@@ -335,160 +335,54 @@ def add_taxes_from_tax_template(item, parent_doc):
 
 @frappe.whitelist()
 def update_invoice(data):
+    """
+    Let ERPNext handle all calculations through set_missing_values() and save()
+    """
     data = json.loads(data)
+    
     if data.get("name"):
-        max_retries = 3
-        retry_count = 0
-        
-        while retry_count < max_retries:
-            try:
-                invoice_doc = frappe.get_doc("Sales Invoice", data.get("name"))
-                invoice_doc.update(data)
-                break  # Success, exit the retry loop
-            except frappe.DoesNotExistError:
-                # Document was deleted, create a new one
-                invoice_doc = frappe.get_doc(data)
-                break
-            except frappe.ValidationError as e:
-                if "Document has been modified" in str(e) and retry_count < max_retries - 1:
-                    # Document was modified by another process, reload and retry
-                    frappe.db.rollback()
-                    retry_count += 1
-                    frappe.log_error(f"Document modification conflict, retry {retry_count}/{max_retries}")
-                    continue
-                else:
-                    raise e
+        try:
+            invoice_doc = frappe.get_doc("Sales Invoice", data.get("name"))
+            invoice_doc.update(data)
+        except frappe.DoesNotExistError:
+            invoice_doc = frappe.new_doc("Sales Invoice")
+            invoice_doc.update(data)
     else:
-        invoice_doc = frappe.get_doc(data)
+        invoice_doc = frappe.new_doc("Sales Invoice")
+        invoice_doc.update(data)
 
-    # Set currency from data before set_missing_values
-    # Validate return items if this is a return invoice
+    # Basic validation for return invoices
     if (data.get("is_return") or invoice_doc.is_return) and invoice_doc.get("return_against"):
         validation = validate_return_items(
             invoice_doc.return_against, [d.as_dict() for d in invoice_doc.items]
         )
         if not validation.get("valid"):
             frappe.throw(validation.get("message"))
-    selected_currency = data.get("currency")
 
-    # Set missing values first
+    #Let ERPNext handle all calculations
     invoice_doc.set_missing_values()
-
-    # Ensure selected currency is preserved after set_missing_values
-    if selected_currency:
-        invoice_doc.currency = selected_currency
-        # Get default conversion rate from ERPNext if currency is different from company currency
-        if invoice_doc.currency != frappe.get_cached_value(
-            "Company", invoice_doc.company, "default_currency"
-        ):
-            company_currency = frappe.get_cached_value("Company", invoice_doc.company, "default_currency")
-
-            # Determine price list currency
-            price_list_currency = data.get("price_list_currency")
-            if not price_list_currency and invoice_doc.get("selling_price_list"):
-                price_list_currency = frappe.db.get_value(
-                    "Price List", invoice_doc.selling_price_list, "currency"
-                )
-            if not price_list_currency:
-                price_list_currency = company_currency
-
-            conversion_rate = 1
-            if invoice_doc.currency != company_currency:
-                conversion_rate = get_exchange_rate(
-                    invoice_doc.currency,
-                    company_currency,
-                    invoice_doc.posting_date,
-                )
-
-            plc_conversion_rate = 1
-            if price_list_currency != invoice_doc.currency:
-                plc_conversion_rate = get_exchange_rate(
-                    price_list_currency,
-                    invoice_doc.currency,
-                    invoice_doc.posting_date,
-                )
-
-            invoice_doc.conversion_rate = conversion_rate
-            invoice_doc.plc_conversion_rate = plc_conversion_rate
-            invoice_doc.price_list_currency = price_list_currency
-
-            # Update rates and amounts for all items using division
-            for item in invoice_doc.items:
-                if item.price_list_rate:
-                    # If exchange rate is 285 PKR = 1 USD
-                    # To convert PKR to USD: divide by exchange rate
-                    # Example: 100 PKR / 285 = 0.35 USD
-                    item.base_price_list_rate = flt(
-                        item.price_list_rate * (conversion_rate / plc_conversion_rate),
-                        item.precision("base_price_list_rate"),
-                    )
-                if item.rate:
-                    item.base_rate = flt(item.rate * conversion_rate, item.precision("base_rate"))
-                if item.amount:
-                    item.base_amount = flt(item.amount * conversion_rate, item.precision("base_amount"))
-
-            # Update payment amounts
-            for payment in invoice_doc.payments:
-                payment.base_amount = flt(payment.amount * conversion_rate, payment.precision("base_amount"))
-
-            # Update invoice level amounts
-            invoice_doc.base_total = flt(
-                invoice_doc.total * conversion_rate, invoice_doc.precision("base_total")
-            )
-            invoice_doc.base_net_total = flt(
-                invoice_doc.net_total * conversion_rate,
-                invoice_doc.precision("base_net_total"),
-            )
-            invoice_doc.base_grand_total = flt(
-                invoice_doc.grand_total * conversion_rate,
-                invoice_doc.precision("base_grand_total"),
-            )
-            invoice_doc.base_rounded_total = flt(
-                invoice_doc.rounded_total * conversion_rate,
-                invoice_doc.precision("base_rounded_total"),
-            )
-            invoice_doc.base_in_words = money_in_words(
-                invoice_doc.base_rounded_total, invoice_doc.company_currency
-            )
-
-            # Update data to be sent back to frontend
-
-            data["conversion_rate"] = conversion_rate
-            data["plc_conversion_rate"] = plc_conversion_rate
-
+    
+    # Basic business rules (not calculations)
     allow_zero_rated_items = frappe.get_cached_value(
         "POS Profile", invoice_doc.pos_profile, "posa_allow_zero_rated_items"
     )
     for item in invoice_doc.items:
         if not item.rate or item.rate == 0:
             if allow_zero_rated_items:
-                item.price_list_rate = 0.00
                 item.is_free_item = 1
             else:
                 frappe.throw(_("Rate cannot be zero for item {0}").format(item.item_code))
         else:
             item.is_free_item = 0
 
-        add_taxes_from_tax_template(item, invoice_doc)
-
-    inclusive = frappe.get_cached_value("POS Profile", invoice_doc.pos_profile, "posa_tax_inclusive")
-    if invoice_doc.get("taxes"):
-        for tax in invoice_doc.taxes:
-            if tax.charge_type == "Actual":
-                tax.included_in_print_rate = 0
-            else:
-                tax.included_in_print_rate = 1 if inclusive else 0
+    # Save and let ERPNext calculate everything
     invoice_doc.flags.ignore_permissions = True
     frappe.flags.ignore_account_permission = True
     invoice_doc.docstatus = 0
     invoice_doc.save()
 
-    # Return both the invoice doc and the updated data
-    response = invoice_doc.as_dict()
-    response["conversion_rate"] = invoice_doc.conversion_rate
-    response["plc_conversion_rate"] = invoice_doc.plc_conversion_rate
-    return response
-
+    #Return ERPNext calculated data as-is
+    return invoice_doc.as_dict()
 
 # =============================================================================
 # FUNCTIONS COPIED FROM submit_invoice.py
@@ -788,3 +682,248 @@ def get_draft_invoices(pos_opening_shift):
     for invoice in invoices_list:
         data.append(frappe.get_cached_doc("Sales Invoice", invoice["name"]))
     return data
+
+# ===========================================================
+# INVOICE COMPUTED PROPERTIES FOR FRONTEND
+# ===========================================================
+
+@frappe.whitelist()
+def create_invoice(customer, pos_profile, pos_opening_shift):
+    """
+    POST - Create new invoice
+    """
+    doc = frappe.new_doc("Sales Invoice")
+    doc.customer = customer
+    doc.pos_profile = pos_profile
+    doc.posa_pos_opening_shift = pos_opening_shift
+    doc.is_pos = 1
+    doc.save()
+    return doc.as_dict()
+
+@frappe.whitelist()
+def get_invoice(invoice_name):
+    """
+    GET - Get invoice with all data
+    """
+    if not invoice_name:
+        return None
+    
+    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    return doc.as_dict()
+
+@frappe.whitelist()
+def add_item_to_invoice(invoice_name, item_code, qty, rate, uom):
+    """
+    POST - Add item to invoice
+    """
+    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    doc.append("items", {
+        "item_code": item_code,
+        "qty": qty,
+        "rate": rate,
+        "uom": uom
+    })
+    doc.save()
+    return doc.as_dict()
+
+@frappe.whitelist()
+def update_item_in_invoice(invoice_name, item_idx, qty=None, rate=None, discount_percentage=None):
+    """
+    PUT - Update item in invoice
+    """
+    try:
+        doc = frappe.get_doc("Sales Invoice", invoice_name)
+        # Convert item_idx to integer since it comes as string from frontend
+        item_idx = int(item_idx)
+        
+        if item_idx < 0 or item_idx >= len(doc.items):
+            frappe.throw(_("Invalid item index: {0}").format(item_idx))
+            
+        item = doc.items[item_idx]
+        
+        if qty is not None:
+            item.qty = flt(qty)
+        if rate is not None:
+            item.rate = flt(rate)
+        if discount_percentage is not None:
+            item.discount_percentage = flt(discount_percentage)
+            
+        doc.save()
+        return doc.as_dict()
+    except ValueError:
+        frappe.throw(_("Invalid item index format"))
+    except Exception as e:
+        frappe.throw(_("Error updating item: {0}").format(str(e)))
+
+@frappe.whitelist()
+def delete_item_from_invoice(invoice_name, item_idx):
+    """
+    DELETE - Remove item from invoice
+    """
+    try:
+        doc = frappe.get_doc("Sales Invoice", invoice_name)
+        # Convert item_idx to integer since it comes as string from frontend
+        item_idx = int(item_idx)
+        
+        if item_idx < 0 or item_idx >= len(doc.items):
+            frappe.throw(_("Invalid item index: {0}").format(item_idx))
+            
+        doc.items.pop(item_idx)
+        doc.save()
+        return doc.as_dict()
+    except ValueError:
+        frappe.throw(_("Invalid item index format"))
+    except Exception as e:
+        frappe.throw(_("Error deleting item: {0}").format(str(e)))
+
+@frappe.whitelist()
+def add_payment_to_invoice(invoice_name, mode_of_payment, amount):
+    """
+    POST - Add payment to invoice
+    """
+    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    doc.append("payments", {
+        "mode_of_payment": mode_of_payment,
+        "amount": amount
+    })
+    doc.save()
+    return doc.as_dict()
+
+@frappe.whitelist()
+def submit_invoice(invoice_name):
+    """
+    PUT - Submit invoice
+    """
+    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    doc.submit()
+    return doc.as_dict()
+
+@frappe.whitelist()
+def delete_invoice(invoice_name):
+    """
+    DELETE - Delete draft invoice
+    """
+    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    if doc.docstatus == 0:  # Only delete drafts
+        doc.delete()
+        return {"deleted": True}
+    return {"deleted": False, "error": "Cannot delete submitted invoice"}
+
+@frappe.whitelist()
+def get_total_items_discount(invoice_name):
+    """
+    GET - Get sum of all item-level discounts
+    """
+    if not invoice_name:
+        return 0
+   
+    doc = frappe.get_doc("Sales Invoice", invoice_name)
+ 
+    total_discount = 0
+    for item in doc.items:
+        total_discount += (item.qty or 0) * (item.discount_amount or 0)
+        
+    return total_discount
+
+@frappe.whitelist()
+def calculate_item_discount_amount(price_list_rate, discount_percentage):
+    """
+    Calculate discount amount based on price and percentage
+    """
+    price_list_rate = flt(price_list_rate) or 0
+    discount_percentage = flt(discount_percentage) or 0
+    
+    if discount_percentage > 0 and price_list_rate > 0:
+        return flt((price_list_rate * discount_percentage) / 100, 2)
+    
+    return 0
+
+@frappe.whitelist()
+def calculate_item_price(item_data):
+    """
+    Calculate item price with discounts - ERPNext handles this automatically
+    Just return the item data as ERPNext will calculate
+    """
+    # Convert string to dict if needed
+    if isinstance(item_data, str):
+        item_data = json.loads(item_data)
+    
+    # Let ERPNext handle the calculations
+    # We just validate and return the data
+    original_rate = flt(item_data.get('base_rate')) or flt(item_data.get('price_list_rate')) or 0
+    
+    if original_rate <= 0:
+        frappe.throw(_("Price is invalid for item"))
+    
+    return {
+        'original_rate': original_rate,
+        'message': 'Use ERPNext calculated fields: doc.total, doc.grand_total, etc.'
+    }
+
+@frappe.whitelist()
+def calculate_stock_qty(qty, conversion_factor):
+    """
+    Calculate stock quantity based on UOM conversion
+    """
+    qty = flt(qty) or 1
+    conversion_factor = flt(conversion_factor) or 1
+    
+    return qty * conversion_factor
+
+@frappe.whitelist()
+def validate_invoice_items(items_data, pos_profile_name, stock_settings):
+    """
+    Validate invoice items - business logic should be in Python
+    """
+    if isinstance(items_data, str):
+        items_data = json.loads(items_data)
+    if isinstance(stock_settings, str):
+        stock_settings = json.loads(stock_settings)
+    
+    pos_profile = frappe.get_cached_doc("POS Profile", pos_profile_name)
+    
+    validation_errors = []
+    
+    for item in items_data:
+        # Check quantity
+        if item.get('qty') == 0:
+            validation_errors.append({
+                'item': item.get('item_name', item.get('item_code')),
+                'error': 'Quantity cannot be zero'
+            })
+            continue
+        
+        # Check negative quantity for regular invoices
+        if not item.get('is_return') and item.get('qty', 0) < 0:
+            validation_errors.append({
+                'item': item.get('item_name', item.get('item_code')),
+                'error': 'Quantity cannot be negative for regular invoices'
+            })
+            continue
+        
+        # Check discount limits
+        if pos_profile.posa_item_max_discount_allowed and not item.get('posa_offer_applied'):
+            if item.get('discount_amount') and flt(item.get('discount_amount')) > 0:
+                discount_percentage = (flt(item.get('discount_amount')) * 100) / flt(item.get('price_list_rate', 0))
+                if discount_percentage > pos_profile.posa_item_max_discount_allowed:
+                    validation_errors.append({
+                        'item': item.get('item_name', item.get('item_code')),
+                        'error': f'Discount percentage cannot exceed {pos_profile.posa_item_max_discount_allowed}%'
+                    })
+                    continue
+        
+        # Check stock availability
+        if stock_settings.get('allow_negative_stock') != 1:
+            if (not item.get('is_return') and item.get('is_stock_item') and 
+                item.get('stock_qty') and item.get('actual_qty') is not None and
+                item.get('stock_qty') > item.get('actual_qty')):
+                validation_errors.append({
+                    'item': item.get('item_name', item.get('item_code')),
+                    'error': f'Available quantity {item.get("actual_qty")} is insufficient'
+                })
+                continue
+    
+    return {
+        'valid': len(validation_errors) == 0,
+        'errors': validation_errors
+    }

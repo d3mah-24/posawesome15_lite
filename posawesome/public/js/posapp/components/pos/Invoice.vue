@@ -520,21 +520,17 @@ export default {
 
   // ===== SECTION 4: COMPUTED =====
   computed: {
-    // Dynamic table headers
     dynamicHeaders() {
       let headers = [...this.items_headers];
       
-      // Remove discount percentage column if not enabled
       if (!this.pos_profile?.posa_display_discount_percentage) {
         headers = headers.filter(header => header.key !== 'discount_percentage');
       }
       
-      // Remove discount amount column if not enabled
       if (!this.pos_profile?.posa_display_discount_amount) {
         headers = headers.filter(header => header.key !== 'discount_amount');
       }
       
-      // Remove "after discount" column if discount editing is not allowed
       if (!this.pos_profile?.posa_allow_user_to_edit_item_discount) {
         headers = headers.filter(header => header.key !== 'rate');
       }
@@ -542,123 +538,44 @@ export default {
       return headers;
     },
     readonly() {
-      // Invoice is readonly only in case of returns
-      // Drafts should be editable
-      const isReadonly = this.invoice_doc?.is_return || false;
-      return isReadonly;
+      return this.invoice_doc?.is_return || false;
     },
     total_qty() {
-      return this.items.reduce((sum, item) => sum + flt(item.qty), 0);
+      if (!this.invoice_doc?.items) return 0;
+      return this.invoice_doc.items.reduce((sum, item) => sum + (item.qty || 0 ), 0);
     },
     Total() {
-      const cacheKey = `total_${this.items.length}_${this.items.map(item => `${item.posa_row_id}_${item.qty}_${item.price_list_rate}`).join('_')}`;
-      
-      if (this._cachedCalculations.has(cacheKey)) {
-        return this._cachedCalculations.get(cacheKey);
-      }
-      
-      
-      const total = this.items.reduce((sum, item) => {
-        const qty = flt(item.qty, this.float_precision);
-        const rate = flt(item.price_list_rate, this.currency_precision); // Use price_list_rate instead of rate
-        const itemTotal = qty * rate;
-        
-        
-        return sum + itemTotal;
-      }, 0);
-      
-      
-      this._cachedCalculations.set(cacheKey, total);
-      
-      // Cleanup cache every 5 minutes
-      if (Date.now() - this._lastCalculationTime > 300000) {
-        this._cachedCalculations.clear();
-        this._lastCalculationTime = Date.now();
-      }
-      
-      return total;
+      return this.invoice_doc?.total || 0;
     },
     subtotal() {
-      try {
-        // Calculate subtotal after discounts and delivery charges
-        this.close_payments();
-        
-        let sum = 0;
-        
-        this.items.forEach((item, index) => {
-          
-          // For returns, use absolute value for correct calculation
-          const qty = this.isReturnInvoice ? Math.abs(flt(item.qty)) : flt(item.qty);
-          const rate = flt(item.rate);
-          const itemTotal = qty * rate;
-          sum += itemTotal;
-          
-        });
-
-
-        // Calculate additional discount based on percentage of current item totals
-        // This ensures the discount scales properly with the number of items
-        let additional_discount_amount = 0;
-        
-        if (this.additional_discount_percentage && sum > 0) {
-          additional_discount_amount = (sum * this.flt(this.additional_discount_percentage)) / 100;
-        } else if (this.discount_amount) {
-          // Fallback to fixed discount amount if percentage is not used
-          additional_discount_amount = this.flt(this.discount_amount);
-        }
-        
-        sum -= additional_discount_amount;
-
-        // Add delivery charges
-        const delivery_charges = this.flt(this.delivery_charges_rate);
-        sum += delivery_charges;
-
-        const finalResult = this.flt(sum, this.currency_precision);
-        
-        return finalResult;
-      } catch (error) {
-        // Return default value in case of error
-        return 0;
-      }
+      this.close_payments();
+      return this.invoice_doc?.net_total || 0;
     },
     total_items_discount_amount() {
-      return this.items.reduce((sum, item) => sum + flt(item.qty) * flt(item.discount_amount), 0);
+      if (!this.invoice_doc?.name) return 0;
+      
+      let result = 0;
+      frappe.call({
+        method: "posawesome.posawesome.api.invoice.get_total_items_discount",
+        args: {
+          invoice_name: this.invoice_doc.name
+        },
+        async: false,
+        callback: (r) => {
+          result = r.message || 0;
+        }
+      });
+      
+      return result;
     },
     TaxAmount() {
-      const cacheKey = `tax_${this.Total}_${this.tax_rate}`;
-      
-      if (this._cachedCalculations.has(cacheKey)) {
-        return this._cachedCalculations.get(cacheKey);
-      }
-      
-      const taxAmount = (flt(this.Total) * flt(this.tax_rate)) / 100;
-      this._cachedCalculations.set(cacheKey, taxAmount);
-      
-      return taxAmount;
+      return this.invoice_doc?.total_taxes_and_charges || 0;
     },
     DiscountAmount() {
-      const cacheKey = `discount_${this.Total}_${this.discount_amount}_${this.discount_percentage}`;
-      
-      if (this._cachedCalculations.has(cacheKey)) {
-        return this._cachedCalculations.get(cacheKey);
-      }
-      
-      let discountAmount = flt(this.discount_amount);
-      if (this.discount_percentage > 0) {
-        discountAmount += (flt(this.Total) * flt(this.discount_percentage)) / 100;
-      }
-      
-      this._cachedCalculations.set(cacheKey, discountAmount);
-      return discountAmount;
+      return this.invoice_doc?.discount_amount || 0;
     },
     GrandTotal() {
-      const cacheKey = `grand_total_${this.Total}_${this.TaxAmount}_${this.DiscountAmount}_${this.delivery_charges_rate}`;
-      if (this._cachedCalculations.has(cacheKey)) {
-        return this._cachedCalculations.get(cacheKey);
-      }
-      const grandTotal = flt(this.Total) + flt(this.TaxAmount) - flt(this.DiscountAmount) + flt(this.delivery_charges_rate);
-      this._cachedCalculations.set(cacheKey, grandTotal);
-      return grandTotal;
+      return this.invoice_doc?.grand_total || 0;
     },
     defaultPaymentMode() {
       const invoicePayments = (this.invoice_doc && Array.isArray(this.invoice_doc.payments)) ? this.invoice_doc.payments : [];
@@ -748,25 +665,17 @@ export default {
       this.$forceUpdate();
     },
     
-    // Functions to increase and decrease quantity
     increaseQuantity(item) {
       try {
         const currentQty = Number(item.qty) || 0;
         const newQty = currentQty + 1;
         
-        // Update quantity directly
         item.qty = newQty;
         
-        // Calculate available quantity
         this.calc_stock_qty(item, newQty);
-        
-        // Cleanup cache
         this._cachedCalculations.clear();
-        
-        // Update UI
         this.$forceUpdate();
         
-        // Auto update invoice
         if (this.invoice_doc && this.invoice_doc.name) {
           this.debounced_auto_update();
         }
@@ -783,25 +692,17 @@ export default {
         const currentQty = Number(item.qty) || 0;
         const newQty = Math.max(0, currentQty - 1);
         
-        // Update quantity directly
         item.qty = newQty;
         
-        // If quantity is zero, delete the item
         if (newQty === 0) {
           this.remove_item(item);
           return;
         }
         
-        // Calculate available quantity
         this.calc_stock_qty(item, newQty);
-        
-        // Cleanup cache
         this._cachedCalculations.clear();
-        
-        // Update UI
         this.$forceUpdate();
         
-        // Auto update invoice
         if (this.invoice_doc && this.invoice_doc.name) {
           this.debounced_auto_update();
         }
@@ -813,26 +714,36 @@ export default {
       }
     },
 
-    
     getDiscountAmount(item) {
-      // Calculate discount amount based on discount percentage and price
       if (!item) return 0;
       
+      if (item.discount_amount) {
+        return flt(item.discount_amount) || 0;
+      }
+
       const basePrice = flt(item.price_list_rate) || flt(item.rate) || 0;
       const discountPercentage = flt(item.discount_percentage) || 0;
       
       if (discountPercentage > 0 && basePrice > 0) {
-        return this.flt((basePrice * discountPercentage) / 100, this.currency_precision);
+        let result = 0;
+        frappe.call({
+          method: "posawesome.posawesome.api.invoice.calculate_item_discount_amount",
+          args: {
+            price_list_rate: basePrice,
+            discount_percentage: discountPercentage
+          },
+          async: false,
+          callback: (r) => {
+            result = r.message || 0;
+          }
+        });
+        return result;
       }
       
-      // If there is a saved discount amount, use it
-      return flt(item.discount_amount) || 0;
+      return 0;
     },
-    
 
-    
     quick_return() {
-      // Check if quick return is enabled
       if (!this.pos_profile.posa_allow_quick_return) {
         evntBus.emit("show_mesage", {
           text: "Quick return is not enabled in POS profile",
@@ -868,12 +779,9 @@ export default {
       if (index >= 0) {
         this.items.splice(index, 1);
         
-        // Check remaining items count
         if (this.items.length === 0 && this.invoice_doc && this.invoice_doc.name) {
-          // Delete invoice if no items remain
           this.delete_draft_invoice();
         } else if (this.invoice_doc && this.invoice_doc.name) {
-          // Auto update invoice when deleting item
           this.debounced_auto_update();
         }
       }
@@ -887,7 +795,6 @@ export default {
         this.calc_stock_qty(item, item.qty);
         this.$forceUpdate();
         
-        // Auto update invoice when changing quantity
         if (this.invoice_doc && this.invoice_doc.name) {
           this.debounced_auto_update();
         }
@@ -901,15 +808,13 @@ export default {
         this.calc_stock_qty(item, item.qty);
         this.$forceUpdate();
         
-        // Auto update invoice when changing quantity
         if (this.invoice_doc && this.invoice_doc.name) {
           this.debounced_auto_update();
         }
       }
     },
 
-    add_item(item) {
-      // Ensure required data is present
+  add_item(item) {
       if (!item || !item.item_code) {
         evntBus.emit("show_mesage", {
           text: "Item data is incorrect or missing",
@@ -918,10 +823,8 @@ export default {
         return;
       }
       
-      // Use Object.assign instead of spread operator for better performance
       const new_item = Object.assign({}, item);
       
-      // Ensure price exists
       if (!new_item.rate && !new_item.price_list_rate) {
         evntBus.emit("show_mesage", {
           text: `No price for item '${new_item.item_name || new_item.item_code}'`,
@@ -930,33 +833,40 @@ export default {
         return;
       }
       
-      // Improved search for existing item
-      // Improve search to handle barcode properly
-      
-      // Ensure UOM exists
       if (!new_item.uom) {
         new_item.uom = new_item.stock_uom || 'Nos';
       }
       
       const existing_item = this.items.find(existing => {
-        // Basic match: same item code and unit of measure
-        const basicMatch = existing.item_code === new_item.item_code && 
-                          existing.uom === new_item.uom;
+        const basicMatch = existing.item_code === new_item.item_code &&  existing.uom === new_item.uom;
         
-        
-        // If item has batch_no, it must match
         if (existing.batch_no || new_item.batch_no) {
-          const batchMatch = basicMatch && existing.batch_no === new_item.batch_no;
-          return batchMatch;
+          return basicMatch && existing.batch_no === new_item.batch_no;
         }
-        
-        // If no batch_no, basic match is sufficient
         return basicMatch;
       });
       
       if (existing_item) {
-        existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
-        this.calc_item_price(existing_item);
+        const existing_idx = this.items.indexOf(existing_item);
+        
+        if (this.invoice_doc && this.invoice_doc.name) {
+          frappe.call({
+            method: "posawesome.posawesome.api.invoice.update_item_in_invoice",
+            args: {
+              invoice_name: this.invoice_doc.name,
+              item_idx: existing_idx,
+              qty: flt(existing_item.qty) + flt(new_item.qty) // Python will handle this
+            },
+            callback: (r) => {
+              if (r.message) {
+                this.invoice_doc = r.message;
+                this.items = r.message.items;
+              }
+            }
+          });
+        } else {
+          existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
+        }
       } else {
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
@@ -964,29 +874,38 @@ export default {
         new_item.posa_is_offer = 0;
         new_item.posa_is_replace = 0;
         new_item.is_free_item = 0;
-        new_item.uom = new_item.uom || new_item.stock_uom;
 
-        const original_price = new_item.price_list_rate || new_item.rate || 0;
-        new_item.price_list_rate = original_price;
-        new_item.base_rate = original_price;
-        new_item.rate = original_price;
-
-        this.items.push(new_item);
-        this.calc_item_price(new_item);
+        const rate = new_item.price_list_rate || new_item.rate || 0;
+        
+        if (this.invoice_doc && this.invoice_doc.name) {
+          frappe.call({
+            method: "posawesome.posawesome.api.invoice.add_item_to_invoice",
+            args: {
+              invoice_name: this.invoice_doc.name,
+              item_code: new_item.item_code,
+              qty: new_item.qty || 1,
+              rate: rate,
+              uom: new_item.uom
+            },
+            callback: (r) => {
+              if (r.message) {
+                this.invoice_doc = r.message;
+                this.items = r.message.items;
+              }
+            }
+          });
+        } else {
+          new_item.rate = rate;
+          new_item.price_list_rate = rate;
+          new_item.base_rate = rate;
+          this.items.push(new_item);
+        }
       }
       
-      // Auto create draft invoice when adding first item
       if (this.items.length === 1 && !this.invoice_doc) {
         this.create_draft_invoice();
-      } else if (this.invoice_doc && this.invoice_doc.name) {
-        // Auto update invoice when adding new item with delay
-        this.debounced_auto_update();
       }
-      
-      // Cleanup cache
-      this._cachedCalculations.clear();
     },
-
     generateRowId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
     },
@@ -1012,9 +931,7 @@ export default {
     },
 
     async auto_update_invoice() {
-      // Auto update invoice if it exists
       if (this.invoice_doc && this.invoice_doc.name && !this.invoice_doc.submitted_for_payment) {
-        // Prevent rapid repeated updates
         if (this._autoUpdateInProgress) {
           return;
         }
@@ -1032,18 +949,13 @@ export default {
             });
           }
         } catch (error) {
-          // Handle error silently to avoid user annoyance
-          
-          // If error is due to document modification, reload invoice
           if (error.message && error.message.includes('Document has been modified')) {
             try {
               await this.reload_invoice();
             } catch (reloadError) {
-              // Failed to reload invoice
             }
             }
           } finally {
-            // Remove lock after update completes
             setTimeout(() => {
               this._autoUpdateInProgress = false;
             }, 1000); // Wait one second before allowing another update
@@ -1052,7 +964,6 @@ export default {
     },
 
     async reload_invoice() {
-      // Reload invoice from database
       if (this.invoice_doc && this.invoice_doc.name) {
         try {
           const result = await frappe.call({
@@ -1065,24 +976,20 @@ export default {
           
           if (result.message) {
               this.invoice_doc = result.message;
-              // Update items from loaded invoice
               if (result.message.items) {
               this.items = result.message.items;
             }
           }
         } catch (error) {
-          // Failed to reload invoice
         }
       }
     },
 
     debounced_auto_update() {
-      // Cancel previous update if exists
       if (this._autoUpdateTimer) {
         clearTimeout(this._autoUpdateTimer);
       }
       
-      // Delay update for 500ms to avoid repeated updates
       this._autoUpdateTimer = setTimeout(() => {
         this.auto_update_invoice();
       }, 500);
@@ -1111,34 +1018,27 @@ export default {
       new_item.actual_batch_qty = "";
       new_item.conversion_factor = 1;
       
-      // Preserve item's unit list
       new_item.item_uoms = item.item_uoms || [];
       
-      // Add base unit if not in unit list
       if (new_item.item_uoms.length === 0 || !new_item.item_uoms.some(uom => uom.uom === item.stock_uom)) {
         new_item.item_uoms.unshift({ uom: item.stock_uom, conversion_factor: 1 });
       }
       
-      // Fix data: Ensure required fields exist for each unit
       new_item.item_uoms = new_item.item_uoms.map(uom => {
-        // If unit is text, convert to object
         if (typeof uom === 'string') {
           return { uom: uom, conversion_factor: 1 };
         } 
-        // If object, ensure required fields exist
         else if (typeof uom === 'object' && uom !== null) {
           return { 
             uom: uom.uom || uom.name || uom.toString(), 
             conversion_factor: parseFloat(uom.conversion_factor) || 1 
           };
         }
-        // If empty or undefined, use base unit
         else {
           return { uom: item.stock_uom || 'Nos', conversion_factor: 1 };
         }
       }).filter(uom => uom && uom.uom); // Exclude invalid units
       
-      // Set correct conversion factor based on selected unit
       if (new_item.item_uoms && Array.isArray(new_item.item_uoms)) {
         const selected_uom_obj = new_item.item_uoms.find(uom => uom.uom === new_item.uom);
         if (selected_uom_obj) {
@@ -1165,9 +1065,6 @@ export default {
     },
 
     cancel_invoice() {
-      const doc = this.get_invoice_doc();
-      
-      // Delete draft invoice from database if exists
       if (this.invoice_doc && this.invoice_doc.name) {
         frappe.call({
           method: "frappe.client.delete",
@@ -1202,12 +1099,10 @@ export default {
       this.selcted_delivery_charges = {};
       evntBus.emit("set_customer_readonly", false);
       
-      // Close payment screen if open
       evntBus.emit("show_payment", "false");
     },
 
     delete_draft_invoice() {
-      // Delete draft invoice from database
       if (this.invoice_doc && this.invoice_doc.name) {
         frappe.call({
           method: "frappe.client.delete",
@@ -1221,7 +1116,6 @@ export default {
                 text: "Draft invoice deleted",
                 color: "success",
               });
-              // Reset data
               this.invoice_doc = "";
               this.return_doc = "";
               this.discount_amount = 0;
@@ -1269,7 +1163,6 @@ export default {
         this.invoice_doc = data;
         this.items = data.items;
         
-        
         this.update_items_details(this.items);
         
         this.posa_offers = data.posa_offers || [];
@@ -1303,8 +1196,6 @@ export default {
       return old_invoice;
     },
 
-
-
     get_invoice_doc() {
       let doc = {};
       if (this.invoice_doc.name && !this.invoice_doc.submitted_for_payment) {
@@ -1319,9 +1210,6 @@ export default {
       doc.naming_series = doc.naming_series || this.pos_profile.naming_series;
       doc.customer = this.customer;
       doc.items = this.get_invoice_items();
-      
-      // Total before discount should be sum of price_list_rate
-      doc.total = this.Total;
       doc.discount_amount = flt(this.discount_amount);
       doc.additional_discount_percentage = flt(this.additional_discount_percentage);
       doc.posa_pos_opening_shift = this.pos_opening_shift.name;
@@ -1332,17 +1220,11 @@ export default {
       doc.posa_offers = this.posa_offers;
       doc.posa_coupons = this.posa_coupons;
       doc.posting_date = this.posting_date;
-      // doc.branch = this.pos_profile.branch || ""; // Temporarily disabled - branch field not in database
       return doc;
     },
 
     get_invoice_items() {
-      // Use Array.map instead of forEach for better performance
       return this.items.map(item => {
-        // Ensure price and quantity are correct
-        const rate = flt(item.rate) || flt(item.price_list_rate) || 0;
-        const qty = Number(item.qty) > 0 ? Number(item.qty) : 1;
-
         return {
           item_code: item.item_code,
           posa_row_id: item.posa_row_id,
@@ -1351,22 +1233,20 @@ export default {
           posa_is_offer: item.posa_is_offer,
           posa_is_replace: item.posa_is_replace,
           is_free_item: item.is_free_item,
-          qty: qty,
-          rate: rate,
+          qty: item.qty || 1,
+          rate: item.rate || item.price_list_rate || 0,
           uom: item.uom || item.stock_uom,
-          amount: qty * rate,
           conversion_factor: item.conversion_factor || 1,
           serial_no: item.serial_no,
-          discount_percentage: flt(item.discount_percentage) || 0,
-          discount_amount: flt(item.discount_amount) || 0,
+          discount_percentage: item.discount_percentage || 0,
+          discount_amount: item.discount_amount || 0,
           batch_no: item.batch_no,
           posa_notes: item.posa_notes,
           posa_delivery_date: item.posa_delivery_date,
-          price_list_rate: item.price_list_rate || rate,
+          price_list_rate: item.price_list_rate || item.rate || 0,
         };
       });
     },
-
 
     get_payments() {
       const payments = [];
@@ -1401,14 +1281,12 @@ export default {
             }
           },
           error: function (err) {
-            // Handle document modification error
             if (err.message && err.message.includes('Document has been modified')) {
               evntBus.emit('show_mesage', {
                 text: 'Invoice was modified elsewhere, will reload',
                 color: 'warning'
               });
               
-              // Reload invoice
               vm.reload_invoice().then(() => {
                 resolve(vm.invoice_doc);
               }).catch((reloadError) => {
@@ -1429,11 +1307,8 @@ export default {
     async process_invoice() {
       const doc = this.get_invoice_doc();
       
-      
       try {
         const result = await this.update_invoice(doc);
-        
-        
         return result;
       } catch (error) {
         evntBus.emit('show_mesage', {
@@ -1443,7 +1318,6 @@ export default {
         throw error;
       }
     },
-
 
     async show_payment() {
       if (this.readonly) return;
@@ -1462,41 +1336,27 @@ export default {
         return;
       }
 
-      // Show loading indicator
       evntBus.emit("show_loading", {
         text: "Preparing payment screen...",
         color: "info"
       });
 
       try {
-        // Process current invoice
         const invoice_doc = await this.process_invoice();
         
-        
-        // Send invoice to payment screen
         evntBus.emit("send_invoice_doc_payment", invoice_doc);
         evntBus.emit("show_payment", "true");
         
-        // Don't clear cart here - will clear after payment completes
-        // Cart will remain until payment is confirmed successfully
-        // Don't clear discounts and offers here - should remain until payment completes
-        
-        // Only clear temporary offers and coupons
         this.posa_offers = [];
         this.posa_coupons = [];
         this._cachedCalculations.clear();
         
-
-        // 3. Reset customer only if required in settings
         if (this.pos_profile.posa_clear_customer_after_payment) {
           this.customer = this.pos_profile.customer;
           evntBus.emit("set_customer", this.customer);
         }
 
-        // 4. Notify other components of new session
         evntBus.emit("invoice_session_reset");
-        
-        // Hide loading indicator
         evntBus.emit("hide_loading");
         
       } catch (error) {
@@ -1509,54 +1369,38 @@ export default {
     },
 
     validate() {
-      // Use Array.every instead of forEach for quick validation
-      return this.items.every(item => {
-              // Validate quantity - allow negative quantities for return invoices
-      if (item.qty == 0) {
-          evntBus.emit("show_mesage", {
-            text: `Item '${item.item_name}' quantity cannot be zero (0)`,
-            color: "error",
-          });
-          return false;
-        }
-        
-        // For regular invoices, don't allow negative quantities
-        if (!this.invoice_doc.is_return && item.qty < 0) {
-          evntBus.emit("show_mesage", {
-            text: `Item '${item.item_name}' quantity cannot be negative in regular invoices`,
-            color: "error",
-          });
-          return false;
-        }
-        
-        // Check maximum discount
-        if (this.pos_profile.posa_item_max_discount_allowed && !item.posa_offer_applied) {
-          if (item.discount_amount && this.flt(item.discount_amount) > 0) {
-            const discount_percentage = (this.flt(item.discount_amount) * 100) / this.flt(item.price_list_rate);
-            if (discount_percentage > this.pos_profile.posa_item_max_discount_allowed) {
-              evntBus.emit("show_mesage", {
-                text: `Discount percentage for item '${item.item_name}' cannot exceed ${this.pos_profile.posa_item_max_discount_allowed}%`,
-                color: "error",
-              });
-              return false;
-            }
-          }
-        }
-        
-        // Check stock availability
-        if (this.stock_settings.allow_negative_stock != 1) {
-                      if (this.invoiceType == "Invoice" && item.is_stock_item && item.stock_qty && 
-                (!item.actual_qty || item.stock_qty > item.actual_qty)) {
-              evntBus.emit("show_mesage", {
-                text: `Available quantity '${item.actual_qty}' for item '${item.item_name}' is insufficient`,
-                color: "error",
-              });
-              return false;
-            }
-        }
-        
+      if (!this.items || this.items.length === 0) {
         return true;
+      }
+      
+      let isValid = true;
+      
+      frappe.call({
+        method: "posawesome.posawesome.api.invoice.validate_invoice_items",
+        args: {
+          items_data: this.items,
+          pos_profile_name: this.pos_profile.name,
+          stock_settings: this.stock_settings
+        },
+        async: false,
+        callback: (r) => {
+          const result = r.message;
+          if (!result.valid) {
+            if (result.errors && result.errors.length > 0) {
+              evntBus.emit("show_mesage", {
+                text: `${result.errors[0].item}: ${result.errors[0].error}`,
+                color: "error",
+              });
+            }
+            isValid = false;
+          }
+        },
+        error: () => {
+          isValid = false;
+        }
       });
+      
+      return isValid;
     },
 
     get_draft_invoices() {
@@ -1581,10 +1425,7 @@ export default {
       });
     },
 
-
-
     open_returns() {
-      // Check if returns are enabled
       if (!this.pos_profile.posa_allow_return) {
         evntBus.emit("show_mesage", {
           text: "Returns are not enabled in POS profile",
@@ -1621,7 +1462,6 @@ export default {
         },
         callback: function (r) {
           if (r.message) {
-            // Use Map for faster search
             const updatedItemsMap = new Map();
             r.message.forEach(item => {
               updatedItemsMap.set(item.item_code, item);
@@ -1636,7 +1476,6 @@ export default {
                 item.rate = updated_item.rate;
                 item.currency = updated_item.currency;
                 
-                // Fix unit data
                 item.item_uoms = (updated_item.item_uoms || []).map(uom => {
                   if (typeof uom === 'string') {
                     return { uom: uom, conversion_factor: 1 };
@@ -1788,18 +1627,14 @@ export default {
         value = 0;
       }
       
-      // Determine maximum discount
       let maxDiscount = 100; // Default value
       
-      // If item has specific maximum
       if (item.max_discount && item.max_discount > 0) {
         maxDiscount = item.max_discount;
       }
-      // If POS Profile has specific maximum
       else if (this.pos_profile.posa_item_max_discount_allowed && this.pos_profile.posa_item_max_discount_allowed > 0) {
         maxDiscount = this.pos_profile.posa_item_max_discount_allowed;
       }
-      
       
       if (value < 0) {
         value = 0;
@@ -1812,20 +1647,11 @@ export default {
       }
       
       item.discount_percentage = value;
-      
-      const syntheticEvent = {
-        target: {
-          id: 'discount_percentage',
-          value: value
-        }
-      };
-      
-      this.calc_prices(item, value, syntheticEvent);
-      
-      // Recalculate Total after applying discount
-      this._cachedCalculations.clear();
-      
-      // Force Total recalculation
+      item.discount_amount = 0; 
+
+      if (this.invoice_doc && this.invoice_doc.name) {
+        this.debounced_auto_update();
+      }
       
       this.$forceUpdate();
     },
@@ -1837,102 +1663,57 @@ export default {
       }
       evntBus.emit("update_customer_price_list", price_list);
     },
+
     update_discount_umount(event) {
-      this.additional_discount_percentage = event.target.value;
-      const value = flt(this.additional_discount_percentage);
-      
-      // Determine maximum discount
+      const value = flt(event.target.value);
       const maxDiscount = this.pos_profile.posa_invoice_max_discount_allowed || 100;
       
-      
       if (value >= 0 && value <= maxDiscount) {
-        this.discount_amount = (this.Total * value) / 100;
+        this.additional_discount_percentage = value;
       } else if (value > maxDiscount) {
         this.additional_discount_percentage = maxDiscount;
-        this.discount_amount = (this.Total * maxDiscount) / 100;
         evntBus.emit("show_mesage", {
           text: `Reverted to allowed discount percentage`,
           color: "info",
         });
       } else {
         this.additional_discount_percentage = 0;
-        this.discount_amount = 0;
       }
       
-      // Auto update invoice when applying discount to invoice
       if (this.invoice_doc && this.invoice_doc.name) {
         this.debounced_auto_update();
       }
     },
 
     calc_prices(item, value, $event) {
-      const originalPrice = flt(item.base_rate) || flt(item.price_list_rate) || 0;
-
       if ($event.target.id === "rate") {
+        item.rate = value;
         item.discount_percentage = 0;
-        if (value < originalPrice) {
-          item.discount_amount = this.flt(
-            originalPrice - flt(value),
-            this.currency_precision
-          );
-        } else if (value < 0) {
-          item.rate = originalPrice;
-          item.discount_amount = 0;
-        } else if (value > originalPrice) {
-          item.discount_amount = 0;
-        }
+        item.discount_amount = 0;
       } else if ($event.target.id === "discount_amount") {
         if (value < 0) {
           item.discount_amount = 0;
-          item.discount_percentage = 0;
         } else {
-          item.rate = originalPrice - flt(value);
-          item.discount_percentage = 0;
+          item.discount_amount = flt(value);
         }
+        item.discount_percentage = 0;
       } else if ($event.target.id === "discount_percentage") {
         if (value < 0) {
-          item.discount_amount = 0;
           item.discount_percentage = 0;
-          item.rate = originalPrice;
         } else {
-          item.rate = this.flt(
-            originalPrice - (originalPrice * flt(value)) / 100,
-            this.currency_precision
-          );
-          
-          item.discount_amount = this.flt(
-            originalPrice - flt(+item.rate),
-            this.currency_precision
-          );
-          
-          if (item.rate < 0) {
-            item.rate = 0;
-            item.discount_amount = originalPrice;
-          }
+          item.discount_percentage = flt(value);
         }
+        item.discount_amount = 0;
       }
-      
-      // Auto update invoice when changing price or discount
+
       if (this.invoice_doc && this.invoice_doc.name) {
         this.debounced_auto_update();
       }
     },
 
     calc_item_price(item) {
-      // Ensure required data exists
       if (!item) return;
       
-      // Use cache for repeated calculations
-      const cacheKey = `price_${item.qty}_${item.rate}_${item.discount_percentage}_${item.discount_amount}`;
-      
-      if (this._cachedCalculations.has(cacheKey)) {
-        const cached = this._cachedCalculations.get(cacheKey);
-        item.amount = cached.amount;
-        item.rate = cached.rate;
-        return;
-      }
-      
-      // Ensure base price exists
       const original_rate = flt(item.base_rate) || flt(item.price_list_rate) || 0;
       if (original_rate <= 0) {
         evntBus.emit("show_mesage", {
@@ -1941,32 +1722,13 @@ export default {
         });
         return;
       }
-      
-      let final_rate = original_rate;
-      
-      if (item.discount_percentage > 0) {
-        final_rate = original_rate - (original_rate * flt(item.discount_percentage) / 100);
+
+      if (this.invoice_doc && this.invoice_doc.name) {
+        this.debounced_auto_update();
       }
-      
-      if (item.discount_amount > 0) {
-        final_rate = final_rate - flt(item.discount_amount);
-      }
-      
-      // Ensure final price is not negative
-      final_rate = Math.max(0, final_rate);
-      
-      item.rate = final_rate;
-      item.amount = flt(item.qty || 0) * final_rate;
-      
-      // Save in cache
-      this._cachedCalculations.set(cacheKey, {
-        amount: item.amount,
-        rate: item.rate
-      });
     },
 
     calc_uom(item, value) {
-      // Ensure the selected value is the unit name (string)
       let selected_uom = value;
       if (typeof value === "object" && value !== null) {
         if (value.target && value.target.value) {
@@ -1978,7 +1740,6 @@ export default {
       
       item.uom = selected_uom;
       
-      // Find conversion factor for selected unit
       if (item.item_uoms && Array.isArray(item.item_uoms)) {
         const selected_uom_obj = item.item_uoms.find((uom_item) => uom_item.uom === selected_uom);
         item.conversion_factor = selected_uom_obj ? parseFloat(selected_uom_obj.conversion_factor) : 1;
@@ -1986,7 +1747,6 @@ export default {
         item.conversion_factor = 1;
       }
       
-      // Save base price if not already saved
       if (!item.base_rate && item.price_list_rate) {
         item.base_rate = item.price_list_rate;
       }
@@ -1995,36 +1755,26 @@ export default {
         item.discount_amount = 0;
         item.discount_percentage = 0;
       }
-      
-      // Recalculate price based on conversion factor
-      if (item.batch_price) {
-        item.price_list_rate = item.batch_price * item.conversion_factor;
-      } else if (item.base_rate) {
-        // Recalculate price based on conversion factor
-        item.price_list_rate = item.base_rate * item.conversion_factor;
-        item.rate = item.price_list_rate;
-      }
-      
-      // Calculate stock quantity
+
       this.calc_stock_qty(item, item.qty);
+      
+      if (this.invoice_doc && this.invoice_doc.name) {
+        this.debounced_auto_update();
+      }
       
       this.update_item_detail(item);
     },
 
     calc_stock_qty(item, value) {
-      // Ensure item exists
       if (!item) return;
       
-      // Convert values to numbers directly
-      const numValue = Number(value);
-      value = numValue > 0 ? numValue : 1;
+      const numValue = Number(value) > 0 ? Number(value) : 1;
+      const convFactor = Number(item.conversion_factor || 1) > 0 ? Number(item.conversion_factor || 1) : 1;
+      item.stock_qty = numValue * convFactor;
       
-      // Ensure conversion_factor is valid number
-      const convFactor = Number(item.conversion_factor || 1);
-      item.conversion_factor = convFactor > 0 ? convFactor : 1;
-      
-      // Calculate stock_qty correctly
-      item.stock_qty = item.conversion_factor * value;
+      if (this.invoice_doc && this.invoice_doc.name) {
+        this.debounced_auto_update();
+      }
     },
 
     set_serial_no(item) {
@@ -2063,11 +1813,6 @@ export default {
         });
       });
 
-      // set item batch_no based on:
-      // 1. if batch has expiry_date we should use the batch with the nearest expiry_date
-      // 2. if batch has no expiry_date we should use the batch with the earliest manufacturing_date
-      // 3. we should not use batch with remaining_qty = 0
-      // 4. we should the highest remaining_qty
       const batch_no_data = Object.values(used_batches)
         .filter((batch) => batch.remaining_qty > 0)
         .sort((a, b) => {
@@ -2112,7 +1857,6 @@ export default {
         item.batch_no_expiry_date = null;
         item.batch_price = null;
       }
-      // update item batch_no_data from batch_no_data
       item.batch_no_data = batch_no_data;
     },
 
@@ -2171,7 +1915,6 @@ export default {
     },
 
     handelOffers() {
-      // Add Debouncing for performance improvement
       if (this._offersDebounceTimer) {
         clearTimeout(this._offersDebounceTimer);
       }
@@ -2212,7 +1955,6 @@ export default {
     },
 
     setItemGiveOffer(offers) {
-      // Set item give offer for replace
       offers.forEach((offer) => {
         if (
           offer.apply_on == "Item Code" &&
@@ -2299,7 +2041,6 @@ export default {
         conditions: { min_qty, max_qty, min_amt, max_amt }
       };
       
-      
       this._cachedCalculations.set(cacheKey, result);
       return result;
     },
@@ -2310,7 +2051,6 @@ export default {
         return true;
       }
       
-      // Use map for faster search
       if (!this._couponCache) {
         this._couponCache = new Map();
         this.posa_coupons.forEach(coupon => {
@@ -2340,10 +2080,8 @@ export default {
                 !this.checkOfferIsAppley(item, offer)
               ) {
               } else {
-                // Ensure stock_qty is valid number
                 const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
                 item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
-                
                 
                 const res = this.chech_qty_amount_offer(
                   offer,
@@ -2378,7 +2116,6 @@ export default {
                 !this.checkOfferIsAppley(item, offer)
               ) {
               } else {
-                // Ensure stock_qty is valid number
                 const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
                 item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
                 
@@ -2419,7 +2156,6 @@ export default {
                 !this.checkOfferIsAppley(item, offer)
               ) {
               } else {
-                // Ensure stock_qty is valid number
                 const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
                 item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
                 
@@ -2449,9 +2185,7 @@ export default {
         if (this.checkOfferCoupon(offer)) {
           let total_qty = 0;
           this.items.forEach((item) => {
-            // Modify condition to include items in draft invoices
             if ((!item.posa_is_offer && !item.posa_is_replace) || (this.invoice_doc?.docstatus === 0)) {
-              // Ensure stock_qty is valid number
               const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
               item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
               
@@ -2906,8 +2640,6 @@ export default {
         "load",
         function () {
           printWindow.print();
-          // printWindow.close();
-          // NOTE : uncomoent this to auto closing printing window
         },
         true
       );
@@ -2969,7 +2701,6 @@ export default {
           });
         });
       } catch (e) {
-        // Error in debugTableDimensions
       }
     },
     printInvoice() {
@@ -3050,7 +2781,6 @@ export default {
   },
 
   mounted() {
-          // Cleanup cache on component mount
       this._cachedCalculations = new Map();
       this._lastCalculationTime = Date.now();
     
@@ -3121,7 +2851,6 @@ export default {
       this.new_line = data;
     });
     this.$nextTick(() => {
-      // existing event bus bindings...
       this.debugTableDimensions();
     });
     evntBus.on("send_invoice_doc_payment", (doc) => {
@@ -3158,11 +2887,9 @@ export default {
     evntBus.$off("update_invoice_coupons");
     evntBus.$off("set_all_items");
     
-    // Cleanup cache
     this._cachedCalculations.clear();
     this._couponCache = null;
     
-    // Cleanup Timers
     if (this._calculationDebounceTimer) {
       clearTimeout(this._calculationDebounceTimer);
     }
@@ -3210,12 +2937,10 @@ export default {
     },
     invoiceType() {
       evntBus.emit("update_invoice_type", this.invoiceType);
-      // Update toggle key when invoice type is changed from elsewhere
     },
     invoice_doc: {
       deep: true,
       handler(newDoc) {
-        // Force update totals from backend when invoice changes
         evntBus.emit("update_invoice_doc", newDoc);
         if (newDoc && newDoc.name) {
           this.$forceUpdate();
@@ -3223,11 +2948,8 @@ export default {
       },
     },
     discount_amount() {
-      if (!this.discount_amount || this.discount_amount == 0) {
-        this.additional_discount_percentage = 0;
-      } else {
-        this.additional_discount_percentage =
-          (this.discount_amount / this.Total) * 100;
+      if (this.invoice_doc && this.invoice_doc.name) {
+        this.debounced_auto_update();
       }
     }
   },
