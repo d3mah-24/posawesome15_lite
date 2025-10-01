@@ -9,14 +9,14 @@
       <v-card-title>
         <v-row no-gutters align="center" justify="center">
           <v-col cols="6">
-            <span class="text-h6 primary--text">الكوبونات</span>
+            <span class="text-h6 primary--text">Coupons</span>
           </v-col>
           <v-col cols="4">
             <v-text-field
               dense
               outlined
               color="primary"
-              label="الكوبونات"
+              label="Coupons"
               background-color="white"
               hide-details
               v-model="new_coupon"
@@ -29,7 +29,7 @@
               color="success"
               dark
               @click="add_coupon(new_coupon)"
-              >إضافة</v-btn
+              >Add</v-btn
             >
           </v-col>
         </v-row>
@@ -71,7 +71,7 @@
             color="warning"
             dark
             @click="back_to_invoice"
-            >رجوع</v-btn
+            >Back</v-btn
           >
         </v-col>
       </v-row>
@@ -99,10 +99,10 @@ export default {
     singleExpand: true,
     expanded: [],
     items_headers: [
-      { title: 'الكوبون', key: 'coupon_code', align: 'start' },
-      { title: 'النوع', key: 'type', align: 'start' },
-      { title: 'عرض نقاط البيع', key: 'pos_offer', align: 'start' },
-      { title: 'مطبق', key: 'applied', align: 'start' },
+      { title: 'Coupon', key: 'coupon_code', align: 'start' },
+      { title: 'Type', key: 'type', align: 'start' },
+      { title: 'POS Offer', key: 'pos_offer', align: 'start' },
+      { title: 'Applied', key: 'applied', align: 'start' },
       ],
     };
     console.log({script: "data end", result: "data object initialized successfully"});
@@ -124,7 +124,7 @@ export default {
     add_coupon(new_coupon) {
       if (!this.customer || !new_coupon) {
         evntBus.emit('show_mesage', {
-          text: 'العميل أو كود الكوبون مفقود',
+          text: 'Customer or coupon code is missing',
           color: 'error'
         });
         return;
@@ -134,7 +134,7 @@ export default {
       );
       if (exist) {
         evntBus.emit('show_mesage', {
-          text: 'هذا الكوبون مستخدم بالفعل!',
+          text: 'This coupon is already used!',
           color: 'error',
         });
         return;
@@ -169,7 +169,7 @@ export default {
             }
           } else {
             evntBus.emit('show_mesage', {
-              text: 'فشل في الحصول على الكوبون من الخادم',
+              text: 'Failed to get coupon from server',
               color: 'error'
             });
           }
@@ -179,7 +179,7 @@ export default {
     setActiveGiftCoupons() {
       if (!this.customer) {
         evntBus.emit('show_mesage', {
-          text: 'لا يوجد عميل للكوبونات الهدية النشطة',
+          text: 'No customer for active gift coupons',
           color: 'error'
         });
         return;
@@ -199,7 +199,7 @@ export default {
             });
           } else {
             evntBus.emit('show_mesage', {
-              text: 'فشل في الحصول على الكوبونات الهدية النشطة',
+              text: 'Failed to get active gift coupons',
               color: 'error'
             });
           }

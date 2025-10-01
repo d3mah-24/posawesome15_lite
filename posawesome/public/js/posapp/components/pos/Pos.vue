@@ -123,7 +123,7 @@ export default {
             evntBus.emit('set_company', r.message.company);
           } else {
             evntBus.emit('show_mesage', {
-              text: 'لا توجد وردية فتح، سيتم إنشاء قيد فتح جديد.',
+              text: 'No opening shift found, a new opening entry will be created.',
               color: 'info'
             });
             this.create_opening_voucher();
@@ -146,7 +146,7 @@ export default {
             evntBus.emit('open_ClosingDialog', r.message);
           } else {
             evntBus.emit('show_mesage', {
-              text: 'فشل في تحميل بيانات الإغلاق',
+              text: 'Failed to load closing data',
               color: 'error'
             });
           }
@@ -163,13 +163,13 @@ export default {
         .then((r) => {
           if (r.message) {
             evntBus.emit('show_mesage', {
-              text: 'تم إغلاق وردية الكاشير بنجاح',
+              text: 'Cashier shift closed successfully',
               color: 'success',
             });
             this.check_opening_entry();
           } else {
             evntBus.emit('show_mesage', {
-              text: 'فشل في إغلاق وردية الكاشير',
+              text: 'Failed to close cashier shift',
               color: 'error'
             });
           }
@@ -185,7 +185,7 @@ export default {
             evntBus.emit('set_offers', r.message);
           } else {
             evntBus.emit('show_mesage', {
-              text: 'فشل في تحميل العروض',
+              text: 'Failed to load offers',
               color: 'error'
             });
           }

@@ -6,7 +6,7 @@
       </template>-->
       <v-card>
         <v-card-title>
-          <span class="headline primary--text">إنشاء مستند فتح نقاط البيع</span>
+          <span class="headline primary--text">Create POS Opening Document</span>
         </v-card-title>
         <v-card-text>
           <v-container>
@@ -14,7 +14,7 @@
               <v-col cols="12">
                 <v-autocomplete
                   :items="companies"
-                  label="الشركة"
+                  label="Company"
                   v-model="company"
                   required
                 ></v-autocomplete>
@@ -22,7 +22,7 @@
               <v-col cols="12">
                 <v-autocomplete
                   :items="pos_profiles"
-                  label="ملف نقاط البيع"
+                  label="POS Profile"
                   v-model="pos_profile"
                   required
                 ></v-autocomplete>
@@ -41,7 +41,7 @@
                       <v-text-field
                         v-model="item.amount"
                         :rules="[max25chars]"
-                        label="تعديل السعر"
+                        label="Edit Amount"
                         single-line
                         counter
                         type="number"
@@ -55,13 +55,13 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" dark @click="go_desk">إلغاء</v-btn>
+          <v-btn color="error" dark @click="go_desk">Cancel</v-btn>
           <v-btn
             color="success"
             :disabled="is_loading"
             dark
             @click="submit_dialog"
-            >تأكيد</v-btn
+            >Confirm</v-btn
           >
         </v-card-actions>
       </v-card>
@@ -90,20 +90,20 @@ export default {
     const payments_methods = ref([]);
     const payments_methods_headers = ref([
       {
-        title: 'طريقة الدفع',
+        title: 'Payment Method',
         align: 'start',
         sortable: false,
         key: 'mode_of_payment',
       },
       {
-        title: 'مبلغ الفتح',
+        title: 'Opening Amount',
         key: 'amount',
         align: 'center',
         sortable: false,
       },
     ]);
     const itemsPerPage = ref(100);
-    const max25chars = (v) => v.length <= 12 || 'النص طويل جداً!';
+    const max25chars = (v) => v.length <= 12 || 'Text too long!';
 
     const close_opening_dialog = () => {
       evntBus.emit('close_opening_dialog');
@@ -123,7 +123,7 @@ export default {
             payments_method_data.value = r.message.payments_method;
           } else {
             evntBus.emit('show_mesage', {
-              text: 'فشل في تحميل بيانات فتح نقاط البيع',
+              text: 'Failed to load POS opening data',
               color: 'error'
             });
           }
@@ -134,7 +134,7 @@ export default {
     const submit_dialog = () => {
       if (!payments_methods.value.length || !company.value || !pos_profile.value) {
         evntBus.emit('show_mesage', {
-          text: 'يرجى ملء جميع الحقول المطلوبة',
+          text: 'Please fill all required fields',
           color: 'error'
         });
         return;
@@ -154,7 +154,7 @@ export default {
             is_loading.value = false;
           } else {
             evntBus.emit('show_mesage', {
-              text: 'فشل في إنشاء مستند الفتح',
+              text: 'Failed to create opening document',
               color: 'error'
             });
           }

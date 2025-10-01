@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-دالة البحث في الباركود الخاص
 Search Private Barcode Function
 """
 
@@ -12,35 +11,35 @@ from frappe import _
 @frappe.whitelist()
 def search_private_barcode(pos_profile, barcode_value):
     """
-    البحث في الباركود الخاص - دالة مبسطة
+    Search private barcode - simplified function
     """
     pos_profile = json.loads(pos_profile)
     
     try:
-        # فحص الحقول المطلوبة
+        # Check required fields
         if not pos_profile.get("posa_private_barcode_prefixes"):
-            frappe.log_error(f"❌ حقل posa_private_barcode_prefixes مفقود", "Private Barcode")
+            frappe.log_error(f"❌ Field posa_private_barcode_prefixes is missing", "Private Barcode")
             return {}
         
         if not pos_profile.get("posa_private_item_code_length"):
-            frappe.log_error(f"❌ حقل posa_private_item_code_length مفقود", "Private Barcode")
+            frappe.log_error(f"❌ Field posa_private_item_code_length is missing", "Private Barcode")
             return {}
         
-        # استخراج كود الصنف من الباركود الخاص بناءً على الحقول المدخلة
-        # الواجهة تضمن أن الباركود يبدأ بأحد البادئات المحددة
+        # Extract item code from private barcode based on entered fields
+        # The interface ensures that the barcode starts with one of the specified prefixes
         prefixes = pos_profile.get("posa_private_barcode_prefixes", "").split(',')
         prefixes = [p.strip() for p in prefixes if p.strip()]
         
-        # العثور على البادئة المستخدمة
+        # Find the used prefix
         used_prefix = next((prefix for prefix in prefixes if barcode_value.startswith(prefix)), None)
         
-        # استخراج كود الصنف بناءً على طول البادئة
+        # Extract item code based on prefix length
         item_code_start = len(used_prefix)
         item_code_length = int(pos_profile.get("posa_private_item_code_length"))
         
         item_code = barcode_value[item_code_start:item_code_start + item_code_length]
         
-        # البحث المباشر في tabItem مع ربط tabItem Price
+        # Direct search in tabItem with join to tabItem Price
         item_data = frappe.db.sql(
             """
             SELECT 
@@ -73,9 +72,9 @@ def search_private_barcode(pos_profile, barcode_value):
             item = item_data[0]
             return item
         else:
-            frappe.log_error(f"❌ لم يجد باركود خاص: {item_code}", "Private Barcode")
+            frappe.log_error(f"❌ Private barcode not found: {item_code}", "Private Barcode")
             return {}
             
     except Exception as e:
-        frappe.log_error(f"❌ خطأ في البحث بالباركود الخاص: {str(e)}", "Private Barcode")
+        frappe.log_error(f"❌ Error searching private barcode: {str(e)}", "Private Barcode")
         return {}

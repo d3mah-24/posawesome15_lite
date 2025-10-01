@@ -3,7 +3,7 @@
     <v-dialog v-model="closingDialog" max-width="900px">
       <v-card>
         <v-card-title>
-          <span class="headline primary--text">إغلاق نقاط البيع</span>
+          <span class="headline primary--text">Close POS</span>
         </v-card-title>
         <v-card-text class="pa-0" v-if="pos_profile">
           <v-container>
@@ -23,7 +23,7 @@
                       <v-text-field
                         v-model="item.closing_amount"
                         :rules="[max25chars]"
-                        :label="'تعديل المبلغ'"
+                        :label="'Edit Amount'"
                         single-line
                         counter
                         type="number"
@@ -60,10 +60,10 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="error" dark @click="close_dialog">
-            إغلاق
+            Close
           </v-btn>
           <v-btn color="success" dark @click="submit_dialog">
-            إرسال
+            Submit
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -85,25 +85,25 @@ export default {
     const pos_profile = ref('');
     const headers = ref([
       {
-        title: 'طريقة الدفع',
+        title: 'Payment Method',
         key: 'mode_of_payment',
         align: 'start',
         sortable: true,
       },
       {
-        title: 'إجمالي النظام',
+        title: 'System Total',
         align: 'end',
         sortable: true,
         key: 'opening_amount',
       },
       {
-        title: 'العدد الفعلي',
+        title: 'Actual Count',
         key: 'closing_amount',
         align: 'end',
         sortable: true,
       },
     ]);
-    const max25chars = (v) => v.length <= 20 || 'الإدخال طويل جدًا!';
+    const max25chars = (v) => v.length <= 20 || 'Input too long!';
 
     const close_dialog = () => {
       closingDialog.value = false;
@@ -123,13 +123,13 @@ export default {
       pos_profile.value = data.pos_profile;
       if (!pos_profile.value.posa_hide_expected_amount) {
         headers.value.push({
-          title: 'الإجمالي المتوقع',
+          title: 'Expected Total',
           key: 'expected_amount',
           align: 'end',
           sortable: false,
         });
         headers.value.push({
-          title: 'الفرق',
+          title: 'Difference',
           key: 'difference',
           align: 'end',
           sortable: false,

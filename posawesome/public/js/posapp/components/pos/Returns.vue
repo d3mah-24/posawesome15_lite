@@ -5,13 +5,13 @@
     <v-dialog v-model="invoicesDialog" max-width="800px" min-width="800px">
       <v-card>
         <v-card-title>
-          <span class="headline primary--text">فاتورة مرتجع</span>
+          <span class="headline primary--text">Return Invoice</span>
         </v-card-title>
         <v-container>
           <v-row class="mb-4">
             <v-text-field
               color="primary"
-              :label="'رقم الفاتورة'"
+              :label="'Invoice Number'"
               background-color="white"
               hide-details
               v-model="invoice_name"
@@ -21,7 +21,7 @@
               @keydown.enter="search_invoices"
             ></v-text-field>
             <v-btn text class="ml-2" color="primary" dark @click="search_invoices">
-              بحث
+              Search
             </v-btn>
           </v-row>
           <v-row>
@@ -34,8 +34,8 @@
                 show-select
                 v-model="selected"
                 :loading="isLoading"
-                loading-text="جاري تحميل الفواتير..."
-                no-data-text="لم يتم العثور على فواتير"
+                loading-text="Loading invoices..."
+                no-data-text="No invoices found"
               >
                 <template v-slot:[`item.grand_total`]="{ item }">
                   {{ currencySymbol(item.currency) }} {{ formatCurrency(item.grand_total) }}
@@ -46,9 +46,9 @@
         </v-container>
         <v-card-actions class="mt-4">
           <v-spacer></v-spacer>
-          <v-btn color="error mx-2" dark @click="close_dialog">إغلاق</v-btn>
+          <v-btn color="error mx-2" dark @click="close_dialog">Close</v-btn>
           <v-btn color="success" dark @click="submit_dialog">
-            اختيار
+            Select
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -79,10 +79,10 @@ export default {
     pos_profile: null,
     pos_opening_shift: null,
     headers: [
-      { title: 'العميل', key: 'customer', align: 'start', sortable: true },
-      { title: 'التاريخ', key: 'posting_date', align: 'start', sortable: true },
-      { title: 'رقم الفاتورة', key: 'name', align: 'start', sortable: true },
-      { title: 'المبلغ', key: 'grand_total', align: 'end', sortable: false }
+      { title: 'Customer', key: 'customer', align: 'start', sortable: true },
+      { title: 'Date', key: 'posting_date', align: 'start', sortable: true },
+      { title: 'Invoice Number', key: 'name', align: 'start', sortable: true },
+      { title: 'Amount', key: 'grand_total', align: 'end', sortable: false }
       ]
     };
     console.log({script: "data end", result: "data object initialized successfully"});
@@ -100,11 +100,11 @@ export default {
       });
     },
     search_invoices() {
-                // تعيين الشركة من أحدث pos_profile أو pos_opening_shift إذا كان متاحاً
+                // Set company from latest pos_profile or pos_opening_shift if available
       this.company = this.pos_profile?.company || this.pos_opening_shift?.company || this.company;
       if (!this.company && !this.invoice_name) {
         evntBus.emit('show_mesage', {
-          text: 'يرجى إدخال رقم الفاتورة أو اختيار الشركة أولاً',
+          text: 'Please enter invoice number or select company first',
           color: 'error'
         });
         return;
@@ -131,16 +131,16 @@ export default {
             this.dialog_data = [];
           }
           
-          // عرض الرسائل المناسبة بناءً على نتائج البحث
+          // Display appropriate messages based on search results
           if (this.dialog_data.length === 0) {
             if (this.invoice_name) {
               evntBus.emit('show_mesage', {
-                text: 'لم يتم العثور على فواتير مطابقة للبحث',
+                text: 'No invoices found matching search',
                 color: 'info'
               });
             } else {
               evntBus.emit('show_mesage', {
-                text: 'لا توجد فواتير متاحة للمرتجع في هذه الشركة',
+                text: 'No invoices available for return in this company',
                 color: 'info'
               });
             }
@@ -149,7 +149,7 @@ export default {
         error: (err) => {
           this.isLoading = false;
           evntBus.emit('show_mesage', {
-            text: 'فشل في البحث عن الفواتير',
+            text: 'Failed to search for invoices',
             color: 'error'
           });
         }
@@ -158,7 +158,7 @@ export default {
     async submit_dialog() {
       if (!this.selected.length || !this.dialog_data.length) {
         evntBus.emit('show_mesage', {
-          text: 'يرجى اختيار فاتورة صحيحة',
+          text: 'Please select a valid invoice',
           color: 'error'
         });
         return;
@@ -166,13 +166,13 @@ export default {
       const selectedItem = this.dialog_data.find(item => item.name === this.selected[0]);
       if (!selectedItem) {
         evntBus.emit('show_mesage', {
-          text: 'الفاتورة المختارة غير موجودة',
+          text: 'Selected invoice not found',
           color: 'error'
         });
         return;
       }
       const return_doc = selectedItem;
-      // جلب الفاتورة الأصلية من الخادم
+      // Fetch original invoice from server
       let original_invoice = null;
       try {
         const response = await frappe.call({
@@ -185,14 +185,14 @@ export default {
         original_invoice = response.message;
       } catch (e) {
         evntBus.emit('show_mesage', {
-          text: 'فشل في جلب الفاتورة الأصلية',
+          text: 'Failed to fetch original invoice',
           color: 'error'
         });
         return;
       }
       if (!original_invoice) {
         evntBus.emit('show_mesage', {
-          text: 'الفاتورة الأصلية غير موجودة',
+          text: 'Original invoice not found',
           color: 'error'
         });
         return;
@@ -201,12 +201,12 @@ export default {
       const invalid_items = return_doc.items.filter(item => !original_items.includes(item.item_code));
       if (invalid_items.length > 0) {
         evntBus.emit('show_mesage', {
-          text: `الأصناف التالية غير موجودة في الفاتورة الأصلية: ${invalid_items.map(i => i.item_code).join(', ')}`,
+          text: `The following items are not in the original invoice: ${invalid_items.map(i => i.item_code).join(', ')}`,
           color: 'error'
         });
         return;
       }
-      // حفظ الكائنات كاملة في المستند
+      // Save complete objects in document
       const invoice_doc = {
         items: return_doc.items.map(item => ({
           ...item,
@@ -218,8 +218,8 @@ export default {
         company: (this.pos_opening_shift && this.pos_opening_shift.company) || (this.pos_profile && this.pos_profile.company) || '',
         customer: return_doc.customer,
         posa_pos_opening_shift: this.pos_opening_shift?.name,
-        pos_opening_shift: this.pos_opening_shift || null, // حفظ الكائن كاملاً
-        pos_profile: this.pos_profile || null // حفظ الكائن كاملاً
+        pos_opening_shift: this.pos_opening_shift || null, // Save complete object
+        pos_profile: this.pos_profile || null // Save complete object
       };
       evntBus.emit('load_return_invoice', { invoice_doc, return_doc });
       this.invoicesDialog = false;
@@ -230,11 +230,11 @@ export default {
       this.invoicesDialog = true;
       this.pos_profile = data.pos_profile || null;
       this.pos_opening_shift = data.pos_opening_shift || null;
-      // تعيين الشركة من pos_profile أو pos_opening_shift
+      // Set company from pos_profile or pos_opening_shift
       this.company = (this.pos_profile && this.pos_profile.company) || (this.pos_opening_shift && this.pos_opening_shift.company) || '';
       this.dialog_data = [];
       this.selected = [];
-      // جلب الفواتير الأولية مع الفلترة المناسبة
+      // Fetch initial invoices with proper filtering
       this.search_invoices();
     });
   }

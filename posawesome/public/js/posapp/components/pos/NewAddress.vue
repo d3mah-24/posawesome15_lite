@@ -3,7 +3,7 @@
     <v-dialog v-model="addressDialog" max-width="600px">
       <v-card>
         <v-card-title>
-          <span class="headline primary--text">إضافة عنوان جديد</span>
+          <span class="headline primary--text">Add New Address</span>
         </v-card-title>
         <v-card-text class="pa-0">
           <v-container>
@@ -12,7 +12,7 @@
                 <v-text-field
                   dense
                   color="primary"
-                  label="العنوان"
+                  label="Address Title"
                   background-color="white"
                   hide-details
                   v-model="address.name"
@@ -22,7 +22,7 @@
                 <v-text-field
                   dense
                   color="primary"
-                  label="العنوان الأول"
+                  label="Address Line 1"
                   background-color="white"
                   hide-details
                   v-model="address.address_line1"
@@ -32,7 +32,7 @@
                 <v-text-field
                   dense
                   color="primary"
-                  label="العنوان الثاني"
+                  label="Address Line 2"
                   background-color="white"
                   hide-details
                   v-model="address.address_line2"
@@ -40,7 +40,7 @@
               </v-col>
               <v-col cols="6">
                 <v-text-field
-                  label="المدينة"
+                  label="City"
                   dense
                   color="primary"
                   background-color="white"
@@ -50,7 +50,7 @@
               </v-col>
               <v-col cols="6">
                 <v-text-field
-                  label="المنطقة"
+                  label="State"
                   dense
                   background-color="white"
                   hide-details
@@ -62,8 +62,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" dark @click="close_dialog">إغلاق</v-btn>
-          <v-btn color="success" dark @click="submit_dialog">تأكيد</v-btn>
+          <v-btn color="error" dark @click="close_dialog">Close</v-btn>
+          <v-btn color="success" dark @click="submit_dialog">Confirm</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -97,7 +97,7 @@ export default {
           if (!r.exc) {
             evntBus.emit('add_the_new_address', r.message);
             evntBus.emit('show_mesage', {
-              text: 'تم إنشاء عنوان العميل بنجاح.',
+              text: 'Customer address created successfully.',
               color: 'success',
             });
             vm.addressDialog = false;

@@ -211,15 +211,15 @@
         <!-- Quick Metrics Overview -->
         <div class="grid-3">
             <div class="metric-card">
-                <div class="metric-label">{{ _("المبلغ الإجمالي") }}</div>
+                <div class="metric-label">{{ _("Grand Total") }}</div>
                 <div class="metric-value">{{ frappe.utils.fmt_money(data.grand_total or 0, currency=currency) }}</div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">{{ _("صافي المبلغ") }}</div>
+                <div class="metric-label">{{ _("Net Total") }}</div>
                 <div class="metric-value">{{ frappe.utils.fmt_money(data.net_total or 0, currency=currency) }}</div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">{{ _("إجمالي الكمية") }}</div>
+                <div class="metric-label">{{ _("Total Quantity") }}</div>
                 <div class="metric-value">{{ data.total_quantity or 0 }}</div>
             </div>
         </div>
@@ -227,27 +227,27 @@
         <!-- Sales Summary Section -->
         <div class="summary-card">
             <div class="card-header">
-                <h3>{{ _("ملخص المبيعات") }}</h3>
+                <h3>{{ _("Sales Summary") }}</h3>
             </div>
             <div class="card-body">
                 <table class="modern-table">
                     <thead>
                         <tr>
-                            <th>{{ _("البيان") }}</th>
-                            <th>{{ _("المبلغ") }}</th>
+                            <th>{{ _("Description") }}</th>
+                            <th>{{ _("Amount") }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>{{ _("المبلغ الإجمالي") }}</td>
+                            <td>{{ _("Grand Total") }}</td>
                             <td><span class="amount-highlight">{{ frappe.utils.fmt_money(data.grand_total or 0, currency=currency) }}</span></td>
                         </tr>
                         <tr>
-                            <td>{{ _("صافي المبلغ") }}</td>
+                            <td>{{ _("Net Total") }}</td>
                             <td><span class="amount-highlight">{{ frappe.utils.fmt_money(data.net_total or 0, currency=currency) }}</span></td>
                         </tr>
                         <tr>
-                            <td>{{ _("إجمالي الكمية") }}</td>
+                            <td>{{ _("Total Quantity") }}</td>
                             <td><span class="amount-highlight">{{ data.total_quantity or 0 }}</span></td>
                         </tr>
                     </tbody>
@@ -258,15 +258,15 @@
         <!-- Payment Methods Section -->
         <div class="summary-card">
             <div class="card-header">
-                <h3>{{ _("طرق الدفع") }}</h3>
+                <h3>{{ _("Payment Methods") }}</h3>
             </div>
             <div class="card-body">
                 {% if data.payment_reconciliation %}
                     <table class="modern-table">
                         <thead>
                             <tr>
-                                <th>{{ _("طريقة الدفع") }}</th>
-                                <th>{{ _("المبلغ") }}</th>
+                                <th>{{ _("Payment Method") }}</th>
+                                <th>{{ _("Amount") }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -280,7 +280,7 @@
                     </table>
                 {% else %}
                     <div class="no-data">
-                        {{ _("لا توجد طرق دفع مسجلة") }}
+                        {{ _("No payment methods recorded") }}
                     </div>
                 {% endif %}
             </div>
@@ -290,15 +290,15 @@
         {% if data.taxes %}
             <div class="summary-card">
                 <div class="card-header">
-                    <h3>{{ _("الضرائب") }}</h3>
+                    <h3>{{ _("Taxes") }}</h3>
                 </div>
                 <div class="card-body">
                     <table class="modern-table">
                         <thead>
                             <tr>
-                                <th>{{ _("حساب الضريبة") }}</th>
-                                <th>{{ _("النسبة") }}</th>
-                                <th>{{ _("المبلغ") }}</th>
+                                <th>{{ _("Tax Account") }}</th>
+                                <th>{{ _("Rate") }}</th>
+                                <th>{{ _("Amount") }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -319,7 +319,7 @@
         
         <!-- Footer Note -->
         <div style="text-align: center; color: #6c757d; font-size: 0.9rem; margin-top: 20px;">
-            {{ _("تم إنشاء التقرير في") }} {{ frappe.utils.now_datetime().strftime("%Y-%m-%d %H:%M:%S") }}
+            {{ _("Report generated at") }} {{ frappe.utils.now_datetime().strftime("%Y-%m-%d %H:%M:%S") }}
         </div>
     </div>
 </div>

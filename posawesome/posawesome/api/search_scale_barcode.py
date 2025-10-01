@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-دالة البحث في باركود الميزان
 Search Scale Barcode Function
 """
 
@@ -12,21 +11,21 @@ from frappe import _
 @frappe.whitelist()
 def search_scale_barcode(pos_profile, barcode_value):
     """
-    البحث في باركود الميزان - دالة مبسطة
+    Search scale barcode - simplified function
     """
     pos_profile = json.loads(pos_profile)
     
     try:
-        # استخراج البيانات بناءً على الحقول المدخلة
-        item_code_start = len(str(pos_profile.get("posa_scale_barcode_start")))      # طول البادئة
-        item_code_length = int(pos_profile.get("posa_scale_item_code_length"))       # طول كود الصنف
-        weight_length = int(pos_profile.get("posa_weight_length"))                    # طول الوزن
+        # Extract data based on entered fields
+        item_code_start = len(str(pos_profile.get("posa_scale_barcode_start")))      # Prefix length
+        item_code_length = int(pos_profile.get("posa_scale_item_code_length"))       # Item code length
+        weight_length = int(pos_profile.get("posa_weight_length"))                    # Weight length
         
         item_code_part = barcode_value[item_code_start:item_code_start + item_code_length]
         weight_part = barcode_value[item_code_start + item_code_length:item_code_start + item_code_length + weight_length]
         
-        # حساب الوزن
-        weight = float(weight_part) / 1000  # تحويل من جرام إلى كيلو
+        # Calculate weight
+        weight = float(weight_part) / 1000  # Convert from grams to kilograms
         item_data = frappe.db.sql(
             """
             SELECT 
@@ -59,9 +58,9 @@ def search_scale_barcode(pos_profile, barcode_value):
             item = item_data[0]
             return item
         else:
-            frappe.log_error(f"❌ لم يجد باركود الميزان: {item_code_part}", "Scale Barcode")
+            frappe.log_error(f"❌ Scale barcode not found: {item_code_part}", "Scale Barcode")
             return {}
             
     except Exception as e:
-        frappe.log_error(f"❌ خطأ في البحث بالباركود: {str(e)}", "Scale Barcode")
+        frappe.log_error(f"❌ Error searching barcode: {str(e)}", "Scale Barcode")
         return {}

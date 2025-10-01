@@ -244,19 +244,19 @@ def validate_return_items(return_against, items):
 @frappe.whitelist()
 def search_invoices_for_return(invoice_name, company):
     """
-    البحث عن الفواتير التي يمكن إرجاعها.
-    يستبعد:
-    - الفواتير المرتجعة مسبقاً (is_return=1)
-    - الفواتير الملغية
-    - الفواتير المسودة
-    - الفواتير غير POS
-    - الفواتير التي لها مرتجعات مسبقاً
+    Search for invoices that can be returned.
+    Excludes:
+    - Previously returned invoices (is_return=1)
+    - Cancelled invoices
+    - Draft invoices
+    - Non-POS invoices
+    - Invoices that already have returns
     """
     filters = {
-        "docstatus": 1,  # فواتير مسلمة فقط
-        "is_return": 0,  # استبعاد الفواتير المرتجعة مسبقاً (هذا هو الفلتر الأساسي)
-        "is_pos": 1,     # فواتير POS فقط
-        "status": ["not in", ["Cancelled", "Draft"]]  # استبعاد الفواتير الملغية والمسودات
+        "docstatus": 1,  # Submitted invoices only
+        "is_return": 0,  # Exclude previously returned invoices (this is the primary filter)
+        "is_pos": 1,     # POS invoices only
+        "status": ["not in", ["Cancelled", "Draft"]]  # Exclude cancelled and draft invoices
     }
     
     if invoice_name:
@@ -264,19 +264,19 @@ def search_invoices_for_return(invoice_name, company):
     if company:
         filters["company"] = company
 
-    # الحصول على قائمة الفواتير المؤهلة مع حد لمنع تحميل الكثير
+    # Get list of eligible invoices with limit to prevent loading too many
     invoices_list = frappe.get_list(
         "Sales Invoice",
         filters=filters,
         fields=["name"],
-        limit_page_length=10,  # حد أقصى 10 فواتير لمنع مشاكل الأداء
+        limit_page_length=10,  # Maximum 10 invoices to prevent performance issues
         order_by="creation desc",
     )
     
     data = []
     
     for invoice in invoices_list:
-        # فحص مزدوج: التأكد من أن هذه الفاتورة ليس لها مرتجع مسبقاً
+        # Double check: Ensure this invoice does not already have a return
         existing_returns = frappe.get_all(
             "Sales Invoice",
             filters={
@@ -287,17 +287,17 @@ def search_invoices_for_return(invoice_name, company):
             fields=["name"]
         )
         
-        # تضمين الفواتير التي ليس لها مرتجعات بعد فقط
+        # Include only invoices that don't have returns yet
         if not existing_returns:
             try:
                 invoice_doc = frappe.get_doc("Sales Invoice", invoice["name"])
-                # التأكد من تحميل الأصناف
+                # Ensure items are loaded
                 if not invoice_doc.items:
                     invoice_doc.load_from_db()
                 data.append(invoice_doc)
             except Exception as e:
-                # تخطي الفواتير التي لا يمكن تحميلها
-                frappe.log_error(f"خطأ في تحميل الفاتورة {invoice['name']}: {str(e)}")
+                # Skip invoices that cannot be loaded
+                frappe.log_error(f"Error loading invoice {invoice['name']}: {str(e)}")
                 continue
     
     return data

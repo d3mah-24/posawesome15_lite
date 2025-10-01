@@ -9,7 +9,7 @@
         <v-col cols="4" class="pa-1">
           <v-select
             :items="items_group"
-            label="مجموعة الصنف"
+            label="Item Group"
             dense
             outlined
             hide-details
@@ -20,13 +20,13 @@
         </v-col>
         <v-col cols="4" class="pa-1">
           <v-btn small block color="primary" text @click="show_coupons" class="header-control"
-            >{{ couponsCount }} كوبونات</v-btn
+            >{{ couponsCount }} Coupons</v-btn
           >
         </v-col>
         <v-col cols="4" class="pa-1">
           <v-btn small block color="primary" text @click="show_offers" class="header-control"
-            >{{ offersCount }} عروض : {{ appliedOffersCount }}
-            مطبق</v-btn
+            >{{ offersCount }} Offers : {{ appliedOffersCount }}
+            Applied</v-btn
           >
         </v-col>
       </v-row>
@@ -44,15 +44,15 @@
         color="info"
       ></v-progress-linear>
   <v-row class="items px-2 py-1" style="flex: 1; min-height: 0;">
-        <!-- حقل البحث بالباركود -->
+        <!-- Barcode search field -->
         <v-col cols="6" class="pb-0 mb-2">
           <v-text-field
             dense
             clearable
             outlined
             color="success"
-            label="البحث بالباركود"
-            hint="باركود عادي/خاص/وزن - يضاف تلقائياً للسلة"
+            label="Search by Barcode"
+            hint="Normal/Private/Weight barcode - automatically added to cart"
             background-color="white"
             hide-details
             v-model="barcode_search"
@@ -65,7 +65,7 @@
           </v-text-field>
         </v-col>
         
-        <!-- حقل البحث بالاسم أو الكود -->
+        <!-- Name or code search field -->
         <v-col cols="6" class="pb-0 mb-2">
           <v-progress-linear
             :active="search_loading"
@@ -81,8 +81,8 @@
             autofocus
             outlined
             color="primary"
-            label="البحث بالاسم أو الكود"
-            hint="البحث المباشر - اسم الصنف/كود الصنف/الدفعة/الرقم التسلسلي"
+            label="Search by Name or Code"
+            hint="Direct search - Item name/Item code/Batch/Serial number"
             background-color="white"
             hide-details
             v-model="debounce_search"
@@ -99,7 +99,7 @@
             v-model="new_line"
             color="accent"
             value="true"
-            label="سطر جديد"
+            label="New Line"
             dense
             hide-details
           ></v-checkbox>
@@ -126,24 +126,24 @@
                     class="white--text align-start item-image"
                     gradient="to bottom, rgba(0,0,0,0), rgba(0,0,0,0.4)"
                   >
-                    <!-- الكمية في أعلى الصورة من اليمين لليسار -->
+                    <!-- Quantity at the top of the image from right to left -->
                     <v-card-text
                       v-if="item.actual_qty !== undefined"
                       class="text-caption px-1 pt-1 text-right"
                     >
                       <span :style="{color: item.actual_qty > 0 ? '#F44336' : '#4CAF50', fontWeight: 'bold'}">
-                        الكمية: {{ formatFloat(item.actual_qty) }}
+                        Qty: {{ formatFloat(item.actual_qty) }}
                       </span>
                     </v-card-text>
                   </v-img>
                   
-                  <!-- اسم الصنف في المنتصف -->
+                  <!-- Item name in the middle -->
                   <v-card-text class="text--primary pa-1 text-center">
                     <div class="text-caption" style="font-weight: bold; margin-bottom: 4px;">
                       {{ item.item_name }}
                     </div>
                     
-                    <!-- السعر والوحدة في نفس السطر -->
+                    <!-- Price and unit on the same line -->
                     <div class="text-caption d-flex justify-space-between">
                       <span class="golden--text">
                         {{ item.stock_uom || "" }}
@@ -220,8 +220,8 @@ export default {
     new_line: false,
     qty: 1,
     
-        // إزالة جميع أنواع الـ cache للسرعة المباشرة
-        _itemsMap: new Map(), // للبحث السريع في العناصر فقط
+        // Remove all types of cache for direct speed
+        _itemsMap: new Map(), // For quick search in items only
     };
     console.log({script: "data end", result: "data object initialized successfully"});
   },
@@ -245,44 +245,44 @@ export default {
   methods: {
     
     // ========================================
-    // دوال البحث بالباركود (عادي/خاص/وزن)
+    // Barcode search functions (normal/private/weight)
     // ========================================
-    // معالجة تلقائية عند وضع الباركود
+    // Automatic processing when placing barcode
     handle_barcode_input() {
       if (!this.barcode_search.trim()) return;
       
       
-      // إرسال للخلفية وتفريغ فوري
+      // Send to backend and immediate clearing
       this.analyze_barcode_type(this.barcode_search.trim());
       this.barcode_search = "";
-      const barcodeInput = document.querySelector('input[placeholder*="باركود"]');
+      const barcodeInput = document.querySelector('input[placeholder*="Barcode"]');
       if (barcodeInput) barcodeInput.value = "";
     },
     
-    // دالة مركزية لتوزيع الباركود حسب إعدادات POS Profile
+    // Central function to distribute barcode according to POS Profile settings
     analyze_barcode_type(barcode_value) {
       
-      // 1. فحص باركود الوزن أولاً
+      // 1. Check weight barcode first
       if (this.process_scale_barcode(barcode_value)) {
         return;
       }
       
-      // 2. فحص الباركود الخاص ثانياً
+      // 2. Check private barcode second
       if (this.process_private_barcode(barcode_value)) {
         return;
       }
       
-      // 3. الباركود العادي كخيار أخير
+      // 3. Normal barcode as last option
       this.process_normal_barcode(barcode_value);
     },
     
-    // معالجة باركود الوزن (فحص + بحث)
+    // Weight barcode processing (check + search)
     process_scale_barcode(barcode_value) {
       const posa_enable_scale_barcode = this.pos_profile?.posa_enable_scale_barcode;
       const posa_scale_barcode_start = this.pos_profile?.posa_scale_barcode_start;
       const posa_scale_barcode_lenth = this.pos_profile?.posa_scale_barcode_lenth;
       
-      // فحص الشروط
+      // Check conditions
       if (posa_enable_scale_barcode === 1 && 
           posa_scale_barcode_start && 
           posa_scale_barcode_lenth && 
@@ -290,16 +290,16 @@ export default {
           barcode_value.length === posa_scale_barcode_lenth) {
         
         
-        // البحث عن الباركود
+        // Search for barcode
         frappe.call({
           method: 'posawesome.posawesome.api.search_scale_barcode.search_scale_barcode',
           args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
           callback: (response) => {
             if (response?.message?.item_code) {
               this.add_item_to_cart(response.message);
-              evntBus.emit("show_mesage", { text: `تم إضافة ${response.message.item_name} للسلة (وزن)`, color: "success" });
+              evntBus.emit("show_mesage", { text: `Added ${response.message.item_name} to cart (weight)`, color: "success" });
             } else {
-              evntBus.emit("show_mesage", { text: "لم يتم العثور على الصنف بباركود الوزن", color: "error" });
+              evntBus.emit("show_mesage", { text: "Item not found with weight barcode", color: "error" });
             }
           }
         });
@@ -308,29 +308,29 @@ export default {
       return false;
     },
     
-    // معالجة الباركود الخاص (فحص + بحث)
+    // Private barcode processing (check + search)
     process_private_barcode(barcode_value) {
       const posa_enable_private_barcode = this.pos_profile?.posa_enable_private_barcode;
       const posa_private_barcode_lenth = this.pos_profile?.posa_private_barcode_lenth;
       const posa_private_item_code_length = this.pos_profile?.posa_private_item_code_length;
       
-      // فحص الشروط
+      // Check conditions
       if (posa_enable_private_barcode === 1 && 
           posa_private_barcode_lenth && 
           posa_private_item_code_length && 
           barcode_value.length === posa_private_barcode_lenth) {
         
         
-        // البحث عن الباركود
+        // Search for barcode
         frappe.call({
           method: 'posawesome.posawesome.api.search_private_barcode.search_private_barcode',
           args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
           callback: (response) => {
             if (response?.message?.item_code) {
               this.add_item_to_cart(response.message);
-              evntBus.emit("show_mesage", { text: `تم إضافة ${response.message.item_name} للسلة (خاص)`, color: "success" });
+              evntBus.emit("show_mesage", { text: `Added ${response.message.item_name} to cart (private)`, color: "success" });
             } else {
-              evntBus.emit("show_mesage", { text: "لم يتم العثور على الصنف بالباركود الخاص", color: "error" });
+              evntBus.emit("show_mesage", { text: "Item not found with private barcode", color: "error" });
             }
           }
         });
@@ -339,7 +339,7 @@ export default {
       return false;
     },
     
-    // معالجة الباركود العادي (بحث مباشر)
+    // Normal barcode processing (direct search)
     process_normal_barcode(barcode_value) {
       frappe.call({
         method: 'posawesome.posawesome.api.search_items_barcode.search_items_barcode',
@@ -347,21 +347,21 @@ export default {
         callback: (response) => {
           if (response?.message?.item_code) {
             this.add_item_to_cart(response.message);
-            evntBus.emit("show_mesage", { text: `تم إضافة ${response.message.item_name} للسلة (عادي)`, color: "success" });
+            evntBus.emit("show_mesage", { text: `Added ${response.message.item_name} to cart (normal)`, color: "success" });
           } else {
-            evntBus.emit("show_mesage", { text: "لم يتم العثور على الصنف بالباركود", color: "error" });
+            evntBus.emit("show_mesage", { text: "Item not found with barcode", color: "error" });
           }
         }
       });
     },
     
     add_item_to_cart(item) {
-      // إضافة الصنف للسلة
+      // Add item to cart
       evntBus.emit("add_item", item);
     },
 
     // ========================================
-    // دوال البحث بالاسم/الكود/الدفعة/السيريال
+    // Search functions by name/code/batch/serial
     // ========================================
     show_offers() {
       evntBus.emit("show_offers", "true");
@@ -384,11 +384,11 @@ export default {
 
     
 
-    // تحسين دالة الحصول على العناصر
+    // Improve function to get items
     get_items() {
       if (!this.pos_profile) {
         evntBus.emit('show_mesage', {
-          text: 'ملف نقاط البيع غير محدد',
+          text: 'POS Profile not specified',
           color: 'error'
         });
         return;
@@ -428,22 +428,22 @@ export default {
       });
     },
 
-    // دالة مساعدة لبناء خريطة العناصر للبحث السريع
+    // Helper function to build items map for quick search
     _buildItemsMap() {
       this._itemsMap.clear();
       
       this.items.forEach(item => {
-        // إضافة البحث بالكود
+        // Add search by code
         this._itemsMap.set(item.item_code.toLowerCase(), item);
         
-        // إضافة البحث بالباركود
+        // Add search by barcode
         if (item.item_barcode) {
           item.item_barcode.forEach(barcode => {
             this._itemsMap.set(barcode.barcode.toLowerCase(), item);
           });
         }
         
-        // إضافة البحث بالاسم
+        // Add search by name
         this._itemsMap.set(item.item_name.toLowerCase(), item);
       });
       
@@ -479,20 +479,20 @@ export default {
     getItemsHeaders() {
       const items_headers = [
         {
-          title: "اسم الصنف",
+          title: "Item Name",
           align: "start",
           sortable: true,
           key: "item_name",
         },
         {
-          title: "الكود",
+          title: "Code",
           align: "start",
           sortable: true,
           key: "item_code",
         },
-        { title: "السعر", key: "rate", align: "start" },
-        { title: "الكمية المتاحة", value: "actual_qty", align: "start" },
-        { title: "الوحدة", key: "stock_uom", align: "start" },
+        { title: "Price", key: "rate", align: "start" },
+        { title: "Available Quantity", value: "actual_qty", align: "start" },
+        { title: "Unit", key: "stock_uom", align: "start" },
       ];
       
       if (!this.pos_profile.posa_display_item_code) {
@@ -502,18 +502,18 @@ export default {
       return items_headers;
     },
 
-    // تحسين دالة إضافة العنصر
+    // Improve function to add item
     add_item_table(event, item){
       item = { ...item.item };
       if (item.has_variants) {
         evntBus.emit("open_variants_model", item, this.items);
       } else {
-    // تعيين الكمية بشكل صحيح دائمًا
+    // Set quantity correctly always
     const currentQty = Number(this.qty);
     if (!item.qty || item.qty === 1) {
       item.qty = currentQty > 0 ? currentQty : 1;
     }
-    // تأكد من أن stock_qty محددة ورقمية
+    // Make sure stock_qty is defined and numeric
     const convFactor = Number(item.conversion_factor || 1);
     item.stock_qty = Number(item.qty) * convFactor;
         evntBus.emit("add_item", item);
@@ -526,7 +526,7 @@ export default {
       if (item.has_variants) {
         evntBus.emit("open_variants_model", item, this.items);
       } else {
-    // تعيين الكمية بشكل صحيح دائمًا
+    // Set quantity correctly always
     const currentQty = Number(this.qty);
     if (!item.qty || item.qty === 1) {
       item.qty = currentQty > 0 ? currentQty : 1;
@@ -534,11 +534,11 @@ export default {
       item.qty = Number(item.qty) || 1;
     }
     
-    // تأكد من أن stock_qty محددة ورقمية
+    // Make sure stock_qty is defined and numeric
     const convFactor = Number(item.conversion_factor || 1);
     item.stock_qty = Number(item.qty) * convFactor;
     
-    // تأكد من أن price_list_rate محددة ورقمية
+    // Make sure price_list_rate is defined and numeric
     item.price_list_rate = Number(item.price_list_rate || item.rate || 0);
         
         evntBus.emit("add_item", item);
@@ -546,19 +546,19 @@ export default {
       }
     },
 
-    // تحسين دالة معالجة البحث
+    // Improve search processing function
     enter_event() {
       let match = false;
       
-      // تحسين التحقق من وجود عناصر للبحث
+      // Improve verification of search items existence
       if (!this.first_search || this.first_search.trim() === '') {
-        // لا تظهر رسالة خطأ إذا لم يتم إدخال أي شيء في البحث
+        // Don't show error if nothing entered in search
         return;
       }
       
       if (!this.filtred_items.length) {
         evntBus.emit('show_mesage', {
-          text: 'لم يتم العثور على عناصر تطابق البحث',
+          text: 'No items found matching search',
           color: 'warning'
         });
         return;
@@ -568,7 +568,7 @@ export default {
       const qty = this.get_item_qty(this.first_search);
       const new_item = { ...this.filtred_items[0] };
       
-  // تعيين الكمية بشكل صحيح دائمًا
+  // Set quantity correctly always
   const parsedQty = Number(qty);
   const currentQty = Number(this.qty);
   
@@ -580,12 +580,12 @@ export default {
     new_item.qty = 1;
   }
   
-  // تأكد من أن stock_qty محددة ورقمية
+  // Make sure stock_qty is defined and numeric
   const convFactor = Number(new_item.conversion_factor || 1);
   new_item.stock_qty = new_item.qty * convFactor;
       
       
-      // تحسين البحث في الباركود
+      // Improve barcode search
       if (new_item.item_barcode) {
         for (const element of new_item.item_barcode) {
           if (this.search === element.barcode) {
@@ -596,7 +596,7 @@ export default {
         }
       }
       
-      // تحسين البحث في الأرقام التسلسلية
+      // Improve serial number search
       if (!new_item.to_set_serial_no && new_item.has_serial_no) {
         for (const element of new_item.serial_no_data) {
           if (this.search && element.serial_no === this.search) {
@@ -611,7 +611,7 @@ export default {
         new_item.to_set_serial_no = this.flags.serial_no;
       }
       
-      // تحسين البحث في أرقام الدفعات
+      // Improve batch number search
       if (!new_item.to_set_batch_no && new_item.has_batch_no) {
         for (const element of new_item.batch_no_data) {
           if (this.search && element.batch_no === this.search) {
@@ -634,7 +634,7 @@ export default {
       }
     },
 
-    // دالة مساعدة لإعادة تعيين البحث
+    // Helper function to reset search
     _resetSearch() {
       this.search = null;
       this.first_search = null;
@@ -646,7 +646,7 @@ export default {
     },
 
     search_onchange() {
-      // البحث بالاسم/الكود/الدفعة/السيريال (ليس الباركود)
+      // Search by name/code/batch/serial (not barcode)
       this._performItemSearch();
     },
 
@@ -654,7 +654,7 @@ export default {
     performLiveSearch(searchValue) {
       const vm = this;
       
-      // تفعيل شريط التقدم للبحث
+      // Activate search progress bar
       this.search_loading = true;
       
       // If search is empty, reload all items
@@ -674,7 +674,7 @@ export default {
           customer: vm.customer,
         },
         callback: function (r) {
-          // إيقاف شريط التقدم للبحث
+          // Stop search progress bar
           vm.search_loading = false;
           
           if (r.message) {
@@ -684,7 +684,7 @@ export default {
           }
         },
         error: function(err) {
-          // إيقاف شريط التقدم للبحث
+          // Stop search progress bar
           vm.search_loading = false;
           
         }
@@ -694,13 +694,13 @@ export default {
     _performItemSearch() {
       const vm = this;
       
-      // إذا كان البحث فارغ، لا تفعل شيئاً
+      // If search is empty, do nothing
       if (!vm.debounce_search || vm.debounce_search.trim() === '') {
         vm.items = vm.originalItems || [];
         return;
       }
 
-      // البحث بالاسم/الكود/الدفعة/السيريال باستخدام get_new_items
+      // Search by name/code/batch/serial using get_items
       frappe.call({
         method: "posawesome.posawesome.api.get_items.get_items",
         args: {
@@ -713,13 +713,13 @@ export default {
         callback: function (r) {
           
           if (r.message && r.message.length > 0) {
-            // تم العثور على نتائج، عرضها للاختيار
+            // Results found, display for selection
             vm.items = r.message;
           } else {
-            // لا توجد نتائج
+            // No results
             vm.items = [];
             evntBus.emit("show_mesage", {
-              text: "لم يتم العثور على نتائج للبحث",
+              text: "No results found for search",
               color: "warning",
             });
           }
@@ -730,21 +730,21 @@ export default {
     _performSearch() {
       const vm = this;
       
-      // إذا كان البحث فارغ، لا تفعل شيئاً
+      // If search is empty, do nothing
       if (!vm.debounce_search || vm.debounce_search.trim() === '') {
         return;
       }
       
-      // تحديث البحث
+      // Update search
       vm.first_search = vm.debounce_search;
       vm.search = vm.debounce_search;
       
-      // البحث عن الباركود مباشرة
+      // Search for barcode directly
       vm.search_barcode_from_server(vm.debounce_search);
     },
 
     get_item_qty(first_search) {
-  // تعيين الكمية بشكل صحيح دائمًا
+  // Set quantity correctly always
   const currentQty = Number(this.qty);
   let scal_qty = currentQty > 0 ? currentQty : 1;
 
@@ -760,7 +760,7 @@ export default {
       this._resetSearch();
     },
 
-    // تحسين دالة تحديث تفاصيل العناصر باستخدام get_items
+    // Improve function to update item details using get_items
     update_items_details(items) {
       const vm = this;
       
@@ -778,7 +778,7 @@ export default {
         },
         callback: function (r) {
           if (r.message) {
-            // استخدام Map للبحث الأسرع
+            // Use Map for faster search
             const updatedItemsMap = new Map();
             r.message.forEach(item => {
               updatedItemsMap.set(item.item_code, item);
@@ -816,25 +816,25 @@ export default {
         },
         onScan: function (sCode) {
           
-          // إضافة فورية للسلة بدون شرط
+          // Immediate addition to cart without condition
           vm.trigger_onscan(sCode);
         },
       });
     },
 
-    // تحسين دالة معالجة الباركود
+    // Improve barcode processing function
     trigger_onscan(sCode) {
       
-      // معالجة مباشرة للباركود
+      // Direct barcode processing
       this.analyze_barcode_type(sCode);
     },
 
-    // البحث المباشر بالباركود من الخادم بدون cache - محسن للسرعة القصوى
+    // Direct barcode search from server without cache - optimized for maximum speed
     search_barcode_from_server(barcode) {
       const vm = this;
       
       
-      // استخدام get_new_items للبحث بالباركود
+      // Use get_items to search by barcode
       frappe.call({
         method: "posawesome.posawesome.api.get_items.get_items",
         args: {
@@ -847,7 +847,7 @@ export default {
         callback: function (r) {
           
           if (r.message && r.message.length > 0) {
-            // وجد الصنف، أضفه للسلة مباشرة
+            // Item found, add to cart directly
             const found_item = r.message[0];
             
             const new_item = { ...found_item };
@@ -856,13 +856,13 @@ export default {
             vm._resetSearch();
             
             evntBus.emit('show_mesage', {
-              text: `تم العثور على الصنف: ${found_item.item_name}`,
+              text: `Item found: ${found_item.item_name}`,
               color: 'success'
             });
           } else {
-            // لم يجد الصنف
+            // Item not found
             evntBus.emit('show_mesage', {
-              text: `الصنف غير موجود للباركود: ${barcode}`,
+              text: `Item not found for barcode: ${barcode}`,
               color: 'error'
             });
             vm._resetSearch();
@@ -870,7 +870,7 @@ export default {
         },
         error: function(err) {
           evntBus.emit('show_mesage', {
-            text: 'خطأ في البحث عن الباركود',
+            text: 'Error searching for barcode',
             color: 'error'
           });
           vm._resetSearch();
@@ -878,7 +878,7 @@ export default {
       });
     },
 
-    // تحسين دالة توليد تركيبات الكلمات
+    // Improve word combinations generation function
     generateWordCombinations(inputString) {
       const words = inputString.split(" ");
       const combinations = [];
@@ -901,7 +901,7 @@ export default {
   },
 
   computed: {
-    // إزالة جميع أنواع الـ cache - فلترة مباشرة
+    // Remove all types of cache - direct filtering
     filtred_items() {
       this.search = this.get_search(this.first_search);
       
@@ -909,7 +909,7 @@ export default {
       
       let filtred_group_list = [];
       
-      // فلترة حسب المجموعة
+      // Filter by group
       if (this.item_group != "ALL") {
         filtred_group_list = this.items.filter((item) =>
           item.item_group.toLowerCase().includes(this.item_group.toLowerCase())
@@ -918,7 +918,7 @@ export default {
         filtred_group_list = this.items;
       }
       
-      // فلترة حسب البحث
+      // Filter by search
       if (!this.search || this.search.length < 3) {
         if (this.pos_profile.posa_show_template_items && this.pos_profile.posa_hide_variants_items) {
           filtred_list = filtred_group_list
@@ -928,19 +928,19 @@ export default {
           filtred_list = filtred_group_list.slice(0, 50);
         }
       } else if (this.search) {
-        // البحث في الباركود أولاً
+        // Search in barcode first
         filtred_list = filtred_group_list.filter((item) => {
           return item.item_barcode.some(element => element.barcode === this.search);
         });
         
-        // البحث في الكود
+        // Search in code
         if (filtred_list.length === 0) {
           filtred_list = filtred_group_list.filter((item) =>
             item.item_code.toLowerCase().includes(this.search.toLowerCase())
           );
         }
         
-        // البحث في الاسم
+        // Search in name
         if (filtred_list.length === 0) {
           const search_combinations = this.generateWordCombinations(this.search);
           filtred_list = filtred_group_list.filter((item) => {
@@ -952,7 +952,7 @@ export default {
           });
         }
         
-        // البحث في الأرقام التسلسلية
+        // Search in serial numbers
         if (filtred_list.length === 0) {
           filtred_list = filtred_group_list.filter((item) => {
             return item.serial_no_data.some(element => {
@@ -965,7 +965,7 @@ export default {
           });
         }
         
-        // البحث في أرقام الدفعات
+        // Search in batch numbers
         if (filtred_list.length === 0) {
           filtred_list = filtred_group_list.filter((item) => {
             return item.batch_no_data.some(element => {
@@ -979,7 +979,7 @@ export default {
         }
       }
       
-      // فلترة نهائية
+      // Final filtering
       if (this.pos_profile.posa_show_template_items && this.pos_profile.posa_hide_variants_items) {
         filtred_list = filtred_list.filter((item) => !item.variant_of).slice(0, 50);
       } else {
@@ -1033,7 +1033,7 @@ export default {
     this.scan_barcode();
   },
 
-  // إضافة beforeDestroy لتنظيف الذاكرة
+  // Add beforeDestroy to clean up memory
   beforeDestroy() {
     this._searchCache.clear();
     this._filteredItemsCache.clear();

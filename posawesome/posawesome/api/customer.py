@@ -109,7 +109,7 @@ def get_customer_names(pos_profile):
         pos_profile = json.loads(pos_profile)
         condition = ""
         condition += get_customer_group_condition(pos_profile)
-        # تحسين استعلام العملاء مع حد أقصى للأداء
+        # Improve customer query with maximum performance limit
         customers = frappe.db.sql(
             """
             SELECT name, mobile_no, email_id, tax_id, customer_name, primary_address
@@ -197,7 +197,7 @@ def create_customer(
     pos_profile = json.loads(pos_profile_doc)
     if method == "create":
             if frappe.db.exists("Customer", {"customer_name": customer_name}):
-                frappe.throw(_("العميل مسجل مسبقاً"))
+                frappe.throw(_("Customer already registered"))
 
             # Convert birthday from various formats to YYYY-MM-DD
             formatted_birthday = None

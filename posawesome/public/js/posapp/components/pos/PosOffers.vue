@@ -9,7 +9,7 @@
     >
       <!-- ===== TEMPLATE SECTION 3: CARD TITLE ===== -->
       <v-card-title class="pb-2">
-        <span class="text-h6 primary--text">العروض</span>
+        <span class="text-h6 primary--text">Offers</span>
       </v-card-title>
       {{ console.log({template: "card title", result: "title rendered"}) }}
       
@@ -49,15 +49,15 @@
                 {{ console.log({template: "offer details", name: offer.name, result: "offer details rendered"}) }}
                 <div>
                   <div class="text-xs mb-1" v-if="offer.discount_percentage">
-                    نسبة الخصم: {{ offer.discount_percentage }}%
+                    Discount %: {{ offer.discount_percentage }}%
                   </div>
                   <div class="text-xs mb-1" v-if="offer.discount_amount">
-                    قيمة الخصم: {{ formatCurrency(offer.discount_amount) }}
+                    Discount Amount: {{ formatCurrency(offer.discount_amount) }}
                   </div>
                                       <div class="text-xs mb-1 warning--text" 
                          v-if="offer.offer === 'Grand Total' && !offer.offer_applied && 
                                discount_percentage_offer_name && discount_percentage_offer_name !== offer.name">
-                      عرض آخر مطبق حالياً
+                      Another offer currently applied
                     </div>
                 </div>
                 <v-row no-gutters align="center">
@@ -66,7 +66,7 @@
                       v-model="offer.offer_applied"
                       @change="forceUpdateItem"
                       color="primary"
-                      label="مطبق"
+                      label="Applied"
                       hide-details
                       dense
                       class="mt-0 pt-0"
@@ -108,7 +108,7 @@
             color="warning"
             dark
             @click="back_to_invoice"
-            >رجوع</v-btn
+            >Back</v-btn
           >
           <!-- ===== TEMPLATE SECTION 10: BACK BUTTON ===== -->
           {{ console.log({template: "back button", result: "back button rendered"}) }}
@@ -140,10 +140,10 @@ export default {
       expanded: [],
       singleExpand: true,
       items_headers: [
-        { title: 'الاسم', key: 'name', align: 'start' },
-        { title: 'يطبق على', key: 'apply_on', align: 'start' },
-        { title: 'العرض', key: 'offer', align: 'start' },
-        { title: 'مطبق', key: 'offer_applied', align: 'start' },
+        { title: 'Name', key: 'name', align: 'start' },
+        { title: 'Apply On', key: 'apply_on', align: 'start' },
+        { title: 'Offer', key: 'offer', align: 'start' },
+        { title: 'Applied', key: 'offer_applied', align: 'start' },
       ]
     };
     console.log({script: "data end", result: "data object initialized successfully"});
@@ -198,7 +198,7 @@ export default {
         }
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في معالجة تغيير العرض',
+          text: 'Error processing offer change',
           color: 'error'
         });
       }
@@ -217,7 +217,7 @@ export default {
         return result;
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في إنشاء المعرف',
+          text: 'Error creating ID',
           color: 'error'
         });
         return '';
@@ -272,7 +272,7 @@ export default {
             }
             this.pos_offers.push(newOffer);
             evntBus.emit('show_mesage', {
-              text: 'تم تنفيذ عرض علي الفاتورة',
+              text: 'Offer applied to invoice',
               color: 'warning',
             });
           }
@@ -281,7 +281,7 @@ export default {
         this.applyBestGrandTotalOffer();
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في تحديث العروض',
+          text: 'Error updating offers',
           color: 'error'
         });
       }
@@ -309,7 +309,7 @@ export default {
             grandTotalOffers[0].offer_applied = true;
             this.discount_percentage_offer_name = grandTotalOffers[0].name;
             evntBus.emit('show_mesage', {
-              text: 'تم تطبيق أفضل عرض: ' + grandTotalOffers[0].name,
+              text: 'Best offer applied: ' + grandTotalOffers[0].name,
               color: 'success',
             });
           }
@@ -320,7 +320,7 @@ export default {
         }
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في تطبيق أفضل عرض',
+          text: 'Error applying best offer',
           color: 'error'
         });
       }
@@ -333,7 +333,7 @@ export default {
         );
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في إزالة العروض',
+          text: 'Error removing offers',
           color: 'error'
         });
       }
@@ -347,7 +347,7 @@ export default {
         evntBus.emit('update_invoice_offers', applyedOffers);
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في معالجة العروض',
+          text: 'Error processing offers',
           color: 'error'
         });
       }
@@ -362,7 +362,7 @@ export default {
         }
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في معالجة النص',
+          text: 'Error processing text',
           color: 'error'
         });
         return '';
@@ -392,7 +392,7 @@ export default {
         }
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في الحصول على الأصناف المجانية',
+          text: 'Error getting free items',
           color: 'error'
         });
         return [];
@@ -407,7 +407,7 @@ export default {
         });
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في تحديث العدادات',
+          text: 'Error updating counters',
           color: 'error'
         });
       }
@@ -421,7 +421,7 @@ export default {
         evntBus.emit('update_pos_coupons', applyedOffers);
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في تحديث الكوبونات',
+          text: 'Error updating coupons',
           color: 'error'
         });
       }
@@ -464,7 +464,7 @@ export default {
       });
     } catch (error) {
       evntBus.emit('show_mesage', {
-        text: 'خطأ في تهيئة العروض',
+        text: 'Error initializing offers',
         color: 'error'
       });
     }

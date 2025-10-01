@@ -49,9 +49,9 @@ def create_payment_request(doc):
             if not doc.get("contact_mobile"):
                 frappe.throw(_("Please enter the phone number first"))
 
-            # إرجاع رسالة نجاح فقط بدون إنشاء Payment Request
+            # Return success message only without creating Payment Request
             return {
-                "message": f"تم إرسال طلب الدفع للعميل {doc.get('contact_mobile')} بنجاح",
+                "message": f"Payment request sent to customer {doc.get('contact_mobile')} successfully",
                 "amount": pay.get("amount"),
                 "currency": doc.get("currency", "LYD"),
                 "customer": doc.get("customer"),

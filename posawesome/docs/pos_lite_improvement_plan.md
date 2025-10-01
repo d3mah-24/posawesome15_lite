@@ -52,3 +52,11 @@ def create_customer():
     # All logic and calculations here
     pass
 ```
+
+## Milestones
+- After finishing each complete component (Vue + Python), test and commit the changes as a milestone.
+- This ensures incremental progress and easier validation.
+
+## Initial Components to Begin With
+- Start with `invoice.vue` and `itemselector.vue` (and their matching Python files).
+- Complete, test, and commit each before moving to the next.

@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
-    {{ console.log({template: "main container", result: "main container rendered"}) }}
     <v-card
       class="cards my-0 py-0 mt-1 grey lighten-5 d-flex flex-column flex-grow-1"
       style="min-height: 0;"
@@ -25,13 +24,13 @@
             auto-select-first
             outlined
             color="primary"
-            label="تكلفة الشحن"
+            label="Delivery Charges"
             v-model="selcted_delivery_charges"
             :items="delivery_charges"
             item-title="name"
             return-object
             background-color="white"
-            no-data-text="لا توجد تكاليف شحن متاحة"
+            no-data-text="No delivery charges available"
             hide-details
             :filter="deliveryChargesFilter"
             :disabled="readonly"
@@ -44,7 +43,7 @@
                     v-html="item.name"
                   ></v-list-item-title>
                   <v-list-item-subtitle
-                    v-html="`السعر: ${item.rate}`"
+                    v-html="`Price: ${item.rate}`"
                   ></v-list-item-subtitle>
                 </v-list-item>
             </template>
@@ -55,7 +54,7 @@
             dense
             outlined
             color="primary"
-            label="سعر تكلفة الشحن"
+            label="Delivery Charges Rate"
             background-color="white"
             hide-details
             :value="formatCurrency(delivery_charges_rate)"
@@ -84,7 +83,7 @@
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
                 v-model="posting_date"
-                label="تاريخ المستند"
+                label="Posting Date"
                 readonly
                 outlined
                 dense
@@ -156,7 +155,7 @@
               </div>
             </template>
               <template v-slot:item.rate="{ item }">
-                <!-- حقل إدخال السعر -->
+                <!-- Price input field -->
                 <v-text-field
                   dense
                   variant="outlined"
@@ -274,7 +273,7 @@
                 size="small"
                 class="delete-item-btn"
                 @click.stop="remove_item(item)"
-                title="حذف الصنف"
+                title="Delete item"
               >
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
@@ -293,7 +292,7 @@
         <v-col class="pa-0 ma-0 equal-width-field">
           <v-text-field
             :model-value="formatFloat(total_qty)"
-            label="إجمالي الكمية"
+            label="Total Quantity"
             variant="outlined"
             dense
             readonly
@@ -319,7 +318,7 @@
               ]
             "
             :rules="[isNumber]"
-            label="خصم نسبة من الفاتورة"
+            label="Invoice Discount %"
             suffix="%"
             ref="percentage_discount"
             variant="outlined"
@@ -338,7 +337,7 @@
           <v-text-field
             :model-value="formatCurrency(total_items_discount_amount)"
             :prefix="currencySymbol(pos_profile.currency)"
-            label="خصم الأصناف"
+            label="Items Discount"
             variant="outlined"
             dense
             color="warning"
@@ -351,7 +350,7 @@
         <v-col class="pa-0 ma-0 equal-width-field">
           <v-text-field
             :model-value="formatCurrency(invoice_doc.total)"
-            label="الإجمالي قبل الخصم"
+            label="Total Before Discount"
             variant="outlined"
             dense
             readonly
@@ -365,7 +364,7 @@
         <v-col class="pa-0 ma-0 equal-width-field">
           <v-text-field
             :model-value="formatCurrency(invoice_doc.net_total)"
-            label="الصافي بدون ضريبة"
+            label="Net Total (No Tax)"
             variant="outlined"
             dense
             readonly
@@ -379,7 +378,7 @@
         <v-col class="pa-0 ma-0 equal-width-field">
           <v-text-field
             :model-value="formatCurrency(invoice_doc.total_taxes_and_charges)"
-            label="الضريبة"
+            label="Tax"
             variant="outlined"
             dense
             readonly
@@ -393,7 +392,7 @@
         <v-col class="pa-0 ma-0 equal-width-field">
           <v-text-field
             :model-value="formatCurrency(invoice_doc.grand_total)"
-            label="إجمالي الفاتورة"
+            label="Invoice Total"
             variant="outlined"
             dense
             readonly
@@ -416,7 +415,7 @@
             :disabled="!canPrintInvoice"
             @click="printInvoice"
           >
-            طباعة الفاتورة
+            Print Invoice
           </v-btn>
         </v-col>
         <v-col class="action-button">
@@ -426,7 +425,7 @@
             variant="flat"
             @click="show_payment"
           >
-            دفع
+            Pay
           </v-btn>
         </v-col>
         <v-col class="action-button">
@@ -436,7 +435,7 @@
             dark
             :disabled="!pos_profile.posa_allow_return"
             @click="open_returns"
-          >مرتجع</v-btn>
+          >Return</v-btn>
         </v-col>
         <v-col class="action-button">
           <v-btn
@@ -446,7 +445,7 @@
             variant="flat"
             :disabled="!pos_profile.posa_allow_quick_return"
             @click="quick_return"
-          >مرتجع سريع</v-btn>
+          >Quick Return</v-btn>
         </v-col>
         <v-col class="action-button">
           <v-btn
@@ -454,7 +453,7 @@
             color="error"
             dark
             @click="cancel_invoice"
-          >إلغاء</v-btn>
+          >Cancel</v-btn>
         </v-col>
       </v-row>
     </v-card>
@@ -463,11 +462,9 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-console.log({script: "imports start"});
 import { evntBus } from "../../bus";
 import format from "../../format";
 import Customer from "./Customer.vue";
-console.log({script: "imports end", result: "3 imports loaded successfully"});
 
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
@@ -475,7 +472,6 @@ export default {
   components: { Customer },
   // ===== SECTION 3: DATA =====
   data() {
-    console.log({script: "data start"});
     return {
       pos_profile: "",
       pos_opening_shift: "",
@@ -506,21 +502,20 @@ export default {
       _autoUpdateInProgress: false,
       _autoUpdateTimer: null,
       items_headers: [
-        { title: "مسح", key: "actions", align: "center", sortable: false },
-        { title: "المجموع", key: "amount", align: "center" },
-        { title: "قيمة الخصم", key: "discount_amount", align: "center" },
-        { title: "نسبة الخصم", key: "discount_percentage", align: "center" },
-        { title: "بعد الخصم", key: "rate", align: "center" },
-        { title: "السعر", key: "price_list_rate", align: "center" },
-        { title: "الوحدة", key: "uom", align: "center" },
-        { title: "الكمية", key: "qty", align: "center" },
-        { title: "اسم الصنف", align: "end", sortable: true, key: "item_name" },
+        { title: "Delete", key: "actions", align: "center", sortable: false },
+        { title: "Total", key: "amount", align: "center" },
+        { title: "Disc. Amount", key: "discount_amount", align: "center" },
+        { title: "Disc. %", key: "discount_percentage", align: "center" },
+        { title: "After Disc.", key: "rate", align: "center" },
+        { title: "Price", key: "price_list_rate", align: "center" },
+        { title: "Unit", key: "uom", align: "center" },
+        { title: "Qty", key: "qty", align: "center" },
+        { title: "Item Name", align: "end", sortable: true, key: "item_name" },
       ],
       _cachedCalculations: new Map(),
       _lastCalculationTime: 0,
       _calculationDebounceTimer: null,
     };
-    console.log({script: "data end", result: "data object initialized successfully"});
   },
 
   // ===== SECTION 4: COMPUTED =====
@@ -529,17 +524,17 @@ export default {
     dynamicHeaders() {
       let headers = [...this.items_headers];
       
-      // إزالة عمود نسبة الخصم إذا كان غير مفعل
+      // Remove discount percentage column if not enabled
       if (!this.pos_profile?.posa_display_discount_percentage) {
         headers = headers.filter(header => header.key !== 'discount_percentage');
       }
       
-      // إزالة عمود قيمة الخصم إذا كان غير مفعل
+      // Remove discount amount column if not enabled
       if (!this.pos_profile?.posa_display_discount_amount) {
         headers = headers.filter(header => header.key !== 'discount_amount');
       }
       
-      // إزالة عمود "بعد الخصم" إذا لم يكن مسموحاً بتعديل الخصم
+      // Remove "after discount" column if discount editing is not allowed
       if (!this.pos_profile?.posa_allow_user_to_edit_item_discount) {
         headers = headers.filter(header => header.key !== 'rate');
       }
@@ -547,8 +542,8 @@ export default {
       return headers;
     },
     readonly() {
-      // الفاتورة تكون readonly فقط في حالة المرتجعات
-      // المسودات يجب أن تكون قابلة للتعديل
+      // Invoice is readonly only in case of returns
+      // Drafts should be editable
       const isReadonly = this.invoice_doc?.is_return || false;
       return isReadonly;
     },
@@ -565,7 +560,7 @@ export default {
       
       const total = this.items.reduce((sum, item) => {
         const qty = flt(item.qty, this.float_precision);
-        const rate = flt(item.price_list_rate, this.currency_precision); // استخدام price_list_rate بدلاً من rate
+        const rate = flt(item.price_list_rate, this.currency_precision); // Use price_list_rate instead of rate
         const itemTotal = qty * rate;
         
         
@@ -575,7 +570,7 @@ export default {
       
       this._cachedCalculations.set(cacheKey, total);
       
-      // تنظيف الذاكرة المؤقتة كل 5 دقائق
+      // Cleanup cache every 5 minutes
       if (Date.now() - this._lastCalculationTime > 300000) {
         this._cachedCalculations.clear();
         this._lastCalculationTime = Date.now();
@@ -622,12 +617,12 @@ export default {
         
         return finalResult;
       } catch (error) {
-        console.error('❌ خطأ في حساب subtotal:', error);
-        console.error('❌ تفاصيل الخطأ:', {
+        console.error('❌ Error calculating subtotal:', error);
+        console.error('❌ Error details:', {
           message: error.message,
           stack: error.stack
         });
-        // إرجاع قيمة افتراضية في حالة الخطأ
+        // Return default value in case of error
         return 0;
       }
     },
@@ -741,7 +736,7 @@ export default {
       } catch (error) {
         console.error('Error updating quantity:', error);
         evntBus.emit("show_mesage", {
-          text: "خطأ في تحديث الكمية",
+          text: "Error updating quantity",
           color: "error",
         });
       }
@@ -759,32 +754,32 @@ export default {
       this.$forceUpdate();
     },
     
-    // دوال الزيادة والنقصان للكمية
+    // Functions to increase and decrease quantity
     increaseQuantity(item) {
       try {
         const currentQty = Number(item.qty) || 0;
         const newQty = currentQty + 1;
         
-        // تحديث الكمية مباشرة
+        // Update quantity directly
         item.qty = newQty;
         
-        // حساب الكمية المتاحة
+        // Calculate available quantity
         this.calc_stock_qty(item, newQty);
         
-        // تنظيف الذاكرة المؤقتة
+        // Cleanup cache
         this._cachedCalculations.clear();
         
-        // تحديث الواجهة
+        // Update UI
         this.$forceUpdate();
         
-        // تحديث تلقائي للفاتورة
+        // Auto update invoice
         if (this.invoice_doc && this.invoice_doc.name) {
           this.debounced_auto_update();
         }
       } catch (error) {
         console.error('Error increasing quantity:', error);
         evntBus.emit("show_mesage", {
-          text: "خطأ في زيادة الكمية",
+          text: "Error increasing quantity",
           color: "error",
         });
       }
@@ -795,32 +790,32 @@ export default {
         const currentQty = Number(item.qty) || 0;
         const newQty = Math.max(0, currentQty - 1);
         
-        // تحديث الكمية مباشرة
+        // Update quantity directly
         item.qty = newQty;
         
-        // إذا كانت الكمية صفر، احذف العنصر
+        // If quantity is zero, delete the item
         if (newQty === 0) {
           this.remove_item(item);
           return;
         }
         
-        // حساب الكمية المتاحة
+        // Calculate available quantity
         this.calc_stock_qty(item, newQty);
         
-        // تنظيف الذاكرة المؤقتة
+        // Cleanup cache
         this._cachedCalculations.clear();
         
-        // تحديث الواجهة
+        // Update UI
         this.$forceUpdate();
         
-        // تحديث تلقائي للفاتورة
+        // Auto update invoice
         if (this.invoice_doc && this.invoice_doc.name) {
           this.debounced_auto_update();
         }
       } catch (error) {
         console.error('Error decreasing quantity:', error);
         evntBus.emit("show_mesage", {
-          text: "خطأ في تقليل الكمية",
+          text: "Error decreasing quantity",
           color: "error",
         });
       }
@@ -828,7 +823,7 @@ export default {
 
     
     getDiscountAmount(item) {
-      // حساب قيمة الخصم بناءً على نسبة الخصم والسعر
+      // Calculate discount amount based on discount percentage and price
       if (!item) return 0;
       
       const basePrice = flt(item.price_list_rate) || flt(item.rate) || 0;
@@ -838,17 +833,17 @@ export default {
         return this.flt((basePrice * discountPercentage) / 100, this.currency_precision);
       }
       
-      // إذا كانت هناك قيمة خصم محفوظة، استخدمها
+      // If there is a saved discount amount, use it
       return flt(item.discount_amount) || 0;
     },
     
 
     
     quick_return() {
-      // التحقق من تفعيل المرتجع السريع
+      // Check if quick return is enabled
       if (!this.pos_profile.posa_allow_quick_return) {
         evntBus.emit("show_mesage", {
-          text: "المرتجع السريع غير مفعل في ملف نقاط البيع",
+          text: "Quick return is not enabled in POS profile",
           color: "error",
         });
         return;
@@ -856,14 +851,14 @@ export default {
       
       if (!this.customer) {
         evntBus.emit("show_mesage", {
-          text: "لا يوجد عميل!",
+          text: "No customer!",
           color: "error",
         });
         return;
       }
       if (!this.items.length) {
         evntBus.emit("show_mesage", {
-          text: "لا توجد أصناف!",
+          text: "No items!",
           color: "error",
         });
         return;
@@ -881,12 +876,12 @@ export default {
       if (index >= 0) {
         this.items.splice(index, 1);
         
-        // التحقق من عدد الأصناف المتبقية
+        // Check remaining items count
         if (this.items.length === 0 && this.invoice_doc && this.invoice_doc.name) {
-          // حذف الفاتورة إذا لم يعد هناك أصناف
+          // Delete invoice if no items remain
           this.delete_draft_invoice();
         } else if (this.invoice_doc && this.invoice_doc.name) {
-          // تحديث تلقائي للفاتورة عند حذف صنف
+          // Auto update invoice when deleting item
           this.debounced_auto_update();
         }
       }
@@ -900,7 +895,7 @@ export default {
         this.calc_stock_qty(item, item.qty);
         this.$forceUpdate();
         
-        // تحديث تلقائي للفاتورة عند تغيير الكمية
+        // Auto update invoice when changing quantity
         if (this.invoice_doc && this.invoice_doc.name) {
           this.debounced_auto_update();
         }
@@ -914,7 +909,7 @@ export default {
         this.calc_stock_qty(item, item.qty);
         this.$forceUpdate();
         
-        // تحديث تلقائي للفاتورة عند تغيير الكمية
+        // Auto update invoice when changing quantity
         if (this.invoice_doc && this.invoice_doc.name) {
           this.debounced_auto_update();
         }
@@ -922,48 +917,48 @@ export default {
     },
 
     add_item(item) {
-      // التأكد من وجود البيانات المطلوبة
+      // Ensure required data is present
       if (!item || !item.item_code) {
         evntBus.emit("show_mesage", {
-          text: "بيانات الصنف غير صحيحة أو مفقودة",
+          text: "Item data is incorrect or missing",
           color: "error",
         });
         return;
       }
       
-      // استخدام Object.assign بدلاً من spread operator للأداء الأفضل
+      // Use Object.assign instead of spread operator for better performance
       const new_item = Object.assign({}, item);
       
-      // التأكد من وجود السعر
+      // Ensure price exists
       if (!new_item.rate && !new_item.price_list_rate) {
         evntBus.emit("show_mesage", {
-          text: `لا يوجد سعر للصنف '${new_item.item_name || new_item.item_code}'`,
+          text: `No price for item '${new_item.item_name || new_item.item_code}'`,
           color: "error",
         });
         return;
       }
       
-      // البحث المحسن عن العنصر الموجود
-      // تحسين البحث ليتعامل مع الباركود بشكل صحيح
+      // Improved search for existing item
+      // Improve search to handle barcode properly
       
-      // التأكد من وجود UOM
+      // Ensure UOM exists
       if (!new_item.uom) {
         new_item.uom = new_item.stock_uom || 'Nos';
       }
       
       const existing_item = this.items.find(existing => {
-        // المطابقة الأساسية: نفس كود الصنف ووحدة القياس
+        // Basic match: same item code and unit of measure
         const basicMatch = existing.item_code === new_item.item_code && 
                           existing.uom === new_item.uom;
         
         
-        // إذا كان الصنف له batch_no، يجب أن يكون متطابقاً
+        // If item has batch_no, it must match
         if (existing.batch_no || new_item.batch_no) {
           const batchMatch = basicMatch && existing.batch_no === new_item.batch_no;
           return batchMatch;
         }
         
-        // إذا لم يكن هناك batch_no، المطابقة الأساسية كافية
+        // If no batch_no, basic match is sufficient
         return basicMatch;
       });
       
@@ -988,15 +983,15 @@ export default {
         this.calc_item_price(new_item);
       }
       
-      // إنشاء فاتورة مسودة تلقائياً عند إضافة أول صنف
+      // Auto create draft invoice when adding first item
       if (this.items.length === 1 && !this.invoice_doc) {
         this.create_draft_invoice();
       } else if (this.invoice_doc && this.invoice_doc.name) {
-        // تحديث تلقائي للفاتورة عند إضافة صنف جديد مع تأخير
+        // Auto update invoice when adding new item with delay
         this.debounced_auto_update();
       }
       
-      // تنظيف الذاكرة المؤقتة
+      // Cleanup cache
       this._cachedCalculations.clear();
     },
 
@@ -1006,31 +1001,28 @@ export default {
 
     async create_draft_invoice() {
       try {
-        console.log("إنشاء فاتورة مسودة جديدة...");
         const doc = this.get_invoice_doc();
         const result = await this.update_invoice(doc);
         
         if (result) {
           this.invoice_doc = result;
-          console.log("تم إنشاء فاتورة مسودة بنجاح");
           evntBus.emit("show_mesage", {
-            text: "تم إنشاء فاتورة مسودة",
+            text: "Draft invoice created",
             color: "success",
           });
         }
       } catch (error) {
-        console.log("خطأ في إنشاء فاتورة مسودة:", error);
         evntBus.emit("show_mesage", {
-          text: "خطأ في إنشاء فاتورة مسودة",
+          text: "Error creating draft invoice",
           color: "error",
         });
       }
     },
 
     async auto_update_invoice() {
-      // تحديث تلقائي للفاتورة إذا كانت موجودة
+      // Auto update invoice if it exists
       if (this.invoice_doc && this.invoice_doc.name && !this.invoice_doc.submitted_for_payment) {
-        // منع التحديث المتكرر السريع
+        // Prevent rapid repeated updates
         if (this._autoUpdateInProgress) {
           return;
         }
@@ -1038,40 +1030,38 @@ export default {
         this._autoUpdateInProgress = true;
         
         try {
-          console.log("تحديث فاتورة مسودة...");
           const doc = this.get_invoice_doc();
           const result = await this.update_invoice(doc);
           if (result) {
             this.invoice_doc = result;
-            console.log("تم تحديث فاتورة مسودة بنجاح");
             evntBus.emit("show_mesage", {
-              text: "تم تحديث فاتورة مسودة",
+              text: "Draft invoice updated",
               color: "info",
             });
           }
         } catch (error) {
-          // معالجة الخطأ بصمت لتجنب إزعاج المستخدم
+          // Handle error silently to avoid user annoyance
           console.warn('Auto update failed:', error);
           
-          // إذا كان الخطأ بسبب تعديل المستند، إعادة تحميل الفاتورة
+          // If error is due to document modification, reload invoice
           if (error.message && error.message.includes('Document has been modified')) {
             try {
               await this.reload_invoice();
             } catch (reloadError) {
               console.warn('Failed to reload invoice:', reloadError);
             }
+            }
+          } finally {
+            // Remove lock after update completes
+            setTimeout(() => {
+              this._autoUpdateInProgress = false;
+            }, 1000); // Wait one second before allowing another update
           }
-        } finally {
-          // إزالة القفل بعد انتهاء التحديث
-          setTimeout(() => {
-            this._autoUpdateInProgress = false;
-          }, 1000); // انتظار ثانية واحدة قبل السماح بتحديث آخر
-        }
       }
     },
 
     async reload_invoice() {
-      // إعادة تحميل الفاتورة من قاعدة البيانات
+      // Reload invoice from database
       if (this.invoice_doc && this.invoice_doc.name) {
         try {
           const result = await frappe.call({
@@ -1083,9 +1073,9 @@ export default {
           });
           
           if (result.message) {
-            this.invoice_doc = result.message;
-            // تحديث الأصناف من الفاتورة المحملة
-            if (result.message.items) {
+              this.invoice_doc = result.message;
+              // Update items from loaded invoice
+              if (result.message.items) {
               this.items = result.message.items;
             }
           }
@@ -1096,12 +1086,12 @@ export default {
     },
 
     debounced_auto_update() {
-      // إلغاء التحديث السابق إذا كان موجوداً
+      // Cancel previous update if exists
       if (this._autoUpdateTimer) {
         clearTimeout(this._autoUpdateTimer);
       }
       
-      // تأخير التحديث لمدة 500ms لتجنب التحديثات المتكررة
+      // Delay update for 500ms to avoid repeated updates
       this._autoUpdateTimer = setTimeout(() => {
         this.auto_update_invoice();
       }, 500);
@@ -1130,34 +1120,34 @@ export default {
       new_item.actual_batch_qty = "";
       new_item.conversion_factor = 1;
       
-      // الحفاظ على قائمة الوحدات للصنف
+      // Preserve item's unit list
       new_item.item_uoms = item.item_uoms || [];
       
-      // إضافة الوحدة الأساسية إذا لم تكن في قائمة الوحدات
+      // Add base unit if not in unit list
       if (new_item.item_uoms.length === 0 || !new_item.item_uoms.some(uom => uom.uom === item.stock_uom)) {
         new_item.item_uoms.unshift({ uom: item.stock_uom, conversion_factor: 1 });
       }
       
-      // تصحيح البيانات: التأكد من وجود الحقول المطلوبة لكل وحدة
+      // Fix data: Ensure required fields exist for each unit
       new_item.item_uoms = new_item.item_uoms.map(uom => {
-        // إذا كانت الوحدة نص، تحويلها إلى كائن
+        // If unit is text, convert to object
         if (typeof uom === 'string') {
           return { uom: uom, conversion_factor: 1 };
         } 
-        // إذا كانت كائن، التأكد من وجود الحقول المطلوبة
+        // If object, ensure required fields exist
         else if (typeof uom === 'object' && uom !== null) {
           return { 
             uom: uom.uom || uom.name || uom.toString(), 
             conversion_factor: parseFloat(uom.conversion_factor) || 1 
           };
         }
-        // إذا كانت فارغة أو غير معرفة، استخدام الوحدة الأساسية
+        // If empty or undefined, use base unit
         else {
           return { uom: item.stock_uom || 'Nos', conversion_factor: 1 };
         }
-      }).filter(uom => uom && uom.uom); // استبعاد الوحدات غير الصحيحة
+      }).filter(uom => uom && uom.uom); // Exclude invalid units
       
-      // تعيين عامل التحويل الصحيح بناءً على الوحدة المختارة
+      // Set correct conversion factor based on selected unit
       if (new_item.item_uoms && Array.isArray(new_item.item_uoms)) {
         const selected_uom_obj = new_item.item_uoms.find(uom => uom.uom === new_item.uom);
         if (selected_uom_obj) {
@@ -1186,9 +1176,8 @@ export default {
     cancel_invoice() {
       const doc = this.get_invoice_doc();
       
-      // حذف الفاتورة المسودة من قاعدة البيانات إذا كانت موجودة
+      // Delete draft invoice from database if exists
       if (this.invoice_doc && this.invoice_doc.name) {
-        console.log("إلغاء فاتورة مسودة...");
         frappe.call({
           method: "frappe.client.delete",
           args: {
@@ -1197,9 +1186,8 @@ export default {
           },
           callback: (r) => {
             if (r.message) {
-              console.log("تم إلغاء فاتورة مسودة بنجاح");
               evntBus.emit("show_mesage", {
-                text: "تم إلغاء فاتورة مسودة",
+                text: "Draft invoice cancelled",
                 color: "success",
               });
             }
@@ -1223,14 +1211,13 @@ export default {
       this.selcted_delivery_charges = {};
       evntBus.emit("set_customer_readonly", false);
       
-      // إغلاق شاشة الدفع إذا كانت مفتوحة
+      // Close payment screen if open
       evntBus.emit("show_payment", "false");
     },
 
     delete_draft_invoice() {
-      // حذف الفاتورة المسودة من قاعدة البيانات
+      // Delete draft invoice from database
       if (this.invoice_doc && this.invoice_doc.name) {
-        console.log("حذف فاتورة مسودة...");
         frappe.call({
           method: "frappe.client.delete",
           args: {
@@ -1239,12 +1226,11 @@ export default {
           },
           callback: (r) => {
             if (r.message) {
-              console.log("تم حذف فاتورة مسودة بنجاح");
               evntBus.emit("show_mesage", {
-                text: "تم حذف فاتورة مسودة",
+                text: "Draft invoice deleted",
                 color: "success",
               });
-              // إعادة تعيين البيانات
+              // Reset data
               this.invoice_doc = "";
               this.return_doc = "";
               this.discount_amount = 0;
@@ -1343,7 +1329,7 @@ export default {
       doc.customer = this.customer;
       doc.items = this.get_invoice_items();
       
-      // الإجمالي قبل الخصم يجب أن يكون مجموع price_list_rate
+      // Total before discount should be sum of price_list_rate
       doc.total = this.Total;
       doc.discount_amount = flt(this.discount_amount);
       doc.additional_discount_percentage = flt(this.additional_discount_percentage);
@@ -1360,9 +1346,9 @@ export default {
     },
 
     get_invoice_items() {
-      // استخدام Array.map بدلاً من forEach للأداء الأفضل
+      // Use Array.map instead of forEach for better performance
       return this.items.map(item => {
-        // التأكد من أن السعر والكمية صحيحة
+        // Ensure price and quantity are correct
         const rate = flt(item.rate) || flt(item.price_list_rate) || 0;
         const qty = Number(item.qty) > 0 ? Number(item.qty) : 1;
 
@@ -1420,18 +1406,18 @@ export default {
               vm.invoice_doc = r.message;
               resolve(vm.invoice_doc);
             } else {
-              reject(new Error('فشل في تحديث الفاتورة'));
+              reject(new Error('Failed to update invoice'));
             }
           },
           error: function (err) {
-            // معالجة خطأ تعديل المستند
+            // Handle document modification error
             if (err.message && err.message.includes('Document has been modified')) {
               evntBus.emit('show_mesage', {
-                text: 'تم تعديل الفاتورة من مكان آخر، سيتم إعادة تحميلها',
+                text: 'Invoice was modified elsewhere, will reload',
                 color: 'warning'
               });
               
-              // إعادة تحميل الفاتورة
+              // Reload invoice
               vm.reload_invoice().then(() => {
                 resolve(vm.invoice_doc);
               }).catch((reloadError) => {
@@ -1439,7 +1425,7 @@ export default {
               });
             } else {
               evntBus.emit('show_mesage', {
-                text: 'خطأ في تحديث الفاتورة',
+                text: 'Error updating invoice',
                 color: 'error'
               });
               reject(err);
@@ -1460,7 +1446,7 @@ export default {
         return result;
       } catch (error) {
         evntBus.emit('show_mesage', {
-          text: 'خطأ في معالجة الفاتورة',
+          text: 'Error processing invoice',
           color: 'error'
         });
         throw error;
@@ -1472,60 +1458,60 @@ export default {
       if (this.readonly) return;
       if (!this.customer) {
         evntBus.emit("show_mesage", {
-          text: "لا يوجد عميل!",
+          text: "No customer!",
           color: "error",
         });
         return;
       }
       if (!this.items.length) {
         evntBus.emit("show_mesage", {
-          text: "لا توجد أصناف في الفاتورة!",
+          text: "No items in invoice!",
           color: "error",
         });
         return;
       }
 
-      // إظهار مؤشر التحميل
+      // Show loading indicator
       evntBus.emit("show_loading", {
-        text: "جاري تحضير شاشة الدفع...",
+        text: "Preparing payment screen...",
         color: "info"
       });
 
       try {
-        // معالجة الفاتورة الحالية
+        // Process current invoice
         const invoice_doc = await this.process_invoice();
         
         
-        // إرسال الفاتورة لشاشة الدفع
+        // Send invoice to payment screen
         evntBus.emit("send_invoice_doc_payment", invoice_doc);
         evntBus.emit("show_payment", "true");
         
-        // لا نمسح السلة هنا - سنمسحها بعد اكتمال الدفع
-        // السلة ستبقى حتى يتم تأكيد الدفع بنجاح
-        // لا نمسح الخصومات والعروض هنا - يجب أن تبقى حتى اكتمال الدفع
+        // Don't clear cart here - will clear after payment completes
+        // Cart will remain until payment is confirmed successfully
+        // Don't clear discounts and offers here - should remain until payment completes
         
-        // فقط مسح العروض والكوبونات المؤقتة
+        // Only clear temporary offers and coupons
         this.posa_offers = [];
         this.posa_coupons = [];
         this._cachedCalculations.clear();
         
 
-        // 3. إعادة تعيين العميل فقط إذا كان مطلوباً في الإعدادات
+        // 3. Reset customer only if required in settings
         if (this.pos_profile.posa_clear_customer_after_payment) {
           this.customer = this.pos_profile.customer;
           evntBus.emit("set_customer", this.customer);
         }
 
-        // 4. إعلام المكونات الأخرى بجلسة جديدة
+        // 4. Notify other components of new session
         evntBus.emit("invoice_session_reset");
         
-        // إخفاء مؤشر التحميل
+        // Hide loading indicator
         evntBus.emit("hide_loading");
         
       } catch (error) {
         evntBus.emit("hide_loading");
         evntBus.emit("show_mesage", {
-          text: "حدث خطأ أثناء تحضير الفاتورة: " + error.message,
+          text: "Error preparing invoice: " + error.message,
           color: "error",
         });
         console.error("Error in show_payment:", error);
@@ -1533,33 +1519,33 @@ export default {
     },
 
     validate() {
-      // استخدام Array.every بدلاً من forEach للتحقق السريع
+      // Use Array.every instead of forEach for quick validation
       return this.items.every(item => {
-              // التحقق من صحة الكمية - السماح بالكميات السالبة للفواتير المرتجعة
+              // Validate quantity - allow negative quantities for return invoices
       if (item.qty == 0) {
           evntBus.emit("show_mesage", {
-            text: `كمية الصنف '${item.item_name}' لا يمكن أن تكون صفر (0)`,
+            text: `Item '${item.item_name}' quantity cannot be zero (0)`,
             color: "error",
           });
           return false;
         }
         
-        // للفواتير العادية، لا تسمح بالكميات السالبة
+        // For regular invoices, don't allow negative quantities
         if (!this.invoice_doc.is_return && item.qty < 0) {
           evntBus.emit("show_mesage", {
-            text: `كمية الصنف '${item.item_name}' لا يمكن أن تكون سالبة في الفواتير العادية`,
+            text: `Item '${item.item_name}' quantity cannot be negative in regular invoices`,
             color: "error",
           });
           return false;
         }
         
-        // التحقق من الحد الأقصى للخصم
+        // Check maximum discount
         if (this.pos_profile.posa_item_max_discount_allowed && !item.posa_offer_applied) {
           if (item.discount_amount && this.flt(item.discount_amount) > 0) {
             const discount_percentage = (this.flt(item.discount_amount) * 100) / this.flt(item.price_list_rate);
             if (discount_percentage > this.pos_profile.posa_item_max_discount_allowed) {
               evntBus.emit("show_mesage", {
-                text: `نسبة الخصم للصنف '${item.item_name}' لا يمكن أن تتجاوز ${this.pos_profile.posa_item_max_discount_allowed}%`,
+                text: `Discount percentage for item '${item.item_name}' cannot exceed ${this.pos_profile.posa_item_max_discount_allowed}%`,
                 color: "error",
               });
               return false;
@@ -1567,12 +1553,12 @@ export default {
           }
         }
         
-        // التحقق من توفر المخزون
+        // Check stock availability
         if (this.stock_settings.allow_negative_stock != 1) {
                       if (this.invoiceType == "Invoice" && item.is_stock_item && item.stock_qty && 
                 (!item.actual_qty || item.stock_qty > item.actual_qty)) {
               evntBus.emit("show_mesage", {
-                text: `الكمية المتاحة '${item.actual_qty}' للصنف '${item.item_name}' غير كافية`,
+                text: `Available quantity '${item.actual_qty}' for item '${item.item_name}' is insufficient`,
                 color: "error",
               });
               return false;
@@ -1598,7 +1584,7 @@ export default {
         },
         error: function (err) {
           evntBus.emit('show_mesage', {
-            text: 'خطأ في جلب الفواتير المسودة',
+            text: 'Error fetching draft invoices',
             color: 'error'
           });
         }
@@ -1608,10 +1594,10 @@ export default {
 
 
     open_returns() {
-      // التحقق من تفعيل المرتجع
+      // Check if returns are enabled
       if (!this.pos_profile.posa_allow_return) {
         evntBus.emit("show_mesage", {
-          text: "المرتجع غير مفعل في ملف نقاط البيع",
+          text: "Returns are not enabled in POS profile",
           color: "error",
         });
         return;
@@ -1645,7 +1631,7 @@ export default {
         },
         callback: function (r) {
           if (r.message) {
-            // استخدام Map للبحث الأسرع
+            // Use Map for faster search
             const updatedItemsMap = new Map();
             r.message.forEach(item => {
               updatedItemsMap.set(item.item_code, item);
@@ -1660,7 +1646,7 @@ export default {
                 item.rate = updated_item.rate;
                 item.currency = updated_item.currency;
                 
-                // تصحيح بيانات الوحدات
+                // Fix unit data
                 item.item_uoms = (updated_item.item_uoms || []).map(uom => {
                   if (typeof uom === 'string') {
                     return { uom: uom, conversion_factor: 1 };
@@ -1683,7 +1669,7 @@ export default {
         },
         error: function (err) {
           evntBus.emit('show_mesage', {
-            text: 'خطأ في تحديث تفاصيل الأصناف',
+            text: 'Error updating item details',
             color: 'error'
           });
         }
@@ -1812,14 +1798,14 @@ export default {
         value = 0;
       }
       
-      // تحديد الحد الأقصى للخصم
-      let maxDiscount = 100; // القيمة الافتراضية
+      // Determine maximum discount
+      let maxDiscount = 100; // Default value
       
-      // إذا كان الصنف له حد أقصى محدد
+      // If item has specific maximum
       if (item.max_discount && item.max_discount > 0) {
         maxDiscount = item.max_discount;
       }
-      // إذا كان POS Profile له حد أقصى محدد
+      // If POS Profile has specific maximum
       else if (this.pos_profile.posa_item_max_discount_allowed && this.pos_profile.posa_item_max_discount_allowed > 0) {
         maxDiscount = this.pos_profile.posa_item_max_discount_allowed;
       }
@@ -1830,7 +1816,7 @@ export default {
       } else if (value > maxDiscount) {
         value = maxDiscount;
         evntBus.emit("show_mesage", {
-          text: `تم تطبيق الحد الأقصى للخصم: ${maxDiscount}%`,
+          text: `Maximum discount applied: ${maxDiscount}%`,
           color: "info",
         });
       }
@@ -1846,10 +1832,10 @@ export default {
       
       this.calc_prices(item, value, syntheticEvent);
       
-      // إعادة حساب Total بعد تطبيق الخصم
+      // Recalculate Total after applying discount
       this._cachedCalculations.clear();
       
-      // إجبار إعادة حساب Total
+      // Force Total recalculation
       
       this.$forceUpdate();
     },
@@ -1865,7 +1851,7 @@ export default {
       this.additional_discount_percentage = event.target.value;
       const value = flt(this.additional_discount_percentage);
       
-      // تحديد الحد الأقصى للخصم
+      // Determine maximum discount
       const maxDiscount = this.pos_profile.posa_invoice_max_discount_allowed || 100;
       
       
@@ -1875,7 +1861,7 @@ export default {
         this.additional_discount_percentage = maxDiscount;
         this.discount_amount = (this.Total * maxDiscount) / 100;
         evntBus.emit("show_mesage", {
-          text: `تم الرجوع لنسبة الخصم المسموح بها`,
+          text: `Reverted to allowed discount percentage`,
           color: "info",
         });
       } else {
@@ -1883,7 +1869,7 @@ export default {
         this.discount_amount = 0;
       }
       
-      // تحديث تلقائي للفاتورة عند تطبيق خصم على الفاتورة
+      // Auto update invoice when applying discount to invoice
       if (this.invoice_doc && this.invoice_doc.name) {
         this.debounced_auto_update();
       }
@@ -1936,17 +1922,17 @@ export default {
         }
       }
       
-      // تحديث تلقائي للفاتورة عند تغيير السعر أو الخصم
+      // Auto update invoice when changing price or discount
       if (this.invoice_doc && this.invoice_doc.name) {
         this.debounced_auto_update();
       }
     },
 
     calc_item_price(item) {
-      // التأكد من وجود البيانات المطلوبة
+      // Ensure required data exists
       if (!item) return;
       
-      // استخدام الذاكرة المؤقتة للعمليات الحسابية المتكررة
+      // Use cache for repeated calculations
       const cacheKey = `price_${item.qty}_${item.rate}_${item.discount_percentage}_${item.discount_amount}`;
       
       if (this._cachedCalculations.has(cacheKey)) {
@@ -1956,11 +1942,11 @@ export default {
         return;
       }
       
-      // التأكد من وجود السعر الأساسي
+      // Ensure base price exists
       const original_rate = flt(item.base_rate) || flt(item.price_list_rate) || 0;
       if (original_rate <= 0) {
         evntBus.emit("show_mesage", {
-          text: `السعر غير صحيح للصنف '${item.item_name || item.item_code}'`,
+          text: `Invalid price for item '${item.item_name || item.item_code}'`,
           color: "error",
         });
         return;
@@ -1976,13 +1962,13 @@ export default {
         final_rate = final_rate - flt(item.discount_amount);
       }
       
-      // التأكد من أن السعر النهائي لا يكون سالب
+      // Ensure final price is not negative
       final_rate = Math.max(0, final_rate);
       
       item.rate = final_rate;
       item.amount = flt(item.qty || 0) * final_rate;
       
-      // حفظ في الذاكرة المؤقتة
+      // Save in cache
       this._cachedCalculations.set(cacheKey, {
         amount: item.amount,
         rate: item.rate
@@ -2002,7 +1988,7 @@ export default {
       
       item.uom = selected_uom;
       
-      // البحث عن عامل التحويل للوحدة المختارة
+      // Find conversion factor for selected unit
       if (item.item_uoms && Array.isArray(item.item_uoms)) {
         const selected_uom_obj = item.item_uoms.find((uom_item) => uom_item.uom === selected_uom);
         item.conversion_factor = selected_uom_obj ? parseFloat(selected_uom_obj.conversion_factor) : 1;
@@ -2010,7 +1996,7 @@ export default {
         item.conversion_factor = 1;
       }
       
-      // حفظ السعر الأساسي إذا لم يكن محفوظاً مسبقاً
+      // Save base price if not already saved
       if (!item.base_rate && item.price_list_rate) {
         item.base_rate = item.price_list_rate;
       }
@@ -2020,34 +2006,34 @@ export default {
         item.discount_percentage = 0;
       }
       
-      // إعادة حساب السعر بناءً على عامل التحويل
+      // Recalculate price based on conversion factor
       if (item.batch_price) {
         item.price_list_rate = item.batch_price * item.conversion_factor;
       } else if (item.base_rate) {
-        // إعادة حساب السعر بناءً على عامل التحويل
+        // Recalculate price based on conversion factor
         item.price_list_rate = item.base_rate * item.conversion_factor;
         item.rate = item.price_list_rate;
       }
       
-      // حساب كمية المخزون
+      // Calculate stock quantity
       this.calc_stock_qty(item, item.qty);
       
       this.update_item_detail(item);
     },
 
     calc_stock_qty(item, value) {
-      // تأكد من أن item موجود
+      // Ensure item exists
       if (!item) return;
       
-      // تحويل القيم إلى أرقام بشكل مباشر
+      // Convert values to numbers directly
       const numValue = Number(value);
       value = numValue > 0 ? numValue : 1;
       
-      // تأكد من أن conversion_factor رقم صحيح
+      // Ensure conversion_factor is valid number
       const convFactor = Number(item.conversion_factor || 1);
       item.conversion_factor = convFactor > 0 ? convFactor : 1;
       
-      // حساب stock_qty بشكل صحيح
+      // Calculate stock_qty correctly
       item.stock_qty = item.conversion_factor * value;
     },
 
@@ -2195,7 +2181,7 @@ export default {
     },
 
     handelOffers() {
-      // إضافة Debouncing لتحسين الأداء
+      // Add Debouncing for performance improvement
       if (this._offersDebounceTimer) {
         clearTimeout(this._offersDebounceTimer);
       }
@@ -2334,7 +2320,7 @@ export default {
         return true;
       }
       
-      // استخدام خريطة للبحث الأسرع
+      // Use map for faster search
       if (!this._couponCache) {
         this._couponCache = new Map();
         this.posa_coupons.forEach(coupon => {
@@ -2364,7 +2350,7 @@ export default {
                 !this.checkOfferIsAppley(item, offer)
               ) {
               } else {
-                // التأكد من أن stock_qty رقم صحيح
+                // Ensure stock_qty is valid number
                 const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
                 item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
                 
@@ -2402,7 +2388,7 @@ export default {
                 !this.checkOfferIsAppley(item, offer)
               ) {
               } else {
-                // التأكد من أن stock_qty رقم صحيح
+                // Ensure stock_qty is valid number
                 const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
                 item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
                 
@@ -2443,7 +2429,7 @@ export default {
                 !this.checkOfferIsAppley(item, offer)
               ) {
               } else {
-                // التأكد من أن stock_qty رقم صحيح
+                // Ensure stock_qty is valid number
                 const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
                 item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
                 
@@ -2473,9 +2459,9 @@ export default {
         if (this.checkOfferCoupon(offer)) {
           let total_qty = 0;
           this.items.forEach((item) => {
-            // تعديل الشرط ليشمل الأصناف في الفواتير المسودة
+            // Modify condition to include items in draft invoices
             if ((!item.posa_is_offer && !item.posa_is_replace) || (this.invoice_doc?.docstatus === 0)) {
-              // التأكد من أن stock_qty رقم صحيح
+              // Ensure stock_qty is valid number
               const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
               item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
               
@@ -2724,7 +2710,7 @@ export default {
       }
       if (offer.offer === "Loyalty Point") {
         evntBus.emit("show_mesage", {
-          text: "تم تطبيق عرض نقاط الولاء",
+          text: "Loyalty points offer applied",
           color: "success",
         });
       }
@@ -2987,12 +2973,13 @@ export default {
         const table = this.$el.querySelector('.invoice-items-scrollable .v-data-table__wrapper table');
         if (!table) return;
         const rows = table.querySelectorAll('tr');
-        console.log('Invoice.vue:debugTableDimensions rows=', rows.length);
+        // Debug logging disabled for performance
+        // console.log('Invoice.vue:debugTableDimensions rows=', rows.length);
         rows.forEach((row, rIdx) => {
-          console.log(`Invoice.vue:debug Row ${rIdx} height=${row.offsetHeight}`);
+          // console.log(`Invoice.vue:debug Row ${rIdx} height=${row.offsetHeight}`);
           [...row.children].forEach((cell, cIdx) => {
             const cs = window.getComputedStyle(cell);
-            console.log(`Invoice.vue:debug Row${rIdx} Cell${cIdx} w=${cell.offsetWidth} h=${cell.offsetHeight} padT=${cs.paddingTop} padB=${cs.paddingBottom} padL=${cs.paddingLeft} padR=${cs.paddingRight} lineH=${cs.lineHeight}`);
+            // console.log(`Invoice.vue:debug Row${rIdx} Cell${cIdx} w=${cell.offsetWidth} h=${cell.offsetHeight} padT=${cs.paddingTop} padB=${cs.paddingBottom} padL=${cs.paddingLeft} padR=${cs.paddingRight} lineH=${cs.lineHeight}`);
           });
         });
       } catch (e) {
@@ -3002,7 +2989,7 @@ export default {
     printInvoice() {
       if (!this.invoice_doc || !this.items || !this.items.length) {
         evntBus.emit("show_mesage", {
-          text: "لا توجد فاتورة للطباعة",
+          text: "No invoice to print",
           color: "error",
         });
         return;
@@ -3011,7 +2998,7 @@ export default {
       const paymentsComponent = this.getPaymentsComponent();
       if (!paymentsComponent) {
         evntBus.emit("show_mesage", {
-          text: "تعذر الوصول إلى شاشة الدفع للطباعة",
+          text: "Cannot access payment screen for printing",
           color: "error",
         });
         return;
@@ -3025,14 +3012,14 @@ export default {
       const defaultMode = this.defaultPaymentMode;
       if (!defaultMode) {
         evntBus.emit("show_mesage", {
-          text: "يرجى اختيار طريقة دفع",
+          text: "Please select a payment method",
           color: "warning",
         });
         return;
       }
 
       evntBus.emit("show_loading", {
-        text: "جاري معالجة الفاتورة للطباعة...",
+        text: "Processing invoice for printing...",
         color: "info",
       });
 
@@ -3049,7 +3036,7 @@ export default {
         })
         .catch((error) => {
           evntBus.emit("show_mesage", {
-            text: "تعذر تجهيز الفاتورة للطباعة: " + error.message,
+            text: "Failed to prepare invoice for printing: " + error.message,
             color: "error",
           });
         })
@@ -3077,7 +3064,7 @@ export default {
   },
 
   mounted() {
-          // تنظيف الذاكرة المؤقتة عند تحميل المكون
+          // Cleanup cache on component mount
       this._cachedCalculations = new Map();
       this._lastCalculationTime = Date.now();
     
@@ -3158,7 +3145,7 @@ export default {
       try {
         if (!this.canPrintInvoice()) {
           evntBus.emit("show_mesage", {
-            text: "يرجى اختيار طريقة دفع قبل الطباعة",
+            text: "Please select a payment method before printing",
             color: "warning",
           });
           return;
@@ -3168,7 +3155,7 @@ export default {
         this.printInvoice();
       } catch (error) {
         evntBus.emit("show_mesage", {
-          text: "تعذر تجهيز الفاتورة للطباعة: " + error.message,
+          text: "Failed to prepare invoice for printing: " + error.message,
           color: "error",
         });
         console.error("request_invoice_print error", error);
@@ -3186,11 +3173,11 @@ export default {
     evntBus.$off("update_invoice_coupons");
     evntBus.$off("set_all_items");
     
-    // تنظيف الذاكرة المؤقتة
+    // Cleanup cache
     this._cachedCalculations.clear();
     this._couponCache = null;
     
-    // تنظيف Timers
+    // Cleanup Timers
     if (this._calculationDebounceTimer) {
       clearTimeout(this._calculationDebounceTimer);
     }
@@ -3274,7 +3261,7 @@ export default {
 .disable-events {
   pointer-events: none;
 }
-/* تنسيق حاوية العميل */
+/* Customer container styling */
 .customer-container {
   height: 100%;
   display: flex;
@@ -3282,7 +3269,7 @@ export default {
   justify-content: center;
 }
 
-/* تنسيق عرض رقم الفاتورة */
+/* Invoice number display styling */
 .invoice-number-display {
   display: flex;
   align-items: center;
@@ -3300,19 +3287,19 @@ export default {
   font-weight: bold;
 }
 
-/* تنسيق الفاتورة العادية - أزرق غامق */
+/* Regular invoice styling - dark blue */
 .regular-invoice .invoice-number-text {
   color: #1976d2 !important;
   font-weight: bold !important;
 }
 
-/* تنسيق فاتورة المرتجع - أحمر غامق */
+/* Return invoice styling - dark red */
 .return-invoice .invoice-number-text {
   color: #d32f2f !important;
   font-weight: bold !important;
 }
 
-/* تنسيق عدم وجود فاتورة - رمادي مائل */
+/* No invoice styling - italic gray */
 .no-invoice .invoice-number-text {
   color: #757575 !important;
   font-weight: normal !important;
@@ -3638,7 +3625,7 @@ export default {
   box-sizing: border-box !important;
 }
 
-/* زر الزيادة - أخضر مع شكل موجب */
+/* Increase button - green with plus shape */
 .quantity-plus-btn {
   background-color: #4caf50 !important;
   color: white !important;
@@ -3654,7 +3641,7 @@ export default {
   transform: scale(0.95) !important;
 }
 
-/* زر النقصان - أصفر مع شكل سالب */
+/* Decrease button - yellow with minus shape */
 .quantity-minus-btn {
   background-color: #ff9800 !important;
   color: white !important;

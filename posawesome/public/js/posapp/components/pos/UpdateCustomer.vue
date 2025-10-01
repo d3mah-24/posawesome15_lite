@@ -7,8 +7,8 @@
     >
       <v-card>
         <v-card-title>
-          <span v-if="customer_id" class="headline primary--text">تحديث بيانات العميل</span>
-          <span v-else class="headline primary--text">تسجيل عميل جديد</span>
+          <span v-if="customer_id" class="headline primary--text">Update Customer Data</span>
+          <span v-else class="headline primary--text">Register New Customer</span>
         </v-card-title>
         <v-card-text class="pa-0">
           <v-container>
@@ -17,7 +17,7 @@
                 <v-text-field
                   dense
                   color="primary"
-                  label="اسم العميل *"
+                  label="Customer Name *"
                   background-color="white"
                   hide-details
                   v-model="customer_name"
@@ -27,7 +27,7 @@
                 <v-text-field
                   dense
                   color="primary"
-                  label="الرقم الضريبي"
+                  label="Tax ID"
                   background-color="white"
                   hide-details
                   v-model="tax_id"
@@ -37,7 +37,7 @@
                 <v-text-field
                   dense
                   color="primary"
-                  label="رقم الجوال"
+                  label="Mobile Number"
                   background-color="white"
                   hide-details
                   v-model="mobile_no"
@@ -47,7 +47,7 @@
                 <v-text-field
                   dense
                   color="primary"
-                  label="البريد الإلكتروني"
+                  label="Email"
                   background-color="white"
                   hide-details
                   v-model="email_id"
@@ -56,7 +56,7 @@
               <v-col cols="6">
                 <v-select
                   dense
-                  label="الجنس"
+                  label="Gender"
                   :items="genders"
                   v-model="gender"
                 ></v-select>
@@ -65,7 +65,7 @@
                 <v-text-field
                   dense
                   color="primary"
-                  label="كود الإحالة"
+                  label="Referral Code"
                   background-color="white"
                   hide-details
                   v-model="referral_code"
@@ -74,7 +74,7 @@
               <v-col cols="6">
                 <v-text-field
                   v-model="birthday"
-                  label="تاريخ الميلاد"
+                  label="Date of Birth"
                   readonly
                   dense
                   clearable
@@ -104,11 +104,11 @@
                   dense
                   auto-select-first
                   color="primary"
-                  label="مجموعة العملاء *"
+                  label="Customer Group *"
                   v-model="group"
                   :items="groups"
                   background-color="white"
-                  no-data-text="لم يتم العثور على المجموعة"
+                  no-data-text="Group not found"
                   hide-details
                   required
                 ></v-autocomplete>
@@ -119,11 +119,11 @@
                   dense
                   auto-select-first
                   color="primary"
-                  label="المنطقة *"
+                  label="Territory *"
                   v-model="territory"
                   :items="territorys"
                   background-color="white"
-                  no-data-text="لم يتم العثور على المنطقة"
+                  no-data-text="Territory not found"
                   hide-details
                   required
                 ></v-autocomplete>
@@ -131,7 +131,7 @@
               <v-col cols="6" v-if="loyalty_program">
                 <v-text-field
                   v-model="loyalty_program"
-                  label="برنامج الولاء"
+                  label="Loyalty Program"
                   dense
                   readonly
                   hide-details
@@ -140,7 +140,7 @@
               <v-col cols="6" v-if="loyalty_points">
                 <v-text-field
                   v-model="loyalty_points"
-                  label="نقاط الولاء"
+                  label="Loyalty Points"
                   dense
                   readonly
                   hide-details
@@ -151,8 +151,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" dark @click="close_dialog">إغلاق</v-btn>
-          <v-btn color="success" dark @click="submit_dialog">{{ customer_id ? 'تحديث بيانات العميل' : 'تسجيل العميل' }}</v-btn>
+          <v-btn color="error" dark @click="close_dialog">Close</v-btn>
+          <v-btn color="success" dark @click="submit_dialog">{{ customer_id ? 'Update Customer Data' : 'Register Customer' }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -223,7 +223,7 @@ export default {
         })
         .catch((err) => {
           evntBus.emit('show_mesage', {
-            text: 'خطأ في تحميل مجموعات العملاء',
+            text: 'Error loading customer groups',
             color: 'error',
           });
         });
@@ -247,7 +247,7 @@ export default {
         })
         .catch((err) => {
           evntBus.emit('show_mesage', {
-            text: 'خطأ في تحميل المناطق',
+            text: 'Error loading territories',
             color: 'error',
           });
         });
@@ -268,7 +268,7 @@ export default {
         })
         .catch((err) => {
           evntBus.emit('show_mesage', {
-            text: 'خطأ في تحميل الجنس',
+            text: 'Error loading genders',
             color: 'error',
           });
         });
@@ -277,21 +277,21 @@ export default {
       // validate if all required fields are filled
       if (!this.customer_name) {
         evntBus.emit('show_mesage', {
-          text: 'اسم العميل مطلوب.',
+          text: 'Customer name is required.',
           color: 'error',
         });
         return;
       }
       if (!this.group) {
         evntBus.emit('show_mesage', {
-          text: 'اسم مجموعة العملاء مطلوب.',
+          text: 'Customer group name is required.',
           color: 'error',
         });
         return;
       }
       if (!this.territory) {
         evntBus.emit('show_mesage', {
-          text: 'اسم المنطقة مطلوب.',
+          text: 'Territory name is required.',
           color: 'error',
         });
         return;
@@ -319,9 +319,9 @@ export default {
           args: args,
           callback: (r) => {
             if (!r.exc && r.message.name) {
-              let text = 'تم إنشاء العميل بنجاح.';
+              let text = 'Customer created successfully.';
               if (vm.customer_id) {
-                text = 'تم تحديث بيانات العميل بنجاح.';
+                text = 'Customer data updated successfully.';
               }
               evntBus.emit('show_mesage', {
                 text: text,
@@ -329,15 +329,15 @@ export default {
               });
               args.name = r.message.name;
               frappe.utils.play_sound('submit');
-              // إضافة العميل إلى القائمة فقط عند الإنشاء
+              // Add customer to list only when creating
               if (!vm.customer_id) {
                 evntBus.emit('add_customer_to_list', args);
               }
-              // لا نرسل set_customer عند التحديث لتجنب إعادة كتابة اسم العميل
+              // Don't send set_customer when updating to avoid rewriting customer name
               if (!vm.customer_id) {
                 evntBus.emit('set_customer', r.message.name);
               }
-              // لا نعيد جلب قائمة العملاء عند التحديث لتجنب التكرار
+              // Don't refetch customer list when updating to avoid duplication
               if (!vm.customer_id) {
                 evntBus.emit('fetch_customer_details');
               }
@@ -345,7 +345,7 @@ export default {
             } else {
               frappe.utils.play_sound('error');
               evntBus.emit('show_mesage', {
-                text: 'فشل في إنشاء العميل.',
+                text: 'Failed to create customer.',
                 color: 'error',
               });
             }

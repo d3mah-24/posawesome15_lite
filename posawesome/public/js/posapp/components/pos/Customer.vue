@@ -6,7 +6,7 @@
       density="compact"
       variant="outlined"
       color="primary"
-      :label="'العميل'"
+      :label="'Customer'"
       v-model="customer"
       :items="customers"
       item-title="customer_name"
@@ -22,11 +22,11 @@
       <template v-slot:item="{ props, item }">
         <v-list-item v-bind="props">
           <v-list-item-title class="primary--text subtitle-1" v-html="item.customer_name"></v-list-item-title>
-          <v-list-item-subtitle v-if="item.customer_name != item.name" v-html="'معرف العميل: ' + item.name"></v-list-item-subtitle>
-          <v-list-item-subtitle v-if="item.tax_id" v-html="'معرف الضريبة: ' + item.tax_id"></v-list-item-subtitle>
-          <v-list-item-subtitle v-if="item.email_id" v-html="'البريد الإلكتروني: ' + item.email_id"></v-list-item-subtitle>
-          <v-list-item-subtitle v-if="item.mobile_no" v-html="'رقم الجوال: ' + item.mobile_no"></v-list-item-subtitle>
-          <v-list-item-subtitle v-if="item.primary_address" v-html="'العنوان الرئيسي: ' + item.primary_address"></v-list-item-subtitle>
+          <v-list-item-subtitle v-if="item.customer_name != item.name" v-html="'Customer ID: ' + item.name"></v-list-item-subtitle>
+          <v-list-item-subtitle v-if="item.tax_id" v-html="'Tax ID: ' + item.tax_id"></v-list-item-subtitle>
+          <v-list-item-subtitle v-if="item.email_id" v-html="'Email: ' + item.email_id"></v-list-item-subtitle>
+          <v-list-item-subtitle v-if="item.mobile_no" v-html="'Mobile: ' + item.mobile_no"></v-list-item-subtitle>
+          <v-list-item-subtitle v-if="item.primary_address" v-html="'Primary Address: ' + item.primary_address"></v-list-item-subtitle>
         </v-list-item>
       </template>
     </v-autocomplete>
@@ -70,8 +70,8 @@ export default {
         if (this.customers.length > 0) {
           return;
         }
-        // تفعيل Local Storage ثابت في الكود
-        // posa_local_storage مفعل ثابت
+        // Local Storage enabled permanently in code
+        // posa_local_storage permanently enabled
         if (localStorage.customer_storage) {
           vm.customers = JSON.parse(localStorage.getItem('customer_storage'));
         }
@@ -83,8 +83,8 @@ export default {
           callback: function (r) {
             if (r.message) {
               vm.customers = r.message;
-              // تفعيل Local Storage ثابت في الكود
-              // posa_local_storage مفعل ثابت
+              // Local Storage enabled permanently in code
+              // posa_local_storage permanently enabled
               localStorage.setItem('customer_storage', '');
               localStorage.setItem(
                 'customer_storage',
@@ -94,14 +94,14 @@ export default {
           },
           error: function (err) {
             evntBus.emit('show_mesage', {
-              message: 'فشل في جلب العملاء',
+              message: 'Failed to fetch customers',
               color: 'error',
             });
           }
         });
       } catch (error) {
         evntBus.emit('show_mesage', {
-          message: 'حدث خطأ غير متوقع أثناء جلب العملاء',
+          message: 'An unexpected error occurred while fetching customers',
           color: 'error',
         });
       }
@@ -111,7 +111,7 @@ export default {
         evntBus.emit('open_update_customer', null);
       } catch (error) {
         evntBus.emit('show_mesage', {
-          message: 'خطأ في فتح نموذج العميل الجديد',
+          message: 'Error opening new customer form',
           color: 'error',
         });
       }
@@ -121,7 +121,7 @@ export default {
         evntBus.emit('open_update_customer', this.customer_info);
       } catch (error) {
         evntBus.emit('show_mesage', {
-          message: 'خطأ في فتح نموذج تعديل العميل',
+          message: 'Error opening customer edit form',
           color: 'error',
         });
       }
@@ -193,7 +193,7 @@ export default {
       
       } catch (error) {
         evntBus.emit('show_mesage', {
-          message: 'حدث خطأ أثناء تهيئة المكون',
+          message: 'An error occurred during component initialization',
           color: 'error',
         });
       }

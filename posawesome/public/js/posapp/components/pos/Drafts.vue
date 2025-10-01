@@ -5,7 +5,7 @@
     <v-dialog v-model="draftsDialog" max-width="900px">
       <v-card>
         <v-card-title>
-          <span class="headline primary--text">اختيار الفواتير المحفوظة</span>
+          <span class="headline primary--text">Select Saved Invoices</span>
         </v-card-title>
         <v-card-text class="pa-0">
           <v-container>
@@ -34,8 +34,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" dark @click="close_dialog">إغلاق</v-btn>
-          <v-btn color="success" dark @click="submit_dialog">اختيار</v-btn>
+          <v-btn color="error" dark @click="close_dialog">Close</v-btn>
+          <v-btn color="success" dark @click="submit_dialog">Select</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -62,31 +62,31 @@ export default {
       dialog_data: {},
       headers: [
         {
-          title: 'العميل',
+          title: 'Customer',
           key: 'customer_name',
           align: 'start',
           sortable: true,
         },
         {
-          title: 'التاريخ',
+          title: 'Date',
           align: 'start',
           sortable: true,
           key: 'posting_date',
         },
         {
-          title: 'الوقت',
+          title: 'Time',
           align: 'start',
           sortable: true,
           key: 'posting_time',
         },
         {
-          title: 'رقم الفاتورة',
+          title: 'Invoice Number',
           key: 'name',
           align: 'start',
           sortable: true,
         },
         {
-          title: 'المبلغ',
+          title: 'Amount',
           key: 'grand_total',
           align: 'end',
           sortable: false,
@@ -114,7 +114,7 @@ export default {
       }
       else{
         evntBus.emit("show_mesage", {
-          text: "يرجى اختيار فاتورة واحدة فقط",
+          text: "Please select only one invoice",
           color: "error",
         });
       }

@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <nav>
-    {{ console.log({template: "main container", result: "main container rendered"}) }}
     <v-app-bar app height="40" class="elevation-2">
       <!-- <v-app-bar-nav-icon
         @click.stop="drawer = !drawer"
@@ -37,7 +36,7 @@
         <v-menu offset="y">
           <template v-slot:activator="{ props }">
             <v-btn color="primary" dark variant="text" v-bind="props">
-              القائمة
+              Menu
             </v-btn>
           </template>
           <v-card class="mx-auto" max-width="300" tile>
@@ -47,23 +46,23 @@
                 v-if="!pos_profile.posa_hide_closing_shift && menu_item == 0"
               >
                 <v-icon class="mr-2">mdi-content-save-move-outline</v-icon>
-                <span>إغلاق الوردية</span>
+                <span>Close Shift</span>
               </v-list-item>
               <v-list-item
                 @click="print_last_invoice"
                 v-if="this.last_invoice"
               >
                 <v-icon class="mr-2">mdi-printer</v-icon>
-                <span>طباعة آخر إيصال</span>
+                <span>Print Last Receipt</span>
               </v-list-item>
               <v-divider class="my-0"></v-divider>
               <v-list-item @click="logOut">
                 <v-icon class="mr-2">mdi-logout</v-icon>
-                <span>تسجيل الخروج</span>
+                <span>Logout</span>
               </v-list-item>
               <v-list-item @click="go_about">
                 <v-icon class="mr-2">mdi-information-outline</v-icon>
-                <span>حول النظام</span>
+                <span>About System</span>
               </v-list-item>
             </v-list>
           </v-card>
@@ -94,7 +93,7 @@
             @click="changePage(listItem.text)"
           >
             <v-icon class="mr-2">{{ listItem.icon }}</v-icon>
-            <span>{{ listItem.text == 'POS' ? 'نقطة البيع' : listItem.text == 'Payments' ? 'المدفوعات' : listItem.text }}</span>
+            <span>{{ listItem.text == 'POS' ? 'Point of Sale' : listItem.text == 'Payments' ? 'Payments' : listItem.text }}</span>
           </v-list-item>
         </v-list>
       </v-list>
@@ -113,16 +112,13 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-console.log({script: "imports start"});
 import { evntBus } from '../bus';
-console.log({script: "imports end", result: "1 import loaded successfully"});
 
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   // components: {MyPopup},
   // ===== SECTION 3: DATA =====
   data() {
-    console.log({script: "data start"});
     return {
       drawer: false,
       mini: true,
@@ -148,12 +144,11 @@ export default {
       last_invoice: '',
       invoice_doc: null,
     };
-    console.log({script: "data end", result: "data object initialized successfully"});
   },
   computed: {
     invoiceNumberText() {
       if (!this.invoice_doc || !this.invoice_doc.name) {
-        return 'لم يتم إنشاء الفاتورة بعد';
+        return 'Invoice not created yet';
       }
       return this.invoice_doc.name;
     },
@@ -233,14 +228,12 @@ export default {
       );
     },
     fetch_company_info() {
-      console.log({script: "fetch_company_info start"});
       if (this.pos_profile && this.pos_profile.company) {
         frappe.db.get_doc('Company', this.pos_profile.company).then((company_doc) => {
           this.company_name = company_doc.company_name;
           this.company_logo = company_doc.company_logo;
-          console.log({script: "fetch_company_info success", result: `Company: ${this.company_name}, Logo: ${this.company_logo}`});
         }).catch((error) => {
-          console.error({script: "fetch_company_info error", result: error});
+          console.error('Error fetching company info:', error);
         });
       }
     },
@@ -279,7 +272,7 @@ export default {
       } catch (error) {
         this.show_mesage({
           color: 'error',
-          text: 'حدث خطأ أثناء تحميل القائمة.'
+          text: 'An error occurred while loading the menu.'
         });
       }
     });

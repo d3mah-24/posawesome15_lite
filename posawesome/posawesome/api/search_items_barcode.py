@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-دالة البحث في باركود الأصناف
 Search Items Barcode Function
 """
 
@@ -12,12 +11,12 @@ from frappe import _
 @frappe.whitelist()
 def search_items_barcode(pos_profile, barcode_value):
     """
-    البحث المباشر في باركود الأصناف - دالة مكتملة
+    Direct search in item barcodes - complete function
     """
     pos_profile = json.loads(pos_profile)
     
     try:
-        # البحث المباشر في tabItem Barcode مع ربط tabItem و tabItem Price
+        # Direct search in tabItem Barcode with join to tabItem and tabItem Price
         item_data = frappe.db.sql(
             """
             SELECT 
@@ -51,9 +50,9 @@ def search_items_barcode(pos_profile, barcode_value):
             item = item_data[0]
             return item
         else:
-            frappe.log_error(f"❌ لم يجد باركود: {barcode_value}", "Items Barcode")
+            frappe.log_error(f"❌ Barcode not found: {barcode_value}", "Items Barcode")
             return {}
             
     except Exception as e:
-        frappe.log_error(f"❌ خطأ في البحث بالباركود: {str(e)}", "Items Barcode")
+        frappe.log_error(f"❌ Error searching barcode: {str(e)}", "Items Barcode")
         return {}

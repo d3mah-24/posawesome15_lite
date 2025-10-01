@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
-    {{ console.log({template: "main container", result: "main container rendered"}) }}
     <v-card
       class="selection mx-auto grey lighten-5 pa-1"
       style="max-height: 76vh; height: 76vh"
@@ -19,7 +18,7 @@
             <v-text-field
               variant="outlined"
               color="primary"
-              label="إجمالي المدفوع"
+              label="Total Paid"
               background-color="white"
               hide-details
               :model-value="formatCurrency(total_payments)"
@@ -32,7 +31,7 @@
             <v-text-field
               variant="outlined"
               color="primary"
-              label="المتبقي"
+              label="Remaining"
               background-color="white"
               hide-details
               :model-value="formatCurrency(diff_payment)"
@@ -46,7 +45,7 @@
             <v-text-field
               variant="outlined"
               color="primary"
-              label="المبلغ المتبقي"
+              label="Remaining Amount"
               background-color="white"
               v-model="paid_change"
               @input="set_paid_change()"
@@ -62,7 +61,7 @@
             <v-text-field
               variant="outlined"
               color="primary"
-              label="مبلغ المرتجع"
+              label="Change Amount"
               background-color="white"
               hide-details
               :model-value="formatCurrency(credit_change)"
@@ -85,7 +84,7 @@
                 dense
                 variant="outlined"
                 color="primary"
-                label="المبلغ"
+                label="Amount"
                 background-color="white"
                 hide-details
                 :model-value="formatCurrency(payment.amount)"
@@ -136,7 +135,7 @@
                     (payment.amount = flt(payment.amount, 0))
                 "
               >
-                طلب
+                Request
               </v-btn>
             </v-col>
           </v-row>
@@ -155,7 +154,7 @@
               dense
               variant="outlined"
               color="primary"
-              label="الدفع من نقاط العميل"
+              label="Pay from Customer Points"
               background-color="white"
               hide-details
               v-model="loyalty_amount"
@@ -168,7 +167,7 @@
               dense
               outlined
               color="primary"
-              label="رصيد نقاط العميل"
+              label="Customer Points Balance"
               background-color="white"
               hide-details
               :model-value="formatFloat(available_pioints_amount)"
@@ -193,7 +192,7 @@
               variant="outlined"
               disabled
               color="primary"
-              label="رصيد العميل المسترد"
+              label="Redeemed Customer Credit"
               background-color="white"
               hide-details
               v-model="redeemed_customer_credit"
@@ -206,7 +205,7 @@
               dense
               variant="outlined"
               color="primary"
-              label="رصيد الائتمان النقدي"
+              label="Cash Credit Balance"
               background-color="white"
               hide-details
               :model-value="formatCurrency(available_customer_credit)"
@@ -232,7 +231,7 @@
               class="my-0 py-0"
               v-model="is_write_off_change"
               flat
-              label="هل هو مبلغ شطب؟"
+              label="Is it a write-off amount?"
             ></v-switch>
           </v-col>
           <v-col
@@ -242,7 +241,7 @@
             <v-switch
               v-model="is_credit_sale"
               variant="flat"
-              label="هل هو بيع آجل؟"
+              label="Is it a credit sale?"
               class="my-0 py-0"
             ></v-switch>
           </v-col>
@@ -253,7 +252,7 @@
             <v-switch
               v-model="is_cashback"
               flat
-              label="هل هو مرتجع نقدي؟"
+              label="Is it a cash refund?"
               class="my-0 py-0"
             ></v-switch>
           </v-col>
@@ -262,7 +261,7 @@
               <template v-slot:activator="{ props: { on, attrs } }">
                 <v-text-field
                   v-model="invoice_doc.due_date"
-                  label="تاريخ الاستحقاق"
+                  label="Due Date"
                   readonly
                   variant="outlined"
                   density="compact"
@@ -289,7 +288,7 @@
             <v-switch
               v-model="redeem_customer_credit"
               flat
-              label="استخدام رصيد العميل"
+              label="Use Customer Credit"
               class="my-0 py-0"
               @change="get_available_credit($event.target.value)"
             ></v-switch>
@@ -312,7 +311,7 @@
                 dense
                 variant="outlined"
                 color="primary"
-                label="الرصيد المتاح"
+                label="Available Credit"
                 background-color="white"
                 hide-details
                 :model-value="formatCurrency(row.total_credit)"
@@ -325,7 +324,7 @@
                 dense
                 variant="outlined"
                 color="primary"
-                label="الرصيد المراد استرداده"
+                label="Credit to Redeem"
                 background-color="white"
                 hide-details
                 type="number"
@@ -351,7 +350,7 @@
             dark
             :disabled="vaildatPayment"
             @click="emitPrintRequest"
-          >طباعة الفاتورة</v-btn>
+          >Print Invoice</v-btn>
         </v-col>
         <v-col cols="6" class="pl-1">
           <v-btn
@@ -361,7 +360,7 @@
             dark
             :disabled="vaildatPayment"
             @click="submit(undefined, false, true)"
-          >تأكيد الدفع</v-btn>
+          >Confirm Payment</v-btn>
         </v-col>
       </v-row>
     </v-card>
@@ -369,7 +368,7 @@
       <v-dialog v-model="phone_dialog" max-width="400px">
         <v-card>
           <v-card-title>
-            <span class="headline primary--text">تأكيد رقم الهاتف</span>
+            <span class="headline primary--text">Confirm Phone Number</span>
           </v-card-title>
           <v-card-text class="pa-0">
             <v-container>
@@ -377,7 +376,7 @@
                 dense
                 variant="outlined"
                 color="primary"
-                label="رقم الهاتف"
+                label="Phone Number"
                 background-color="white"
                 hide-details
                 v-model="invoice_doc.contact_mobile"
@@ -387,8 +386,8 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="error" dark @click="phone_dialog = false">إغلاق</v-btn>
-            <v-btn color="primary" dark @click="request_payment">طلب</v-btn>
+            <v-btn color="error" dark @click="phone_dialog = false">Close</v-btn>
+            <v-btn color="primary" dark @click="request_payment">Request</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -398,10 +397,8 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-console.log({script: "imports start"});
 import { evntBus } from "../../bus";
 import format from "../../format";
-console.log({script: "imports end", result: "2 imports loaded successfully"});
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   mixins: [format],
@@ -460,7 +457,7 @@ export default {
       return this.flt(this.paid_change - change, this.currency_precision);
     },
     diff_lable() {
-      let lable = this.diff_payment < 0 ? "المتبقي" : "ادفع لاحقاً";
+      let lable = this.diff_payment < 0 ? "Remaining" : "Pay Later";
       return lable;
     },
     available_pioints_amount() {
@@ -496,7 +493,7 @@ export default {
       return false;
     },
     request_payment_field() {
-      // إذا كان هناك طريقة دفع من نوع Phone، فعّل زر الطلب
+      // If there is a payment method of type Phone, enable the Request button
       if (this.invoice_doc && this.invoice_doc.payments) {
         return this.invoice_doc.payments.some(payment => payment.type === 'Phone');
       }
@@ -543,7 +540,7 @@ export default {
           this.load_print_page();
         }
         evntBus.emit("show_mesage", {
-          text: "تم إرسال الفاتورة بالفعل",
+          text: "Invoice has already been submitted",
           color: "info",
         });
         evntBus.emit("set_last_invoice", this.invoice_doc.name);
@@ -556,7 +553,7 @@ export default {
         const defaultPayment = this.getDefaultPayment();
         if (!defaultPayment) {
           evntBus.emit("show_mesage", {
-            text: "لا توجد طريقة دفع افتراضية في ملف نقاط البيع",
+            text: "No default payment method in POS profile",
             color: "error",
           });
           return;
@@ -616,7 +613,7 @@ export default {
       if (autoMode) {
         vm.load_print_page();
         evntBus.emit("show_mesage", {
-          text: "تم طباعة الفاتورة بالاعتماد على طريقة الدفع الافتراضية",
+          text: "Invoice printed using default payment method",
           color: "success",
         });
         evntBus.emit("new_invoice", "false");
@@ -637,7 +634,7 @@ export default {
             }
             evntBus.emit("set_last_invoice", vm.invoice_doc.name);
             evntBus.emit("show_mesage", {
-              text: `تم إرسال الفاتورة ${r.message.name} بنجاح`,
+              text: `Invoice ${r.message.name} submitted successfully`,
               color: "success",
             });
             frappe.utils.play_sound("submit");
@@ -646,7 +643,7 @@ export default {
             vm.back_to_invoice();
           } else {
             evntBus.emit("show_mesage", {
-              text: "فشل في إرسال الفاتورة",
+              text: "Failed to submit invoice",
               color: "error",
             });
           }
@@ -665,7 +662,7 @@ export default {
               .catch((refreshErr) => {
                 console.warn("Failed to refresh after timestamp mismatch", refreshErr);
                 evntBus.emit("show_mesage", {
-                  text: "تم تعديل الفاتورة من مسار آخر، يرجى المحاولة مجددًا",
+                  text: "Invoice was modified elsewhere, please try again",
                   color: "warning",
                 });
               });
@@ -673,7 +670,7 @@ export default {
           }
 
           evntBus.emit("show_mesage", {
-            text: err?.message || "فشل في إرسال الفاتورة",
+            text: err?.message || "Failed to submit invoice",
             color: "error",
           });
         },
@@ -752,7 +749,7 @@ export default {
       });
     },
     set_full_amount(idx) {
-      // عند المرتجع السريع، احفظ مؤشر الطريقة المختارة
+      // For quick return, save the index of the selected method
       if (this.quick_return || this.invoice_doc.is_return) {
         this.selected_return_payment_idx = idx;
         this.invoice_doc.payments.forEach((payment) => {
@@ -799,7 +796,7 @@ export default {
         "load",
         function () {
           printWindow.print();
-          // إغلاق نافذة الطباعة تلقائياً بعد الطباعة
+          // Auto-close print window after printing
           setTimeout(() => {
             printWindow.close();
           }, 1000);
@@ -830,7 +827,7 @@ export default {
       let change = -this.diff_payment;
       if (this.paid_change > change) {
         this.paid_change_rules = [
-          "لا يمكن أن يكون المرتجع المدفوع أكبر من إجمالي المرتجع!",
+          "Paid change cannot be greater than total change!",
         ];
         this.credit_change = 0;
       }
@@ -920,7 +917,7 @@ export default {
       const vm = this;
       if (!this.invoice_doc.contact_mobile) {
         evntBus.emit("show_mesage", {
-          text: "يرجى إدخال رقم هاتف العميل",
+          text: "Please enter customer phone number",
           color: "error",
         });
         evntBus.emit("open_edit_customer");
@@ -928,7 +925,7 @@ export default {
         return;
       }
       evntBus.emit("freeze", {
-        title: "يرجى الانتظار للدفع...",
+        title: "Please wait for payment...",
       });
       this.invoice_doc.payments.forEach((payment) => {
         payment.amount = flt(payment.amount);
@@ -951,14 +948,14 @@ export default {
         .then(({ message }) => {
           evntBus.emit("unfreeze");
           evntBus.emit("show_mesage", {
-            text: message.message || "تم إرسال طلب الدفع بنجاح",
+            text: message.message || "Payment request sent successfully",
             color: "success",
           });
         })
         .fail(() => {
           evntBus.emit("unfreeze");
           evntBus.emit("show_mesage", {
-            text: "فشل طلب الدفع",
+            text: "Payment request failed",
             color: "error",
           });
         });
@@ -973,10 +970,10 @@ export default {
       evntBus.on("send_invoice_doc_payment", (invoice_doc) => {
         this.invoice_doc = invoice_doc;
         
-        // التأكد من وجود payments
+        // Ensure payments array exists
         if (!this.invoice_doc.payments || !Array.isArray(this.invoice_doc.payments)) {
           evntBus.emit("show_mesage", {
-            text: "لا توجد مصفوفة مدفوعات في مستند الفاتورة",
+            text: "No payments array in invoice document",
             color: "error",
           });
           this.invoice_doc.payments = [];
@@ -1062,7 +1059,7 @@ export default {
         this.invoice_doc.redeem_loyalty_points = 0;
         this.invoice_doc.loyalty_points = 0;
         evntBus.emit("show_mesage", {
-          text: `لا يمكن إدخال نقاط أكبر من الرصيد ${this.available_pioints_amount}`,
+          text: `Cannot enter points greater than available balance ${this.available_pioints_amount}`,
           color: "error",
         });
       } else {
@@ -1092,7 +1089,7 @@ export default {
     redeemed_customer_credit(value) {
       if (value > this.available_customer_credit) {
         evntBus.emit("show_mesage", {
-          text: `يمكن استرداد رصيد العميل حتى ${this.available_customer_credit}`,
+          text: `Customer credit can be redeemed up to ${this.available_customer_credit}`,
           color: "error",
         });
       }

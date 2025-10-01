@@ -7,16 +7,16 @@ frappe.ui.form.on('POS Profile', {
         });
     },
 
-    // منطق التحكم - خيار واحد فقط
+    // Control logic - only one option allowed
     posa_allow_user_to_edit_additional_discount: function(frm) {
         if (frm.doc.posa_allow_user_to_edit_additional_discount) {
-            // إلغاء الخيارات الأخرى
+            // Disable other options
             frm.set_value('posa_allow_user_to_edit_item_discount', 0);
             frm.set_value('posa_auto_fetch_offers', 0);
             frm.set_value('posa_fetch_coupon', 0);
             
             frappe.show_alert({
-                message: 'تم تفعيل الخصم الإضافي - تم إلغاء الخيارات الأخرى',
+                message: 'Additional discount enabled - other options disabled',
                 indicator: 'green'
             });
         }
@@ -24,13 +24,13 @@ frappe.ui.form.on('POS Profile', {
 
     posa_allow_user_to_edit_item_discount: function(frm) {
         if (frm.doc.posa_allow_user_to_edit_item_discount) {
-            // إلغاء الخيارات الأخرى
+            // Disable other options
             frm.set_value('posa_allow_user_to_edit_additional_discount', 0);
             frm.set_value('posa_auto_fetch_offers', 0);
             frm.set_value('posa_fetch_coupon', 0);
             
             frappe.show_alert({
-                message: 'تم تفعيل خصم الأصناف - تم إلغاء الخيارات الأخرى',
+                message: 'Item discount enabled - other options disabled',
                 indicator: 'blue'
             });
         }
@@ -38,13 +38,13 @@ frappe.ui.form.on('POS Profile', {
 
     posa_auto_fetch_offers: function(frm) {
         if (frm.doc.posa_auto_fetch_offers) {
-            // إلغاء الخيارات الأخرى
+            // Disable other options
             frm.set_value('posa_allow_user_to_edit_additional_discount', 0);
             frm.set_value('posa_allow_user_to_edit_item_discount', 0);
             frm.set_value('posa_fetch_coupon', 0);
             
             frappe.show_alert({
-                message: 'تم تفعيل العروض التلقائية - تم إلغاء الخيارات الأخرى',
+                message: 'Auto offers enabled - other options disabled',
                 indicator: 'orange'
             });
         }
@@ -52,13 +52,13 @@ frappe.ui.form.on('POS Profile', {
 
     posa_fetch_coupon: function(frm) {
         if (frm.doc.posa_fetch_coupon) {
-            // إلغاء الخيارات الأخرى
+            // Disable other options
             frm.set_value('posa_allow_user_to_edit_additional_discount', 0);
             frm.set_value('posa_allow_user_to_edit_item_discount', 0);
             frm.set_value('posa_auto_fetch_offers', 0);
             
             frappe.show_alert({
-                message: 'تم تفعيل الكوبونات - تم إلغاء الخيارات الأخرى',
+                message: 'Coupons enabled - other options disabled',
                 indicator: 'purple'
             });
         }

@@ -31,13 +31,13 @@ frappe.ui.form.on('POS Opening Shift', {
 			if(frm.doc.docstatus == 0) {
 				if(!frm.doc.posting_date) {
 					frm.set_value('posting_date', frappe.datetime.nowdate());
-				}
-				frm.trigger('set_posting_date_read_only');
-				
-				// جعل حقل المستخدم للقراءة فقط إذا لم يتم اختيار POS Profile
-				if (!frm.doc.pos_profile) {
-					frm.set_df_property('user', 'read_only', 1);
-				}
+			}
+			frm.trigger('set_posting_date_read_only');
+			
+			// Make user field read-only if POS Profile is not selected
+			if (!frm.doc.pos_profile) {
+				frm.set_df_property('user', 'read_only', 1);
+			}
 			}
 		} catch (error) {
 			console.error('[ERROR] refresh error:', error);
@@ -67,10 +67,10 @@ frappe.ui.form.on('POS Opening Shift', {
 	pos_profile: (frm) => {
 		try {
 			if (frm.doc.pos_profile) {
-				// مسح حقل المستخدم عند تغيير POS Profile
+				// Clear user field when POS Profile changes
 				frm.set_value('user', '');
 				
-				// جعل حقل المستخدم قابل للتعديل
+				// Make user field editable
 				frm.set_df_property('user', 'read_only', 0);
 				
 				frappe.db.get_doc("POS Profile", frm.doc.pos_profile)
@@ -87,7 +87,7 @@ frappe.ui.form.on('POS Opening Shift', {
 						console.error('[ERROR] pos_profile get_doc error:', error);
 					});
 			} else {
-				// جعل حقل المستخدم للقراءة فقط إذا لم يتم اختيار POS Profile
+				// Make user field read-only if POS Profile is not selected
 				frm.set_df_property('user', 'read_only', 1);
 			}
 		} catch (error) {

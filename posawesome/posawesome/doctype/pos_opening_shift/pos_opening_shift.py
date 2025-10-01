@@ -32,7 +32,7 @@ class POSOpeningShift(StatusUpdater):
 				print(f"[ERROR] User {self.user} has been disabled.", file=sys.stderr)
 				frappe.throw(_("User {} has been disabled. Please select valid user/cashier".format(self.user)))
 			
-			# التحقق من أن المستخدم مسجل في POS Profile
+			# Verify that the user is registered in POS Profile
 			if self.pos_profile and self.user:
 				user_exists = frappe.db.exists("POS Profile User", {
 					"parent": self.pos_profile,
@@ -41,7 +41,7 @@ class POSOpeningShift(StatusUpdater):
 				
 				if not user_exists:
 					print(f"[ERROR] User {self.user} is not assigned to POS Profile {self.pos_profile}", file=sys.stderr)
-					frappe.throw(_("المستخدم {} غير مسجل في ملف نقطة البيع {}. يرجى اختيار مستخدم مسجل في الملف".format(self.user, self.pos_profile)))
+					frappe.throw(_("User {} is not registered in POS Profile {}. Please select a user registered in the profile".format(self.user, self.pos_profile)))
 		except Exception as e:
 			print(f"[ERROR] Exception in validate_pos_profile_and_cashier: {e}", file=sys.stderr)
 			raise
@@ -58,11 +58,11 @@ class POSOpeningShift(StatusUpdater):
 
 @frappe.whitelist()
 def get_profile_users(doctype, txt, searchfield, start, page_len, filters):
-	"""استرجاع المستخدمين المسجلين في POS Profile"""
+	"""Retrieve users registered in POS Profile"""
 	try:
 		pos_profile = filters.get("parent")
 		
-		# استخدام frappe.get_all بدلاً من SQL مباشر
+		# Use frappe.get_all instead of direct SQL
 		users = frappe.get_all(
 			"POS Profile User",
 			filters={
@@ -75,7 +75,7 @@ def get_profile_users(doctype, txt, searchfield, start, page_len, filters):
 			limit_page_length=page_len
 		)
 		
-		# تحويل النتيجة إلى التنسيق المطلوب
+		# Convert result to required format
 		return [[user.user] for user in users]
 	except Exception as e:
 		print(f"[ERROR] Exception in get_profile_users: {e}")

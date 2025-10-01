@@ -3,9 +3,9 @@
     <v-dialog v-model="varaintsDialog" max-width="600px">
       <v-card min-height="500px">
         <v-card-title>
-          <span class="headline primary--text">اختيار الصنف</span>
+          <span class="headline primary--text">Select Item</span>
           <v-spacer></v-spacer>
-                      <v-btn color="error" dark @click="close_dialog">إغلاق</v-btn>
+                      <v-btn color="error" dark @click="close_dialog">Close</v-btn>
         </v-card-title>
         <v-card-text class="pa-0">
           <v-container v-if="parentItem">
@@ -104,7 +104,7 @@ export default {
         return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
       } catch (error) {
         evntBus.emit("show_mesage", {
-          text: __("خطأ في تنسيق العملة"),
+          text: __("Error formatting currency"),
           color: "error",
         });
         return value;
@@ -143,7 +143,7 @@ export default {
         });
       } catch (error) {
         evntBus.emit("show_mesage", {
-          text: __("خطأ في تحديث الأصناف المفلترة"),
+          text: __("Error updating filtered items"),
           color: "error",
         });
       }
@@ -154,7 +154,7 @@ export default {
         this.close_dialog();
       } catch (error) {
         evntBus.emit("show_mesage", {
-          text: __("خطأ في إضافة الصنف"),
+          text: __("Error adding item"),
           color: "error",
         });
       }
@@ -174,7 +174,7 @@ export default {
       });
     } catch (error) {
       evntBus.emit("show_mesage", {
-        text: __("خطأ في تحميل نافذة الأصناف المتغيرة"),
+        text: __("Error loading variant items window"),
         color: "error",
       });
     }

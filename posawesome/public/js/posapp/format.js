@@ -3,7 +3,7 @@ export default {
         return {
             float_precision: 2,
             currency_precision: 2,
-            // إضافة cache للتحسين
+            // Add cache for optimization
             _formatCache: new Map(),
             _currencySymbolCache: new Map(),
             _lastCacheCleanup: Date.now()
@@ -136,9 +136,9 @@ export default {
             }
         },
         
-        // دالة مساعدة لتنظيف cache
+        // Helper function to cleanup cache
         _cleanupCache() {
-            // تنظيف cache كل 5 دقائق
+            // Cleanup cache every 5 minutes
             if (Date.now() - this._lastCacheCleanup > 300000) {
                 this._formatCache.clear();
                 this._currencySymbolCache.clear();
@@ -152,7 +152,7 @@ export default {
         this.currency_precision = frappe.defaults.get_default('currency_precision') || 2;
     },
     
-    // تنظيف الذاكرة عند تدمير المكون
+    // Cleanup memory when component is destroyed
     beforeDestroy() {
         this._formatCache.clear();
         this._currencySymbolCache.clear();
