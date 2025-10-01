@@ -927,3 +927,252 @@ def validate_invoice_items(items_data, pos_profile_name, stock_settings):
         'valid': len(validation_errors) == 0,
         'errors': validation_errors
     }
+
+# =============================================================================
+# BATCH MANAGEMENT API FUNCTIONS - MOVED FROM VUE FRONTEND
+# =============================================================================
+
+@frappe.whitelist()
+def calculate_batch_quantities(item_code, current_item_row_id, existing_items_data, batch_no_data):
+    """
+    Calculate used and remaining quantities for each batch
+    Moved from Vue set_batch_qty method
+    """
+    if isinstance(existing_items_data, str):
+        existing_items_data = json.loads(existing_items_data)
+    if isinstance(batch_no_data, str):
+        batch_no_data = json.loads(batch_no_data)
+    
+    # Filter existing items for the same item code (excluding current item)
+    existing_items = [
+        item for item in existing_items_data 
+        if item.get('item_code') == item_code and item.get('posa_row_id') != current_item_row_id
+    ]
+    
+    # Calculate used quantities for each batch
+    used_batches = {}
+    for batch in batch_no_data:
+        batch_no = batch.get('batch_no')
+        used_batches[batch_no] = {
+            **batch,
+            'used_qty': 0,
+            'remaining_qty': flt(batch.get('batch_qty', 0)),
+        }
+        
+        # Calculate used quantity from existing items
+        for existing_item in existing_items:
+            if existing_item.get('batch_no') == batch_no:
+                used_qty = flt(existing_item.get('qty', 0))
+                used_batches[batch_no]['used_qty'] += used_qty
+                used_batches[batch_no]['remaining_qty'] -= used_qty
+    
+    return list(used_batches.values())
+
+@frappe.whitelist()
+def select_optimal_batch(batch_data, preferred_batch_no=None):
+    """
+    Select the optimal batch based on business rules:
+    1. Use preferred batch if specified and available
+    2. Prioritize batches with expiry dates (FIFO - First Expiry First Out)
+    3. Then by manufacturing date (FIFO - First In First Out)
+    4. Finally by highest remaining quantity
+    
+    Moved from Vue set_batch_qty method
+    """
+    if isinstance(batch_data, str):
+        batch_data = json.loads(batch_data)
+    
+    # Filter batches with remaining quantity > 0
+    available_batches = [
+        batch for batch in batch_data 
+        if flt(batch.get('remaining_qty', 0)) > 0
+    ]
+    
+    if not available_batches:
+        return None
+    
+    # If preferred batch is specified and available, use it
+    if preferred_batch_no:
+        preferred_batch = next(
+            (batch for batch in available_batches if batch.get('batch_no') == preferred_batch_no),
+            None
+        )
+        if preferred_batch:
+            return preferred_batch
+    
+    # Sort batches by business rules
+    def sort_key(batch):
+        expiry_date = batch.get('expiry_date')
+        manufacturing_date = batch.get('manufacturing_date')
+        remaining_qty = flt(batch.get('remaining_qty', 0))
+        
+        # Convert dates to sortable format (None becomes a large number for sorting)
+        expiry_sort = getdate(expiry_date) if expiry_date else getdate('2099-12-31')
+        mfg_sort = getdate(manufacturing_date) if manufacturing_date else getdate('1900-01-01')
+        
+        # Sort by: expiry_date (asc), manufacturing_date (asc), remaining_qty (desc)
+        return (expiry_sort, mfg_sort, -remaining_qty)
+    
+    sorted_batches = sorted(available_batches, key=sort_key)
+    return sorted_batches[0]
+
+@frappe.whitelist()
+def process_batch_selection(item_code, current_item_row_id, existing_items_data, batch_no_data, preferred_batch_no=None):
+    """
+    Complete batch selection process combining calculation and selection
+    Returns the selected batch with all necessary data
+    """
+    try:
+        # Calculate batch quantities
+        calculated_batches = calculate_batch_quantities(
+            item_code, current_item_row_id, existing_items_data, batch_no_data
+        )
+        
+        # Select optimal batch
+        selected_batch = select_optimal_batch(calculated_batches, preferred_batch_no)
+        
+        if not selected_batch:
+            return {
+                'success': False,
+                'message': 'No available batches with sufficient quantity',
+                'batch_data': calculated_batches
+            }
+        
+        return {
+            'success': True,
+            'selected_batch': {
+                'batch_no': selected_batch.get('batch_no'),
+                'actual_batch_qty': selected_batch.get('batch_qty'),
+                'remaining_qty': selected_batch.get('remaining_qty'),
+                'expiry_date': selected_batch.get('expiry_date'),
+                'manufacturing_date': selected_batch.get('manufacturing_date'),
+                'batch_price': selected_batch.get('batch_price')
+            },
+            'batch_data': calculated_batches
+        }
+        
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Error processing batch selection: {str(e)}',
+            'batch_data': []
+        }
+
+# =============================================================================
+# OFFER MANAGEMENT API FUNCTIONS - SIMPLIFIED
+# =============================================================================
+
+@frappe.whitelist()
+def validate_offer_coupon(offer_data):
+    """Simple coupon validation"""
+    if isinstance(offer_data, str):
+        offer_data = json.loads(offer_data)
+    
+    if not offer_data.get('coupon_based'):
+        return {'valid': True}
+    
+    coupon_code = offer_data.get('coupon')
+    if not coupon_code:
+        return {'valid': False, 'message': 'Coupon required'}
+    
+    try:
+        coupon = frappe.get_doc('POS Coupon', coupon_code)
+        if coupon.disabled or (coupon.maximum_use > 0 and coupon.used >= coupon.maximum_use):
+            return {'valid': False, 'message': 'Coupon not available'}
+        return {'valid': True}
+    except:
+        return {'valid': False, 'message': 'Invalid coupon'}
+
+@frappe.whitelist()
+def check_offer_conditions(offer_data, qty, amount):
+    """Check if qty/amount meets offer conditions"""
+    if isinstance(offer_data, str):
+        offer_data = json.loads(offer_data)
+    
+    # Simple validation - same logic as Vue checkOfferEligibility
+    checks = {
+        'min_qty': flt(offer_data.get('min_qty', 0)) <= 0 or qty >= flt(offer_data.get('min_qty', 0)),
+        'max_qty': flt(offer_data.get('max_qty', 0)) <= 0 or qty <= flt(offer_data.get('max_qty', 0)),
+        'min_amt': flt(offer_data.get('min_amt', 0)) <= 0 or amount >= flt(offer_data.get('min_amt', 0)),
+        'max_amt': flt(offer_data.get('max_amt', 0)) <= 0 or amount <= flt(offer_data.get('max_amt', 0))
+    }
+    
+    return {'apply': all(checks.values()), 'conditions': checks}
+
+@frappe.whitelist()
+def process_item_offer(offer_data, items_data):
+    """Simplified offer processing - mirrors original Vue logic"""
+    if isinstance(offer_data, str):
+        offer_data = json.loads(offer_data)
+    if isinstance(items_data, str):
+        items_data = json.loads(items_data)
+    
+    # Check coupon first
+    coupon_check = validate_offer_coupon(offer_data)
+    if not coupon_check['valid']:
+        return {'success': False, 'message': coupon_check.get('message')}
+    
+    if offer_data.get('apply_on') != 'Item Code':
+        return {'success': False, 'message': 'Only Item Code offers supported'}
+    
+    target_item = offer_data.get('item')
+    eligible_items = []
+    
+    for item in items_data:
+        # Skip offer items and non-matching items
+        if item.get('posa_is_offer') or item.get('item_code') != target_item:
+            continue
+            
+        # Skip if price offer already applied
+        if (offer_data.get('offer') == 'Item Price' and item.get('posa_offer_applied')):
+            continue
+        
+        # Calculate quantities
+        qty = flt(item.get('qty', 1)) or 1
+        stock_qty = flt(item.get('stock_qty', qty)) or qty
+        amount = stock_qty * flt(item.get('price_list_rate', 0))
+        
+        # Check conditions
+        conditions = check_offer_conditions(offer_data, stock_qty, amount)
+        if conditions['apply']:
+            eligible_items.append(item.get('posa_row_id'))
+    
+    if not eligible_items:
+        return {'success': True, 'offer': None}
+    
+    # Return offer with eligible items
+    offer_result = offer_data.copy()
+    offer_result['items'] = eligible_items
+    
+    return {'success': True, 'offer': offer_result}
+
+# =============================================================================
+# FUNCTIONS COPIED FROM get_draft_invoices.py
+# =============================================================================
+
+@frappe.whitelist()
+def get_draft_invoices(pos_opening_shift):
+    """
+    Get draft invoices for a specific POS opening shift
+    
+    Args:
+        pos_opening_shift: POS Opening Shift name
+    
+    Returns:
+        List of draft Sales Invoice documents
+    """
+    invoices_list = frappe.get_list(
+        "Sales Invoice",
+        filters={
+            "posa_pos_opening_shift": pos_opening_shift,
+            "docstatus": 0,
+            "posa_is_printed": 0,
+        },
+        fields=["name"],
+        limit_page_length=0,
+        order_by="creation desc",
+    )
+    data = []
+    for invoice in invoices_list:
+        data.append(frappe.get_cached_doc("Sales Invoice", invoice["name"]))
+    return data

@@ -596,43 +596,6 @@ export default {
 
   // ===== SECTION 5: METHODS =====
   methods: {
-    getInvoiceNumberClass() {
-      if (!this.invoice_doc || !this.invoice_doc.name) {
-        return 'invoice-number-field no-invoice';
-      }
-      if (this.invoice_doc && this.invoice_doc.is_return) {
-        return 'invoice-number-field return-invoice';
-      }
-      return 'invoice-number-field regular-invoice';
-    },
-    getInvoiceNumberStyle() {
-      if (!this.invoice_doc || !this.invoice_doc.name) {
-        return {
-          color: '#757575',
-          fontWeight: 'normal',
-          fontStyle: 'italic'
-        };
-      }
-      if (this.invoice_doc && this.invoice_doc.is_return) {
-        return {
-          color: '#d32f2f',
-          fontWeight: 'bold'
-        };
-      }
-      return {
-        color: '#1976d2',
-        fontWeight: 'bold'
-      };
-    },
-    getInvoiceIconColor() {
-      if (!this.invoice_doc || !this.invoice_doc.name) {
-        return '#757575';
-      }
-      if (this.invoice_doc && this.invoice_doc.is_return) {
-        return '#d32f2f';
-      }
-      return '#1976d2';
-    },
     onQtyChange(item) {
       try {
         const newQty = Number(item.qty) || 0;
@@ -656,9 +619,6 @@ export default {
       item.qty = Number(item.qty) || 0;
       this.recalculateItem(item);
       this.refreshTotals();
-    },
-    recalculateItem(item) {
-      this.calc_item_price(item);
     },
     refreshTotals() {
       this._cachedCalculations.clear();
@@ -1571,9 +1531,8 @@ export default {
             item.stock_qty = data.stock_qty;
             item.actual_qty = data.actual_qty;
             item.stock_uom = data.stock_uom;
-            (item.has_serial_no = data.has_serial_no),
-              (item.has_batch_no = data.has_batch_no),
-              vm.calc_item_price(item);
+            item.has_serial_no = data.has_serial_no;
+            item.has_batch_no = data.has_batch_no;
               
           }
         },
@@ -1711,23 +1670,6 @@ export default {
       }
     },
 
-    calc_item_price(item) {
-      if (!item) return;
-      
-      const original_rate = flt(item.base_rate) || flt(item.price_list_rate) || 0;
-      if (original_rate <= 0) {
-        evntBus.emit("show_mesage", {
-          text: `Invalid price for item '${item.item_name || item.item_code}'`,
-          color: "error",
-        });
-        return;
-      }
-
-      if (this.invoice_doc && this.invoice_doc.name) {
-        this.debounced_auto_update();
-      }
-    },
-
     calc_uom(item, value) {
       let selected_uom = value;
       if (typeof value === "object" && value !== null) {
@@ -1792,72 +1734,66 @@ export default {
     },
 
     set_batch_qty(item, value, update = true) {
-      const existing_items = this.items.filter(
-        (element) =>
-          element.item_code == item.item_code &&
-          element.posa_row_id != item.posa_row_id
-      );
-      const used_batches = {};
-      item.batch_no_data.forEach((batch) => {
-        used_batches[batch.batch_no] = {
-          ...batch,
-          used_qty: 0,
-          remaining_qty: batch.batch_qty,
-        };
-        existing_items.forEach((element) => {
-          if (element.batch_no && element.batch_no == batch.batch_no) {
-            used_batches[batch.batch_no].used_qty += element.qty;
-            used_batches[batch.batch_no].remaining_qty -= element.qty;
-            used_batches[batch.batch_no].batch_qty -= element.qty;
-          }
-        });
-      });
-
-      const batch_no_data = Object.values(used_batches)
-        .filter((batch) => batch.remaining_qty > 0)
-        .sort((a, b) => {
-          if (a.expiry_date && b.expiry_date) {
-            return a.expiry_date - b.expiry_date;
-          } else if (a.expiry_date) {
-            return -1;
-          } else if (b.expiry_date) {
-            return 1;
-          } else if (a.manufacturing_date && b.manufacturing_date) {
-            return a.manufacturing_date - b.manufacturing_date;
-          } else if (a.manufacturing_date) {
-            return -1;
-          } else if (b.manufacturing_date) {
-            return 1;
-          } else {
-            return b.remaining_qty - a.remaining_qty;
-          }
-        });
-      if (batch_no_data.length > 0) {
-        let batch_to_use = null;
-        if (value) {
-          batch_to_use = batch_no_data.find((batch) => batch.batch_no == value);
-        }
-        if (!batch_to_use) {
-          batch_to_use = batch_no_data[0];
-        }
-        item.batch_no = batch_to_use.batch_no;
-        item.actual_batch_qty = batch_to_use.batch_qty;
-        item.batch_no_expiry_date = batch_to_use.expiry_date;
-        if (batch_to_use.batch_price) {
-          item.batch_price = batch_to_use.batch_price;
-          item.price_list_rate = batch_to_use.batch_price;
-          item.rate = batch_to_use.batch_price;
-        } else if (update) {
-          item.batch_price = null;
-          this.update_item_detail(item);
-        }
-      } else {
-        item.batch_no = null;
-        item.actual_batch_qty = null;
-        item.batch_no_expiry_date = null;
-        item.batch_price = null;
+      if (!item.batch_no_data || !Array.isArray(item.batch_no_data)) {
+        return;
       }
-      item.batch_no_data = batch_no_data;
+
+      const vm = this;
+      frappe.call({
+        method: "posawesome.posawesome.api.invoice.process_batch_selection",
+        args: {
+          item_code: item.item_code,
+          current_item_row_id: item.posa_row_id,
+          existing_items_data: this.items,
+          batch_no_data: item.batch_no_data,
+          preferred_batch_no: value || null
+        },
+        async: false,
+        callback: function(r) {
+          if (r.message && r.message.success) {
+            const result = r.message;
+            const selectedBatch = result.selected_batch;
+            
+            item.batch_no = selectedBatch.batch_no;
+            item.actual_batch_qty = selectedBatch.actual_batch_qty;
+            item.batch_no_expiry_date = selectedBatch.expiry_date;
+            item.batch_no_data = result.batch_data;
+            
+            if (selectedBatch.batch_price) {
+              item.batch_price = selectedBatch.batch_price;
+              item.price_list_rate = selectedBatch.batch_price;
+              item.rate = selectedBatch.batch_price;
+            } else if (update) {
+              item.batch_price = null;
+              vm.update_item_detail(item);
+            }
+            
+            vm.$forceUpdate();
+            
+          } else {
+            item.batch_no = null;
+            item.actual_batch_qty = null;
+            item.batch_no_expiry_date = null;
+            item.batch_price = null;
+            item.batch_no_data = r.message?.batch_data || [];
+            
+            if (r.message?.message) {
+              evntBus.emit("show_mesage", {
+                text: r.message.message,
+                color: "warning",
+              });
+            }
+            
+            vm.$forceUpdate();
+          }
+        },
+        error: function(err) {
+          evntBus.emit("show_mesage", {
+            text: "خطأ في اختيار الباتش: " + (err.message || "خطأ غير معروف"),
+            color: "error",
+          });
+        }
+      });
     },
 
     shortOpenPayment(e) {
@@ -2009,36 +1945,18 @@ export default {
         return this._cachedCalculations.get(cacheKey);
       }
       
-      let min_qty = true;
-      let max_qty = true;
-      let min_amt = true;
-      let max_amt = true;
-      const applys = [];
+      const checks = {
+        min_qty: offer.min_qty <= 0 || qty >= offer.min_qty,
+        max_qty: offer.max_qty <= 0 || qty <= offer.max_qty,
+        min_amt: offer.min_amt <= 0 || amount >= offer.min_amt,
+        max_amt: offer.max_amt <= 0 || amount <= offer.max_amt
+      };
       
-      if (offer.min_qty > 0) {
-        min_qty = qty >= offer.min_qty;
-        applys.push(min_qty);
-      }
+      const allConditionsMet = Object.values(checks).every(Boolean);
       
-      if (offer.max_qty > 0) {
-        max_qty = qty <= offer.max_qty;
-        applys.push(max_qty);
-      }
-      
-      if (offer.min_amt > 0) {
-        min_amt = amount >= offer.min_amt;
-        applys.push(min_amt);
-      }
-      
-      if (offer.max_amt > 0) {
-        max_amt = amount <= offer.max_amt;
-        applys.push(max_amt);
-      }
-      
-      const apply = !applys.includes(false);
       const result = {
-        apply: apply,
-        conditions: { min_qty, max_qty, min_amt, max_amt }
+        apply: allConditionsMet,
+        conditions: checks
       };
       
       this._cachedCalculations.set(cacheKey, result);
@@ -2069,35 +1987,21 @@ export default {
 
     getItemOffer(offer) {
       let apply_offer = null;
-      if (offer.apply_on === "Item Code") {
-        if (this.checkOfferCoupon(offer)) {
-          this.items.forEach((item) => {
-            if (!item.posa_is_offer && item.item_code === offer.item) {
-              const items = [];
-              if (
-                offer.offer === "Item Price" &&
-                item.posa_offer_applied &&
-                !this.checkOfferIsAppley(item, offer)
-              ) {
-              } else {
-                const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
-                item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
-                
-                const res = this.chech_qty_amount_offer(
-                  offer,
-                  item.stock_qty,
-                  item.stock_qty * (item.price_list_rate || 0)
-                );
-                if (res.apply) {
-                  items.push(item.posa_row_id);
-                  offer.items = items;
-                  apply_offer = offer;
-                }
-              }
-            }
-          });
+
+      frappe.call({
+        method: "posawesome.posawesome.api.invoice.process_item_offer",
+        args: {
+          offer_data: offer,
+          items_data: this.items
+        },
+        async: false,
+        callback: function(r) {
+          if (r.message && r.message.success) {
+            apply_offer = r.message.offer;
+          }
         }
-      }
+      });
+
       return apply_offer;
     },
 
@@ -2515,7 +2419,6 @@ export default {
               item.discount_amount += offer.discount_amount;
             }
             item.posa_offer_applied = 1;
-            this.calc_item_price(item);
           }
         }
       });
@@ -2541,7 +2444,6 @@ export default {
             } else if (originalOffer.discount_type === "Discount Amount") {
               item.discount_amount -= offer.discount_amount;
             }
-            this.calc_item_price(item);
           }
         }
       });
