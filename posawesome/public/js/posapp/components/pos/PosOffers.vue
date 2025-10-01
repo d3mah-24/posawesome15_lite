@@ -148,11 +148,9 @@ export default {
   // ===== SECTION 5: METHODS =====
   methods: {
     back_to_invoice() {
-      console.log('back_to_invoice called');
       evntBus.emit('show_offers', 'false');
     },
     forceUpdateItem() {
-      console.log('forceUpdateItem called');
       let list_offers = [];
       list_offers = [...this.pos_offers];
       this.pos_offers = list_offers;
@@ -160,7 +158,6 @@ export default {
       this.handleManualOfferChange();
     },
     handleManualOfferChange() {
-      console.log('handleManualOfferChange called');
       try {
         // Find applied Grand Total offers
         const appliedGrandTotalOffers = this.pos_offers.filter(
@@ -190,7 +187,6 @@ export default {
       }
     },
     makeid(length) {
-      console.log('makeid called with length:', length);
       try {
         let result = '';
         const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -210,7 +206,6 @@ export default {
       }
     },
     updatePosOffers(offers) {
-      console.log('updatePosOffers called with offers:', offers);
       try {
         const toRemove = [];
         this.pos_offers.forEach((pos_offer) => {
@@ -273,7 +268,6 @@ export default {
       }
     },
     applyBestGrandTotalOffer() {
-      console.log('applyBestGrandTotalOffer called');
       try {
         // Find all available Grand Total offers (applied or not)
         const grandTotalOffers = this.pos_offers.filter(
@@ -312,7 +306,6 @@ export default {
       }
     },
     removeOffers(offers_id_list) {
-      console.log('removeOffers called with offers_id_list:', offers_id_list);
       try {
         this.pos_offers = this.pos_offers.filter(
           (offer) => !offers_id_list.includes(offer.row_id)
@@ -325,7 +318,6 @@ export default {
       }
     },
     handelOffers() {
-      console.log('handelOffers called');
       try {
         const applyedOffers = this.pos_offers.filter(
           (offer) => offer.offer_applied
@@ -339,7 +331,6 @@ export default {
       }
     },
     handleNewLine(str) {
-      console.log('handleNewLine called with str:', str);
       try {
         if (str) {
           return str.replace(/(?:\r\n|\r|\n)/g, '<br />');
@@ -355,7 +346,6 @@ export default {
       }
     },
     get_give_items(offer) {
-      console.log('get_give_items called with offer:', offer);
       try {
         if (offer.apply_type == 'Item Code') {
           return [offer.apply_item_code];
@@ -385,7 +375,6 @@ export default {
       }
     },
     updateCounters() {
-      console.log('updateCounters called');
       try {
         evntBus.emit('update_offers_counters', {
           offersCount: this.offersCount,
@@ -399,7 +388,6 @@ export default {
       }
     },
     updatePosCoupuns() {
-      console.log('updatePosCoupuns called');
       try {
         const applyedOffers = this.pos_offers.filter(
           (offer) => offer.offer_applied && offer.coupon_based

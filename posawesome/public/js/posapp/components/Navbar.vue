@@ -232,8 +232,8 @@ export default {
         frappe.db.get_doc('Company', this.pos_profile.company).then((company_doc) => {
           this.company_name = company_doc.company_name;
           this.company_logo = company_doc.company_logo;
-        }).catch((error) => {
-          console.error('Error fetching company info:', error);
+        }).catch(() => {
+          // Error fetching company info
         });
       }
     },

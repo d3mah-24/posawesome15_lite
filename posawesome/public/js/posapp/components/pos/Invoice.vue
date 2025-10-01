@@ -617,11 +617,6 @@ export default {
         
         return finalResult;
       } catch (error) {
-        console.error('❌ Error calculating subtotal:', error);
-        console.error('❌ Error details:', {
-          message: error.message,
-          stack: error.stack
-        });
         // Return default value in case of error
         return 0;
       }
@@ -734,7 +729,6 @@ export default {
           this.debounced_auto_update();
         }
       } catch (error) {
-        console.error('Error updating quantity:', error);
         evntBus.emit("show_mesage", {
           text: "Error updating quantity",
           color: "error",
@@ -777,7 +771,6 @@ export default {
           this.debounced_auto_update();
         }
       } catch (error) {
-        console.error('Error increasing quantity:', error);
         evntBus.emit("show_mesage", {
           text: "Error increasing quantity",
           color: "error",
@@ -813,7 +806,6 @@ export default {
           this.debounced_auto_update();
         }
       } catch (error) {
-        console.error('Error decreasing quantity:', error);
         evntBus.emit("show_mesage", {
           text: "Error decreasing quantity",
           color: "error",
@@ -1041,14 +1033,13 @@ export default {
           }
         } catch (error) {
           // Handle error silently to avoid user annoyance
-          console.warn('Auto update failed:', error);
           
           // If error is due to document modification, reload invoice
           if (error.message && error.message.includes('Document has been modified')) {
             try {
               await this.reload_invoice();
             } catch (reloadError) {
-              console.warn('Failed to reload invoice:', reloadError);
+              // Failed to reload invoice
             }
             }
           } finally {
@@ -1080,7 +1071,7 @@ export default {
             }
           }
         } catch (error) {
-          console.warn('Failed to reload invoice:', error);
+          // Failed to reload invoice
         }
       }
     },
@@ -1514,7 +1505,6 @@ export default {
           text: "Error preparing invoice: " + error.message,
           color: "error",
         });
-        console.error("Error in show_payment:", error);
       }
     },
 
@@ -2974,14 +2964,12 @@ export default {
         if (!table) return;
         const rows = table.querySelectorAll('tr');
         rows.forEach((row, rIdx) => {
-          // console.log(`Invoice.vue:debug Row ${rIdx} height=${row.offsetHeight}`);
           [...row.children].forEach((cell, cIdx) => {
             const cs = window.getComputedStyle(cell);
-            // console.log(`Invoice.vue:debug Row${rIdx} Cell${cIdx} w=${cell.offsetWidth} h=${cell.offsetHeight} padT=${cs.paddingTop} padB=${cs.paddingBottom} padL=${cs.paddingLeft} padR=${cs.paddingRight} lineH=${cs.lineHeight}`);
           });
         });
       } catch (e) {
-        console.error('Invoice.vue:debugTableDimensions error', e);
+        // Error in debugTableDimensions
       }
     },
     printInvoice() {
@@ -3156,7 +3144,6 @@ export default {
           text: "Failed to prepare invoice for printing: " + error.message,
           color: "error",
         });
-        console.error("request_invoice_print error", error);
       }
     });
   },

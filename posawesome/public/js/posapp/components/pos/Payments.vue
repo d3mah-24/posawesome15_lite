@@ -532,7 +532,7 @@ export default {
       try {
         await this.refreshInvoiceDoc();
       } catch (error) {
-        console.warn("Failed to refresh invoice before submit", error);
+        // Failed to refresh invoice before submit
       }
 
       if (this.invoice_doc && this.invoice_doc.docstatus === 1) {
@@ -659,8 +659,7 @@ export default {
               .then(() => {
                 vm.submit_invoice(print, autoMode, true);
               })
-              .catch((refreshErr) => {
-                console.warn("Failed to refresh after timestamp mismatch", refreshErr);
+              .catch(() => {
                 evntBus.emit("show_mesage", {
                   text: "Invoice was modified elsewhere, please try again",
                   color: "warning",
