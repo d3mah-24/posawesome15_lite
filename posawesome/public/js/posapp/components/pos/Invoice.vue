@@ -2973,8 +2973,6 @@ export default {
         const table = this.$el.querySelector('.invoice-items-scrollable .v-data-table__wrapper table');
         if (!table) return;
         const rows = table.querySelectorAll('tr');
-        // Debug logging disabled for performance
-        // console.log('Invoice.vue:debugTableDimensions rows=', rows.length);
         rows.forEach((row, rIdx) => {
           // console.log(`Invoice.vue:debug Row ${rIdx} height=${row.offsetHeight}`);
           [...row.children].forEach((cell, cIdx) => {

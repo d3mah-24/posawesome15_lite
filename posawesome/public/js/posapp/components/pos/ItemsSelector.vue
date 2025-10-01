@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
-    {{ console.log({template: "main container", result: "main container rendered"}) }}
 
   <!-- Filters and counters (no extra top margin) -->
     <v-card class="cards mb-2 pa-2 grey lighten-5">
@@ -187,17 +186,14 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-console.log({script: "imports start"});
 import { evntBus } from "../../bus";
 import format from "../../format";
 import _ from "lodash";
-console.log({script: "imports end", result: "3 imports loaded successfully"});
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   mixins: [format],
   // ===== SECTION 3: DATA =====
   data: () => {
-    console.log({script: "data start"});
     return {
       pos_profile: "",
     flags: {},
@@ -223,7 +219,6 @@ export default {
         // Remove all types of cache for direct speed
         _itemsMap: new Map(), // For quick search in items only
     };
-    console.log({script: "data end", result: "data object initialized successfully"});
   },
 
   // ===== SECTION 4: WATCH =====

@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <v-row justify="center">
-    {{ console.log({template: "main container", result: "main container rendered"}) }}
     <v-dialog v-model="draftsDialog" max-width="900px">
       <v-card>
         <v-card-title>
@@ -44,17 +43,14 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-console.log({script: "imports start"});
 import { evntBus } from '../../bus';
 import format from '../../format';
-console.log({script: "imports end", result: "2 imports loaded successfully"});
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   // props: ["draftsDialog"],
   mixins: [format],
   // ===== SECTION 3: DATA =====
   data: () => {
-    console.log({script: "data start"});
     return {
       draftsDialog: false,
       singleSelect: true,

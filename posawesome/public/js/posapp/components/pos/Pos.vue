@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div fluid class="mt-1">
-    {{ console.log({template: "main container", result: "main container rendered"}) }}
     <ClosingDialog></ClosingDialog>
     <Drafts></Drafts>
     <Returns></Returns>
@@ -63,7 +62,6 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-console.log({script: "imports start"});
 import { evntBus } from '../../bus';
 import ItemsSelector from './ItemsSelector.vue';
 import Invoice from './Invoice.vue';
@@ -76,13 +74,11 @@ import ClosingDialog from './ClosingDialog.vue';
 import NewAddress from './NewAddress.vue';
 import Variants from './Variants.vue';
 import Returns from './Returns.vue';
-console.log({script: "imports end", result: "12 imports loaded successfully"});
 
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   // ===== SECTION 3: DATA =====
   data: function () {
-    console.log({script: "data start"});
     return {
       dialog: false,
       pos_profile: '',
@@ -91,7 +87,6 @@ export default {
       offers: false,
       coupons: false,
     };
-    console.log({script: "data end", result: "data object initialized successfully"});
   },
   // ===== SECTION 4: COMPONENTS =====
   components: {

@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
-    {{ console.log({template: "main container", result: "main container rendered"}) }}
     <v-card
       class="selection mx-auto grey lighten-5"
       style="max-height: 80vh; height: 80vh"
@@ -81,14 +80,11 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-console.log({script: "imports start"});
 import { evntBus } from '../../bus';
-console.log({script: "imports end", result: "1 import loaded successfully"});
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   // ===== SECTION 3: DATA =====
   data: () => {
-    console.log({script: "data start"});
     return {
     loading: false,
     pos_profile: '',
@@ -105,7 +101,6 @@ export default {
       { title: 'Applied', key: 'applied', align: 'start' },
       ],
     };
-    console.log({script: "data end", result: "data object initialized successfully"});
   },
 
   computed: {

@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
-    {{ console.log({template: "main container", result: "main container rendered"}) }}
     <v-autocomplete
       density="compact"
       variant="outlined"
@@ -39,15 +38,12 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-console.log({script: "imports start"});
 import { evntBus } from '../../bus';
 import UpdateCustomer from './UpdateCustomer.vue';
-console.log({script: "imports end", result: "2 imports loaded successfully"});
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   // ===== SECTION 3: DATA =====
   data: () => {
-    console.log({script: "data start"});
     return {
     pos_profile: '',
     customers: [],
@@ -56,7 +52,6 @@ export default {
     customer_info: {},
     quick_return: false,
     };
-    console.log({script: "data end", result: "data object initialized successfully"});
   },
   // ===== SECTION 4: COMPONENTS =====
   components: {

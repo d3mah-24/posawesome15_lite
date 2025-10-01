@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
-    {{ console.log({template: "main div", result: "main container rendered"}) }}
     <!-- ===== TEMPLATE SECTION 2: OFFERS CARD ===== -->
     <v-card
       class="selection mx-auto grey lighten-5"
@@ -11,14 +10,11 @@
       <v-card-title class="pb-2">
         <span class="text-h6 primary--text">Offers</span>
       </v-card-title>
-      {{ console.log({template: "card title", result: "title rendered"}) }}
       
         <!-- ===== TEMPLATE SECTION 4: OFFERS CONTAINER ===== -->
         <div class="my-0 py-0 offers-container" style="max-height: 72vh; overflow-y: auto; overflow-x: hidden;">
-          {{ console.log({template: "offers container", result: "offers container rendered"}) }}
           <!-- ===== TEMPLATE SECTION 5: OFFERS ROW ===== -->
           <v-row dense class="px-2">
-            {{ console.log({template: "offers row", result: "offers row rendered"}) }}
           <v-col
             v-for="(offer, idx) in pos_offers"
             :key="idx"
@@ -31,7 +27,6 @@
           >
             <!-- ===== TEMPLATE SECTION 6: OFFER CARD ===== -->
             <v-card hover="hover" class="mb-2 offer-card flex-grow-1" :class="{ 'border-primary': offer.offer_applied }" style="height: 180px; width: 100%;">
-              {{ console.log({template: "offer card", name: offer.name, result: "offer card rendered"}) }}
               <!-- ===== TEMPLATE SECTION 7: OFFER IMAGE ===== -->
               <v-img
                 :src="offer.image || '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'"
@@ -39,14 +34,12 @@
                 gradient="to bottom, rgba(0,0,0,0), rgba(0,0,0,0.6)"
                 height="80px"
               >
-                {{ console.log({template: "offer image", name: offer.name, result: "offer image rendered"}) }}
                 <v-card-text class="text-caption px-1 pb-0" style="font-size: 0.65rem;">
                   <div class="font-weight-bold">{{ offer.name.length > 12 ? offer.name.substring(0, 12) + '...' : offer.name }}</div>
                 </v-card-text>
               </v-img>
               <!-- ===== TEMPLATE SECTION 8: OFFER DETAILS ===== -->
               <v-card-text class="text--primary pa-1 d-flex flex-column justify-space-between" style="height: 100px;">
-                {{ console.log({template: "offer details", name: offer.name, result: "offer details rendered"}) }}
                 <div>
                   <div class="text-xs mb-1" v-if="offer.discount_percentage">
                     Discount %: {{ offer.discount_percentage }}%
@@ -70,7 +63,6 @@
                       hide-details
                       dense
                       class="mt-0 pt-0"
-                      @click="console.log({template: 'offer checkbox', name: offer.name})"
                       :disabled="
                         (offer.offer == 'Give Product' &&
                           !offer.give_item &&
@@ -98,7 +90,6 @@
       style="max-height: 11vh; height: 11vh"
       class="cards mb-0 mt-3 py-0"
     >
-      {{ console.log({template: "bottom card", result: "bottom card rendered"}) }}
       <v-row align="start" no-gutters>
         <v-col cols="12">
           <v-btn
@@ -111,7 +102,6 @@
             >Back</v-btn
           >
           <!-- ===== TEMPLATE SECTION 10: BACK BUTTON ===== -->
-          {{ console.log({template: "back button", result: "back button rendered"}) }}
         </v-col>
       </v-row>
     </v-card>
@@ -120,16 +110,13 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-console.log({script: "imports start"});
 import { evntBus } from '../../bus';
 import format from '../../format';
-console.log({script: "imports end", result: "2 imports loaded successfully"});
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   mixins: [format],
   // ===== SECTION 3: DATA =====
   data: () => {
-    console.log({script: "data start"});
     return {
       loading: false,
       pos_profile: '',
@@ -146,7 +133,6 @@ export default {
         { title: 'Applied', key: 'offer_applied', align: 'start' },
       ]
     };
-    console.log({script: "data end", result: "data object initialized successfully"});
   },
 
   // ===== SECTION 4: COMPUTED =====
