@@ -1,0 +1,52 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from . import __version__ as app_version
+
+app_name = "posawesome"
+app_title = "POS Awesome"
+app_publisher = "future-support"
+app_description = "posawesome"
+app_icon = "octicon octicon-file-directory"
+app_color = "grey"
+app_email = "abdopcnet@gmail.com"
+app_license = "GPLv3"
+
+
+
+
+app_include_js = [
+    "/assets/posawesome/node_modules/vue/dist/vue.global.prod.js",
+    "/assets/posawesome/node_modules/vuetify/dist/vuetify.min.js",
+    "posawesome.bundle.js",
+]
+
+
+doctype_js = {
+    "POS Profile": "public/js/pos_profile.js",
+    "Sales Invoice": "public/js/invoice.js",
+    "Company": "public/js/company.js",
+}
+
+
+
+
+doc_events = {
+    "Sales Invoice": {
+        "validate": "posawesome.posawesome.api.invoice.validate",
+        "before_submit": "posawesome.posawesome.api.invoice.before_submit",
+        "before_cancel": "posawesome.posawesome.api.invoice.before_cancel",
+    },
+    "Customer": {
+        "validate": "posawesome.posawesome.api.customer.validate",
+        "after_insert": "posawesome.posawesome.api.customer.after_insert",
+    },
+}
+
+
+
+
+
+fixtures = [
+    {"doctype": "Custom Field", "filters": [["module", "=", "POSAwesome"]]},
+    {"doctype": "Property Setter", "filters": [["module", "=", "POSAwesome"]]},
+]

@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Frappe Bench",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/frappe/frappe-bench-15/apps/frappe/frappe/app.py",
+            "args": [
+                "serve",
+                "--port",
+                "8000",
+                "--noreload"
+            ],
+            "cwd": "/home/frappe/frappe-bench-15",
+            "env": {
+                "PYTHONPATH": "/home/frappe/frappe-bench-15"
+            },
+            "console": "integratedTerminal"
+        }
+    ]
+}

@@ -1,0 +1,252 @@
+<template>
+  <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
+  <div fluid class="mt-1">
+    {{ console.log({template: "main container", result: "main container rendered"}) }}
+    <ClosingDialog></ClosingDialog>
+    <Drafts></Drafts>
+    <Returns></Returns>
+    <NewAddress></NewAddress>
+    <Variants></Variants>
+    <OpeningDialog v-if="dialog" :dialog="dialog"></OpeningDialog>
+    <v-row v-show="!dialog">
+      <v-col
+        v-show="!payment && !offers && !coupons"
+        xl="6"
+        lg="6"
+        md="6"
+        sm="6"
+        cols="12"
+        class="pos pr-0"
+      >
+        <ItemsSelector></ItemsSelector>
+      </v-col>
+      <v-col
+        v-show="offers"
+        xl="6"
+        lg="6"
+        md="6"
+        sm="6"
+        cols="12"
+        class="pos pr-0"
+      >
+        <PosOffers></PosOffers>
+      </v-col>
+      <v-col
+        v-show="coupons"
+        xl="6"
+        lg="6"
+        md="6"
+        sm="6"
+        cols="12"
+        class="pos pr-0"
+      >
+        <PosCoupons></PosCoupons>
+      </v-col>
+      <v-col
+        v-show="payment"
+        xl="6"
+        lg="6"
+        md="6"
+        sm="6"
+        cols="12"
+        class="pos pr-0"
+      >
+        <Payments ref="payments" @request-print="onPrintRequest"></Payments>
+      </v-col>
+
+      <v-col xl="6" lg="6" md="6" sm="6" cols="12" class="pos">
+        <Invoice></Invoice>
+      </v-col>
+    </v-row>
+  </div>
+</template>
+
+<script>
+// ===== SECTION 1: IMPORTS =====
+console.log({script: "imports start"});
+import { evntBus } from '../../bus';
+import ItemsSelector from './ItemsSelector.vue';
+import Invoice from './Invoice.vue';
+import OpeningDialog from './OpeningDialog.vue';
+import Payments from './Payments.vue';
+import PosOffers from './PosOffers.vue';
+import PosCoupons from './PosCoupons.vue';
+import Drafts from './Drafts.vue';
+import ClosingDialog from './ClosingDialog.vue';
+import NewAddress from './NewAddress.vue';
+import Variants from './Variants.vue';
+import Returns from './Returns.vue';
+console.log({script: "imports end", result: "12 imports loaded successfully"});
+
+// ===== SECTION 2: EXPORT DEFAULT =====
+export default {
+  // ===== SECTION 3: DATA =====
+  data: function () {
+    console.log({script: "data start"});
+    return {
+      dialog: false,
+      pos_profile: '',
+      pos_opening_shift: '',
+      payment: false,
+      offers: false,
+      coupons: false,
+    };
+    console.log({script: "data end", result: "data object initialized successfully"});
+  },
+  // ===== SECTION 4: COMPONENTS =====
+  components: {
+    ItemsSelector,
+    Invoice,
+    OpeningDialog,
+    Payments,
+    Drafts,
+    ClosingDialog,
+    Returns,
+    PosOffers,
+    PosCoupons,
+    NewAddress,
+    Variants,
+  },
+  // ===== SECTION 5: METHODS =====
+  methods: {
+    check_opening_entry() {
+      return frappe
+        .call('posawesome.posawesome.api.create_opening_voucher.check_opening_shift', {
+          user: frappe.session.user,
+        })
+        .then((r) => {
+          if (r.message) {
+            this.pos_profile = r.message.pos_profile;
+            this.pos_opening_shift = r.message.pos_opening_shift;
+            this.get_offers(this.pos_profile.name);
+            evntBus.emit('register_pos_profile', r.message);
+            evntBus.emit('set_company', r.message.company);
+          } else {
+            evntBus.emit('show_mesage', {
+              text: 'لا توجد وردية فتح، سيتم إنشاء قيد فتح جديد.',
+              color: 'info'
+            });
+            this.create_opening_voucher();
+          }
+        });
+    },
+    create_opening_voucher() {
+      this.dialog = true;
+    },
+    get_closing_data() {
+      return frappe
+        .call(
+          'posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening',
+          {
+            opening_shift: this.pos_opening_shift,
+          }
+        )
+        .then((r) => {
+          if (r.message) {
+            evntBus.emit('open_ClosingDialog', r.message);
+          } else {
+            evntBus.emit('show_mesage', {
+              text: 'فشل في تحميل بيانات الإغلاق',
+              color: 'error'
+            });
+          }
+        });
+    },
+    submit_closing_pos(data) {
+      frappe
+        .call(
+          'posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift',
+          {
+            closing_shift: data,
+          }
+        )
+        .then((r) => {
+          if (r.message) {
+            evntBus.emit('show_mesage', {
+              text: 'تم إغلاق وردية الكاشير بنجاح',
+              color: 'success',
+            });
+            this.check_opening_entry();
+          } else {
+            evntBus.emit('show_mesage', {
+              text: 'فشل في إغلاق وردية الكاشير',
+              color: 'error'
+            });
+          }
+        });
+    },
+    get_offers(pos_profile) {
+      return frappe
+        .call('posawesome.posawesome.api.get_offers.get_offers', {
+          profile: pos_profile,
+        })
+        .then((r) => {
+          if (r.message) {
+            evntBus.emit('set_offers', r.message);
+          } else {
+            evntBus.emit('show_mesage', {
+              text: 'فشل في تحميل العروض',
+              color: 'error'
+            });
+          }
+        });
+    },
+    get_pos_setting() {
+      frappe.db.get_doc('POS Settings', undefined).then((doc) => {
+        evntBus.emit('set_pos_settings', doc);
+      });
+    },
+    onPrintRequest() {
+      evntBus.emit("request_invoice_print");
+    },
+  },
+  // ===== SECTION 6: LIFECYCLE HOOKS =====
+  mounted: function () {
+    this.$nextTick(function () {
+      this.check_opening_entry();
+      this.get_pos_setting();
+      evntBus.on('close_opening_dialog', () => {
+        this.dialog = false;
+      });
+      evntBus.on('register_pos_data', (data) => {
+        this.pos_profile = data.pos_profile;
+        this.get_offers(this.pos_profile.name);
+        this.pos_opening_shift = data.pos_opening_shift;
+        evntBus.emit('register_pos_profile', data);
+      });
+      evntBus.on('show_payment', (data) => {
+        this.payment = true ? data === 'true' : false;
+        this.offers = false ? data === 'true' : false;
+        this.coupons = false ? data === 'true' : false;
+      });
+      evntBus.on('show_offers', (data) => {
+        this.offers = true ? data === 'true' : false;
+        this.payment = false ? data === 'true' : false;
+        this.coupons = false ? data === 'true' : false;
+      });
+      evntBus.on('show_coupons', (data) => {
+        this.coupons = true ? data === 'true' : false;
+        this.offers = false ? data === 'true' : false;
+        this.payment = false ? data === 'true' : false;
+      });
+      evntBus.on('open_closing_dialog', () => {
+        this.get_closing_data();
+      });
+      evntBus.on('submit_closing_pos', (data) => {
+        this.submit_closing_pos(data);
+      });
+    });
+  },
+  beforeDestroy() {
+    evntBus.$off('close_opening_dialog');
+    evntBus.$off('register_pos_data');
+    evntBus.$off('LoadPosProfile');
+    evntBus.$off('show_offers');
+    evntBus.$off('show_coupons');
+    evntBus.$off('open_closing_dialog');
+    evntBus.$off('submit_closing_pos');
+  }
+};
+</script>
+
+<style scoped></style>
