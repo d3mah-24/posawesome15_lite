@@ -1,6 +1,6 @@
 # Translation Plan: Arabic to English - Multiple Files
 
-## 🎉 Translation Project Completed! 🎉
+git ## 🎉 Translation Project Completed! 🎉
 
 ### Total Files Translated: 26 files ✅
 
