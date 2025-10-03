@@ -32,6 +32,179 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
     get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
 
+# =============================================================================
+# OFFER API FUNCTIONS
+# =============================================================================
+
+
+@frappe.whitelist()
+def apply_offers_to_invoice(invoice_name, offer_names):
+    """
+    POST - Apply specific offers to an invoice
+    """
+    try:
+        if not invoice_name or not offer_names:
+            return None
+        
+        # Handle both string and list inputs
+        if isinstance(offer_names, str):
+            try:
+                offer_names = json.loads(offer_names)
+            except:
+                offer_names = [offer_names]
+        
+        if not isinstance(offer_names, list):
+            offer_names = [offer_names]
+        
+        doc = frappe.get_doc("Sales Invoice", invoice_name)
+        
+        # Apply each offer
+        for offer_name in offer_names:
+            try:
+                _apply_single_offer(doc, offer_name)
+            except Exception as e:
+                frappe.log_error(f"Error applying offer {offer_name}: {str(e)}")
+                continue
+        
+        # Let ERPNext handle all calculations
+        doc.set_missing_values()
+        doc.calculate_taxes_and_totals()
+        doc.save()
+        
+        return doc.as_dict()
+    except Exception as e:
+        frappe.log_error(f"Error in apply_offers_to_invoice: {str(e)}")
+        raise
+
+@frappe.whitelist()
+def remove_offers_from_invoice(invoice_name, offer_names):
+    """
+    DELETE - Remove specific offers from an invoice
+    """
+    try:
+        if not invoice_name or not offer_names:
+            return None
+        
+        # Handle both string and list inputs
+        if isinstance(offer_names, str):
+            try:
+                offer_names = json.loads(offer_names)
+            except:
+                offer_names = [offer_names]
+        
+        if not isinstance(offer_names, list):
+            offer_names = [offer_names]
+        
+        doc = frappe.get_doc("Sales Invoice", invoice_name)
+        
+        # Remove each offer
+        for offer_name in offer_names:
+            try:
+                _remove_single_offer(doc, offer_name)
+            except Exception as e:
+                frappe.log_error(f"Error removing offer {offer_name}: {str(e)}")
+                continue
+        
+        # Let ERPNext handle all calculations
+        doc.set_missing_values()
+        doc.calculate_taxes_and_totals()
+        doc.save()
+        
+        return doc.as_dict()
+    except Exception as e:
+        frappe.log_error(f"Error in remove_offers_from_invoice: {str(e)}")
+        raise
+
+def _apply_single_offer(doc, offer_name):
+    """
+    Apply a single offer to the invoice (internal helper)
+    """
+    try:
+        # Get the offer details
+        offer = frappe.get_doc("POS Offer", offer_name)
+        
+        if not offer or offer.disabled:
+            return
+        
+        if offer.apply_on == "Item Code":
+            _apply_item_code_offer(doc, offer)
+        elif offer.apply_on == "Item Group":
+            _apply_item_group_offer(doc, offer)
+        elif offer.apply_on == "Brand":
+            _apply_brand_offer(doc, offer)
+        elif offer.apply_on == "Transaction":
+            _apply_transaction_offer(doc, offer)
+    except Exception as e:
+        frappe.log_error(f"Error in _apply_single_offer for {offer_name}: {str(e)}")
+        raise
+
+def _remove_single_offer(doc, offer_name):
+    """
+    Remove a single offer from the invoice (internal helper)
+    """
+    try:
+        # This would need to track which offers were applied and reverse them
+        # For now, we'll reset discounts and let user reapply
+        for item in doc.items:
+            if not getattr(item, 'posa_is_offer', False):
+                item.discount_percentage = 0
+                item.discount_amount = 0
+                item.rate = item.price_list_rate
+        
+        # Reset transaction level discounts
+        doc.additional_discount_percentage = 0
+        doc.discount_amount = 0
+    except Exception as e:
+        frappe.log_error(f"Error in _remove_single_offer for {offer_name}: {str(e)}")
+        raise
+
+def _apply_item_code_offer(doc, offer):
+    """
+    Apply item code specific offer
+    """
+    for item in doc.items:
+        if item.item_code == offer.item and not getattr(item, 'posa_is_offer', False):
+            if offer.discount_type == "Rate":
+                item.rate = offer.rate
+            elif offer.discount_type == "Discount Percentage":
+                item.discount_percentage = offer.discount_percentage
+            elif offer.discount_type == "Discount Amount":
+                item.discount_amount = offer.discount_amount
+
+def _apply_item_group_offer(doc, offer):
+    """
+    Apply item group specific offer
+    """
+    for item in doc.items:
+        if item.item_group == offer.item_group and not getattr(item, 'posa_is_offer', False):
+            if offer.discount_type == "Rate":
+                item.rate = offer.rate
+            elif offer.discount_type == "Discount Percentage":
+                item.discount_percentage = offer.discount_percentage
+            elif offer.discount_type == "Discount Amount":
+                item.discount_amount = offer.discount_amount
+
+def _apply_brand_offer(doc, offer):
+    """
+    Apply brand specific offer
+    """
+    for item in doc.items:
+        if item.brand == offer.brand and not getattr(item, 'posa_is_offer', False):
+            if offer.discount_type == "Rate":
+                item.rate = offer.rate
+            elif offer.discount_type == "Discount Percentage":
+                item.discount_percentage = offer.discount_percentage
+            elif offer.discount_type == "Discount Amount":
+                item.discount_amount = offer.discount_amount
+
+def _apply_transaction_offer(doc, offer):
+    """
+    Apply transaction level offer
+    """
+    if offer.discount_type == "Discount Percentage":
+        doc.additional_discount_percentage = offer.discount_percentage
+    elif offer.discount_type == "Discount Amount":
+        doc.discount_amount = offer.discount_amount
 
 def validate(doc, method):
     validate_shift(doc)
@@ -375,6 +548,8 @@ def update_invoice(data):
         else:
             item.is_free_item = 0
 
+    # CRITICAL: Calculate taxes and totals to apply item discounts and invoice discounts
+    # Without this, discount_percentage and additional_discount_percentage won't be applied
     invoice_doc.calculate_taxes_and_totals()
 
     # Save and let ERPNext calculate everything
@@ -891,153 +1066,6 @@ def get_applicable_offers(invoice_name):
         frappe.log_error(f"Error in get_applicable_offers: {str(e)}")
         return []
 
-@frappe.whitelist()
-def apply_offers_to_invoice(invoice_name, offer_names):
-    """
-    POST - Apply specific offers to an invoice
-    """
-    if not invoice_name or not offer_names:
-        return None
-    
-    doc = frappe.get_doc("Sales Invoice", invoice_name)
-    
-    # Apply each offer
-    for offer_name in offer_names:
-        _apply_single_offer(doc, offer_name)
-    
-    # Let ERPNext handle all calculations
-    doc.set_missing_values()
-    doc.calculate_taxes_and_totals()
-    doc.save()
-    
-    return doc.as_dict()
-
-@frappe.whitelist()
-def remove_offers_from_invoice(invoice_name, offer_names):
-    """
-    DELETE - Remove specific offers from an invoice
-    """
-    if not invoice_name or not offer_names:
-        return None
-    
-    doc = frappe.get_doc("Sales Invoice", invoice_name)
-    
-    # Remove each offer
-    for offer_name in offer_names:
-        _remove_single_offer(doc, offer_name)
-    
-    # Let ERPNext handle all calculations
-    doc.set_missing_values()
-    doc.calculate_taxes_and_totals()
-    doc.save()
-    
-    return doc.as_dict()
-
-def _check_offer_conditions(doc, offer):
-    """
-    Check if offer conditions are met (internal helper)
-    """
-    # Get total quantity and amount
-    total_qty = sum(item.qty for item in doc.items if not getattr(item, 'posa_is_offer', False))
-    total_amount = doc.total
-    
-    # Check quantity conditions
-    min_qty = flt(offer.get('min_qty', 0))
-    max_qty = flt(offer.get('max_qty', 0))
-    if min_qty > 0 and total_qty < min_qty:
-        return False
-    if max_qty > 0 and total_qty > max_qty:
-        return False
-    
-    # Check amount conditions
-    min_amt = flt(offer.get('min_amt', 0))
-    max_amt = flt(offer.get('max_amt', 0))
-    if min_amt > 0 and total_amount < min_amt:
-        return False
-    if max_amt > 0 and total_amount > max_amt:
-        return False
-    
-    return True
-
-def _apply_single_offer(doc, offer_name):
-    """
-    Apply a single offer to the invoice (internal helper)
-    """
-    # Get the offer details
-    offer = frappe.get_doc("POS Offer", offer_name)
-    
-    if offer.apply_on == "Item Code":
-        _apply_item_code_offer(doc, offer)
-    elif offer.apply_on == "Item Group":
-        _apply_item_group_offer(doc, offer)
-    elif offer.apply_on == "Brand":
-        _apply_brand_offer(doc, offer)
-    elif offer.apply_on == "Transaction":
-        _apply_transaction_offer(doc, offer)
-
-def _apply_item_code_offer(doc, offer):
-    """
-    Apply item code specific offer
-    """
-    for item in doc.items:
-        if item.item_code == offer.item and not getattr(item, 'posa_is_offer', False):
-            if offer.discount_type == "Rate":
-                item.rate = offer.rate
-            elif offer.discount_type == "Discount Percentage":
-                item.discount_percentage = offer.discount_percentage
-            elif offer.discount_type == "Discount Amount":
-                item.discount_amount = offer.discount_amount
-
-def _apply_item_group_offer(doc, offer):
-    """
-    Apply item group specific offer
-    """
-    for item in doc.items:
-        if item.item_group == offer.item_group and not getattr(item, 'posa_is_offer', False):
-            if offer.discount_type == "Rate":
-                item.rate = offer.rate
-            elif offer.discount_type == "Discount Percentage":
-                item.discount_percentage = offer.discount_percentage
-            elif offer.discount_type == "Discount Amount":
-                item.discount_amount = offer.discount_amount
-
-def _apply_brand_offer(doc, offer):
-    """
-    Apply brand specific offer
-    """
-    for item in doc.items:
-        if item.brand == offer.brand and not getattr(item, 'posa_is_offer', False):
-            if offer.discount_type == "Rate":
-                item.rate = offer.rate
-            elif offer.discount_type == "Discount Percentage":
-                item.discount_percentage = offer.discount_percentage
-            elif offer.discount_type == "Discount Amount":
-                item.discount_amount = offer.discount_amount
-
-def _apply_transaction_offer(doc, offer):
-    """
-    Apply transaction level offer
-    """
-    if offer.discount_type == "Discount Percentage":
-        doc.additional_discount_percentage = offer.discount_percentage
-    elif offer.discount_type == "Discount Amount":
-        doc.discount_amount = offer.discount_amount
-
-def _remove_single_offer(doc, offer_name):
-    """
-    Remove a single offer from the invoice (internal helper)
-    """
-    # This would need to track which offers were applied and reverse them
-    # For now, we'll reset discounts and let user reapply
-    for item in doc.items:
-        if not getattr(item, 'posa_is_offer', False):
-            item.discount_percentage = 0
-            item.discount_amount = 0
-            item.rate = item.price_list_rate
-    
-    # Reset transaction level discounts
-    doc.additional_discount_percentage = 0
-    doc.discount_amount = 0
 
 @frappe.whitelist()
 def calculate_item_discount_amount(price_list_rate, discount_percentage):
