@@ -1369,138 +1369,21 @@ export default {
     },
 
     update_items_details(items) {
-      if (!items.length > 0) {
-        return;
+      if (!items.length) return;
+      
+      if (this.invoice_doc?.name) {
+        this.debounced_auto_update();
       }
-      const vm = this;
-      if (!vm.pos_profile) return
-      frappe.call({
-        method: "posawesome.posawesome.api.get_items.get_items",
-        async: true,
-        args: {
-          pos_profile: vm.pos_profile,
-          price_list: vm.pos_profile.selling_price_list,
-          item_group: "",
-          search_value: "", // Empty search to get all items
-          customer: vm.customer,
-        },
-        callback: function (r) {
-          if (r.message) {
-            const updatedItemsMap = new Map();
-            r.message.forEach(item => {
-              updatedItemsMap.set(item.item_code, item);
-            });
-            
-            items.forEach((item) => {
-              const updated_item = updatedItemsMap.get(item.item_code);
-              if (updated_item) {
-                item.actual_qty = updated_item.actual_qty;
-                item.serial_no_data = updated_item.serial_no_data;
-                item.batch_no_data = updated_item.batch_no_data;
-                item.rate = updated_item.rate;
-                item.currency = updated_item.currency;
-                
-                item.item_uoms = (updated_item.item_uoms || []).map(uom => {
-                  if (typeof uom === 'string') {
-                    return { uom: uom, conversion_factor: 1 };
-                  } else if (typeof uom === 'object' && uom !== null) {
-                    return { 
-                      uom: uom.uom || uom.name || uom.toString(), 
-                      conversion_factor: parseFloat(uom.conversion_factor) || 1 
-                    };
-                  } else {
-                    return { uom: item.stock_uom || 'Nos', conversion_factor: 1 };
-                  }
-                }).filter(uom => uom && uom.uom);
-                
-                item.has_batch_no = updated_item.has_batch_no;
-                item.has_serial_no = updated_item.has_serial_no;
-              }
-            });
-            
-          }
-        },
-        error: function (err) {
-          evntBus.emit('show_mesage', {
-            text: 'Error updating item details',
-            color: 'error'
-          });
-        }
-      });
     },
 
     update_item_detail(item) {
       if (!item.item_code || this.invoice_doc.is_return) {
         return;
       }
-      const vm = this;
-      frappe.call({
-        method: "posawesome.posawesome.api.get_items.get_items",
-        args: {
-          pos_profile: this.pos_profile,
-          price_list: this.pos_profile.selling_price_list,
-          item_group: "",
-          search_value: item.item_code, // Search for specific item
-          customer: this.customer,
-        },
-        callback: function (r) {
-          if (r.message && r.message.length > 0) {
-            const data = r.message[0]; // Get first item from array
-            if (data.batch_no_data) {
-              item.batch_no_data = data.batch_no_data;
-            }
-            if (
-              item.has_batch_no &&
-              vm.pos_profile.posa_auto_set_batch &&
-              !item.batch_no &&
-              data.batch_no_data
-            ) {
-              item.batch_no_data = data.batch_no_data;
-              vm.set_batch_qty(item, item.batch_no, false);
-            }
-            if (data.has_pricing_rule) {
-            } else if (
-              vm.pos_profile.posa_apply_customer_discount &&
-              vm.customer_info.posa_discount > 0 &&
-              vm.customer_info.posa_discount <= 100
-            ) {
-              if (
-                item.posa_is_offer == 0 &&
-                !item.posa_is_replace &&
-                item.posa_offer_applied == 0
-              ) {
-                if (item.max_discount > 0) {
-                  item.discount_percentage =
-                    item.max_discount < vm.customer_info.posa_discount
-                      ? item.max_discount
-                      : vm.customer_info.posa_discount;
-                } else {
-                  item.discount_percentage = vm.customer_info.posa_discount;
-                }
-              }
-            }
-            if (!item.batch_price) {
-              if (
-                !item.is_free_item &&
-                !item.posa_is_offer &&
-                !item.posa_is_replace
-              ) {
-                item.price_list_rate = data.price_list_rate;
-              }
-            }
-            item.last_purchase_rate = data.last_purchase_rate;
-            item.projected_qty = data.projected_qty;
-            item.reserved_qty = data.reserved_qty;
-            item.conversion_factor = data.conversion_factor;
-            item.stock_qty = data.stock_qty;
-            item.actual_qty = data.actual_qty;
-            item.stock_uom = data.stock_uom;
-            item.has_serial_no = data.has_serial_no;
-            item.has_batch_no = data.has_batch_no;
-              
-          }
-        },
-      });
+      
+      if (this.invoice_doc?.name) {
+        this.debounced_auto_update();
+      }
     },
 
     fetch_customer_details() {
