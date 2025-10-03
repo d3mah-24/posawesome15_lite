@@ -5,8 +5,8 @@
 *.css.map
 
 # Dependencies
-node_modules/
-**/node_modules/
+node_modules
+
 
 # Python cache
 __pycache__/
