@@ -818,14 +818,226 @@ def get_total_items_discount(invoice_name):
     """
     if not invoice_name:
         return 0
-   
+    
     doc = frappe.get_doc("Sales Invoice", invoice_name)
- 
     total_discount = 0
+    
     for item in doc.items:
-        total_discount += (item.qty or 0) * (item.discount_amount or 0)
-        
+        if item.discount_amount:
+            total_discount += item.discount_amount
+        elif item.discount_percentage:
+            discount_amount = (item.price_list_rate * item.discount_percentage) / 100
+            total_discount += discount_amount
+    
     return total_discount
+
+# ===========================================================
+# OFFER OPERATIONS - Following 1:1 Architecture
+# ===========================================================
+
+@frappe.whitelist()
+def get_applicable_offers(invoice_name):
+    """
+    GET - Get all applicable offers for an invoice
+    """
+    try:
+        if not invoice_name:
+            return []
+        
+        doc = frappe.get_doc("Sales Invoice", invoice_name)
+        
+        if not doc.pos_profile:
+            return []
+            
+        pos_profile = frappe.get_doc("POS Profile", doc.pos_profile)
+        company = pos_profile.company
+        warehouse = pos_profile.warehouse
+        date = frappe.utils.nowdate()
+
+        # Get offers using the same logic as get_offers.py
+        values = {
+            "company": company,
+            "pos_profile": doc.pos_profile,
+            "warehouse": warehouse,
+            "valid_from": date,
+            "valid_upto": date,
+        }
+        
+        offers = frappe.db.sql(
+            """
+            SELECT *
+            FROM `tabPOS Offer`
+            WHERE 
+            disable = 0 AND
+            company = %(company)s AND
+            (pos_profile is NULL OR pos_profile = '' OR pos_profile = %(pos_profile)s) AND
+            (warehouse is NULL OR warehouse = '' OR warehouse = %(warehouse)s) AND
+            (valid_from is NULL OR valid_from = '' OR valid_from <= %(valid_from)s) AND
+            (valid_upto is NULL OR valid_upto = '' OR valid_upto >= %(valid_upto)s)
+            """,
+            values=values,
+            as_dict=1,
+        )
+        
+        # Filter offers based on invoice conditions
+        applicable_offers = []
+        for offer in offers:
+            if _check_offer_conditions(doc, offer):
+                applicable_offers.append(offer)
+        
+        return applicable_offers
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_applicable_offers: {str(e)}")
+        return []
+
+@frappe.whitelist()
+def apply_offers_to_invoice(invoice_name, offer_names):
+    """
+    POST - Apply specific offers to an invoice
+    """
+    if not invoice_name or not offer_names:
+        return None
+    
+    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    
+    # Apply each offer
+    for offer_name in offer_names:
+        _apply_single_offer(doc, offer_name)
+    
+    # Let ERPNext handle all calculations
+    doc.set_missing_values()
+    doc.calculate_taxes_and_totals()
+    doc.save()
+    
+    return doc.as_dict()
+
+@frappe.whitelist()
+def remove_offers_from_invoice(invoice_name, offer_names):
+    """
+    DELETE - Remove specific offers from an invoice
+    """
+    if not invoice_name or not offer_names:
+        return None
+    
+    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    
+    # Remove each offer
+    for offer_name in offer_names:
+        _remove_single_offer(doc, offer_name)
+    
+    # Let ERPNext handle all calculations
+    doc.set_missing_values()
+    doc.calculate_taxes_and_totals()
+    doc.save()
+    
+    return doc.as_dict()
+
+def _check_offer_conditions(doc, offer):
+    """
+    Check if offer conditions are met (internal helper)
+    """
+    # Get total quantity and amount
+    total_qty = sum(item.qty for item in doc.items if not getattr(item, 'posa_is_offer', False))
+    total_amount = doc.total
+    
+    # Check quantity conditions
+    min_qty = flt(offer.get('min_qty', 0))
+    max_qty = flt(offer.get('max_qty', 0))
+    if min_qty > 0 and total_qty < min_qty:
+        return False
+    if max_qty > 0 and total_qty > max_qty:
+        return False
+    
+    # Check amount conditions
+    min_amt = flt(offer.get('min_amt', 0))
+    max_amt = flt(offer.get('max_amt', 0))
+    if min_amt > 0 and total_amount < min_amt:
+        return False
+    if max_amt > 0 and total_amount > max_amt:
+        return False
+    
+    return True
+
+def _apply_single_offer(doc, offer_name):
+    """
+    Apply a single offer to the invoice (internal helper)
+    """
+    # Get the offer details
+    offer = frappe.get_doc("POS Offer", offer_name)
+    
+    if offer.apply_on == "Item Code":
+        _apply_item_code_offer(doc, offer)
+    elif offer.apply_on == "Item Group":
+        _apply_item_group_offer(doc, offer)
+    elif offer.apply_on == "Brand":
+        _apply_brand_offer(doc, offer)
+    elif offer.apply_on == "Transaction":
+        _apply_transaction_offer(doc, offer)
+
+def _apply_item_code_offer(doc, offer):
+    """
+    Apply item code specific offer
+    """
+    for item in doc.items:
+        if item.item_code == offer.item and not getattr(item, 'posa_is_offer', False):
+            if offer.discount_type == "Rate":
+                item.rate = offer.rate
+            elif offer.discount_type == "Discount Percentage":
+                item.discount_percentage = offer.discount_percentage
+            elif offer.discount_type == "Discount Amount":
+                item.discount_amount = offer.discount_amount
+
+def _apply_item_group_offer(doc, offer):
+    """
+    Apply item group specific offer
+    """
+    for item in doc.items:
+        if item.item_group == offer.item_group and not getattr(item, 'posa_is_offer', False):
+            if offer.discount_type == "Rate":
+                item.rate = offer.rate
+            elif offer.discount_type == "Discount Percentage":
+                item.discount_percentage = offer.discount_percentage
+            elif offer.discount_type == "Discount Amount":
+                item.discount_amount = offer.discount_amount
+
+def _apply_brand_offer(doc, offer):
+    """
+    Apply brand specific offer
+    """
+    for item in doc.items:
+        if item.brand == offer.brand and not getattr(item, 'posa_is_offer', False):
+            if offer.discount_type == "Rate":
+                item.rate = offer.rate
+            elif offer.discount_type == "Discount Percentage":
+                item.discount_percentage = offer.discount_percentage
+            elif offer.discount_type == "Discount Amount":
+                item.discount_amount = offer.discount_amount
+
+def _apply_transaction_offer(doc, offer):
+    """
+    Apply transaction level offer
+    """
+    if offer.discount_type == "Discount Percentage":
+        doc.additional_discount_percentage = offer.discount_percentage
+    elif offer.discount_type == "Discount Amount":
+        doc.discount_amount = offer.discount_amount
+
+def _remove_single_offer(doc, offer_name):
+    """
+    Remove a single offer from the invoice (internal helper)
+    """
+    # This would need to track which offers were applied and reverse them
+    # For now, we'll reset discounts and let user reapply
+    for item in doc.items:
+        if not getattr(item, 'posa_is_offer', False):
+            item.discount_percentage = 0
+            item.discount_amount = 0
+            item.rate = item.price_list_rate
+    
+    # Reset transaction level discounts
+    doc.additional_discount_percentage = 0
+    doc.discount_amount = 0
 
 @frappe.whitelist()
 def calculate_item_discount_amount(price_list_rate, discount_percentage):

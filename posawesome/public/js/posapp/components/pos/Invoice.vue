@@ -1609,6 +1609,7 @@ export default {
       
       item.discount_percentage = value;
       
+      // Recalculate item with new discount for immediate visual feedback
       this.recalculateItem(item);
       this.refreshTotals();
 
@@ -1867,33 +1868,21 @@ export default {
     },
 
     _processOffers() {
-      const offers = [];
-      this.posOffers.forEach((offer) => {
-        if (offer.apply_on === "Item Code") {
-          const itemOffer = this.getItemOffer(offer);
-          if (itemOffer) {
-            offers.push(itemOffer);
+      if (!this.invoice_doc?.name) return;
+      
+      frappe.call({
+        method: "posawesome.posawesome.api.invoice.get_applicable_offers",
+        args: {
+          invoice_name: this.invoice_doc.name
+        },
+        callback: (r) => {
+          if (r.message) {
+            this.updatePosOffers(r.message);
           }
-        } else if (offer.apply_on === "Item Group") {
-          const groupOffer = this.getGroupOffer(offer);
-          if (groupOffer) {
-            offers.push(groupOffer);
-          }
-        } else if (offer.apply_on === "Brand") {
-          const brandOffer = this.getBrandOffer(offer);
-          if (brandOffer) {
-            offers.push(brandOffer);
-          }
-        } else if (offer.apply_on === "Transaction") {
-          const transactionOffer = this.getTransactionOffer(offer);
-          if (transactionOffer) {
-            offers.push(transactionOffer);
-          }
+        },
+        error: (r) => {
         }
       });
-
-      this.setItemGiveOffer(offers);
-      this.updatePosOffers(offers);
     },
 
     setItemGiveOffer(offers) {
@@ -1943,31 +1932,6 @@ export default {
       return item;
     },
 
-    chech_qty_amount_offer(offer, qty, amount) {
-      const cacheKey = `offer_${offer.name}_${qty}_${amount}`;
-      
-      
-      if (this._cachedCalculations.has(cacheKey)) {
-        return this._cachedCalculations.get(cacheKey);
-      }
-      
-      const checks = {
-        min_qty: offer.min_qty <= 0 || qty >= offer.min_qty,
-        max_qty: offer.max_qty <= 0 || qty <= offer.max_qty,
-        min_amt: offer.min_amt <= 0 || amount >= offer.min_amt,
-        max_amt: offer.max_amt <= 0 || amount <= offer.max_amt
-      };
-      
-      const allConditionsMet = Object.values(checks).every(Boolean);
-      
-      const result = {
-        apply: allConditionsMet,
-        conditions: checks
-      };
-      
-      this._cachedCalculations.set(cacheKey, result);
-      return result;
-    },
 
     checkOfferCoupon(offer) {
       if (!offer.coupon_based) {
@@ -2011,118 +1975,6 @@ export default {
       return apply_offer;
     },
 
-    getGroupOffer(offer) {
-      let apply_offer = null;
-      if (offer.apply_on === "Item Group") {
-        if (this.checkOfferCoupon(offer)) {
-          const items = [];
-          let total_count = 0;
-          let total_amount = 0;
-          this.items.forEach((item) => {
-            if (!item.posa_is_offer && item.item_group === offer.item_group) {
-              if (
-                offer.offer === "Item Price" &&
-                item.posa_offer_applied &&
-                !this.checkOfferIsAppley(item, offer)
-              ) {
-              } else {
-                const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
-                item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
-                
-                total_count += item.stock_qty;
-                total_amount += item.stock_qty * (item.price_list_rate || 0);
-                items.push(item.posa_row_id);
-              }
-            }
-          });
-          if (total_count || total_amount) {
-            const res = this.chech_qty_amount_offer(
-              offer,
-              total_count,
-              total_amount
-            );
-            if (res.apply) {
-              offer.items = items;
-              apply_offer = offer;
-            }
-          }
-        }
-      }
-      return apply_offer;
-    },
-
-    getBrandOffer(offer) {
-      let apply_offer = null;
-      if (offer.apply_on === "Brand") {
-        if (this.checkOfferCoupon(offer)) {
-          const items = [];
-          let total_count = 0;
-          let total_amount = 0;
-          this.items.forEach((item) => {
-            if (!item.posa_is_offer && item.brand === offer.brand) {
-              if (
-                offer.offer === "Item Price" &&
-                item.posa_offer_applied &&
-                !this.checkOfferIsAppley(item, offer)
-              ) {
-              } else {
-                const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
-                item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
-                
-                total_count += item.stock_qty;
-                total_amount += item.stock_qty * (item.price_list_rate || 0);
-              }
-            }
-          });
-          if (total_count || total_amount) {
-            const res = this.chech_qty_amount_offer(
-              offer,
-              total_count,
-              total_amount
-            );
-            if (res.apply) {
-              offer.items = items;
-              apply_offer = offer;
-            }
-          }
-        }
-      }
-      return apply_offer;
-    },
-    getTransactionOffer(offer) {
-      let apply_offer = null;
-      if (offer.apply_on === "Transaction") {
-        if (this.checkOfferCoupon(offer)) {
-          let total_qty = 0;
-          this.items.forEach((item) => {
-            if ((!item.posa_is_offer && !item.posa_is_replace) || (this.invoice_doc?.docstatus === 0)) {
-              const itemQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
-              item.stock_qty = Number(item.stock_qty) > 0 ? Number(item.stock_qty) : itemQty;
-              
-              total_qty += item.stock_qty;
-            }
-          });
-          const items = [];
-          const total_count = total_qty;
-          const total_amount = this.Total;
-          if (total_count || total_amount) {
-            const res = this.chech_qty_amount_offer(
-              offer,
-              total_count,
-              total_amount
-            );
-            if (res.apply) {
-              this.items.forEach((item) => {
-                items.push(item.posa_row_id);
-              });
-              offer.items = items;
-              apply_offer = offer;
-            }
-          }
-        }
-      }
-      return apply_offer;
-    },
 
     updatePosOffers(offers) {
       evntBus.emit("update_pos_offers", offers);
@@ -2412,110 +2264,47 @@ export default {
       return new_item;
     },
 
-    ApplyOnPrice(offer) {
-      this.items.forEach((item) => {
-        if (offer.items.includes(item.posa_row_id)) {
-          const item_offers = JSON.parse(item.posa_offers);
-          if (!item_offers.includes(offer.row_id)) {
-            if (offer.discount_type === "Rate") {
-              item.rate = offer.rate;
-            } else if (offer.discount_type === "Discount Percentage") {
-              item.discount_percentage += offer.discount_percentage;
-            } else if (offer.discount_type === "Discount Amount") {
-              item.discount_amount += offer.discount_amount;
-            }
-            item.posa_offer_applied = 1;
+    applyOffersToInvoice(offer_names) {
+      if (!this.invoice_doc?.name || !offer_names?.length) return;
+      
+      frappe.call({
+        method: "posawesome.posawesome.api.invoice.apply_offers_to_invoice",
+        args: {
+          invoice_name: this.invoice_doc.name,
+          offer_names: offer_names
+        },
+        callback: (r) => {
+          if (r.message) {
+            this.invoice_doc = r.message;
+            this.refreshTotals();
+            evntBus.emit("show_mesage", {
+              text: "Offers applied successfully",
+              color: "success",
+            });
           }
         }
       });
     },
 
-    RemoveOnPrice(offer) {
-      this.items.forEach((item) => {
-        const item_offers = JSON.parse(item.posa_offers);
-        if (item_offers.includes(offer.row_id)) {
-          const originalOffer = this.posOffers.find(
-            (el) => el.name == offer.offer_name
-          );
-          if (originalOffer) {
-            if (originalOffer.discount_type === "Rate") {
-              item.rate = item.price_list_rate;
-            } else if (originalOffer.discount_type === "Discount Percentage") {
-              item.discount_percentage -= offer.discount_percentage;
-              if (!item.discount_percentage) {
-                item.discount_percentage = 0;
-                item.discount_amount = 0;
-                item.rate = item.price_list_rate;
-              }
-            } else if (originalOffer.discount_type === "Discount Amount") {
-              item.discount_amount -= offer.discount_amount;
-            }
+    removeOffersFromInvoice(offer_names) {
+      if (!this.invoice_doc?.name || !offer_names?.length) return;
+      
+      frappe.call({
+        method: "posawesome.posawesome.api.invoice.remove_offers_from_invoice",
+        args: {
+          invoice_name: this.invoice_doc.name,
+          offer_names: offer_names
+        },
+        callback: (r) => {
+          if (r.message) {
+            this.invoice_doc = r.message;
+            this.refreshTotals();
+            evntBus.emit("show_mesage", {
+              text: "Offers removed successfully",
+              color: "info",
+            });
           }
         }
-      });
-    },
-
-    ApplyOnTotal(offer) {
-      if (!offer.name) {
-        offer = this.posOffers.find((el) => el.name == offer.offer_name);
-      }
-      if (
-        (!this.discount_percentage_offer_name ||
-          this.discount_percentage_offer_name == offer.name) &&
-        offer.discount_percentage > 0 &&
-        offer.discount_percentage <= 100
-      ) {
-        this.discount_amount = this.flt(
-          (flt(this.Total) * flt(offer.discount_percentage)) / 100,
-          this.currency_precision
-        );
-        this.discount_percentage_offer_name = offer.name;
-      }
-    },
-
-    RemoveOnTotal(offer) {
-      if (
-        this.discount_percentage_offer_name &&
-        this.discount_percentage_offer_name == offer.offer_name
-      ) {
-        this.discount_amount = 0;
-        this.discount_percentage_offer_name = null;
-      }
-    },
-
-    addOfferToItems(offer) {
-      const offer_items = JSON.parse(offer.items);
-      offer_items.forEach((el) => {
-        this.items.forEach((exist_item) => {
-          if (exist_item.posa_row_id == el) {
-            const item_offers = JSON.parse(exist_item.posa_offers);
-            if (!item_offers.includes(offer.row_id)) {
-              item_offers.push(offer.row_id);
-              if (offer.offer === "Item Price") {
-                exist_item.posa_offer_applied = 1;
-              }
-            }
-            exist_item.posa_offers = JSON.stringify(item_offers);
-          }
-        });
-      });
-    },
-
-    deleteOfferFromItems(offer) {
-      const offer_items = JSON.parse(offer.items);
-      offer_items.forEach((el) => {
-        this.items.forEach((exist_item) => {
-          if (exist_item.posa_row_id == el) {
-            const item_offers = JSON.parse(exist_item.posa_offers);
-            const updated_item_offers = item_offers.filter(
-              (row_id) => row_id != offer.row_id
-            );
-            if (offer.offer === "Item Price") {
-              exist_item.posa_offer_applied = 0;
-            }
-            exist_item.posa_offers = JSON.stringify(updated_item_offers);
-          }
-        });
       });
     },
 
