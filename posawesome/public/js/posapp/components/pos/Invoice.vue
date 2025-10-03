@@ -540,21 +540,7 @@ export default {
       return this.invoice_doc?.net_total || 0;
     },
     total_items_discount_amount() {
-      if (!this.invoice_doc?.name) return 0;
-      
-      let result = 0;
-      frappe.call({
-        method: "posawesome.posawesome.api.invoice.get_total_items_discount",
-        args: {
-          invoice_name: this.invoice_doc.name
-        },
-        async: false,
-        callback: (r) => {
-          result = r.message || 0;
-        }
-      });
-      
-      return result;
+      return this.invoice_doc?.total_items_discount || 0;
     },
     TaxAmount() {
       return this.invoice_doc?.total_taxes_and_charges || 0;
@@ -584,28 +570,11 @@ export default {
 
   // ===== SECTION 5: METHODS =====
   methods: {
-    recalculateItem(item) {
-      if (!item) return;
-      
-      const price_list_rate = flt(item.price_list_rate) || flt(item.base_rate) || 0;
-      const discount_percentage = flt(item.discount_percentage) || 0;
-      
-      if (discount_percentage > 0 && price_list_rate > 0) {
-        const discount_per_unit = flt((price_list_rate * discount_percentage) / 100, this.currency_precision);
-        item.rate = flt(price_list_rate - discount_per_unit, this.currency_precision);
-      } else if (discount_percentage === 0) {
-        item.rate = price_list_rate;
-      }
-    },
     
     onQtyChange(item) {
       try {
         const newQty = Number(item.qty) || 0;
         item.qty = newQty;
-        if (newQty > 0) {
-          this.calc_stock_qty(item, newQty);
-        }
-        this.recalculateItem(item);
         this.refreshTotals();
         if (this.invoice_doc && this.invoice_doc.name) {
           this.debounced_auto_update();
@@ -634,7 +603,6 @@ export default {
         
         item.qty = newQty;
         
-        this.calc_stock_qty(item, newQty);
         this._cachedCalculations.clear();
         this.$forceUpdate();
         
@@ -661,7 +629,6 @@ export default {
           return;
         }
         
-        this.calc_stock_qty(item, newQty);
         this._cachedCalculations.clear();
         this.$forceUpdate();
         
@@ -754,7 +721,6 @@ export default {
       if (item.qty == 0) {
         this.remove_item(item);
       } else {
-        this.calc_stock_qty(item, item.qty);
         this.$forceUpdate();
         
         if (this.invoice_doc && this.invoice_doc.name) {
@@ -767,7 +733,6 @@ export default {
       if (item.qty == 0) {
         this.remove_item(item);
       } else {
-        this.calc_stock_qty(item, item.qty);
         this.$forceUpdate();
         
         if (this.invoice_doc && this.invoice_doc.name) {
@@ -1610,7 +1575,6 @@ export default {
       item.discount_percentage = value;
       
       // Recalculate item with new discount for immediate visual feedback
-      this.recalculateItem(item);
       this.refreshTotals();
 
       if (this.invoice_doc && this.invoice_doc.name) {
@@ -1667,7 +1631,6 @@ export default {
         }
         item.discount_amount = 0;
         // Recalculate with new discount
-        this.recalculateItem(item);
       }
 
       this.refreshTotals();
@@ -1705,7 +1668,6 @@ export default {
         item.discount_percentage = 0;
       }
 
-      this.calc_stock_qty(item, item.qty);
       
       if (this.invoice_doc && this.invoice_doc.name) {
         this.debounced_auto_update();
@@ -1714,17 +1676,6 @@ export default {
       this.update_item_detail(item);
     },
 
-    calc_stock_qty(item, value) {
-      if (!item) return;
-      
-      const numValue = Number(value) > 0 ? Number(value) : 1;
-      const convFactor = Number(item.conversion_factor || 1) > 0 ? Number(item.conversion_factor || 1) : 1;
-      item.stock_qty = numValue * convFactor;
-      
-      if (this.invoice_doc && this.invoice_doc.name) {
-        this.debounced_auto_update();
-      }
-    },
 
     set_serial_no(item) {
       if (!item.has_serial_no) return;
@@ -1735,7 +1686,6 @@ export default {
       item.serial_no_selected_count = item.serial_no_selected.length;
       if (item.serial_no_selected_count != item.stock_qty) {
         item.qty = item.serial_no_selected_count;
-        this.calc_stock_qty(item, item.qty);
         this.$forceUpdate();
       }
     },
@@ -1885,47 +1835,6 @@ export default {
       });
     },
 
-    setItemGiveOffer(offers) {
-      offers.forEach((offer) => {
-        if (
-          offer.apply_on == "Item Code" &&
-          offer.apply_type == "Item Code" &&
-          offer.replace_item
-        ) {
-          offer.give_item = offer.item;
-          offer.apply_item_code = offer.item;
-        } else if (
-          offer.apply_on == "Item Group" &&
-          offer.apply_type == "Item Group" &&
-          offer.replace_cheapest_item
-        ) {
-          const offerItemCode = this.getCheapestItem(offer).item_code;
-          offer.give_item = offerItemCode;
-          offer.apply_item_code = offerItemCode;
-        }
-      });
-    },
-
-    getCheapestItem(offer) {
-      let itemsRowID;
-      if (typeof offer.items === "string") {
-        itemsRowID = JSON.parse(offer.items);
-      } else {
-        itemsRowID = offer.items;
-      }
-      const itemsList = [];
-      itemsRowID.forEach((row_id) => {
-        itemsList.push(this.getItemFromRowID(row_id));
-      });
-      const result = itemsList.reduce(function (res, obj) {
-        return !obj.posa_is_replace &&
-          !obj.posa_is_offer &&
-          obj.price_list_rate < res.price_list_rate
-          ? obj
-          : res;
-      });
-      return result;
-    },
 
     getItemFromRowID(row_id) {
       const item = this.items.find((el) => el.posa_row_id == row_id);
