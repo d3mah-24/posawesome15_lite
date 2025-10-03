@@ -375,6 +375,8 @@ def update_invoice(data):
         else:
             item.is_free_item = 0
 
+    invoice_doc.calculate_taxes_and_totals()
+
     # Save and let ERPNext calculate everything
     invoice_doc.flags.ignore_permissions = True
     frappe.flags.ignore_account_permission = True

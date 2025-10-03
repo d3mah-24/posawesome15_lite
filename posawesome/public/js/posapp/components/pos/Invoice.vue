@@ -304,20 +304,8 @@
         </v-col>
         <v-col class="pa-0 ma-0 equal-width-field">
           <v-text-field
-            :model-value="formatFloat(additional_discount_percentage)"
-            @change="
-              [
-                setFormatedFloat(
-                  additional_discount_percentage,
-                  'additional_discount_percentage',
-                  null,
-                  false,
-                  $event
-                ),
-                update_discount_umount($event),
-              ]
-            "
-            :rules="[isNumber]"
+            v-model.number="additional_discount_percentage"
+            @blur="update_discount_umount"
             label="Invoice Discount %"
             suffix="%"
             ref="percentage_discount"
@@ -327,10 +315,10 @@
             hide-details
             class="ma-0"
             style="margin: 0 1px !important;"
-            :readonly="
-              !pos_profile.posa_allow_user_to_edit_additional_discount ||
-              !!discount_percentage_offer_name
-            "
+            type="number"
+            step="0.01"
+            min="0"
+            :max="pos_profile.posa_invoice_max_discount_allowed || 100"
           ></v-text-field>
         </v-col>
         <v-col class="pa-0 ma-0 equal-width-field">
@@ -596,6 +584,20 @@ export default {
 
   // ===== SECTION 5: METHODS =====
   methods: {
+    recalculateItem(item) {
+      if (!item) return;
+      
+      const price_list_rate = flt(item.price_list_rate) || flt(item.base_rate) || 0;
+      const discount_percentage = flt(item.discount_percentage) || 0;
+      
+      if (discount_percentage > 0 && price_list_rate > 0) {
+        const discount_per_unit = flt((price_list_rate * discount_percentage) / 100, this.currency_precision);
+        item.rate = flt(price_list_rate - discount_per_unit, this.currency_precision);
+      } else if (discount_percentage === 0) {
+        item.rate = price_list_rate;
+      }
+    },
+    
     onQtyChange(item) {
       try {
         const newQty = Number(item.qty) || 0;
@@ -617,7 +619,7 @@ export default {
     },
     onQtyInput(item) {
       item.qty = Number(item.qty) || 0;
-      this.recalculateItem(item);
+      // Just update the display, no need to recalculate discount
       this.refreshTotals();
     },
     refreshTotals() {
@@ -1606,7 +1608,9 @@ export default {
       }
       
       item.discount_percentage = value;
-      item.discount_amount = 0; 
+      
+      this.recalculateItem(item);
+      this.refreshTotals();
 
       if (this.invoice_doc && this.invoice_doc.name) {
         this.debounced_auto_update();
@@ -1623,20 +1627,18 @@ export default {
       evntBus.emit("update_customer_price_list", price_list);
     },
 
-    update_discount_umount(event) {
-      const value = flt(event.target.value);
+    update_discount_umount() {
+      const value = flt(this.additional_discount_percentage) || 0;
       const maxDiscount = this.pos_profile.posa_invoice_max_discount_allowed || 100;
       
-      if (value >= 0 && value <= maxDiscount) {
-        this.additional_discount_percentage = value;
+      if (value < 0) {
+        this.additional_discount_percentage = 0;
       } else if (value > maxDiscount) {
         this.additional_discount_percentage = maxDiscount;
         evntBus.emit("show_mesage", {
-          text: `Reverted to allowed discount percentage`,
+          text: `Maximum invoice discount is ${maxDiscount}%`,
           color: "info",
         });
-      } else {
-        this.additional_discount_percentage = 0;
       }
       
       if (this.invoice_doc && this.invoice_doc.name) {
@@ -1663,7 +1665,11 @@ export default {
           item.discount_percentage = flt(value);
         }
         item.discount_amount = 0;
+        // Recalculate with new discount
+        this.recalculateItem(item);
       }
+
+      this.refreshTotals();
 
       if (this.invoice_doc && this.invoice_doc.name) {
         this.debounced_auto_update();
@@ -3288,6 +3294,12 @@ export default {
 .cards.mb-0.mt-3.py-1.px-0.grey.lighten-5 .v-text-field .v-field__input {
   padding: 6px 10px !important;
   font-size: 0.8rem !important;
+}
+
+/* Ensure invoice discount field is editable */
+.cards.mb-0.mt-3.py-1.px-0.grey.lighten-5 .v-text-field input[type="number"] {
+  pointer-events: auto !important;
+  cursor: text !important;
 }
 @media (max-width: 1280px) {
   .quantity-input,
