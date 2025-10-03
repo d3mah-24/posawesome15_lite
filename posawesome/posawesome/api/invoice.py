@@ -36,7 +36,6 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
 # OFFER API FUNCTIONS
 # =============================================================================
 
-
 @frappe.whitelist()
 def apply_offers_to_invoice(invoice_name, offer_names):
     """
@@ -967,9 +966,9 @@ def add_payment_to_invoice(invoice_name, mode_of_payment, amount):
     return doc.as_dict()
 
 @frappe.whitelist()
-def submit_invoice(invoice_name):
+def submit_invoice_simple(invoice_name):
     """
-    PUT - Submit invoice
+    PUT - Submit invoice (simple version)
     """
     doc = frappe.get_doc("Sales Invoice", invoice_name)
     doc.submit()
