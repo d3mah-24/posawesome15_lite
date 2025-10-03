@@ -27,10 +27,6 @@ from erpnext.accounts.doctype.loyalty_program.loyalty_program import (
     get_loyalty_program_details_with_points,
 )
 from posawesome.posawesome.doctype.pos_coupon.pos_coupon import update_coupon_code_count, check_coupon_code
-from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
-    get_applicable_delivery_charges,
-    get_applicable_delivery_charges as _get_applicable_delivery_charges,
-)
 
 # =============================================================================
 # OFFER API FUNCTIONS
@@ -207,8 +203,6 @@ def _apply_transaction_offer(doc, offer):
 
 def validate(doc, method):
     validate_shift(doc)
-    auto_set_delivery_charges(doc)
-    calc_delivery_charges(doc)
     apply_tax_inclusive(doc)
 
 
@@ -253,88 +247,6 @@ def update_coupon(doc, transaction_type):
         update_coupon_code_count(coupon.coupon, transaction_type)
 
 
-def auto_set_delivery_charges(doc):
-    if not doc.pos_profile:
-        return
-    if not frappe.get_cached_value("POS Profile", doc.pos_profile, "posa_auto_set_delivery_charges"):
-        return
-
-    delivery_charges = get_applicable_delivery_charges(
-        doc.company,
-        doc.pos_profile,
-        doc.customer,
-        doc.shipping_address_name,
-        doc.posa_delivery_charges,
-        restrict=True,
-    )
-
-    if doc.posa_delivery_charges:
-        if doc.posa_delivery_charges_rate:
-            return
-        else:
-            if len(delivery_charges) > 0:
-                doc.posa_delivery_charges_rate = delivery_charges[0].rate
-    else:
-        if len(delivery_charges) > 0:
-            doc.posa_delivery_charges = delivery_charges[0].name
-            doc.posa_delivery_charges_rate = delivery_charges[0].rate
-        else:
-            doc.posa_delivery_charges = None
-            doc.posa_delivery_charges_rate = None
-
-
-def calc_delivery_charges(doc):
-    if not doc.pos_profile:
-        return
-
-    old_doc = None
-    calculate_taxes_and_totals = False
-    if not doc.is_new():
-        old_doc = doc.get_doc_before_save()
-        if not doc.posa_delivery_charges and not old_doc.posa_delivery_charges:
-            return
-    else:
-        if not doc.posa_delivery_charges:
-            return
-    if not doc.posa_delivery_charges:
-        doc.posa_delivery_charges_rate = 0
-
-    charges_doc = None
-    if doc.posa_delivery_charges:
-        charges_doc = frappe.get_cached_doc("Delivery Charges", doc.posa_delivery_charges)
-        doc.posa_delivery_charges_rate = charges_doc.default_rate
-        charges_profile = next((i for i in charges_doc.profiles if i.pos_profile == doc.pos_profile), None)
-        if charges_profile:
-            doc.posa_delivery_charges_rate = charges_profile.rate
-
-    if old_doc and old_doc.posa_delivery_charges:
-        old_charges = next(
-            (
-                i
-                for i in doc.taxes
-                if i.charge_type == "Actual" and i.description == old_doc.posa_delivery_charges
-            ),
-            None,
-        )
-        if old_charges:
-            doc.taxes.remove(old_charges)
-            calculate_taxes_and_totals = True
-
-    if doc.posa_delivery_charges:
-        doc.append(
-            "taxes",
-            {
-                "charge_type": "Actual",
-                "description": doc.posa_delivery_charges,
-                "tax_amount": doc.posa_delivery_charges_rate,
-                "cost_center": charges_doc.cost_center,
-                "account_head": charges_doc.shipping_account,
-            },
-        )
-        calculate_taxes_and_totals = True
-
-    if calculate_taxes_and_totals:
-        doc.calculate_taxes_and_totals()
 
 
 def apply_tax_inclusive(doc):

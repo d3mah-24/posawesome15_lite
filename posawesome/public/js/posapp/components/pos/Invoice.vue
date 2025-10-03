@@ -15,57 +15,6 @@
       <v-row
         align="center"
         class="items px-2 py-0 mt-0 pt-0"
-        v-if="pos_profile.posa_use_delivery_charges"
-      >
-        <v-col cols="8" class="pb-0 mb-0 pr-0 pt-0">
-          <v-autocomplete
-            dense
-            clearable
-            auto-select-first
-            outlined
-            color="primary"
-            label="Delivery Charges"
-            v-model="selcted_delivery_charges"
-            :items="delivery_charges"
-            item-title="name"
-            return-object
-            background-color="white"
-            no-data-text="No delivery charges available"
-            hide-details
-            :filter="deliveryChargesFilter"
-            :disabled="readonly"
-            @change="update_delivery_charges"
-          >
-            <template v-slot:item="{ props, item }">
-                <v-list-item v-bind="props">
-                  <v-list-item-title
-                    class="primary--text subtitle-1"
-                    v-html="item.name"
-                  ></v-list-item-title>
-                  <v-list-item-subtitle
-                    v-html="`Price: ${item.rate}`"
-                  ></v-list-item-subtitle>
-                </v-list-item>
-            </template>
-          </v-autocomplete>
-        </v-col>
-        <v-col cols="4" class="pb-0 mb-0 pt-0">
-          <v-text-field
-            dense
-            outlined
-            color="primary"
-            label="Delivery Charges Rate"
-            background-color="white"
-            hide-details
-            :value="formatCurrency(delivery_charges_rate)"
-            :prefix="currencySymbol(pos_profile.currency)"
-            disabled
-          ></v-text-field>
-        </v-col>
-      </v-row>
-      <v-row
-        align="center"
-        class="items px-2 py-0 mt-0 pt-0"
         v-if="pos_profile.posa_allow_change_posting_date"
       >
         <v-col
@@ -397,7 +346,7 @@
             block
             color="primary"
             variant="flat"
-            :disabled="!canPrintInvoice"
+            :disabled="!hasItems"
             @click="printInvoice"
           >
             Print Invoice
@@ -408,6 +357,7 @@
             block
             color="success"
             variant="flat"
+            :disabled="!hasItems"
             @click="show_payment"
           >
             Pay
@@ -478,9 +428,6 @@ export default {
       float_precision: 2,
       currency_precision: 2,
       new_line: false,
-      delivery_charges: [],
-      delivery_charges_rate: 0,
-      selcted_delivery_charges: {},
       invoice_posting_date: false,
       posting_date: frappe.datetime.nowdate(),
       quick_return_value: false,
@@ -533,7 +480,7 @@ export default {
       return this.invoice_doc?.total || 0;
     },
     subtotal() {
-      this.close_payments();
+        this.close_payments();
       return this.invoice_doc?.net_total || 0;
     },
     total_items_discount_amount() {
@@ -562,6 +509,9 @@ export default {
       const hasPositive = payments.some(payment => this.flt(payment.amount) > 0);
       if (hasPositive) return true;
       return !!this.defaultPaymentMode;
+    },
+    hasItems() {
+      return this.items && this.items.length > 0;
     },
   },
 
@@ -639,14 +589,14 @@ export default {
         });
       }
     },
-
+    
     getDiscountAmount(item) {
       if (!item) return 0;
       
       if (item.discount_amount) {
         return flt(item.discount_amount) || 0;
       }
-
+      
       const basePrice = flt(item.price_list_rate) || flt(item.rate) || 0;
       const discountPercentage = flt(item.discount_percentage) || 0;
       
@@ -668,7 +618,7 @@ export default {
       
       return 0;
     },
-
+    
     quick_return() {
       if (!this.pos_profile.posa_allow_quick_return) {
         evntBus.emit("show_mesage", {
@@ -738,7 +688,7 @@ export default {
       }
     },
 
-  add_item(item) {
+    add_item(item) {
       if (!item || !item.item_code) {
         evntBus.emit("show_mesage", {
           text: "Item data is incorrect or missing",
@@ -789,7 +739,7 @@ export default {
             }
           });
         } else {
-          existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
+        existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
         }
       } else {
         new_item.posa_row_id = this.generateRowId();
@@ -822,7 +772,7 @@ export default {
           new_item.rate = rate;
           new_item.price_list_rate = rate;
           new_item.base_rate = rate;
-          this.items.push(new_item);
+        this.items.push(new_item);
         }
       }
       
@@ -878,12 +828,12 @@ export default {
               await this.reload_invoice();
             } catch (reloadError) {
             }
-            }
-          } finally {
-            setTimeout(() => {
-              this._autoUpdateInProgress = false;
-            }, 1000); // Wait one second before allowing another update
           }
+        } finally {
+          setTimeout(() => {
+            this._autoUpdateInProgress = false;
+            }, 1000); // Wait one second before allowing another update
+        }
       }
     },
 
@@ -899,8 +849,8 @@ export default {
           });
           
           if (result.message) {
-              this.invoice_doc = result.message;
-              if (result.message.items) {
+            this.invoice_doc = result.message;
+            if (result.message.items) {
               this.items = result.message.items;
             }
           }
@@ -976,7 +926,6 @@ export default {
       new_item.posa_is_replace = item.posa_is_replace || null;
       new_item.is_free_item = 0;
       new_item.posa_notes = "";
-      new_item.posa_delivery_date = "";
       new_item.posa_row_id = this.makeid(20);
    
       if (
@@ -1019,8 +968,6 @@ export default {
       this.return_doc = "";
       this.discount_amount = 0;
       this.additional_discount_percentage = 0;
-      this.delivery_charges_rate = 0;
-      this.selcted_delivery_charges = {};
       evntBus.emit("set_customer_readonly", false);
       
       evntBus.emit("show_payment", "false");
@@ -1166,7 +1113,6 @@ export default {
           discount_amount: item.discount_amount || 0,
           batch_no: item.batch_no,
           posa_notes: item.posa_notes,
-          posa_delivery_date: item.posa_delivery_date,
           price_list_rate: item.price_list_rate || item.rate || 0,
         };
       });
@@ -1471,7 +1417,7 @@ export default {
       }
       evntBus.emit("update_customer_price_list", price_list);
     },
-
+      
     update_discount_umount() {
       const value = flt(this.additional_discount_percentage) || 0;
       const maxDiscount = this.pos_profile.posa_invoice_max_discount_allowed || 100;
@@ -1536,18 +1482,18 @@ export default {
               item.batch_price = selectedBatch.batch_price;
               item.price_list_rate = selectedBatch.batch_price;
               item.rate = selectedBatch.batch_price;
-            } else if (update) {
-              item.batch_price = null;
+        } else if (update) {
+          item.batch_price = null;
               vm.update_item_detail(item);
-            }
+        }
             
             vm.$forceUpdate();
             
-          } else {
-            item.batch_no = null;
-            item.actual_batch_qty = null;
-            item.batch_no_expiry_date = null;
-            item.batch_price = null;
+      } else {
+        item.batch_no = null;
+        item.actual_batch_qty = null;
+        item.batch_no_expiry_date = null;
+        item.batch_price = null;
             item.batch_no_data = r.message?.batch_data || [];
             
             if (r.message?.message) {
@@ -1692,9 +1638,9 @@ export default {
         callback: function(r) {
           if (r.message && r.message.success) {
             apply_offer = r.message.offer;
-          }
-        }
-      });
+              }
+            }
+          });
 
       return apply_offer;
     },
@@ -1718,9 +1664,9 @@ export default {
         this.removeOffersFromInvoice([offer_name]);
       }
       
-      const index = this.posa_offers.findIndex(
-        (el) => el.row_id === invoiceOffer.row_id
-      );
+        const index = this.posa_offers.findIndex(
+          (el) => el.row_id === invoiceOffer.row_id
+        );
       if (index > -1) {
         this.posa_offers.splice(index, 1);
       }
@@ -1732,7 +1678,7 @@ export default {
         const offer_name = offer.name || offer.title;
         this.applyOffersToInvoice([offer_name]);
       }
-      
+
       const newOffer = {
         offer_name: offer.name,
         row_id: offer.row_id,
@@ -1792,16 +1738,6 @@ export default {
       });
     },
 
-    validate_due_date(item) {
-      const today = frappe.datetime.now_date();
-      const parse_today = Date.parse(today);
-      const new_date = Date.parse(item.posa_delivery_date);
-      if (new_date < parse_today) {
-        setTimeout(() => {
-          item.posa_delivery_date = today;
-        }, 0);
-      }
-    },
     load_print_page(invoice_name) {
       const print_format =
         this.pos_profile.print_format_for_online ||
@@ -1826,48 +1762,6 @@ export default {
       );
     },
 
-    set_delivery_charges() {
-      const vm = this;
-      if (
-        !this.pos_profile ||
-        !this.customer ||
-        !this.pos_profile.posa_use_delivery_charges
-      ) {
-        this.delivery_charges = [];
-        this.delivery_charges_rate = 0;
-        this.selcted_delivery_charges = {};
-        return;
-      }
-      this.delivery_charges_rate = 0;
-      this.selcted_delivery_charges = {};
-      frappe.call({
-        method:
-          "posawesome.posawesome.api.posapp.get_applicable_delivery_charges",
-        args: {
-          company: this.pos_profile.company,
-          pos_profile: this.pos_profile.name,
-          customer: this.customer,
-        },
-        async: true,
-        callback: function (r) {
-          if (r.message) {
-            vm.delivery_charges = r.message;
-          }
-        },
-      });
-    },
-    deliveryChargesFilter(item, queryText, itemText) {
-      const textOne = item.name.toLowerCase();
-      const searchText = queryText.toLowerCase();
-      return textOne.indexOf(searchText) > -1;
-    },
-    update_delivery_charges() {
-      if (this.selcted_delivery_charges) {
-        this.delivery_charges_rate = this.selcted_delivery_charges.rate;
-      } else {
-        this.delivery_charges_rate = 0;
-      }
-    },
     debugTableDimensions() {
       try {
         if (!this.$el || typeof this.$el.querySelector !== "function") {
@@ -1893,25 +1787,11 @@ export default {
         return;
       }
 
-      const paymentsComponent = this.getPaymentsComponent();
-      if (!paymentsComponent) {
-        evntBus.emit("show_mesage", {
-          text: "Cannot access payment screen for printing",
-          color: "error",
-        });
-        return;
-      }
-
-      if (this.hasManualPayments(paymentsComponent)) {
-        paymentsComponent.exposeSubmit(true);
-        return;
-      }
-
       const defaultMode = this.defaultPaymentMode;
       if (!defaultMode) {
         evntBus.emit("show_mesage", {
-          text: "Please select a payment method",
-          color: "warning",
+          text: "No default payment method in POS profile",
+          color: "error",
         });
         return;
       }
@@ -1929,10 +1809,51 @@ export default {
           if (defaultPayment) {
             defaultPayment.amount = this.flt(invoice_doc.grand_total, this.currency_precision);
           }
-          evntBus.emit("send_invoice_doc_payment", invoice_doc);
-          paymentsComponent.autoPayWithDefault(invoice_doc);
+          
+          // Submit and print the invoice
+          frappe.call({
+            method: "posawesome.posawesome.api.invoice.submit_invoice",
+            args: {
+              data: {
+                total_change: 0,
+                paid_change: 0,
+                credit_change: 0,
+                redeemed_customer_credit: 0,
+                customer_credit_dict: [],
+                is_cashback: false,
+              },
+              invoice: invoice_doc,
+            },
+            async: true,
+            callback: (r) => {
+              evntBus.emit("unfreeze");
+              if (r.message) {
+                this.load_print_page(r.message.name);
+                evntBus.emit("set_last_invoice", r.message.name);
+                evntBus.emit("show_mesage", {
+                  text: `Invoice ${r.message.name} submitted and printed successfully`,
+                  color: "success",
+                });
+                frappe.utils.play_sound("submit");
+                evntBus.emit("new_invoice", "false");
+              } else {
+                evntBus.emit("show_mesage", {
+                  text: "Failed to submit invoice",
+                  color: "error",
+                });
+              }
+            },
+            error: (err) => {
+              evntBus.emit("unfreeze");
+              evntBus.emit("show_mesage", {
+                text: err?.message || "Failed to submit invoice",
+                color: "error",
+              });
+            },
+          });
         })
         .catch((error) => {
+          evntBus.emit("unfreeze");
           evntBus.emit("show_mesage", {
             text: "Failed to prepare invoice for printing: " + error.message,
             color: "error",
@@ -2099,7 +2020,6 @@ export default {
       this.close_payments();
       evntBus.emit("set_customer", this.customer);
       this.fetch_customer_details();
-      this.set_delivery_charges();
     },
     customer_info() {
       evntBus.emit("set_customer_info_to_edit", this.customer_info);

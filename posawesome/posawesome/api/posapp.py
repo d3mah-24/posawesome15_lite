@@ -24,9 +24,6 @@ from erpnext.accounts.doctype.loyalty_program.loyalty_program import (
     get_loyalty_program_details_with_points,
 )
 from posawesome.posawesome.doctype.pos_coupon.pos_coupon import check_coupon_code
-from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
-    get_applicable_delivery_charges as _get_applicable_delivery_charges,
-)
 
 
 
@@ -66,11 +63,3 @@ def get_amount(ref_doc, payment_account=None):
         frappe.throw(
             _("Payment Entry is already created or payment account is not matched")
         )
-
-@frappe.whitelist()
-def get_applicable_delivery_charges(
-    company, pos_profile, customer, shipping_address_name=None
-):
-    return _get_applicable_delivery_charges(
-        company, pos_profile, customer, shipping_address_name
-    )

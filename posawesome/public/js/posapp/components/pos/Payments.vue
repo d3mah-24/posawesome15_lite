@@ -235,7 +235,7 @@
             ></v-switch>
           </v-col>
           <v-col
-            cols="6"
+            cols="4"
             v-if="pos_profile.posa_allow_credit_sale && !invoice_doc.is_return"
           >
             <v-switch
@@ -244,6 +244,30 @@
               label="Is it a credit sale?"
               class="my-0 py-0"
             ></v-switch>
+          </v-col>
+          <v-col
+            cols="4"
+            v-if="!invoice_doc.is_return && pos_profile.posa_use_customer_credit"
+          >
+            <v-switch
+              v-model="redeem_customer_credit"
+              flat
+              label="Use Customer Credit"
+              class="my-0 py-0"
+              @change="get_available_credit($event.target.value)"
+            ></v-switch>
+          </v-col>
+          <v-col
+            cols="4"
+          >
+            <v-btn
+              block
+              large
+              color="primary"
+              dark
+              :disabled="vaildatPayment"
+              @click="emitPrintRequest"
+            >Print Invoice</v-btn>
           </v-col>
           <v-col
             cols="6"
@@ -280,18 +304,6 @@
                 @update:model-value="date_menu = false"
               ></v-date-picker>
             </v-menu>
-          </v-col>
-          <v-col
-            cols="6"
-            v-if="!invoice_doc.is_return && pos_profile.posa_use_customer_credit"
-          >
-            <v-switch
-              v-model="redeem_customer_credit"
-              flat
-              label="Use Customer Credit"
-              class="my-0 py-0"
-              @change="get_available_credit($event.target.value)"
-            ></v-switch>
           </v-col>
         </v-row>
         <div
@@ -340,30 +352,6 @@
       </div>
     </v-card>
 
-    <v-card flat class="cards mb-0 mt-3 py-0">
-      <v-row align="start" no-gutters>
-        <v-col cols="6" class="pr-1">
-          <v-btn
-            block
-            large
-            color="primary"
-            dark
-            :disabled="vaildatPayment"
-            @click="emitPrintRequest"
-          >Print Invoice</v-btn>
-        </v-col>
-        <v-col cols="6" class="pl-1">
-          <v-btn
-            block
-            large
-            color="success"
-            dark
-            :disabled="vaildatPayment"
-            @click="submit(undefined, false, true)"
-          >Confirm Payment</v-btn>
-        </v-col>
-      </v-row>
-    </v-card>
     <div>
       <v-dialog v-model="phone_dialog" max-width="400px">
         <v-card>
@@ -1019,12 +1007,6 @@ export default {
     });
     evntBus.on("set_customer_info_to_edit", (data) => {
       this.customer_info = data;
-    });
-    // Delivery date update handler
-    evntBus.on("update_delivery_date", (date) => {
-      if (this.invoice_doc) {
-        this.invoice_doc.posa_delivery_date = date;
-      }
     });
     
     // Due date update handler
