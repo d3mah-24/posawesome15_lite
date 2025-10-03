@@ -173,7 +173,6 @@
                         false,
                         $event
                       ),
-                      calc_prices(item, $event.target.value, $event),
                     ]
                   "
                   @blur="
@@ -185,7 +184,6 @@
                         false,
                         $event
                       ),
-                      calc_prices(item, $event.target.value, $event),
                     ]
                   "
                   @keyup.enter="
@@ -197,7 +195,6 @@
                         false,
                         $event
                       ),
-                      calc_prices(item, $event.target.value, $event),
                     ]
                   "
                   :rules="[isNumber]"
@@ -1611,70 +1608,6 @@ export default {
       }
     },
 
-    calc_prices(item, value, $event) {
-      if ($event.target.id === "rate") {
-        item.rate = value;
-        item.discount_percentage = 0;
-        item.discount_amount = 0;
-      } else if ($event.target.id === "discount_amount") {
-        if (value < 0) {
-          item.discount_amount = 0;
-        } else {
-          item.discount_amount = flt(value);
-        }
-        item.discount_percentage = 0;
-      } else if ($event.target.id === "discount_percentage") {
-        if (value < 0) {
-          item.discount_percentage = 0;
-        } else {
-          item.discount_percentage = flt(value);
-        }
-        item.discount_amount = 0;
-        // Recalculate with new discount
-      }
-
-      this.refreshTotals();
-
-      if (this.invoice_doc && this.invoice_doc.name) {
-        this.debounced_auto_update();
-      }
-    },
-
-    calc_uom(item, value) {
-      let selected_uom = value;
-      if (typeof value === "object" && value !== null) {
-        if (value.target && value.target.value) {
-          selected_uom = value.target.value;
-        } else if (value.uom) {
-          selected_uom = value.uom;
-        }
-      }
-      
-      item.uom = selected_uom;
-      
-      if (item.item_uoms && Array.isArray(item.item_uoms)) {
-        const selected_uom_obj = item.item_uoms.find((uom_item) => uom_item.uom === selected_uom);
-        item.conversion_factor = selected_uom_obj ? parseFloat(selected_uom_obj.conversion_factor) : 1;
-      } else {
-        item.conversion_factor = 1;
-      }
-      
-      if (!item.base_rate && item.price_list_rate) {
-        item.base_rate = item.price_list_rate;
-      }
-      
-      if (!item.posa_offer_applied) {
-        item.discount_amount = 0;
-        item.discount_percentage = 0;
-      }
-
-      
-      if (this.invoice_doc && this.invoice_doc.name) {
-        this.debounced_auto_update();
-      }
-      
-      this.update_item_detail(item);
-    },
 
 
     set_serial_no(item) {
