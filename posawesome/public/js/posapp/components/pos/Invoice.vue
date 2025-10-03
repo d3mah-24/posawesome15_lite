@@ -1932,7 +1932,6 @@ export default {
       return item;
     },
 
-
     checkOfferCoupon(offer) {
       if (!offer.coupon_based) {
         offer.coupon = null;
@@ -1975,232 +1974,40 @@ export default {
       return apply_offer;
     },
 
-
     updatePosOffers(offers) {
       evntBus.emit("update_pos_offers", offers);
     },
 
     updateInvoiceOffers(offers) {
-      this.posa_offers.forEach((invoiceOffer) => {
-        const existOffer = offers.find(
-          (offer) => invoiceOffer.row_id == offer.row_id
-        );
-        if (!existOffer) {
-          this.removeApplyOffer(invoiceOffer);
-        }
-      });
-      offers.forEach((offer) => {
-        const existOffer = this.posa_offers.find(
-          (invoiceOffer) => invoiceOffer.row_id == offer.row_id
-        );
-        if (existOffer) {
-          existOffer.items = JSON.stringify(offer.items);
-          if (
-            existOffer.offer === "Give Product" &&
-            existOffer.give_item &&
-            existOffer.give_item != offer.give_item
-          ) {
-            const item_to_remove = this.items.find(
-              (item) => item.posa_row_id == existOffer.give_item_row_id
-            );
-            if (item_to_remove) {
-              const updated_item_offers = offer.items.filter(
-                (row_id) => row_id != item_to_remove.posa_row_id
-              );
-              offer.items = updated_item_offers;
-              this.remove_item(item_to_remove);
-              existOffer.give_item_row_id = null;
-              existOffer.give_item = null;
-            }
-            const newItemOffer = this.ApplyOnGiveProduct(offer);
-            if (offer.replace_cheapest_item) {
-              const cheapestItem = this.getCheapestItem(offer);
-              const oldBaseItem = this.items.find(
-                (el) => el.posa_row_id == item_to_remove.posa_is_replace
-              );
-              newItemOffer.qty = item_to_remove.qty;
-              if (oldBaseItem && !oldBaseItem.posa_is_replace) {
-                oldBaseItem.qty += item_to_remove.qty;
-              } else {
-                const restoredItem = this.ApplyOnGiveProduct(
-                  {
-                    given_qty: item_to_remove.qty,
-                  },
-                  item_to_remove.item_code
-                );
-                restoredItem.posa_is_offer = 0;
-                this.items.unshift(restoredItem);
-              }
-              newItemOffer.posa_is_offer = 0;
-              newItemOffer.posa_is_replace = cheapestItem.posa_row_id;
-              const diffQty = cheapestItem.qty - newItemOffer.qty;
-              if (diffQty <= 0) {
-                newItemOffer.qty += diffQty;
-                this.remove_item(cheapestItem);
-                newItemOffer.posa_row_id = cheapestItem.posa_row_id;
-                newItemOffer.posa_is_replace = newItemOffer.posa_row_id;
-              } else {
-                cheapestItem.qty = diffQty;
-              }
-            }
-            this.items.unshift(newItemOffer);
-            existOffer.give_item_row_id = newItemOffer.posa_row_id;
-            existOffer.give_item = newItemOffer.item_code;
-          } else if (
-            existOffer.offer === "Give Product" &&
-            existOffer.give_item &&
-            existOffer.give_item == offer.give_item &&
-            (offer.replace_item || offer.replace_cheapest_item)
-          ) {
-            this.$nextTick(function () {
-              const offerItem = this.getItemFromRowID(
-                existOffer.give_item_row_id
-              );
-              const diff = offer.given_qty - offerItem.qty;
-              if (diff > 0) {
-                const itemsRowID = JSON.parse(existOffer.items);
-                const itemsList = [];
-                itemsRowID.forEach((row_id) => {
-                  itemsList.push(this.getItemFromRowID(row_id));
-                });
-                const existItem = itemsList.find(
-                  (el) =>
-                    el.item_code == offerItem.item_code &&
-                    el.posa_is_replace != offerItem.posa_row_id
-                );
-                if (existItem) {
-                  const diffExistQty = existItem.qty - diff;
-                  if (diffExistQty > 0) {
-                    offerItem.qty += diff;
-                    existItem.qty -= diff;
-                  } else {
-                    offerItem.qty += existItem.qty;
-                    this.remove_item(existItem);
-                  }
-                }
-              }
-            });
-          } else if (existOffer.offer === "Item Price") {
-            this.ApplyOnPrice(offer);
-          } else if (existOffer.offer === "Grand Total") {
-            this.ApplyOnTotal(offer);
-          }
-          this.addOfferToItems(existOffer);
-        } else {
-          this.applyNewOffer(offer);
-        }
-      });
+      this.posa_offers = offers || [];
+      
+      if (offers && offers.length > 0) {
+        const offer_names = offers.map(offer => offer.name || offer.title);
+        this.applyOffersToInvoice(offer_names);
+      }
     },
 
     removeApplyOffer(invoiceOffer) {
-      if (invoiceOffer.offer === "Item Price") {
-        this.RemoveOnPrice(invoiceOffer);
-        const index = this.posa_offers.findIndex(
-          (el) => el.row_id === invoiceOffer.row_id
-        );
+      if (invoiceOffer.name || invoiceOffer.title) {
+        const offer_name = invoiceOffer.name || invoiceOffer.title;
+        this.removeOffersFromInvoice([offer_name]);
+      }
+      
+      const index = this.posa_offers.findIndex(
+        (el) => el.row_id === invoiceOffer.row_id
+      );
+      if (index > -1) {
         this.posa_offers.splice(index, 1);
       }
-      if (invoiceOffer.offer === "Give Product") {
-        const item_to_remove = this.items.find(
-          (item) => item.posa_row_id == invoiceOffer.give_item_row_id
-        );
-        const index = this.posa_offers.findIndex(
-          (el) => el.row_id === invoiceOffer.row_id
-        );
-        this.posa_offers.splice(index, 1);
-        this.remove_item(item_to_remove);
-      }
-      if (invoiceOffer.offer === "Grand Total") {
-        this.RemoveOnTotal(invoiceOffer);
-        const index = this.posa_offers.findIndex(
-          (el) => el.row_id === invoiceOffer.row_id
-        );
-        this.posa_offers.splice(index, 1);
-      }
-      if (invoiceOffer.offer === "Loyalty Point") {
-        const index = this.posa_offers.findIndex(
-          (el) => el.row_id === invoiceOffer.row_id
-        );
-        this.posa_offers.splice(index, 1);
-      }
-      this.deleteOfferFromItems(invoiceOffer);
     },
 
     applyNewOffer(offer) {
-      if (offer.offer === "Item Price") {
-        this.ApplyOnPrice(offer);
+      // SIMPLIFIED: Use Python API to apply new offers
+      if (offer.name || offer.title) {
+        const offer_name = offer.name || offer.title;
+        this.applyOffersToInvoice([offer_name]);
       }
-      if (offer.offer === "Give Product") {
-        let itemsRowID;
-        if (typeof offer.items === "string") {
-          itemsRowID = JSON.parse(offer.items);
-        } else {
-          itemsRowID = offer.items;
-        }
-        if (
-          offer.apply_on == "Item Code" &&
-          offer.apply_type == "Item Code" &&
-          offer.replace_item
-        ) {
-          const item = this.ApplyOnGiveProduct(offer, offer.item);
-          item.posa_is_replace = itemsRowID[0];
-          const baseItem = this.items.find(
-            (el) => el.posa_row_id == item.posa_is_replace
-          );
-          const diffQty = baseItem.qty - offer.given_qty;
-          item.posa_is_offer = 0;
-          if (diffQty <= 0) {
-            item.qty = baseItem.qty;
-            this.remove_item(baseItem);
-            item.posa_row_id = item.posa_is_replace;
-          } else {
-            baseItem.qty = diffQty;
-          }
-          this.items.unshift(item);
-          offer.give_item_row_id = item.posa_row_id;
-        } else if (
-          offer.apply_on == "Item Group" &&
-          offer.apply_type == "Item Group" &&
-          offer.replace_cheapest_item
-        ) {
-          const itemsList = [];
-          itemsRowID.forEach((row_id) => {
-            itemsList.push(this.getItemFromRowID(row_id));
-          });
-          const baseItem = itemsList.find(
-            (el) => el.item_code == offer.give_item
-          );
-          const item = this.ApplyOnGiveProduct(offer, offer.give_item);
-          item.posa_is_offer = 0;
-          item.posa_is_replace = baseItem.posa_row_id;
-          const diffQty = baseItem.qty - offer.given_qty;
-          if (diffQty <= 0) {
-            item.qty = baseItem.qty;
-            this.remove_item(baseItem);
-            item.posa_row_id = item.posa_is_replace;
-          } else {
-            baseItem.qty = diffQty;
-          }
-          this.items.unshift(item);
-          offer.give_item_row_id = item.posa_row_id;
-        } else {
-          const item = this.ApplyOnGiveProduct(offer);
-          this.items.unshift(item);
-          if (item) {
-            offer.give_item_row_id = item.posa_row_id;
-          }
-        }
-      }
-      if (offer.offer === "Grand Total") {
-        this.ApplyOnTotal(offer);
-      }
-      if (offer.offer === "Loyalty Point") {
-        evntBus.emit("show_mesage", {
-          text: "Loyalty points offer applied",
-          color: "success",
-        });
-      }
-
+      
       const newOffer = {
         offer_name: offer.name,
         row_id: offer.row_id,
@@ -2214,54 +2021,6 @@ export default {
         coupon: offer.coupon,
       };
       this.posa_offers.push(newOffer);
-      this.addOfferToItems(newOffer);
-    },
-
-    ApplyOnGiveProduct(offer, item_code) {
-      if (!item_code) {
-        item_code = offer.give_item;
-      }
-      const items = this.allItems;
-      const item = items.find((item) => item.item_code == item_code);
-      if (!item) {
-        return;
-      }
-      const new_item = { ...item };
-      new_item.qty = offer.given_qty;
-      new_item.stock_qty = offer.given_qty;
-      new_item.rate = offer.discount_type === "Rate" ? offer.rate : item.rate;
-      new_item.discount_amount =
-        offer.discount_type === "Discount Amount" ? offer.discount_amount : 0;
-      new_item.discount_percentage =
-        offer.discount_type === "Discount Percentage"
-          ? offer.discount_percentage
-          : 0;
-      new_item.discount_amount_per_item = 0;
-      new_item.uom = item.uom ? item.uom : item.stock_uom;
-      new_item.uom = new_item.uom && new_item.uom.uom ? new_item.uom.uom : new_item.uom;
-      new_item.actual_batch_qty = "";
-      new_item.conversion_factor = 1;
-      new_item.posa_offers = JSON.stringify([]);
-      new_item.posa_offer_applied = 0;
-      new_item.posa_is_offer = 1;
-      new_item.posa_is_replace = null;
-      new_item.posa_notes = "";
-      new_item.posa_delivery_date = "";
-      new_item.posa_row_id = this.makeid(20);
-      new_item.price_list_rate =
-        (offer.discount_type === "Rate" && !offer.rate) ||
-        (offer.discount_type === "Discount Percentage" &&
-          offer.discount_percentage == 0)
-          ? 0
-          : item.rate;
-      if (
-        (!this.pos_profile.posa_auto_set_batch && new_item.has_batch_no) ||
-        new_item.has_serial_no
-      ) {
-        this.expanded.push(new_item);
-      }
-      this.update_item_detail(new_item);
-      return new_item;
     },
 
     applyOffersToInvoice(offer_names) {
