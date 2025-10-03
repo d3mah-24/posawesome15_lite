@@ -29,14 +29,7 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
 )
 
 
-@frappe.whitelist()
-def get_sales_person_names():
-    return frappe.get_list(
-        "Sales Person",
-        filters={"enabled": 1},
-        fields=["name", "sales_person_name"],
-        limit_page_length=100000,
-    )
+
 
 @frappe.whitelist()
 def create_payment_request(doc):
