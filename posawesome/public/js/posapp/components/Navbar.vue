@@ -32,6 +32,13 @@
       <v-btn style="cursor: unset" variant="text" color="primary">
         <span right>{{ pos_profile.name }}</span>
       </v-btn>
+      <v-btn icon variant="text"
+             :color="last_invoice ? 'primary' : 'grey'"
+             :disabled="!last_invoice"
+             @click="print_last_invoice"
+             :title="last_invoice ? 'Print Last Receipt' : 'No last receipt'">
+        <v-icon>mdi-printer</v-icon>
+      </v-btn>
       <div class="text-center">
         <v-menu offset="y">
           <template v-slot:activator="{ props }">
@@ -48,13 +55,7 @@
                 <v-icon class="mr-2">mdi-content-save-move-outline</v-icon>
                 <span>Close Shift</span>
               </v-list-item>
-              <v-list-item
-                @click="print_last_invoice"
-                v-if="this.last_invoice"
-              >
-                <v-icon class="mr-2">mdi-printer</v-icon>
-                <span>Print Last Receipt</span>
-              </v-list-item>
+              <!-- Removed Print Last Receipt from menu -->
               <v-divider class="my-0"></v-divider>
               <v-list-item @click="logOut">
                 <v-icon class="mr-2">mdi-logout</v-icon>
