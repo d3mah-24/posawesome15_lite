@@ -323,10 +323,6 @@ export default {
               if (vm.customer_id) {
                 text = 'Customer data updated successfully.';
               }
-              evntBus.emit('show_mesage', {
-                text: text,
-                color: 'success',
-              });
               args.name = r.message.name;
               frappe.utils.play_sound('submit');
               // Add customer to list only when creating

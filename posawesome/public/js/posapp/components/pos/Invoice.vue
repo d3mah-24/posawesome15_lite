@@ -817,10 +817,6 @@ export default {
           const result = await this.update_invoice(doc);
           if (result) {
             this.invoice_doc = result;
-            evntBus.emit("show_mesage", {
-              text: "Draft invoice updated",
-              color: "info",
-            });
           }
         } catch (error) {
           if (error.message && error.message.includes('Document has been modified')) {
