@@ -1765,8 +1765,8 @@ export default {
     debugTableDimensions() {
       try {
         if (!this.$el || typeof this.$el.querySelector !== "function") {
-          return;
-        }
+        return;
+      }
         const table = this.$el.querySelector('.invoice-items-scrollable .v-data-table__wrapper table');
         if (!table) return;
         const rows = table.querySelectorAll('tr');
@@ -1811,9 +1811,9 @@ export default {
           }
           
           // Submit and print the invoice
-          frappe.call({
+      frappe.call({
             method: "posawesome.posawesome.api.invoice.submit_invoice",
-            args: {
+        args: {
               data: {
                 total_change: 0,
                 paid_change: 0,
@@ -1823,11 +1823,11 @@ export default {
                 is_cashback: false,
               },
               invoice: invoice_doc,
-            },
-            async: true,
+        },
+        async: true,
             callback: (r) => {
               evntBus.emit("unfreeze");
-              if (r.message) {
+          if (r.message) {
                 this.load_print_page(r.message.name);
                 evntBus.emit("set_last_invoice", r.message.name);
                 evntBus.emit("show_mesage", {
@@ -1848,8 +1848,8 @@ export default {
               evntBus.emit("show_mesage", {
                 text: err?.message || "Failed to submit invoice",
                 color: "error",
-              });
-            },
+      });
+    },
           });
         })
         .catch((error) => {
