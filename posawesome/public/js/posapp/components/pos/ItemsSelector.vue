@@ -432,7 +432,12 @@ export default {
         callback: function (r) {
           console.log('[ItemsSelector.vue:get_items] response', r && r.message ? r.message.length : 0);
           if (r.message) {
-            vm.items = r.message;
+            vm.items = (r.message || []).map(it => ({
+              ...it,
+              item_barcode: Array.isArray(it.item_barcode) ? it.item_barcode : [],
+              serial_no_data: Array.isArray(it.serial_no_data) ? it.serial_no_data : [],
+              batch_no_data: Array.isArray(it.batch_no_data) ? it.batch_no_data : []
+            }));
             vm._buildItemsMap();
             evntBus.emit("set_all_items", vm.items);
             vm.loading = false;
@@ -696,7 +701,12 @@ export default {
           
           console.log('[ItemsSelector.vue:performLiveSearch] response', r && r.message ? r.message.length : 0);
           if (r.message) {
-            vm.items = r.message;
+            vm.items = (r.message || []).map(it => ({
+              ...it,
+              item_barcode: Array.isArray(it.item_barcode) ? it.item_barcode : [],
+              serial_no_data: Array.isArray(it.serial_no_data) ? it.serial_no_data : [],
+              batch_no_data: Array.isArray(it.batch_no_data) ? it.batch_no_data : []
+            }));
             vm._buildItemsMap();
             evntBus.emit("set_all_items", vm.items);
           }
@@ -734,7 +744,12 @@ export default {
           console.log('[ItemsSelector.vue:_performItemSearch] response', r && r.message ? r.message.length : 0);
           if (r.message && r.message.length > 0) {
             // Results found, display for selection
-            vm.items = r.message;
+            vm.items = (r.message || []).map(it => ({
+              ...it,
+              item_barcode: Array.isArray(it.item_barcode) ? it.item_barcode : [],
+              serial_no_data: Array.isArray(it.serial_no_data) ? it.serial_no_data : [],
+              batch_no_data: Array.isArray(it.batch_no_data) ? it.batch_no_data : []
+            }));
           } else {
             // No results
             vm.items = [];
@@ -807,8 +822,14 @@ export default {
           if (r.message) {
             // Use Map for faster search
             const updatedItemsMap = new Map();
-            r.message.forEach(item => {
-              updatedItemsMap.set(item.item_code, item);
+            (r.message || []).forEach(item => {
+              const safeItem = {
+                ...item,
+                item_barcode: Array.isArray(item.item_barcode) ? item.item_barcode : [],
+                serial_no_data: Array.isArray(item.serial_no_data) ? item.serial_no_data : [],
+                batch_no_data: Array.isArray(item.batch_no_data) ? item.batch_no_data : []
+              };
+              updatedItemsMap.set(safeItem.item_code, safeItem);
             });
             
             // Update only the items that were passed in
