@@ -970,32 +970,37 @@ export default {
     },
 
     delete_draft_invoice() {
-      if (this.invoice_doc && this.invoice_doc.name) {
-        frappe.call({
-          method: "frappe.client.delete",
-          args: {
-            doctype: "Sales Invoice",
-            name: this.invoice_doc.name
-          },
-          callback: (r) => {
-            if (r.message) {
-              evntBus.emit("show_mesage", {
-                text: "Draft invoice deleted",
-                color: "success",
-              });
-              this.invoice_doc = "";
-              this.return_doc = "";
-              this.discount_amount = 0;
-              this.additional_discount_percentage = 0;
-              this.delivery_charges_rate = 0;
-              this.selcted_delivery_charges = {};
-              this.posa_offers = [];
-              evntBus.emit("set_pos_coupons", []);
-              this.posa_coupons = [];
-            }
-          }
-        });
+      const name = this.invoice_doc && this.invoice_doc.name;
+      const reset = () => {
+        this.reset_invoice_session();
+      };
+
+      if (!name) {
+        reset();
+        return;
       }
+
+      frappe.call({
+        method: "posawesome.posawesome.api.invoice.delete_invoice",
+        args: { invoice_name: name }
+      }).then(reset).catch(reset);
+    },
+
+    reset_invoice_session() {
+      this.invoiceType = "Invoice";
+      this.invoiceTypes = ["Invoice"];
+      this.posting_date = frappe.datetime.nowdate();
+      this.items = [];
+      this.posa_offers = [];
+      evntBus.emit("set_pos_coupons", []);
+      this.posa_coupons = [];
+      this.discount_amount = 0;
+      this.additional_discount_percentage = 0;
+      this.return_doc = null;
+      this.invoice_doc = "";
+      this.customer = this.pos_profile?.customer || this.customer;
+      this.refreshTotals?.();
+      evntBus.emit("new_invoice", "false");
     },
 
     new_invoice(data = {}) {
