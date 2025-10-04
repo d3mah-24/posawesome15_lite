@@ -117,32 +117,6 @@ def get_items(
     return result
 
 
-def get_item_uoms(item_code):
-    """
-    Get all UOM conversion details for an item
-    """
-    try:
-        # Get stock UOM
-        stock_uom = frappe.get_cached_value("Item", item_code, "stock_uom")
-        
-        # Get all UOM conversion details
-        item_uoms = frappe.get_all(
-            "UOM Conversion Detail",
-            filters={"parent": item_code},
-            fields=["uom", "conversion_factor"],
-        )
-        
-        # Add stock UOM if not already in the list
-        stock_uom_exists = any(uom["uom"] == stock_uom for uom in item_uoms)
-        if not stock_uom_exists:
-            item_uoms.insert(0, {"uom": stock_uom, "conversion_factor": 1.0})
-            
-        return item_uoms
-    except Exception as e:
-        frappe.logger().error(f'Error in get_item_uoms: {e}')
-        return []
-
-
 def get_item_attributes(item_code):
     """
     Get item attributes for template items
