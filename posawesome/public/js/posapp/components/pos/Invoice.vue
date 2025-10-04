@@ -980,7 +980,7 @@ export default {
         return;
       }
 
-      frappe.call({
+        frappe.call({
         method: "posawesome.posawesome.api.invoice.delete_invoice",
         args: { invoice_name: name }
       }).then(reset).catch(reset);
@@ -991,9 +991,9 @@ export default {
       this.invoiceTypes = ["Invoice"];
       this.posting_date = frappe.datetime.nowdate();
       this.items = [];
-      this.posa_offers = [];
-      evntBus.emit("set_pos_coupons", []);
-      this.posa_coupons = [];
+              this.posa_offers = [];
+              evntBus.emit("set_pos_coupons", []);
+              this.posa_coupons = [];
       this.discount_amount = 0;
       this.additional_discount_percentage = 0;
       this.return_doc = null;
@@ -2020,6 +2020,12 @@ export default {
     customer() {
       this.close_payments();
       evntBus.emit("set_customer", this.customer);
+      // Reset contact fields to avoid ERPNext validation error when customer changes
+      if (this.invoice_doc) {
+        this.invoice_doc.contact_person = "";
+        this.invoice_doc.contact_email = "";
+        this.invoice_doc.contact_mobile = "";
+      }
       this.fetch_customer_details();
     },
     customer_info() {

@@ -215,6 +215,8 @@ export default {
     customer: null,
     new_line: false,
     qty: 1,
+      _suppressCustomerWatcher: false,
+      _detailsReady: false,
     
         // Remove all types of cache for direct speed
         _itemsMap: new Map(), // For quick search in items only
@@ -228,8 +230,18 @@ export default {
         this.update_items_details(new_value);
       }
     },
-    customer() {
-      this.get_items();
+    customer(newVal, oldVal) {
+      if (this._suppressCustomerWatcher) {
+        console.log('[ItemsSelector.vue:watch customer] suppressed initial change');
+        this._suppressCustomerWatcher = false;
+        return;
+      }
+      if (oldVal !== undefined && newVal !== oldVal) {
+        console.log('[ItemsSelector.vue:watch customer] changed', { oldVal, newVal });
+        this.get_items();
+      } else {
+        console.log('[ItemsSelector.vue:watch customer] ignored', { oldVal, newVal });
+      }
     },
     new_line() {
       evntBus.emit("set_new_line", this.new_line);
@@ -366,6 +378,7 @@ export default {
     },
 
     onItemGroupChange() {
+      console.log('[ItemsSelector.vue:onItemGroupChange] group change', this.item_group);
       
       // Clear search when group changes to avoid confusion
       if (this.debounce_search) {
@@ -389,6 +402,11 @@ export default {
         return;
       }
       
+      console.log('[ItemsSelector.vue:get_items] calling get_items API', {
+        item_group: this.item_group,
+        search: this.first_search,
+        customer: this.customer
+      });
       const vm = this;
       this.loading = true;
       let search = this.get_search(this.first_search);
@@ -412,6 +430,7 @@ export default {
           customer: vm.customer,
         },
         callback: function (r) {
+          console.log('[ItemsSelector.vue:get_items] response', r && r.message ? r.message.length : 0);
           if (r.message) {
             vm.items = r.message;
             vm._buildItemsMap();
@@ -461,6 +480,7 @@ export default {
           method: "posawesome.posawesome.api.get_items.get_items_groups",
           args: {},
           callback: function (r) {
+            console.log('[ItemsSelector.vue:get_items_groups] response', r && r.message ? r.message.length : 0);
             if (r.message) {
               r.message.forEach((element) => {
                 vm.items_group.push(element.name);
@@ -654,11 +674,13 @@ export default {
       
       // If search is empty, reload all items
       if (!searchValue || searchValue.trim() === '') {
+        console.log('[ItemsSelector.vue:performLiveSearch] empty search, calling get_items');
         this.get_items();
         return;
       }
       
       // Perform live search using get_items
+      console.log('[ItemsSelector.vue:performLiveSearch] calling get_items with search', searchValue);
       frappe.call({
         method: "posawesome.posawesome.api.get_items.get_items",
         args: {
@@ -672,6 +694,7 @@ export default {
           // Stop search progress bar
           vm.search_loading = false;
           
+          console.log('[ItemsSelector.vue:performLiveSearch] response', r && r.message ? r.message.length : 0);
           if (r.message) {
             vm.items = r.message;
             vm._buildItemsMap();
@@ -696,6 +719,7 @@ export default {
       }
 
       // Search by name/code/batch/serial using get_items
+      console.log('[ItemsSelector.vue:_performItemSearch] calling get_items with debounce_search', vm.debounce_search);
       frappe.call({
         method: "posawesome.posawesome.api.get_items.get_items",
         args: {
@@ -707,6 +731,7 @@ export default {
         },
         callback: function (r) {
           
+          console.log('[ItemsSelector.vue:_performItemSearch] response', r && r.message ? r.message.length : 0);
           if (r.message && r.message.length > 0) {
             // Results found, display for selection
             vm.items = r.message;
@@ -758,6 +783,12 @@ export default {
     // Improve function to update item details using get_items
     update_items_details(items) {
       const vm = this;
+      // Avoid triggering on initial load — wait until first list is displayed
+      if (!this._detailsReady) {
+        this._detailsReady = true;
+        console.log('[ItemsSelector.vue:update_items_details] skipped on initial load');
+        return;
+      }
       
       // Get item codes from the items to update
       const item_codes = items.map(item => item.item_code);
@@ -772,6 +803,7 @@ export default {
           customer: vm.customer,
         },
         callback: function (r) {
+          console.log('[ItemsSelector.vue:update_items_details] response for refresh', r && r.message ? r.message.length : 0);
           if (r.message) {
             // Use Map for faster search
             const updatedItemsMap = new Map();
@@ -1000,6 +1032,10 @@ export default {
     this.$nextTick(function () {});
     evntBus.on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
+      // Set customer without triggering watcher for first time
+      this._suppressCustomerWatcher = true;
+      this.customer = this.pos_profile && this.pos_profile.customer ? this.pos_profile.customer : this.customer;
+      console.log('[ItemsSelector.vue:register_pos_profile] init', { customer: this.customer });
       this.get_items();
       this.get_items_groups();
       this.items_view = this.pos_profile.posa_default_card_view ? "card" : "list";
