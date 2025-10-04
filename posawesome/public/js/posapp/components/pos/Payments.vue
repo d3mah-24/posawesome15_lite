@@ -257,17 +257,14 @@
               @change="get_available_credit($event.target.value)"
             ></v-switch>
           </v-col>
-          <v-col
-            cols="4"
-          >
+          <v-col cols="4">
             <v-btn
               block
               large
-              color="primary"
+              color="secondary"
               dark
-              :disabled="vaildatPayment"
-              @click="emitPrintRequest"
-            >Print Invoice</v-btn>
+              @click="back_to_invoice"
+            >Back</v-btn>
           </v-col>
           <v-col
             cols="6"
@@ -407,6 +404,7 @@ export default {
     redeem_customer_credit: false,
     customer_credit_dict: [],
     phone_dialog: false,
+    allow_print_in_dialog: false,
     invoiceType: "Invoice",
     pos_settings: "",
     customer_info: "",
@@ -509,6 +507,7 @@ export default {
       return payments.find((payment) => payment.default == 1);
     },
     back_to_invoice() {
+      console.log('[Payments.vue:back_to_invoice] closing payment dialog');
       evntBus.emit("show_payment", "false");
       evntBus.emit("set_customer_readonly", false);
     },
@@ -556,26 +555,26 @@ export default {
     },
     submit_invoice(print, autoMode, retrying = false) {
       // existing logic continues
-      if (this.quick_return) {
-        this.invoice_doc.is_return = true;
-        let total = 0;
-        this.invoice_doc.items.forEach(item => {
-          item.qty = -1 * item.qty;
-          item.amount = -1 * item.amount;
-          total += item.amount;
+    if (this.quick_return) {
+      this.invoice_doc.is_return = true;
+      let total = 0;
+      this.invoice_doc.items.forEach(item => {
+        item.qty = -1 * item.qty;
+        item.amount = -1 * item.amount;
+        total += item.amount;
+      });
+      this.invoice_doc.total = total;
+      if (typeof this.selected_return_payment_idx === 'number') {
+        this.invoice_doc.payments.forEach((payment) => {
+          payment.amount = payment.idx === this.selected_return_payment_idx ? this.invoice_doc.total : 0;
         });
-        this.invoice_doc.total = total;
-        if (typeof this.selected_return_payment_idx === 'number') {
-          this.invoice_doc.payments.forEach((payment) => {
-            payment.amount = payment.idx === this.selected_return_payment_idx ? this.invoice_doc.total : 0;
-          });
-        } else {
-          if (this.invoice_doc.payments.length > 0) {
+      } else {
+        if (this.invoice_doc.payments.length > 0) {
             this.invoice_doc.payments[0].amount = this.invoice_doc.total;
-          }
         }
-        this.quick_return = false;
       }
+      this.quick_return = false;
+    }
       let totalPayedAmount = 0;
       this.invoice_doc.payments.forEach((payment) => {
         payment.amount = flt(payment.amount);
@@ -736,28 +735,37 @@ export default {
       });
     },
     set_full_amount(idx) {
-      // For quick return, save the index of the selected method
-      if (this.quick_return || this.invoice_doc.is_return) {
-        this.selected_return_payment_idx = idx;
-        this.invoice_doc.payments.forEach((payment) => {
-          payment.amount = payment.idx === idx ? this.invoice_doc.total : 0;
-        });
-      } else {
-        this.invoice_doc.payments.forEach((payment) => {
-          payment.amount = payment.idx == idx ? this.invoice_doc.grand_total : 0;
-        });
+      // Zero all payments first, then set only the chosen one
+      const isReturn = !!this.invoice_doc.is_return;
+      const total = this.invoice_doc.rounded_total || this.invoice_doc.grand_total;
+      this.invoice_doc.payments.forEach((p) => {
+        p.amount = 0;
+        if (typeof p.base_amount !== 'undefined') p.base_amount = 0;
+      });
+      const payment = this.invoice_doc.payments.find((p) => p.idx == idx);
+      if (payment) {
+        payment.amount = isReturn ? -Math.abs(total) : total;
+        if (typeof payment.base_amount !== 'undefined') payment.base_amount = payment.amount;
       }
+      console.log('[Payments.vue:set_full_amount] selected idx', idx, 'payments:', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
+      evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
     },
     set_rest_amount(idx) {
-      this.invoice_doc.payments.forEach((payment) => {
-        if (
-          payment.idx == idx &&
-          payment.amount == 0 &&
-          this.diff_payment > 0
-        ) {
-          payment.amount = this.diff_payment;
-        }
+      // Zero all payments first, then assign remaining amount to chosen one
+      const isReturn = !!this.invoice_doc.is_return;
+      this.invoice_doc.payments.forEach((p) => {
+        p.amount = 0;
+        if (typeof p.base_amount !== 'undefined') p.base_amount = 0;
       });
+      const payment = this.invoice_doc.payments.find((p) => p.idx == idx);
+      if (payment) {
+        let amount = this.diff_payment > 0 ? this.diff_payment : 0;
+        if (isReturn) amount = -Math.abs(amount);
+        payment.amount = amount;
+        if (typeof payment.base_amount !== 'undefined') payment.base_amount = amount;
+      }
+      console.log('[Payments.vue:set_rest_amount] idx', idx, 'diff_payment', this.diff_payment, 'payments:', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
+      evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
     },
     clear_all_amounts() {
       this.invoice_doc.payments.forEach((payment) => {

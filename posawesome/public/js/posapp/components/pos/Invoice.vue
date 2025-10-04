@@ -346,8 +346,9 @@
             block
             color="primary"
             variant="flat"
-            :disabled="!hasItems"
+            :disabled="!hasItems || !hasChosenPayment"
             @click="printInvoice"
+            title="Print after choosing a payment method"
           >
             Print Invoice
           </v-btn>
@@ -512,6 +513,10 @@ export default {
     },
     hasItems() {
       return this.items && this.items.length > 0;
+    },
+    hasChosenPayment() {
+      const payments = (this.invoice_doc && Array.isArray(this.invoice_doc.payments)) ? this.invoice_doc.payments : [];
+      return payments.some(p => this.flt(p.amount) > 0);
     },
   },
 
@@ -1120,8 +1125,19 @@ export default {
     },
 
     get_payments() {
+      // Prefer current invoice payments (e.g., chosen in Payments dialog)
+      if (this.invoice_doc && Array.isArray(this.invoice_doc.payments) && this.invoice_doc.payments.length) {
+        return this.invoice_doc.payments.map((p) => ({
+          amount: this.flt(p.amount),
+          mode_of_payment: p.mode_of_payment,
+          default: p.default,
+          account: p.account || "",
+          idx: p.idx,
+        }));
+      }
+      // Fallback to POS Profile payments with zero amounts
       const payments = [];
-      if (this.pos_profile && this.pos_profile.payments && Array.isArray(this.pos_profile.payments)) {
+      if (this.pos_profile && Array.isArray(this.pos_profile.payments)) {
         this.pos_profile.payments.forEach((payment) => {
           payments.push({
             amount: 0,
@@ -1804,13 +1820,12 @@ export default {
 
       this.process_invoice()
         .then((invoice_doc) => {
-          const defaultPayment = (invoice_doc.payments || []).find(
-            (payment) => payment.mode_of_payment === defaultMode
-          );
-          if (defaultPayment) {
-            defaultPayment.amount = this.flt(invoice_doc.grand_total, this.currency_precision);
+          const hasChosen = (invoice_doc.payments || []).some((p) => this.flt(p.amount) > 0);
+          if (!hasChosen) {
+            evntBus.emit("show_mesage", { text: "Choose a payment method amount first", color: "warning" });
+            evntBus.emit("show_payment", "true");
+            throw new Error('No payment chosen');
           }
-          
           // Submit and print the invoice
       frappe.call({
             method: "posawesome.posawesome.api.invoice.submit_invoice",
@@ -1958,6 +1973,12 @@ export default {
     });
     evntBus.on("send_invoice_doc_payment", (doc) => {
       this.invoice_doc = doc;
+    });
+    evntBus.on('payments_updated', (payments) => {
+      if (this.invoice_doc) {
+        this.invoice_doc.payments = payments || [];
+        this.$forceUpdate();
+      }
     });
     evntBus.on("request_invoice_print", async () => {
       try {
