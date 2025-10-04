@@ -16,17 +16,8 @@ def get_items(
     pos_profile, price_list=None, item_group="", search_value="", customer=None
 ):
     """
-    Optimized standalone function to get items with all required fields
-    
-    Args:
-        pos_profile: JSON string of POS Profile data
-        price_list: Price list name (optional)
-        item_group: Item group filter (optional)
-        search_value: Search term for item code/name (optional)
-        customer: Customer for customer-specific pricing (optional)
-    
-    Returns:
-        List of item dictionaries with all required fields
+    Optimized lightweight function to get items - based on ERPNext approach
+    Only returns essential fields for fast performance
     """
     pos_profile = json.loads(pos_profile)
     today = nowdate()
@@ -35,152 +26,87 @@ def get_items(
     if not price_list:
         price_list = pos_profile.get("selling_price_list")
     
-    # Build conditions
-    conditions = ["i.disabled = 0", "i.is_sales_item = 1", "i.is_fixed_asset = 0"]
+    # Build lightweight conditions
+    conditions = ["item.disabled = 0", "item.is_sales_item = 1", "item.is_fixed_asset = 0"]
     
     # Item group condition
     if item_group:
-        conditions.append(f"i.item_group LIKE '%{item_group}%'")
+        conditions.append(f"item.item_group LIKE '%{item_group}%'")
     
     # Search condition
     if search_value:
-        conditions.append(f"(i.name LIKE '%{search_value}%' OR i.item_name LIKE '%{search_value}%')")
+        conditions.append(f"(item.name LIKE '%{search_value}%' OR item.item_name LIKE '%{search_value}%')")
     
     # POS Profile item groups condition
     item_groups = get_item_groups(pos_profile.get("name"))
     if item_groups:
         item_groups_str = "', '".join(item_groups)
-        conditions.append(f"i.item_group IN ('{item_groups_str}')")
+        conditions.append(f"item.item_group IN ('{item_groups_str}')")
     
     # Template items condition
     if not pos_profile.get("posa_show_template_items"):
-        conditions.append("i.has_variants = 0")
+        conditions.append("item.has_variants = 0")
     
     where_clause = " AND ".join(conditions)
     
-    # Main optimized SQL query
+    # Lightweight SQL query - only essential fields
     sql_query = f"""
     SELECT 
-        i.name AS item_code,
-        i.item_name,
-        i.description,
-        i.stock_uom,
-        i.image,
-        i.is_stock_item,
-        i.has_variants,
-        i.variant_of,
-        i.item_group,
-        i.has_batch_no,
-        i.has_serial_no,
-        i.max_discount,
-        i.brand,
-        COALESCE(ip.price_list_rate, 0) AS rate,
-        COALESCE(ip.currency, '{pos_profile.get("currency", "SAR")}') AS currency,
-        COALESCE(sle.qty_after_transaction, 0) AS actual_qty
-    FROM `tabItem` i
-    LEFT JOIN (
-        SELECT 
-            item_code,
-            price_list_rate,
-            currency,
-            ROW_NUMBER() OVER (
-                PARTITION BY item_code 
-                ORDER BY valid_from DESC, creation DESC
-            ) as rn
-        FROM `tabItem Price`
-        WHERE price_list = '{price_list}'
-            AND selling = 1
-            AND (valid_from IS NULL OR valid_from <= '{today}')
-            AND (valid_upto IS NULL OR valid_upto >= '{today}')
-            AND (customer IS NULL OR customer = '' OR customer = '{customer or ""}')
-    ) ip ON i.name = ip.item_code AND ip.rn = 1
-    LEFT JOIN (
-        SELECT 
-            item_code,
-            qty_after_transaction,
-            ROW_NUMBER() OVER (
-                PARTITION BY item_code 
-                ORDER BY posting_date DESC, posting_time DESC, creation DESC
-            ) as rn
-        FROM `tabStock Ledger Entry`
-        WHERE warehouse = '{warehouse}'
-            AND is_cancelled = 0
-    ) sle ON i.name = sle.item_code AND sle.rn = 1
+        item.name AS item_code,
+        item.item_name,
+        item.description,
+        item.stock_uom,
+        item.image,
+        item.is_stock_item,
+        item.has_variants,
+        item.variant_of,
+        item.item_group,
+        item.has_batch_no,
+        item.has_serial_no,
+        item.max_discount,
+        item.brand
+    FROM `tabItem` item
     WHERE {where_clause}
-    ORDER BY i.item_name ASC
-    LIMIT 500
+    ORDER BY item.item_name ASC
+    LIMIT 50
     """
     
-    # Execute main query
+    # Execute lightweight query
     items_data = frappe.db.sql(sql_query, as_dict=True)
     
-    # Process each item to add additional data
+    # Process items with minimal additional queries
     result = []
     for item in items_data:
         item_code = item['item_code']
         
-        # Get item UOMs
-        item_uoms = get_item_uoms(item_code)
-        item['item_uoms'] = item_uoms or []
+        # Get stock quantity - lightweight query
+        stock_qty = frappe.db.sql(f"""
+            SELECT COALESCE(SUM(qty_after_transaction), 0) as qty
+            FROM `tabStock Ledger Entry`
+            WHERE item_code = %s AND warehouse = %s AND is_cancelled = 0
+            ORDER BY posting_date DESC, posting_time DESC
+            LIMIT 1
+        """, (item_code, warehouse), as_dict=True)
         
-        # Get item barcodes
-        item_barcodes = frappe.get_all(
-            "Item Barcode",
-            filters={"parent": item_code},
-            fields=["barcode", "posa_uom"],
-        )
-        item['item_barcode'] = item_barcodes or []
+        item['actual_qty'] = stock_qty[0]['qty'] if stock_qty else 0
         
-        # Get serial numbers
-        serial_no_data = []
-        if item['has_serial_no']:
-            serial_no_data = frappe.get_all(
-                "Serial No",
-                filters={
-                    "item_code": item_code,
-                    "status": "Active",
-                    "warehouse": warehouse,
-                },
-                fields=["name as serial_no"],
-            )
-        item['serial_no_data'] = serial_no_data
+        # Get price - lightweight query
+        price_data = frappe.db.sql(f"""
+            SELECT price_list_rate, currency
+            FROM `tabItem Price`
+            WHERE item_code = %s AND price_list = %s AND selling = 1
+                AND (valid_from IS NULL OR valid_from <= %s)
+                AND (valid_upto IS NULL OR valid_upto >= %s)
+            ORDER BY valid_from DESC
+            LIMIT 1
+        """, (item_code, price_list, today, today), as_dict=True)
         
-        # Get batch numbers
-        batch_no_data = []
-        if item['has_batch_no']:
-            batch_list = get_batch_qty(warehouse=warehouse, item_code=item_code)
-            if batch_list:
-                for batch in batch_list:
-                    if batch.qty > 0 and batch.batch_no:
-                        batch_doc = frappe.get_cached_doc("Batch", batch.batch_no)
-                        if (
-                            str(batch_doc.expiry_date) > str(today)
-                            or batch_doc.expiry_date in ["", None]
-                        ) and batch_doc.disabled == 0:
-                            batch_no_data.append({
-                                "batch_no": batch.batch_no,
-                                "batch_qty": batch.qty,
-                                "expiry_date": batch_doc.expiry_date,
-                                "batch_price": batch_doc.posa_batch_price,
-                                "manufacturing_date": batch_doc.manufacturing_date,
-                            })
-        item['batch_no_data'] = batch_no_data
-        
-        # Get attributes for template items
-        attributes = ""
-        if pos_profile.get("posa_show_template_items") and item['has_variants']:
-            attributes = get_item_attributes(item_code)
-        item['attributes'] = attributes or ""
-        
-        # Get item attributes for variants
-        item_attributes = []
-        if pos_profile.get("posa_show_template_items") and item['variant_of']:
-            item_attributes = frappe.get_all(
-                "Item Variant Attribute",
-                fields=["attribute", "attribute_value"],
-                filters={"parent": item_code, "parentfield": "attributes"},
-            )
-        item['item_attributes'] = item_attributes or []
+        if price_data:
+            item['rate'] = price_data[0]['price_list_rate']
+            item['currency'] = price_data[0]['currency']
+        else:
+            item['rate'] = 0
+            item['currency'] = pos_profile.get("currency", "SAR")
         
         # Filter by stock if required
         if pos_profile.get("posa_display_items_in_stock") and item['actual_qty'] <= 0:
