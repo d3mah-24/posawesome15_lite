@@ -777,13 +777,10 @@ export default {
           new_item.rate = rate;
           new_item.price_list_rate = rate;
           new_item.base_rate = rate;
-        this.items.push(new_item);
+          this.items.push(new_item);
         }
       }
-      
-      if (this.items.length === 1 && !this.invoice_doc) {
-        this.create_draft_invoice();
-      }
+
     },
     generateRowId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
