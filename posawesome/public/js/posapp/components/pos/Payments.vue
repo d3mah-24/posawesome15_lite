@@ -751,21 +751,24 @@ export default {
       evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
     },
     set_rest_amount(idx) {
-      // Zero all payments first, then assign remaining amount to chosen one
+      // Behavior aligned with Payments_new.vue:
+      // Only fill the focused payment with remaining if its amount is zero.
+      // Do NOT reset other payments; preserve user-edited values.
       const isReturn = !!this.invoice_doc.is_return;
-      this.invoice_doc.payments.forEach((p) => {
-        p.amount = 0;
-        if (typeof p.base_amount !== 'undefined') p.base_amount = 0;
-      });
       const payment = this.invoice_doc.payments.find((p) => p.idx == idx);
-      if (payment) {
-        let amount = this.diff_payment > 0 ? this.diff_payment : 0;
+      if (!payment) return;
+
+      // Only auto-fill when the field is empty (zero) and there is a remaining amount
+      const hasRemaining = this.diff_payment > 0;
+      const isZero = !flt(payment.amount);
+      if (isZero && hasRemaining) {
+        let amount = this.diff_payment;
         if (isReturn) amount = -Math.abs(amount);
         payment.amount = amount;
         if (typeof payment.base_amount !== 'undefined') payment.base_amount = amount;
+        console.log('[Payments.vue:set_rest_amount] filled remaining for idx', idx, 'amount', amount);
+        evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
       }
-      console.log('[Payments.vue:set_rest_amount] idx', idx, 'diff_payment', this.diff_payment, 'payments:', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
-      evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
     },
     clear_all_amounts() {
       this.invoice_doc.payments.forEach((payment) => {
@@ -986,11 +989,18 @@ export default {
           );
         }
         if (invoice_doc.is_return) {
+          // Align with Payments_new.vue: reset all payments then set default to negative full amount
           this.is_return = true;
+          const total = invoice_doc.rounded_total || invoice_doc.grand_total;
           invoice_doc.payments.forEach((payment) => {
             payment.amount = 0;
-            payment.base_amount = 0;
+            if (typeof payment.base_amount !== 'undefined') payment.base_amount = 0;
           });
+          if (default_payment) {
+            const neg = -Math.abs(total);
+            default_payment.amount = neg;
+            if (typeof default_payment.base_amount !== 'undefined') default_payment.base_amount = neg;
+          }
         }
         this.loyalty_amount = 0;
         this.get_addresses();
