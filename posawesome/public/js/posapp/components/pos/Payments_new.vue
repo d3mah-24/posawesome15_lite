@@ -1205,7 +1205,7 @@ export default {
 				return;
 			}
 			frappe.call({
-				method: "posawesome.posawesome.api.customers.get_customer_addresses",
+				method: "posawesome.posawesome.api.customer.get_customer_addresses",
 				args: { customer: vm.invoice_doc.customer },
 				async: true,
 				callback: function (r) {
