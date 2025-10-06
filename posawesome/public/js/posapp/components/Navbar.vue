@@ -18,8 +18,15 @@
         style="cursor: pointer"
         class="text-uppercase primary--text"
       >
-        <span>{{ company_name || 'POS Awesome' }}</span>
+        <span>POS Awesome</span>
       </v-toolbar-title>
+
+      <div class="company-name-badge">
+        <v-icon size="18" color="primary">mdi-domain</v-icon>
+        <span class="company-name-text">
+          {{ company_name }}
+        </span>
+      </div>
 
       <div class="invoice-number-badge" :class="invoiceNumberClass">
         <v-icon size="18" :color="invoiceIconColor">mdi-receipt</v-icon>
@@ -590,6 +597,25 @@ export default {
 
 .no-invoice .invoice-number-text {
   color: #757575;
+}
+
+/* Company Name Badge Styles */
+.company-name-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.company-name-text {
+  font-weight: 600;
+  color: #1976d2;
 }
 
 /* Shift Number Badge Styles */
