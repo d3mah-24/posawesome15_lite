@@ -105,19 +105,24 @@
           ></v-checkbox>
         </v-col>
         <v-col cols="12" class="pt-0 mt-0 d-flex flex-column flex-grow-1">
-          <div class="items d-flex flex-column flex-grow-1" v-if="items_view == 'card'">
-            <v-row dense class="items-scrollable">
-              <v-col
-                v-for="(item, idx) in filtred_items"
-                :key="idx"
-                xl="2"
-                lg="3"
-                md="4"
-                sm="6"
-                cols="6"
-                min-height="50"
-              >
-                <v-card hover="hover" @click="add_item(item)" class="item-card">
+          <div
+            class="items-panel d-flex flex-column flex-grow-1"
+            v-if="items_view == 'card'"
+          >
+            <!-- Scroll wrapper keeps card grid inside selector -->
+            <div class="items-scrollable">
+              <v-row dense>
+                <v-col
+                  v-for="(item, idx) in filtred_items"
+                  :key="idx"
+                  xl="2"
+                  lg="3"
+                  md="4"
+                  sm="6"
+                  cols="6"
+                  min-height="50"
+                >
+                  <v-card hover="hover" @click="add_item(item)" class="item-card">
                   <v-img
                     :src="
                       item.image ||
@@ -153,12 +158,17 @@
                       </span>
                     </div>
                   </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </div>
           </div>
-          <div class="items d-flex flex-column flex-grow-1" v-if="items_view == 'list'">
-            <div class="my-0 py-0 flex-grow-1 items-scrollable">
+          <div
+            class="items-panel d-flex flex-column flex-grow-1"
+            v-if="items_view == 'list'"
+          >
+            <!-- Scroll wrapper keeps table height capped -->
+            <div class="items-scrollable">
               <v-data-table
                 :headers="getItemsHeaders()"
                 :items="filtred_items"
@@ -1209,9 +1219,17 @@ export default {
   min-height: 0 !important;
 }
 
+.items-panel {
+  /* Panel keeps search zone fixed while body flexes */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .items-scrollable {
   /* Scroll area for the grid/list */
   flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
   overflow-y: auto;
   max-height: 100%;
   padding-right: 4px;
