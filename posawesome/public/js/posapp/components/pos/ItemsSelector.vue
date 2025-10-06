@@ -1100,6 +1100,7 @@ export default {
 <style scoped>
 .item-card {
   height: 100%;
+  min-height: 120px !important;
   display: flex;
   flex-direction: column;
 }
@@ -1109,6 +1110,7 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-height: 60px !important;
 }
 
 .item-card .v-img {
@@ -1183,42 +1185,40 @@ export default {
   height: 28px !important;
 }
 
-/* Make ItemsSelector use full available space */
+.selection {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 140px);
+  max-height: calc(100vh - 140px);
+  overflow: hidden;
+}
+
+.items {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
 .items-scrollable {
-  min-height: 60vh !important;
-  height: auto !important;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  max-height: 100%;
+  padding-right: 4px;
+  padding-bottom: 8px;
 }
 
 .items-scrollable .v-data-table__wrapper {
-  min-height: 60vh !important;
-  height: auto !important;
+  max-height: none;
 }
 
-/* Ensure proper spacing for card view */
 .items-scrollable .v-row {
-  min-height: 60vh !important;
-  height: auto !important;
+  margin: 0 !important;
 }
 
-/* Make parent containers use full space */
-.items {
-  min-height: 60vh !important;
-  height: auto !important;
-}
-
-.flex-grow-1 {
-  flex-grow: 1 !important;
-  min-height: 60vh !important;
-}
-
-/* Ensure card items take proper space */
-.item-card {
-  min-height: 120px !important;
-  height: auto !important;
-}
-
-.item-card .v-card__text {
-  min-height: 60px !important;
+@media (max-width: 960px) {
+  .selection {
+    height: calc(100vh - 200px);
+    max-height: calc(100vh - 200px);
+  }
 }
 
 .v-row {
