@@ -150,6 +150,10 @@ export default {
           if (r.message) {
             evntBus.emit('register_pos_data', r.message);
             evntBus.emit('set_company', r.message.company);
+            evntBus.emit('show_mesage', {
+              text: `POS Opening Shift ${r.message.pos_opening_shift.name} Created`,
+              color: 'success'
+            });
             close_opening_dialog();
             is_loading.value = false;
           } else {

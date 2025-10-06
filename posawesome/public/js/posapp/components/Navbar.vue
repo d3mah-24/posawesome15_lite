@@ -28,6 +28,27 @@
         </span>
       </div>
 
+      <div class="shift-number-badge" :class="shiftNumberClass">
+        <v-icon size="18" :color="shiftIconColor">mdi-clock-outline</v-icon>
+        <span class="shift-number-text">
+          {{ shiftNumberText }}
+        </span>
+      </div>
+
+      <div class="user-name-badge">
+        <v-icon size="18" color="primary">mdi-account</v-icon>
+        <span class="user-name-text">
+          {{ currentUserName }}
+        </span>
+      </div>
+
+      <div class="shift-start-badge" :class="shiftStartClass">
+        <v-icon size="18" :color="shiftStartIconColor">mdi-clock-start</v-icon>
+        <span class="shift-start-text">
+          {{ shiftStartText }}
+        </span>
+      </div>
+
       <v-spacer></v-spacer>
       <v-btn style="cursor: unset" variant="text" color="primary">
         <span right>{{ pos_profile.name }}</span>
@@ -38,6 +59,12 @@
              @click="print_last_invoice"
              :title="last_invoice ? 'Print Last Receipt' : 'No last receipt'">
         <v-icon>mdi-printer</v-icon>
+      </v-btn>
+      <v-btn icon variant="text"
+             color="warning"
+             @click="clearCache"
+             title="Clear Cache & Reload">
+        <v-icon>mdi-cached</v-icon>
       </v-btn>
       <div class="text-center">
         <v-menu offset="y">
@@ -64,6 +91,11 @@
               <v-list-item @click="go_about">
                 <v-icon class="mr-2">mdi-information-outline</v-icon>
                 <span>About System</span>
+              </v-list-item>
+              <v-divider class="my-0"></v-divider>
+              <v-list-item @click="clearCache">
+                <v-icon class="mr-2">mdi-cached</v-icon>
+                <span>Clear Cache & Reload</span>
               </v-list-item>
             </v-list>
           </v-card>
@@ -114,6 +146,8 @@
 <script>
 // ===== SECTION 1: IMPORTS =====
 import { evntBus } from '../bus';
+// Import cache manager utility
+import '../../utils/clearAllCaches.js';
 
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
@@ -144,6 +178,7 @@ export default {
       freezeMsg: '',
       last_invoice: '',
       invoice_doc: null,
+      pos_opening_shift: null,
     };
   },
   computed: {
@@ -164,6 +199,55 @@ export default {
         return 'grey';
       }
       return this.invoice_doc.is_return ? 'error' : 'primary';
+    },
+    shiftNumberText() {
+      console.log('shiftNumberText computed - pos_opening_shift:', this.pos_opening_shift);
+      if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
+        return 'Shift not opened yet';
+      }
+      return this.pos_opening_shift.name;
+    },
+    shiftNumberClass() {
+      if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
+        return 'no-shift';
+      }
+      return this.pos_opening_shift.status === 'Open' ? 'open-shift' : 'closed-shift';
+    },
+    shiftIconColor() {
+      if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
+        return 'grey';
+      }
+      return this.pos_opening_shift.status === 'Open' ? 'success' : 'warning';
+    },
+    currentUserName() {
+      return frappe.session.user || 'Unknown User';
+    },
+    shiftStartText() {
+      if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
+        return 'Shift start: Not opened';
+      }
+      if (!this.pos_opening_shift.period_start_date) {
+        return 'Shift start: Unknown';
+      }
+      const startDate = new Date(this.pos_opening_shift.period_start_date);
+      const timeString = startDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      return `Shift start: ${timeString}`;
+    },
+    shiftStartClass() {
+      if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
+        return 'no-shift-start';
+      }
+      return this.pos_opening_shift.status === 'Open' ? 'open-shift-start' : 'closed-shift-start';
+    },
+    shiftStartIconColor() {
+      if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
+        return 'grey';
+      }
+      return this.pos_opening_shift.status === 'Open' ? 'success' : 'warning';
     }
   },
   // ===== SECTION 4: METHODS =====
@@ -238,6 +322,56 @@ export default {
         });
       }
     },
+    async clearCache() {
+      try {
+        // Show loading message
+        this.show_mesage({
+          color: 'info',
+          text: 'Clearing cache...'
+        });
+        
+        // Use the comprehensive cache manager
+        if (window.cacheManager) {
+          const success = await window.cacheManager.clearAllCaches();
+          
+          if (success) {
+            this.show_mesage({
+              color: 'success',
+              text: 'Cache cleared successfully. Reloading...'
+            });
+            
+            // Reload page after short delay
+            setTimeout(() => {
+              location.reload();
+            }, 1000);
+          } else {
+            this.show_mesage({
+              color: 'error',
+              text: 'Error clearing cache'
+            });
+          }
+        } else {
+          // Fallback to basic cache clearing
+          localStorage.clear();
+          sessionStorage.clear();
+          
+          this.show_mesage({
+            color: 'success',
+            text: 'Basic cache cleared. Reloading...'
+          });
+          
+          setTimeout(() => {
+            location.reload();
+          }, 1000);
+        }
+        
+      } catch (error) {
+        this.show_mesage({
+          color: 'error',
+          text: 'Error clearing cache: ' + error.message
+        });
+      }
+    },
   },
   created: function () {
     this.$nextTick(function () {
@@ -250,7 +384,10 @@ export default {
           this.company_logo = data.company_logo || '';
         });
         evntBus.on('register_pos_profile', (data) => {
+          console.log('Navbar received pos_profile data:', data);
           this.pos_profile = data.pos_profile;
+          this.pos_opening_shift = data.pos_opening_shift;
+          console.log('Navbar pos_opening_shift set to:', this.pos_opening_shift);
           this.fetch_company_info();
           // External payments screen disabled - removed payments option
         });
@@ -259,6 +396,12 @@ export default {
         });
         evntBus.on('update_invoice_doc', (data) => {
           this.invoice_doc = data;
+        });
+        evntBus.on('set_pos_opening_shift', (data) => {
+          this.pos_opening_shift = data;
+        });
+        evntBus.on('register_pos_data', (data) => {
+          this.pos_opening_shift = data.pos_opening_shift;
         });
         evntBus.on('freeze', (data) => {
           this.freeze = true;
@@ -336,5 +479,132 @@ export default {
 
 .no-invoice .invoice-number-text {
   color: #757575;
+}
+
+/* Shift Number Badge Styles */
+.shift-number-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.shift-number-text {
+  font-weight: 600;
+}
+
+.open-shift {
+  color: #2e7d32;
+}
+
+.open-shift .shift-number-text {
+  color: #2e7d32;
+}
+
+.closed-shift {
+  color: #f57c00;
+}
+
+.closed-shift .shift-number-text {
+  color: #f57c00;
+}
+
+.no-shift {
+  color: #757575;
+  font-style: italic;
+}
+
+.no-shift .shift-number-text {
+  color: #757575;
+}
+
+/* User Name Badge Styles */
+.user-name-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.user-name-text {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+/* Shift Start Badge Styles */
+.shift-start-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.shift-start-text {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.open-shift-start {
+  border-color: #4caf50;
+  background: #e8f5e8;
+}
+
+.open-shift-start .shift-start-text {
+  color: #2e7d32;
+}
+
+.closed-shift-start {
+  border-color: #ff9800;
+  background: #fff3e0;
+}
+
+.closed-shift-start .shift-start-text {
+  color: #f57c00;
+}
+
+.no-shift-start {
+  color: #757575;
+  font-style: italic;
+}
+
+.no-shift-start .shift-start-text {
+  color: #757575;
+}
+
+/* Clear Cache Button Styles */
+.v-list-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.v-list-item:active {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Cache button animation */
+.v-btn[title="Clear Cache & Reload"]:hover .v-icon {
+  animation: rotate 0.5s ease-in-out;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(180deg); }
 }
 </style>

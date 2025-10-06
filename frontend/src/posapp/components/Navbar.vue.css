@@ -1,0 +1,52 @@
+
+.margen-top {
+  margin-top: 0px;
+}
+
+.elevation-2 {
+  width: 1024px;
+  height: 768px;
+  z-index: 0 !important;
+}
+
+.invoice-number-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  margin-left: 16px;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.invoice-number-text {
+  font-weight: 600;
+}
+
+.regular-invoice {
+  color: #1976d2;
+}
+
+.regular-invoice .invoice-number-text {
+  color: #1976d2;
+}
+
+.return-invoice {
+  color: #d32f2f;
+}
+
+.return-invoice .invoice-number-text {
+  color: #d32f2f;
+}
+
+.no-invoice {
+  color: #757575;
+  font-style: italic;
+}
+
+.no-invoice .invoice-number-text {
+  color: #757575;
+}

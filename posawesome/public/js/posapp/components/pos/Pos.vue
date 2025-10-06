@@ -116,6 +116,8 @@ export default {
             this.get_offers(this.pos_profile.name);
             evntBus.emit('register_pos_profile', r.message);
             evntBus.emit('set_company', r.message.company);
+            // Also emit shift data separately to ensure it reaches Navbar
+            evntBus.emit('set_pos_opening_shift', r.message.pos_opening_shift);
           } else {
             evntBus.emit('show_mesage', {
               text: 'No opening shift found, a new opening entry will be created.',

@@ -1,0 +1,113 @@
+
+.pos-screen {
+  width: 100%;
+  margin: 0;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  min-height: 100vh;
+  box-sizing: border-box;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pos-screen::-webkit-scrollbar {
+  width: 10px;
+}
+
+.pos-screen::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+
+.pos-screen::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 5px;
+}
+
+.pos-screen::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.pos-screen {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+@media (max-width: 1024px) {
+  .pos-screen {
+    padding: 0.75rem;
+    min-height: calc(100vh - 60px);
+  }
+}
+
+@media (max-width: 768px) {
+  .pos-screen {
+    padding: 0.5rem;
+    min-height: calc(100vh - 50px);
+  }
+}
+
+/* Optimized for cashier screens - no browser zoom needed */
+.v-application {
+  font-size: 0.8rem !important; /* Slightly larger for better readability */
+}
+
+.v-btn {
+  font-size: 0.75rem !important;
+  padding: 6px 12px !important;
+  min-height: 28px !important;
+}
+
+.v-text-field {
+  font-size: 0.8rem !important;
+}
+
+.v-text-field .v-field {
+  min-height: 32px !important;
+}
+
+.v-text-field .v-field__input {
+  padding: 6px 12px !important;
+  font-size: 0.8rem !important;
+}
+
+.v-data-table {
+  font-size: 0.8rem !important;
+}
+
+.v-data-table .v-data-table__wrapper table {
+  font-size: 0.8rem !important;
+}
+
+.v-data-table .v-data-table__wrapper table th,
+.v-data-table .v-data-table__wrapper table td {
+  padding: 6px 8px !important;
+  font-size: 0.8rem !important;
+}
+
+.v-card {
+  padding: 8px !important;
+}
+
+.v-row {
+  margin: -2px !important;
+}
+
+.v-col {
+  padding: 2px !important;
+}
+
+/* Optimized select elements for cashier screens */
+.v-select {
+  font-size: 0.8rem !important;
+}
+
+.v-select .v-field {
+  min-height: 32px !important;
+}
+
+.v-select .v-field__input {
+  padding: 6px 12px !important;
+  font-size: 0.8rem !important;
+}

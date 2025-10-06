@@ -39,6 +39,53 @@ frappe.ui.form.on('POS Opening Shift', {
 				frm.set_df_property('user', 'read_only', 1);
 			}
 			}
+
+			// Administrator-only shift control buttons
+			if (frappe.user.has_role('Administrator')) {
+				// Clear previous buttons to prevent duplication
+				frm.clear_custom_buttons();
+
+				if (frm.doc.docstatus === 1) {  // Only if submitted
+					if (frm.doc.status === 'Closed') {
+						frm.add_custom_button(__('🔓 Open Shift'), function() {
+							frappe.call({
+								method: "frappe.client.set_value",
+								args: {
+									doctype: "POS Opening Shift",
+									name: frm.doc.name,
+									fieldname: "status",
+									value: "Open"
+								},
+								callback: function(response) {
+									if (!response.exc) {
+										frappe.msgprint(__('✅ Shift has been opened.'));
+										frm.reload_doc();
+									}
+								}
+							});
+						}).addClass("btn-primary");
+					} 
+					else if (frm.doc.status === 'Open') {
+						frm.add_custom_button(__('🔒 Close Shift'), function() {
+							frappe.call({
+								method: "frappe.client.set_value",
+								args: {
+									doctype: "POS Opening Shift",
+									name: frm.doc.name,
+									fieldname: "status",
+									value: "Closed"
+								},
+								callback: function(response) {
+									if (!response.exc) {
+										frappe.msgprint(__('✅ Shift has been closed.'));
+										frm.reload_doc();
+									}
+								}
+							});
+						}).addClass("btn-danger");
+					}
+				}
+			}
 		} catch (error) {
 			console.error('[ERROR] refresh error:', error);
 		}
