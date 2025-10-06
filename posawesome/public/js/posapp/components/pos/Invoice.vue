@@ -432,7 +432,10 @@ export default {
       invoice_posting_date: false,
       posting_date: frappe.datetime.nowdate(),
       quick_return_value: false,
-      _autoUpdateInProgress: false,
+      _autoSaveProcessing: false,
+      _pendingAutoSaveDoc: null,
+      _pendingAutoSaveReason: "auto",
+      _autoSaveWorkerTimer: null,
       _autoUpdateTimer: null,
       items_headers: [
         { title: "Delete", key: "actions", align: "center", sortable: false },
@@ -663,7 +666,7 @@ export default {
         if (this.items.length === 0 && this.invoice_doc && this.invoice_doc.name) {
           this.delete_draft_invoice();
         } else if (this.invoice_doc && this.invoice_doc.name) {
-          this.debounced_auto_update();
+          this.debounced_auto_update("item-removed");
         }
       }
     },
@@ -674,9 +677,9 @@ export default {
         this.remove_item(item);
       } else {
         this.$forceUpdate();
-        
+
         if (this.invoice_doc && this.invoice_doc.name) {
-          this.debounced_auto_update();
+          this.debounced_auto_update("qty-increment");
         }
       }
     },
@@ -686,9 +689,9 @@ export default {
         this.remove_item(item);
       } else {
         this.$forceUpdate();
-        
+
         if (this.invoice_doc && this.invoice_doc.name) {
-          this.debounced_auto_update();
+          this.debounced_auto_update("qty-decrement");
         }
       }
     },
@@ -744,7 +747,7 @@ export default {
             }
           });
         } else {
-        existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
+          existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
         }
       } else {
         new_item.posa_row_id = this.generateRowId();
@@ -778,6 +781,7 @@ export default {
           new_item.price_list_rate = rate;
           new_item.base_rate = rate;
           this.items.push(new_item);
+          this.debounced_auto_update("item-added");
         }
       }
 
@@ -806,33 +810,84 @@ export default {
       }
     },
 
-    async auto_update_invoice() {
-      if (this.invoice_doc && this.invoice_doc.name && !this.invoice_doc.submitted_for_payment) {
-        if (this._autoUpdateInProgress) {
+    async auto_update_invoice(doc = null, reason = "auto") {
+      if (this.invoice_doc?.submitted_for_payment) {
+        return;
+      }
+
+      const payload = doc || this.get_invoice_doc();
+
+      try {
+        const result = await this.update_invoice(payload);
+        if (result && Array.isArray(result.items)) {
+          this.items = result.items;
+        }
+        return result;
+      } catch (error) {
+        if (error?.message && error.message.includes("Document has been modified")) {
+          try {
+            await this.reload_invoice();
+          } catch (reloadError) {
+            console.error("Failed to reload invoice after modification conflict", reloadError);
+          }
           return;
         }
-        
-        this._autoUpdateInProgress = true;
-        
-        try {
-          const doc = this.get_invoice_doc();
-          const result = await this.update_invoice(doc);
-          if (result) {
-            this.invoice_doc = result;
-          }
-        } catch (error) {
-          if (error.message && error.message.includes('Document has been modified')) {
-            try {
-              await this.reload_invoice();
-            } catch (reloadError) {
-            }
-          }
-        } finally {
-          setTimeout(() => {
-            this._autoUpdateInProgress = false;
-            }, 1000); // Wait one second before allowing another update
-        }
+
+        evntBus.emit("show_mesage", {
+          text: "Auto-saving draft failed",
+          color: "error",
+        });
+
+        throw error;
       }
+    },
+
+    queue_auto_save(reason = "auto") {
+      if (this.invoice_doc?.submitted_for_payment) {
+        return;
+      }
+
+      this._pendingAutoSaveDoc = this.get_invoice_doc();
+      this._pendingAutoSaveReason = reason;
+
+      if (!this._autoSaveProcessing) {
+        this._run_auto_save_worker();
+      }
+    },
+
+    _run_auto_save_worker() {
+      if (this._autoSaveProcessing) {
+        return;
+      }
+
+      if (!this._pendingAutoSaveDoc) {
+        return;
+      }
+
+      const doc = this._pendingAutoSaveDoc;
+      const reason = this._pendingAutoSaveReason || "auto";
+
+      this._pendingAutoSaveDoc = null;
+      this._pendingAutoSaveReason = "auto";
+      this._autoSaveProcessing = true;
+
+      this.auto_update_invoice(doc, reason)
+        .catch((error) => {
+          console.error(`[POS] Auto save draft failed (${reason})`, error);
+        })
+        .finally(() => {
+          this._autoSaveProcessing = false;
+
+          if (this._pendingAutoSaveDoc) {
+            if (this._autoSaveWorkerTimer) {
+              clearTimeout(this._autoSaveWorkerTimer);
+            }
+            this._autoSaveWorkerTimer = setTimeout(() => {
+              this._autoSaveWorkerTimer = null;
+              this._run_auto_save_worker();
+            }, 0);
+          }
+        });
     },
 
     async reload_invoice() {
@@ -857,14 +912,14 @@ export default {
       }
     },
 
-    debounced_auto_update() {
+    debounced_auto_update(reason = "auto") {
       if (this._autoUpdateTimer) {
         clearTimeout(this._autoUpdateTimer);
       }
-      
+
       this._autoUpdateTimer = setTimeout(() => {
-        this.auto_update_invoice();
-      }, 500);
+        this.queue_auto_save(reason);
+      }, 400);
     },
 
     get_new_item(item) {
@@ -2020,6 +2075,12 @@ export default {
     if (this._autoUpdateTimer) {
       clearTimeout(this._autoUpdateTimer);
     }
+    if (this._autoSaveWorkerTimer) {
+      clearTimeout(this._autoSaveWorkerTimer);
+    }
+    this._pendingAutoSaveDoc = null;
+    this._pendingAutoSaveReason = "auto";
+    this._autoSaveProcessing = false;
   },
   created() {
     document.addEventListener("keydown", this.shortOpenPayment.bind(this));
