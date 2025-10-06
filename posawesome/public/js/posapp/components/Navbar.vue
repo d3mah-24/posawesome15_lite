@@ -1,7 +1,7 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <nav>
-    <v-app-bar app height="40" class="elevation-2">
+    <v-app-bar app height="40" class="elevation-2 app-navbar">
       <!-- <v-app-bar-nav-icon
         @click.stop="drawer = !drawer"
         class="grey--text"
@@ -286,10 +286,14 @@ export default {
   margin-top: 0px;
 }
 
-.elevation-2 {
-  width: 1024px;
-  height: 768px;
-  z-index: 0 !important;
+.app-navbar {
+  /* Keep navbar pinned while scrolling */
+  width: 100%;
+  height: 40px;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 1100 !important;
 }
 
 .invoice-number-badge {
