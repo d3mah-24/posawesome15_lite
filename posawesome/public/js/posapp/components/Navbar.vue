@@ -56,6 +56,13 @@
         </span>
       </div>
 
+      <div class="ping-badge" :class="pingClass">
+        <v-icon size="18" :color="pingIconColor">mdi-wifi</v-icon>
+        <span class="ping-text">
+          Connection: {{ pingTime }}ms
+        </span>
+      </div>
+
       <v-spacer></v-spacer>
       <v-btn style="cursor: unset" variant="text" color="primary">
         <span right>{{ pos_profile.name }}</span>
@@ -187,6 +194,9 @@ export default {
       invoice_doc: null,
       pos_opening_shift: null,
       shift_invoice_count: 0,
+      // Ping variables
+      pingTime: '000',
+      pingInterval: null,
     };
   },
   computed: {
@@ -263,6 +273,21 @@ export default {
         return '000';
       }
       return this.shift_invoice_count || '000';
+    },
+    // Ping computed properties
+    pingClass() {
+      const ping = parseInt(this.pingTime);
+      if (ping < 100) return 'ping-excellent';
+      if (ping < 300) return 'ping-good';
+      if (ping < 500) return 'ping-fair';
+      return 'ping-poor';
+    },
+    pingIconColor() {
+      const ping = parseInt(this.pingTime);
+      if (ping < 100) return 'success';
+      if (ping < 300) return 'primary';
+      if (ping < 500) return 'warning';
+      return 'error';
     }
   },
   // ===== SECTION 4: METHODS =====
@@ -409,10 +434,46 @@ export default {
         this.shift_invoice_count = 0;
       }
     },
+    // Ping methods
+    async measurePing() {
+      const startTime = performance.now();
+      try {
+        await frappe.call({
+          method: 'frappe.ping',
+          args: {},
+          callback: () => {
+            const endTime = performance.now();
+            const ping = Math.round(endTime - startTime);
+            this.pingTime = ping.toString().padStart(3, '0');
+          }
+        });
+      } catch (error) {
+        console.error('Ping measurement failed:', error);
+        this.pingTime = '999';
+      }
+    },
+    startPingMonitoring() {
+      // Initial ping
+      this.measurePing();
+      
+      // Set up interval for continuous monitoring (every 5 seconds)
+      this.pingInterval = setInterval(() => {
+        this.measurePing();
+      }, 5000);
+    },
+    stopPingMonitoring() {
+      if (this.pingInterval) {
+        clearInterval(this.pingInterval);
+        this.pingInterval = null;
+      }
+    },
   },
   created: function () {
     this.$nextTick(function () {
       try {
+        // Start ping monitoring
+        this.startPingMonitoring();
+        
         evntBus.on('show_mesage', (data) => {
           this.show_mesage(data);
         });
@@ -466,6 +527,10 @@ export default {
         });
       }
     });
+  },
+  beforeDestroy() {
+    // Clean up ping monitoring
+    this.stopPingMonitoring();
   }
 };
 </script>
@@ -652,6 +717,62 @@ export default {
 .totals-text {
   font-weight: 600;
   color: #1976d2;
+}
+
+/* Ping Badge Styles */
+.ping-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.ping-text {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+/* Ping Status Classes */
+.ping-excellent {
+  border-color: #4caf50;
+  background: #e8f5e8;
+}
+
+.ping-excellent .ping-text {
+  color: #2e7d32;
+}
+
+.ping-good {
+  border-color: #2196f3;
+  background: #e3f2fd;
+}
+
+.ping-good .ping-text {
+  color: #1976d2;
+}
+
+.ping-fair {
+  border-color: #ff9800;
+  background: #fff3e0;
+}
+
+.ping-fair .ping-text {
+  color: #f57c00;
+}
+
+.ping-poor {
+  border-color: #f44336;
+  background: #ffebee;
+}
+
+.ping-poor .ping-text {
+  color: #d32f2f;
 }
 
 /* Clear Cache Button Styles */
