@@ -627,6 +627,7 @@ export default {
             frappe.utils.play_sound("submit");
             this.addresses = [];
             evntBus.emit("new_invoice", "false");
+            evntBus.emit("invoice_submitted");
             vm.back_to_invoice();
           } else {
             evntBus.emit("show_mesage", {

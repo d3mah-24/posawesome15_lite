@@ -49,6 +49,13 @@
         </span>
       </div>
 
+      <div class="totals-badge">
+        <v-icon size="18" color="primary">mdi-counter</v-icon>
+        <span class="totals-text">
+          SINV_QTY: {{ totalInvoicesQty }}
+        </span>
+      </div>
+
       <v-spacer></v-spacer>
       <v-btn style="cursor: unset" variant="text" color="primary">
         <span right>{{ pos_profile.name }}</span>
@@ -179,6 +186,7 @@ export default {
       last_invoice: '',
       invoice_doc: null,
       pos_opening_shift: null,
+      shift_invoice_count: 0,
     };
   },
   computed: {
@@ -248,6 +256,13 @@ export default {
         return 'grey';
       }
       return this.pos_opening_shift.status === 'Open' ? 'success' : 'warning';
+    },
+    totalInvoicesQty() {
+      // Get total invoices count for current shift
+      if (!this.pos_opening_shift || !this.pos_opening_shift.name || !this.pos_profile) {
+        return '000';
+      }
+      return this.shift_invoice_count || '000';
     }
   },
   // ===== SECTION 4: METHODS =====
@@ -372,6 +387,28 @@ export default {
         });
       }
     },
+    async fetchShiftInvoiceCount() {
+      if (!this.pos_profile || !this.pos_opening_shift) {
+        return;
+      }
+      
+      try {
+        const response = await frappe.call({
+          method: 'posawesome.posawesome.api.sinv_qty.get_user_shift_invoice_count',
+          args: {
+            pos_profile: this.pos_profile.name,
+            pos_opening_shift: this.pos_opening_shift.name
+          }
+        });
+        
+        if (response.message !== undefined) {
+          this.shift_invoice_count = response.message;
+        }
+      } catch (error) {
+        console.error('Error fetching shift invoice count:', error);
+        this.shift_invoice_count = 0;
+      }
+    },
   },
   created: function () {
     this.$nextTick(function () {
@@ -389,6 +426,7 @@ export default {
           this.pos_opening_shift = data.pos_opening_shift;
           console.log('Navbar pos_opening_shift set to:', this.pos_opening_shift);
           this.fetch_company_info();
+          this.fetchShiftInvoiceCount();
           // External payments screen disabled - removed payments option
         });
         evntBus.on('set_last_invoice', (data) => {
@@ -399,9 +437,17 @@ export default {
         });
         evntBus.on('set_pos_opening_shift', (data) => {
           this.pos_opening_shift = data;
+          this.fetchShiftInvoiceCount();
         });
         evntBus.on('register_pos_data', (data) => {
           this.pos_opening_shift = data.pos_opening_shift;
+        });
+        evntBus.on('invoice_submitted', () => {
+          // Refresh invoice count when a new invoice is submitted
+          // Add delay to wait for background job to complete
+          setTimeout(() => {
+            this.fetchShiftInvoiceCount();
+          }, 2000); // Wait 2 seconds for background job
         });
         evntBus.on('freeze', (data) => {
           this.freeze = true;
@@ -587,6 +633,25 @@ export default {
 
 .no-shift-start .shift-start-text {
   color: #757575;
+}
+
+/* Totals Badge Styles */
+.totals-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.totals-text {
+  font-weight: 600;
+  color: #1976d2;
 }
 
 /* Clear Cache Button Styles */

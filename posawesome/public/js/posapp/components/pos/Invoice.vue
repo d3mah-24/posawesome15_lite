@@ -1904,6 +1904,7 @@ export default {
                 });
                 frappe.utils.play_sound("submit");
                 evntBus.emit("new_invoice", "false");
+                evntBus.emit("invoice_submitted");
               } else {
                 evntBus.emit("show_mesage", {
                   text: "Failed to submit invoice",
