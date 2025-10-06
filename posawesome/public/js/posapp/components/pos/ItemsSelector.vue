@@ -33,7 +33,7 @@
     </v-card>
 
     <v-card
-      class="selection mx-auto grey lighten-5 d-flex flex-column flex-grow-1"
+      class="selection grey lighten-5 d-flex flex-column flex-grow-1"
       style="min-height: 0;"
     >
       <v-progress-linear
@@ -1204,12 +1204,15 @@ export default {
 }
 
 .selection {
-  /* Keep the card pinned while the items area scrolls */
+  /* Keep selector full-width while capping height */
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  width: 100%;
+  max-width: none;
+  height: calc(100vh - 120px);
   max-height: calc(100vh - 120px);
 }
 
@@ -1226,6 +1229,7 @@ export default {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+  overflow: hidden;
 }
 
 .items-shell__body {
@@ -1240,6 +1244,8 @@ export default {
   /* Scroll area for the grid/list */
   flex: 1 1 auto;
   min-height: 0;
+  height: 100%;
+  max-height: 100%;
   overflow-y: auto;
   width: 100%;
   padding-right: 4px;
@@ -1257,12 +1263,14 @@ export default {
 
 @media (max-width: 960px) {
   .selection {
+    height: calc(100vh - 168px);
     max-height: calc(100vh - 168px);
   }
 }
 
 @media (max-width: 600px) {
   .selection {
+    height: calc(100vh - 208px);
     max-height: calc(100vh - 208px);
   }
 }
