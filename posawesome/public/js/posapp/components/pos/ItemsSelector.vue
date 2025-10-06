@@ -1,7 +1,7 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
-  <!-- Fixed-height wrapper keeps scroll inside -->
-  <div class="selector-wrapper">
+  <!-- Lightweight shell keeps layout predictable -->
+  <div class="selector-shell">
 
   <!-- Filters and counters (no extra top margin) -->
     <v-card class="cards mb-2 pa-2 grey lighten-5">
@@ -43,7 +43,7 @@
         top
         color="info"
       ></v-progress-linear>
-  <v-row class="items px-2 py-1" style="flex: 1; min-height: 0;">
+      <v-row class="items-row px-2 py-1" style="flex: 1; min-height: 0;">
         <!-- Barcode search field -->
         <v-col cols="6" class="pb-0 mb-2">
           <v-text-field
@@ -104,9 +104,9 @@
             hide-details
           ></v-checkbox>
         </v-col>
-        <v-col cols="12" class="pt-0 mt-0 d-flex flex-column flex-grow-1">
+        <v-col cols="12" class="pt-0 mt-0 items-shell">
           <div
-            class="items-panel d-flex flex-column flex-grow-1"
+            class="items-shell__body"
             v-if="items_view == 'card'"
           >
             <!-- Scroll wrapper keeps card grid inside selector -->
@@ -164,7 +164,7 @@
             </div>
           </div>
           <div
-            class="items-panel d-flex flex-column flex-grow-1"
+            class="items-shell__body"
             v-if="items_view == 'list'"
           >
             <!-- Scroll wrapper keeps table height capped -->
@@ -1109,13 +1109,11 @@ export default {
 </script>
 
 <style scoped>
-.selector-wrapper {
-  /* Keep selector column inside viewport */
+.selector-shell {
+  /* Allow the selector column to expand naturally */
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 64px);
-  max-height: calc(100vh - 64px);
-  overflow: hidden;
+  height: 100%;
 }
 
 .item-card {
@@ -1206,21 +1204,34 @@ export default {
 }
 
 .selection {
-  /* Let the selector card fill the wrapper */
+  /* Keep the card pinned while the items area scrolls */
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  max-height: calc(100vh - 120px);
 }
 
-.items {
+
+.items-row {
+  /* Let the row containing inputs + list stretch */
   flex: 1 1 auto !important;
   min-height: 0 !important;
 }
 
-.items-panel {
-  /* Panel keeps search zone fixed while body flexes */
+.items-shell {
+  /* Reserve vertical space for the results panel */
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.items-shell__body {
+  /* Split card/list view from the filters */
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -1229,9 +1240,8 @@ export default {
   /* Scroll area for the grid/list */
   flex: 1 1 auto;
   min-height: 0;
-  height: 100%;
   overflow-y: auto;
-  max-height: 100%;
+  width: 100%;
   padding-right: 4px;
   padding-bottom: 8px;
   overscroll-behavior: contain;
@@ -1246,16 +1256,14 @@ export default {
 }
 
 @media (max-width: 960px) {
-  .selector-wrapper {
-    height: calc(100vh - 112px);
-    max-height: calc(100vh - 112px);
+  .selection {
+    max-height: calc(100vh - 168px);
   }
 }
 
 @media (max-width: 600px) {
-  .selector-wrapper {
-    height: calc(100vh - 160px);
-    max-height: calc(100vh - 160px);
+  .selection {
+    max-height: calc(100vh - 208px);
   }
 }
 
