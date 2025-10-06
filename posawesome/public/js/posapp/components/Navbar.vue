@@ -6,19 +6,11 @@
         @click.stop="drawer = !drawer"
         class="grey--text"
       ></v-app-bar-nav-icon> -->
-      <v-img
-        :src="company_logo || '/assets/posawesome/js/posapp/components/pos/pos.png'"
-        alt="Company Logo"
-        max-width="32"
-        class="mr-2"
-        color="primary"
-      ></v-img>
       <v-toolbar-title
         @click="go_desk"
         style="cursor: pointer"
         class="text-uppercase primary--text"
       >
-        <span>POS Awesome</span>
       </v-toolbar-title>
 
       <div class="company-name-badge">
@@ -83,8 +75,7 @@
       </v-btn>
       <v-btn icon variant="text"
              color="warning"
-             @click="clearCache"
-             title="Clear Cache & Reload">
+             @click="clearCache">
         <v-icon>mdi-cached</v-icon>
       </v-btn>
       <div class="text-center">
@@ -114,10 +105,6 @@
                 <span>About System</span>
               </v-list-item>
               <v-divider class="my-0"></v-divider>
-              <v-list-item @click="clearCache">
-                <v-icon class="mr-2">mdi-cached</v-icon>
-                <span>Clear Cache & Reload</span>
-              </v-list-item>
             </v-list>
           </v-card>
         </v-menu>
@@ -811,7 +798,7 @@ export default {
 }
 
 /* Cache button animation */
-.v-btn[title="Clear Cache & Reload"]:hover .v-icon {
+.v-btn[color="warning"]:hover .v-icon {
   animation: rotate 0.5s ease-in-out;
 }
 
