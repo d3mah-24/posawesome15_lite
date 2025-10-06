@@ -1,6 +1,7 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
-  <div>
+  <!-- Fixed-height wrapper keeps scroll inside -->
+  <div class="selector-wrapper">
 
   <!-- Filters and counters (no extra top margin) -->
     <v-card class="cards mb-2 pa-2 grey lighten-5">
@@ -1098,6 +1099,15 @@ export default {
 </script>
 
 <style scoped>
+.selector-wrapper {
+  /* Keep selector column inside viewport */
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  max-height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
 .item-card {
   height: 100%;
   min-height: 120px !important;
@@ -1186,10 +1196,11 @@ export default {
 }
 
 .selection {
+  /* Let the selector card fill the wrapper */
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 140px);
-  max-height: calc(100vh - 140px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -1199,11 +1210,13 @@ export default {
 }
 
 .items-scrollable {
+  /* Scroll area for the grid/list */
   flex: 1 1 auto;
   overflow-y: auto;
   max-height: 100%;
   padding-right: 4px;
   padding-bottom: 8px;
+  overscroll-behavior: contain;
 }
 
 .items-scrollable .v-data-table__wrapper {
@@ -1215,9 +1228,16 @@ export default {
 }
 
 @media (max-width: 960px) {
-  .selection {
-    height: calc(100vh - 200px);
-    max-height: calc(100vh - 200px);
+  .selector-wrapper {
+    height: calc(100vh - 112px);
+    max-height: calc(100vh - 112px);
+  }
+}
+
+@media (max-width: 600px) {
+  .selector-wrapper {
+    height: calc(100vh - 160px);
+    max-height: calc(100vh - 160px);
   }
 }
 

@@ -287,9 +287,13 @@ export default {
 }
 
 .app-navbar {
+  /* Keep navbar pinned while scrolling */
   width: 100%;
   height: 40px;
-  z-index: 1000 !important;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 1100 !important;
 }
 
 .invoice-number-badge {
