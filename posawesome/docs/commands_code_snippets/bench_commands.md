@@ -2,97 +2,670 @@
 
 **All commands extracted from Frappe Framework v15.82.1 source code**
 
-## Complete Command List
+## Complete Command List with Detailed Actions
 
 ALL 91 bench commands documented from source:
-- `add-database-index` - Add database index to table
-- `add-system-manager` - Create system manager user
-- `add-to-email-queue` - Add email to queue
-- `add-to-hosts` - Add site to /etc/hosts  
-- `add-user` - Create new user
-- `backup` - Backup site database and files
-- `browse` - Open site in browser
-- `build` - Compile JS and CSS
-- `build-message-files` - Build translation files
-- `build-search-index` - Build search index
-- `bulk-rename` - Rename multiple documents
-- `clear-cache` - Clear all caches
-- `clear-log-table` - Clear log tables
-- `clear-website-cache` - Clear website cache
-- `compile-po-to-mo` - Compile translations
-- `console` - Start IPython console
-- `create-patch` - Create new patch
-- `create-po-file` - Create PO translation file
-- `create-rq-users` - Create Redis queue users
-- `data-import` - Import CSV/XLSX data
-- `db-console` / `mariadb` / `postgres` - Database console
-- `describe-database-table` - Show table structure
-- `destroy-all-sessions` - Clear all sessions
-- `disable-scheduler` - Disable scheduler
-- `disable-user` - Disable user account
-- `doctor` - Check bench health
-- `drop-site` - Delete a site
-- `enable-scheduler` - Enable scheduler
-- `execute` - Execute Python/SQL command
-- `export-csv` - Export data template
-- `export-doc` - Export single document
-- `export-fixtures` - Export fixtures
-- `export-json` - Export as JSON
-- `generate-pot-file` - Generate POT file
-- `get-untranslated` - Export untranslated strings
-- `import-doc` - Import documents
-- `import-translations` - Import translations
-- `install-app` - Install app on site
-- `jupyter` - Start Jupyter notebook
-- `list-apps` - List installed apps
-- `make-app` - Create new app
-- `migrate` - Run migrations
-- `migrate-csv-to-po` - Migrate CSV to PO
-- `migrate-to` - Migrate to version
-- `migrate-translations` - Migrate translations
-- `new-language` - Create new language
-- `new-site` - Create new site
-- `ngrok` - Start ngrok tunnel
-- `partial-restore` - Restore specific tables
-- `publish-realtime` - Publish realtime event
-- `purge-jobs` - Clear job queue
-- `ready-for-migration` - Check migration readiness
-- `rebuild-global-search` - Rebuild search
-- `reinstall` - Reinstall site
-- `reload-doc` - Reload document
-- `reload-doctype` - Reload doctype
-- `remove-from-installed-apps` - Remove app from list
-- `request` - Execute API request
-- `reset-perms` - Reset permissions
-- `restore` - Restore from backup
-- `run-parallel-tests` - Run parallel tests
-- `run-patch` - Run specific patch
-- `run-tests` - Run unit tests
-- `run-ui-tests` - Run Cypress tests
-- `schedule` - Run scheduler
-- `scheduler` - Manage scheduler
-- `serve` - Start dev server
-- `set-admin-password` - Set admin password
-- `set-config` - Set config value
-- `set-last-active-for-user` - Update last active
-- `set-maintenance-mode` - Toggle maintenance
-- `set-password` - Set user password
-- `show-config` - Display configuration
-- `show-pending-jobs` - Show pending jobs
-- `start-recording` - Start recorder
-- `stop-recording` - Stop recorder
-- `transform-database` - Transform DB engine
-- `trigger-scheduler-event` - Trigger event
-- `trim-database` / `trim-tables` - Optimize database
-- `uninstall-app` - Uninstall app
-- `update-csv-from-po` - Update CSV from PO
-- `update-po-files` - Update PO files
-- `update-translations` - Update translations
-- `use` - Set default site
-- `version` - Show app versions
-- `watch` - Watch and rebuild
-- `worker` - Start background worker
-- `worker-pool` - Start worker pool
+
+### Cache & Performance Commands
+
+# bench clear-cache
+✅ Server Scripts Cache
+✅ DocType Metadata Cache  
+✅ User Cache
+✅ System Settings Cache
+✅ Permissions Cache
+✅ Website/Portal Cache
+✅ Redis Cache
+✅ File Cache
+
+# bench clear-website-cache
+✅ Website Pages Cache
+✅ Portal Menu Cache
+✅ Blog Posts Cache
+✅ Guest Cache
+❌ Does NOT clear Server Scripts
+❌ Does NOT clear DocTypes
+
+# bench clear-log-table
+✅ Error Logs
+✅ Activity Logs
+✅ Communication Logs
+✅ Error Snapshot Logs
+✅ Scheduled Job Logs
+
+### Site Management Commands
+
+# bench new-site
+✅ Create Database
+✅ Create Site Directory
+✅ Install Frappe Framework
+✅ Create Administrator User
+✅ Set Site Configuration
+✅ Initialize Site Structure
+
+# bench drop-site
+✅ Drop Database
+✅ Remove Site Directory
+✅ Clear Site Files
+✅ Remove Site Configuration
+❌ Does NOT affect other sites
+
+# bench reinstall
+✅ Drop Existing Database
+✅ Recreate Database
+✅ Reinstall All Apps
+✅ Reset All Data
+✅ Recreate Administrator
+
+# bench backup
+✅ Database SQL Dump
+✅ Private Files Backup
+✅ Public Files Backup
+✅ Site Configuration
+✅ Compress Backup Files
+
+# bench restore
+✅ Restore Database
+✅ Restore Private Files
+✅ Restore Public Files
+✅ Restore Configuration
+✅ Verify Restoration
+
+### App Management Commands
+
+# bench install-app
+✅ Install App Dependencies
+✅ Run App Migrations
+✅ Install App Tables
+✅ Install App Fixtures
+✅ Update App Permissions
+
+# bench uninstall-app
+✅ Drop App Tables
+✅ Remove App Files
+✅ Clear App Cache
+✅ Update Site Configuration
+❌ Does NOT affect other apps
+
+# bench make-app
+✅ Create App Directory
+✅ Generate App Structure
+✅ Create App Configuration
+✅ Initialize Git Repository
+✅ Create Basic Files
+
+### Development Commands
+
+# bench build
+✅ Compile JavaScript Files
+✅ Compile CSS Files
+✅ Bundle Assets
+✅ Minify Production Files
+✅ Generate Source Maps
+
+# bench watch
+✅ Monitor File Changes
+✅ Auto-rebuild on Changes
+✅ Live Reload Browser
+✅ Watch Multiple Apps
+✅ Background Process
+
+# bench serve
+✅ Start Development Server
+✅ Enable Hot Reload
+✅ Serve Static Files
+✅ Enable Debug Mode
+✅ Auto-restart on Changes
+
+### Database Commands
+
+# bench migrate
+✅ Run App Migrations
+✅ Update Database Schema
+✅ Execute Migration Scripts
+✅ Update DocType Structure
+✅ Handle Data Migrations
+
+# bench mariadb / bench postgres
+✅ Connect to Database
+✅ Execute SQL Commands
+✅ Interactive Console
+✅ Direct Database Access
+✅ Query Database Tables
+
+# bench execute
+✅ Run Python Code
+✅ Execute SQL Queries
+✅ Access Frappe APIs
+✅ Run Custom Scripts
+✅ Return Results
+
+### User Management Commands
+
+# bench add-user
+✅ Create User Account
+✅ Set User Password
+✅ Assign User Roles
+✅ Set User Permissions
+✅ Send Welcome Email
+
+# bench add-system-manager
+✅ Create Administrator User
+✅ Grant System Manager Role
+✅ Set Admin Permissions
+✅ Enable All Access
+✅ Create Super User
+
+# bench set-password
+✅ Update User Password
+✅ Hash Password Securely
+✅ Update Password History
+✅ Send Password Change Email
+✅ Log Password Change
+
+# bench disable-user
+✅ Disable User Login
+✅ Revoke Active Sessions
+✅ Keep User Data
+✅ Prevent New Logins
+✅ Log Disable Action
+
+### Testing Commands
+
+# bench run-tests
+✅ Run App Unit Tests
+✅ Execute Test Cases
+✅ Generate Test Reports
+✅ Check Test Coverage
+✅ Validate Test Results
+
+# bench run-ui-tests
+✅ Run UI Test Suite
+✅ Execute Browser Tests
+✅ Test User Interface
+✅ Generate Screenshots
+✅ Validate UI Behavior
+
+# bench run-parallel-tests
+✅ Run Tests in Parallel
+✅ Distribute Test Load
+✅ Speed Up Test Execution
+✅ Use Multiple Workers
+✅ Aggregate Results
+
+### Translation Commands
+
+# bench generate-pot-file
+✅ Extract Translatable Strings
+✅ Create POT Template
+✅ Include All App Strings
+✅ Generate Translation File
+✅ Update Existing POT
+
+# bench create-po-file
+✅ Create Language PO File
+✅ Initialize Translation File
+✅ Set Language Metadata
+✅ Create Empty Translations
+✅ Ready for Translation
+
+# bench compile-po-to-mo
+✅ Compile PO to MO
+✅ Generate Binary Files
+✅ Optimize Translation Files
+✅ Make Translations Available
+✅ Update Translation Cache
+
+# bench build-message-files
+✅ Compile Translation Files
+✅ Generate Message Files
+✅ Build Language Packs
+✅ Update Translation Cache
+✅ Prepare Translations
+
+### Scheduler Commands
+
+# bench scheduler
+✅ Enable/Disable Scheduler
+✅ Check Scheduler Status
+✅ Manage Scheduler Jobs
+✅ Control Background Tasks
+✅ Monitor Scheduler Health
+
+# bench schedule
+✅ Execute Scheduled Jobs
+✅ Run Background Tasks
+✅ Process Job Queue
+✅ Handle Cron Jobs
+✅ Update Job Status
+
+# bench worker
+✅ Process Background Jobs
+✅ Handle Async Tasks
+✅ Execute Job Queue
+✅ Run Long Tasks
+✅ Update Job Progress
+
+### Utility Commands
+
+# bench doctor
+✅ Check System Health
+✅ Validate Configuration
+✅ Test Database Connection
+✅ Check File Permissions
+✅ Report System Status
+
+# bench version
+✅ Display App Versions
+✅ Show Framework Version
+✅ List Installed Apps
+✅ Check Version Compatibility
+✅ Show Update Status
+
+# bench show-config
+✅ Show Site Configuration
+✅ Display System Settings
+✅ List Environment Variables
+✅ Show Database Settings
+✅ Display App Settings
+
+### Advanced Commands
+
+# bench jupyter
+✅ Start Jupyter Server
+✅ Create Interactive Notebooks
+✅ Access Frappe APIs
+✅ Run Python Code
+✅ Data Analysis Environment
+
+# bench ngrok
+✅ Create Public Tunnel
+✅ Expose Local Server
+✅ Generate Public URL
+✅ Enable Remote Access
+✅ Share Development Site
+
+# bench data-import
+✅ Parse CSV/XLSX Files
+✅ Validate Data Format
+✅ Import to DocType
+✅ Handle Data Mapping
+✅ Report Import Results
+
+### Maintenance Commands
+
+# bench trim-database
+✅ Optimize Database Tables
+✅ Remove Unused Data
+✅ Compress Database
+✅ Improve Performance
+✅ Clean Up Storage
+
+# bench purge-jobs
+✅ Clear Failed Jobs
+✅ Remove Completed Jobs
+✅ Clean Job Queue
+✅ Free Up Resources
+✅ Reset Job Status
+
+# bench destroy-all-sessions
+✅ Logout All Users
+✅ Clear Session Data
+✅ Revoke All Tokens
+✅ Force Re-login
+✅ Reset User Sessions
+
+### Additional Commands
+
+# bench add-database-index
+✅ Create Database Index
+✅ Improve Query Performance
+✅ Optimize Table Access
+✅ Add Index to Specific Column
+✅ Update Table Statistics
+
+# bench add-to-email-queue
+✅ Queue Email for Sending
+✅ Add Email to Background Queue
+✅ Schedule Email Delivery
+✅ Handle Email Retry Logic
+✅ Track Email Status
+
+# bench add-to-hosts
+✅ Add Site to Hosts File
+✅ Enable Local Domain Access
+✅ Map Domain to Localhost
+✅ Update System Hosts
+✅ Enable Site Access
+
+# bench browse
+✅ Open Site in Default Browser
+✅ Navigate to Site URL
+✅ Launch Web Interface
+✅ Access Site Dashboard
+✅ Open Site Login Page
+
+# bench build-search-index
+✅ Create Search Index
+✅ Index All Documents
+✅ Build Full-Text Search
+✅ Update Search Database
+✅ Enable Global Search
+
+# bench bulk-rename
+✅ Rename Multiple Documents
+✅ Update Document Names
+✅ Handle Bulk Operations
+✅ Update References
+✅ Log Rename Operations
+
+# bench console
+✅ Start Interactive Console
+✅ Access Frappe APIs
+✅ Run Python Commands
+✅ Debug Code Interactively
+✅ Test Functions
+
+# bench create-patch
+✅ Generate Patch File
+✅ Create Migration Script
+✅ Set Patch Version
+✅ Add Patch Metadata
+✅ Prepare Database Changes
+
+# bench create-rq-users
+✅ Create Redis Queue Users
+✅ Set Up Background Workers
+✅ Configure Queue Access
+✅ Enable Job Processing
+✅ Set Worker Permissions
+
+# bench db-console
+✅ Connect to Database
+✅ Execute SQL Commands
+✅ Interactive Database Access
+✅ Query Database Directly
+✅ Manage Database Objects
+
+# bench describe-database-table
+✅ Display Table Schema
+✅ Show Column Information
+✅ List Table Indexes
+✅ Display Table Constraints
+✅ Show Table Statistics
+
+# bench disable-scheduler
+✅ Stop Background Scheduler
+✅ Disable Scheduled Jobs
+✅ Prevent Job Execution
+✅ Keep Job Definitions
+✅ Log Scheduler Status
+
+# bench enable-scheduler
+✅ Start Background Scheduler
+✅ Enable Scheduled Jobs
+✅ Resume Job Execution
+✅ Activate Cron Jobs
+✅ Log Scheduler Status
+
+# bench export-csv
+✅ Generate CSV Template
+✅ Export Data Format
+✅ Create Import Template
+✅ Include Column Headers
+✅ Prepare Data Export
+
+# bench export-doc
+✅ Export Document Data
+✅ Generate JSON Export
+✅ Include Document Metadata
+✅ Export Child Documents
+✅ Create Backup Copy
+
+# bench export-fixtures
+✅ Export App Fixtures
+✅ Generate Fixture Files
+✅ Export Default Data
+✅ Create Data Templates
+✅ Prepare App Data
+
+# bench export-json
+✅ Export Data as JSON
+✅ Generate JSON File
+✅ Include All Fields
+✅ Export Document Structure
+✅ Create Data Backup
+
+# bench get-untranslated
+✅ Find Untranslated Strings
+✅ Export Missing Translations
+✅ Generate Translation List
+✅ Identify Translation Gaps
+✅ Prepare Translation Work
+
+# bench import-doc
+✅ Import Document Files
+✅ Process JSON Documents
+✅ Validate Document Data
+✅ Create/Update Documents
+✅ Handle Import Errors
+
+# bench import-translations
+✅ Import Translation Files
+✅ Process PO/MO Files
+✅ Update Language Files
+✅ Apply Translations
+✅ Update Translation Cache
+
+# bench list-apps
+✅ Show Installed Apps
+✅ Display App Versions
+✅ List App Status
+✅ Show App Dependencies
+✅ Display App Information
+
+# bench migrate-csv-to-po
+✅ Convert CSV to PO Format
+✅ Migrate Translation Files
+✅ Update File Format
+✅ Preserve Translation Data
+✅ Update File Structure
+
+# bench migrate-to
+✅ Migrate to Specific Version
+✅ Run Version Migrations
+✅ Update App Version
+✅ Handle Version Changes
+✅ Update Database Schema
+
+# bench migrate-translations
+✅ Migrate Translation Files
+✅ Update Translation Format
+✅ Process Translation Data
+✅ Update Language Files
+✅ Migrate Translation Structure
+
+# bench new-language
+✅ Create New Language
+✅ Set Language Configuration
+✅ Initialize Language Files
+✅ Set Language Metadata
+✅ Prepare Translation Files
+
+# bench partial-restore
+✅ Restore Specific Tables
+✅ Partial Database Restore
+✅ Restore Table Data
+✅ Handle Selective Restore
+✅ Update Table Structure
+
+# bench publish-realtime
+✅ Send Realtime Event
+✅ Publish to WebSocket
+✅ Notify Connected Clients
+✅ Broadcast Event Data
+✅ Update UI in Real-time
+
+# bench ready-for-migration
+✅ Check Migration Status
+✅ Validate Migration Readiness
+✅ Check Dependencies
+✅ Verify System State
+✅ Prepare for Migration
+
+# bench rebuild-global-search
+✅ Rebuild Search Index
+✅ Update Search Database
+✅ Refresh Search Data
+✅ Optimize Search Performance
+✅ Update Search Results
+
+# bench reload-doc
+✅ Reload Document Data
+✅ Refresh Document Cache
+✅ Update Document State
+✅ Reload Document Structure
+✅ Refresh Document View
+
+# bench reload-doctype
+✅ Reload DocType Definition
+✅ Refresh DocType Cache
+✅ Update DocType Structure
+✅ Reload DocType Schema
+✅ Refresh DocType View
+
+# bench remove-from-installed-apps
+✅ Remove App from List
+✅ Update Installed Apps
+✅ Remove App Reference
+✅ Update App Configuration
+✅ Clean App Dependencies
+
+# bench request
+✅ Execute API Call
+✅ Send HTTP Request
+✅ Process API Response
+✅ Handle API Errors
+✅ Return API Results
+
+# bench reset-perms
+✅ Reset User Permissions
+✅ Clear Permission Cache
+✅ Rebuild Permission Rules
+✅ Update Access Control
+✅ Refresh User Rights
+
+# bench run-patch
+✅ Execute Specific Patch
+✅ Run Migration Script
+✅ Apply Database Changes
+✅ Update System State
+✅ Log Patch Execution
+
+# bench set-admin-password
+✅ Set Administrator Password
+✅ Update Admin Credentials
+✅ Secure Admin Account
+✅ Hash Password Securely
+✅ Log Password Change
+
+# bench set-config
+✅ Update Configuration Value
+✅ Set System Setting
+✅ Update Site Config
+✅ Modify App Setting
+✅ Save Configuration
+
+# bench set-last-active-for-user
+✅ Update User Last Active
+✅ Track User Activity
+✅ Update Login Time
+✅ Record User Session
+✅ Update Activity Log
+
+# bench set-maintenance-mode
+✅ Enable/Disable Maintenance Mode
+✅ Control Site Access
+✅ Show Maintenance Page
+✅ Block User Access
+✅ Enable Admin Access
+
+# bench show-pending-jobs
+✅ Display Pending Jobs
+✅ Show Job Queue Status
+✅ List Background Tasks
+✅ Display Job Information
+✅ Show Job Progress
+
+# bench start-recording
+✅ Start System Recording
+✅ Begin Activity Logging
+✅ Record User Actions
+✅ Track System Events
+✅ Enable Recording Mode
+
+# bench stop-recording
+✅ Stop System Recording
+✅ End Activity Logging
+✅ Save Recording Data
+✅ Disable Recording Mode
+✅ Generate Recording Report
+
+# bench transform-database
+✅ Change Database Engine
+✅ Convert Table Storage
+✅ Update Database Format
+✅ Optimize Database Performance
+✅ Migrate Database Engine
+
+# bench trigger-scheduler-event
+✅ Trigger Scheduler Event
+✅ Execute Scheduled Task
+✅ Run Background Job
+✅ Process Event Queue
+✅ Update Job Status
+
+# bench trim-tables
+✅ Optimize Database Tables
+✅ Remove Unused Data
+✅ Compress Table Storage
+✅ Improve Table Performance
+✅ Clean Up Table Data
+
+# bench update-csv-from-po
+✅ Update CSV from PO Files
+✅ Sync Translation Data
+✅ Update CSV Format
+✅ Merge Translation Changes
+✅ Update CSV Structure
+
+# bench update-po-files
+✅ Update PO Translation Files
+✅ Sync Translation Data
+✅ Update PO Format
+✅ Merge Translation Changes
+✅ Update PO Structure
+
+# bench update-translations
+✅ Update Translation Files
+✅ Sync Translation Data
+✅ Update Language Files
+✅ Merge Translation Changes
+✅ Update Translation Structure
+
+# bench use
+✅ Set Default Site
+✅ Update Site Configuration
+✅ Change Active Site
+✅ Update Site Reference
+✅ Set Site Context
+
+# bench worker-pool
+✅ Start Multiple Workers
+✅ Create Worker Pool
+✅ Distribute Job Load
+✅ Manage Worker Processes
+✅ Scale Background Processing
 
 ## Most Used Commands
 
