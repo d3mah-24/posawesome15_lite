@@ -1,7 +1,6 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
-  <!-- Lightweight shell keeps layout predictable -->
-  <div class="selector-shell">
+  <div>
 
   <!-- Filters and counters (no extra top margin) -->
     <v-card class="cards mb-2 pa-2 grey lighten-5">
@@ -43,7 +42,7 @@
         top
         color="info"
       ></v-progress-linear>
-      <v-row class="items-row px-2 py-1" style="flex: 1; min-height: 0;">
+  <v-row class="items px-2 py-1" style="flex: 1; min-height: 0;">
         <!-- Barcode search field -->
         <v-col cols="6" class="pb-0 mb-2">
           <v-text-field
@@ -104,25 +103,25 @@
             hide-details
           ></v-checkbox>
         </v-col>
-        <v-col cols="12" class="pt-0 mt-0 items-shell">
-          <div
-            class="items-shell__body"
-            v-if="items_view == 'card'"
-          >
-            <!-- Scroll wrapper keeps card grid inside selector -->
-            <div class="items-scrollable">
-              <v-row dense>
-                <v-col
-                  v-for="(item, idx) in filtred_items"
-                  :key="idx"
-                  xl="2"
-                  lg="3"
-                  md="4"
-                  sm="6"
-                  cols="6"
-                  min-height="50"
-                >
-                  <v-card hover="hover" @click="add_item(item)" class="item-card">
+        <v-col cols="12" class="pt-0 mt-0 d-flex flex-column flex-grow-1">
+          <div class="items d-flex flex-column flex-grow-1" v-if="items_view == 'card'">
+            <v-row
+              dense
+              class="items-scrollable"
+              ref="itemsScrollArea"
+              :style="itemsScrollStyle"
+            >
+              <v-col
+                v-for="(item, idx) in filtred_items"
+                :key="idx"
+                xl="2"
+                lg="3"
+                md="4"
+                sm="6"
+                cols="6"
+                min-height="50"
+              >
+                <v-card hover="hover" @click="add_item(item)" class="item-card">
                   <v-img
                     :src="
                       item.image ||
@@ -158,17 +157,16 @@
                       </span>
                     </div>
                   </v-card-text>
-                  </v-card>
-                </v-col>
-              </v-row>
-            </div>
+                </v-card>
+              </v-col>
+            </v-row>
           </div>
-          <div
-            class="items-shell__body"
-            v-if="items_view == 'list'"
-          >
-            <!-- Scroll wrapper keeps table height capped -->
-            <div class="items-scrollable">
+          <div class="items d-flex flex-column flex-grow-1" v-if="items_view == 'list'">
+            <div
+              class="my-0 py-0 flex-grow-1 items-scrollable"
+              ref="itemsScrollArea"
+              :style="itemsScrollStyle"
+            >
               <v-data-table
                 :headers="getItemsHeaders()"
                 :items="filtred_items"
@@ -226,9 +224,11 @@ export default {
     customer: null,
     new_line: false,
     qty: 1,
+      // Store dynamic scroll height for grid/table wrapper
+      itemsScrollHeight: null,
       _suppressCustomerWatcher: false,
       _detailsReady: false,
-    
+
         // Remove all types of cache for direct speed
         _itemsMap: new Map(), // For quick search in items only
     };
@@ -240,6 +240,8 @@ export default {
       if (new_value.length != old_value.length) {
         this.update_items_details(new_value);
       }
+      // Refresh scroll height whenever the dataset changes size
+      this.scheduleScrollHeightUpdate();
     },
     customer(newVal, oldVal) {
       if (this._suppressCustomerWatcher) {
@@ -256,12 +258,47 @@ export default {
     },
     new_line() {
       evntBus.emit("set_new_line", this.new_line);
-    }
+    },
+    items_view() {
+      // Recompute scroll area when toggling views
+      this.scheduleScrollHeightUpdate();
+    },
   },
 
   // ===== SECTION 5: METHODS =====
   methods: {
-    
+
+    // ===============================
+    // Layout helpers for scroll panel
+    // ===============================
+    scheduleScrollHeightUpdate() {
+      // Defer measurement until DOM updates settle
+      this.$nextTick(() => {
+        this.updateScrollableHeight();
+      });
+    },
+    updateScrollableHeight() {
+      const scrollRef = this.$refs.itemsScrollArea;
+      const scrollEl = scrollRef ? (scrollRef.$el || scrollRef) : null;
+      if (!scrollEl || typeof scrollEl.getBoundingClientRect !== "function") {
+        return;
+      }
+
+      const viewportHeight = window.innerHeight || document.documentElement?.clientHeight || 0;
+      if (!viewportHeight) {
+        return;
+      }
+
+      const rect = scrollEl.getBoundingClientRect();
+      const bottomPadding = 16; // Keep a tiny gap above footer
+      const available = viewportHeight - rect.top - bottomPadding;
+      const minPanelHeight = 180; // Enough space to show multiple items
+
+      if (Number.isFinite(available)) {
+        this.itemsScrollHeight = Math.max(minPanelHeight, Math.floor(available));
+      }
+    },
+
     // ========================================
     // Barcode search functions (normal/private/weight)
     // ========================================
@@ -453,6 +490,8 @@ export default {
             evntBus.emit("set_all_items", vm.items);
             vm.loading = false;
             vm.search_loading = false;
+            // Re-evaluate scrolling once fresh items render
+            vm.scheduleScrollHeightUpdate();
           }
         },
       });
@@ -1048,6 +1087,16 @@ export default {
       return filtred_list;
     },
 
+    // Inline style for scroll host (keeps template tidy)
+    itemsScrollStyle() {
+      if (!this.itemsScrollHeight) {
+        return {};
+      }
+      return {
+        maxHeight: `${this.itemsScrollHeight}px`,
+      };
+    },
+
     debounce_search: {
       get() {
         return this.first_search;
@@ -1094,6 +1143,9 @@ export default {
   // ===== SECTION 6: LIFECYCLE HOOKS =====
   mounted() {
     this.scan_barcode();
+    // Calculate scrollable area as soon as the card renders
+    this.scheduleScrollHeightUpdate();
+    window.addEventListener("resize", this.scheduleScrollHeightUpdate);
   },
 
   // Add beforeDestroy to clean up memory
@@ -1104,18 +1156,12 @@ export default {
     if (this._searchDebounceTimer) {
       clearTimeout(this._searchDebounceTimer);
     }
+    window.removeEventListener("resize", this.scheduleScrollHeightUpdate);
   }
 };
 </script>
 
 <style scoped>
-.selector-shell {
-  /* Allow the selector column to expand naturally */
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
 .item-card {
   height: 100%;
   min-height: 120px !important;
@@ -1203,49 +1249,23 @@ export default {
   height: 28px !important;
 }
 
+/* Keep selector card stretched edge-to-edge */
 .selection {
-  /* Keep selector full-width while capping height */
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
   width: 100%;
   max-width: none;
-  height: calc(100vh - 120px);
-  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-
-.items-row {
-  /* Let the row containing inputs + list stretch */
-  flex: 1 1 auto !important;
+/* Let the items column shrink without forcing page scroll */
+.items {
   min-height: 0 !important;
 }
 
-.items-shell {
-  /* Reserve vertical space for the results panel */
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.items-shell__body {
-  /* Split card/list view from the filters */
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
 .items-scrollable {
-  /* Scroll area for the grid/list */
   flex: 1 1 auto;
   min-height: 0;
-  height: 100%;
-  max-height: 100%;
   overflow-y: auto;
   width: 100%;
   padding-right: 4px;
@@ -1259,20 +1279,6 @@ export default {
 
 .items-scrollable .v-row {
   margin: 0 !important;
-}
-
-@media (max-width: 960px) {
-  .selection {
-    height: calc(100vh - 168px);
-    max-height: calc(100vh - 168px);
-  }
-}
-
-@media (max-width: 600px) {
-  .selection {
-    height: calc(100vh - 208px);
-    max-height: calc(100vh - 208px);
-  }
 }
 
 .v-row {
