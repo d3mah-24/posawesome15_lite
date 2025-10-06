@@ -32,7 +32,7 @@
     </v-card>
 
     <v-card
-      class="selection mx-auto grey lighten-5 d-flex flex-column flex-grow-1"
+      class="selection grey lighten-5 d-flex flex-column flex-grow-1"
       style="min-height: 0;"
     >
       <v-progress-linear
@@ -105,7 +105,12 @@
         </v-col>
         <v-col cols="12" class="pt-0 mt-0 d-flex flex-column flex-grow-1">
           <div class="items d-flex flex-column flex-grow-1" v-if="items_view == 'card'">
-            <v-row dense class="items-scrollable">
+            <v-row
+              dense
+              class="items-scrollable"
+              ref="itemsScrollArea"
+              :style="itemsScrollStyle"
+            >
               <v-col
                 v-for="(item, idx) in filtred_items"
                 :key="idx"
@@ -157,7 +162,11 @@
             </v-row>
           </div>
           <div class="items d-flex flex-column flex-grow-1" v-if="items_view == 'list'">
-            <div class="my-0 py-0 flex-grow-1 items-scrollable">
+            <div
+              class="my-0 py-0 flex-grow-1 items-scrollable"
+              ref="itemsScrollArea"
+              :style="itemsScrollStyle"
+            >
               <v-data-table
                 :headers="getItemsHeaders()"
                 :items="filtred_items"
@@ -215,9 +224,11 @@ export default {
     customer: null,
     new_line: false,
     qty: 1,
+      // Store dynamic scroll height for grid/table wrapper
+      itemsScrollHeight: null,
       _suppressCustomerWatcher: false,
       _detailsReady: false,
-    
+
         // Remove all types of cache for direct speed
         _itemsMap: new Map(), // For quick search in items only
     };
@@ -229,6 +240,8 @@ export default {
       if (new_value.length != old_value.length) {
         this.update_items_details(new_value);
       }
+      // Refresh scroll height whenever the dataset changes size
+      this.scheduleScrollHeightUpdate();
     },
     customer(newVal, oldVal) {
       if (this._suppressCustomerWatcher) {
@@ -245,12 +258,47 @@ export default {
     },
     new_line() {
       evntBus.emit("set_new_line", this.new_line);
-    }
+    },
+    items_view() {
+      // Recompute scroll area when toggling views
+      this.scheduleScrollHeightUpdate();
+    },
   },
 
   // ===== SECTION 5: METHODS =====
   methods: {
-    
+
+    // ===============================
+    // Layout helpers for scroll panel
+    // ===============================
+    scheduleScrollHeightUpdate() {
+      // Defer measurement until DOM updates settle
+      this.$nextTick(() => {
+        this.updateScrollableHeight();
+      });
+    },
+    updateScrollableHeight() {
+      const scrollRef = this.$refs.itemsScrollArea;
+      const scrollEl = scrollRef ? (scrollRef.$el || scrollRef) : null;
+      if (!scrollEl || typeof scrollEl.getBoundingClientRect !== "function") {
+        return;
+      }
+
+      const viewportHeight = window.innerHeight || document.documentElement?.clientHeight || 0;
+      if (!viewportHeight) {
+        return;
+      }
+
+      const rect = scrollEl.getBoundingClientRect();
+      const bottomPadding = 16; // Keep a tiny gap above footer
+      const available = viewportHeight - rect.top - bottomPadding;
+      const minPanelHeight = 180; // Enough space to show multiple items
+
+      if (Number.isFinite(available)) {
+        this.itemsScrollHeight = Math.max(minPanelHeight, Math.floor(available));
+      }
+    },
+
     // ========================================
     // Barcode search functions (normal/private/weight)
     // ========================================
@@ -442,6 +490,8 @@ export default {
             evntBus.emit("set_all_items", vm.items);
             vm.loading = false;
             vm.search_loading = false;
+            // Re-evaluate scrolling once fresh items render
+            vm.scheduleScrollHeightUpdate();
           }
         },
       });
@@ -1037,6 +1087,16 @@ export default {
       return filtred_list;
     },
 
+    // Inline style for scroll host (keeps template tidy)
+    itemsScrollStyle() {
+      if (!this.itemsScrollHeight) {
+        return {};
+      }
+      return {
+        maxHeight: `${this.itemsScrollHeight}px`,
+      };
+    },
+
     debounce_search: {
       get() {
         return this.first_search;
@@ -1083,6 +1143,9 @@ export default {
   // ===== SECTION 6: LIFECYCLE HOOKS =====
   mounted() {
     this.scan_barcode();
+    // Calculate scrollable area as soon as the card renders
+    this.scheduleScrollHeightUpdate();
+    window.addEventListener("resize", this.scheduleScrollHeightUpdate);
   },
 
   // Add beforeDestroy to clean up memory
@@ -1093,6 +1156,7 @@ export default {
     if (this._searchDebounceTimer) {
       clearTimeout(this._searchDebounceTimer);
     }
+    window.removeEventListener("resize", this.scheduleScrollHeightUpdate);
   }
 };
 </script>
@@ -1100,6 +1164,7 @@ export default {
 <style scoped>
 .item-card {
   height: 100%;
+  min-height: 120px !important;
   display: flex;
   flex-direction: column;
 }
@@ -1109,6 +1174,7 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-height: 60px !important;
 }
 
 .item-card .v-img {
@@ -1183,42 +1249,36 @@ export default {
   height: 28px !important;
 }
 
-/* Make ItemsSelector use full available space */
+/* Keep selector card stretched edge-to-edge */
+.selection {
+  width: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Let the items column shrink without forcing page scroll */
+.items {
+  min-height: 0 !important;
+}
+
 .items-scrollable {
-  min-height: 60vh !important;
-  height: auto !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  padding-right: 4px;
+  padding-bottom: 8px;
+  overscroll-behavior: contain;
 }
 
 .items-scrollable .v-data-table__wrapper {
-  min-height: 60vh !important;
-  height: auto !important;
+  max-height: none;
 }
 
-/* Ensure proper spacing for card view */
 .items-scrollable .v-row {
-  min-height: 60vh !important;
-  height: auto !important;
-}
-
-/* Make parent containers use full space */
-.items {
-  min-height: 60vh !important;
-  height: auto !important;
-}
-
-.flex-grow-1 {
-  flex-grow: 1 !important;
-  min-height: 60vh !important;
-}
-
-/* Ensure card items take proper space */
-.item-card {
-  min-height: 120px !important;
-  height: auto !important;
-}
-
-.item-card .v-card__text {
-  min-height: 60px !important;
+  margin: 0 !important;
 }
 
 .v-row {
