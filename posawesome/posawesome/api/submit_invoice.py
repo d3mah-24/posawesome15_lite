@@ -27,6 +27,16 @@ def submit_invoice(invoice, data):
         # Apply any additional data
         if data:
             doc.update(data)
+        
+        # Fix rounding issues before submit
+        if doc.is_pos and doc.payments:
+            total_payments = sum(frappe.utils.flt(p.amount) for p in doc.payments)
+            grand_total = frappe.utils.flt(doc.grand_total)
+            difference = total_payments - grand_total
+            
+            # Auto-adjust if difference is small (rounding issue)
+            if abs(difference) <= 1.0 and difference != 0:
+                doc.payments[0].amount = frappe.utils.flt(doc.payments[0].amount) - difference
 
         # Submit the invoice
         doc.submit()

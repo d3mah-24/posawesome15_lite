@@ -34,9 +34,16 @@ def before_submit(doc, method):
         grand_total = frappe.utils.flt(doc.grand_total)
         difference = abs(total_payments - grand_total)
         
-        # Allow small differences due to rounding (up to 1 cent)
-        if difference > 0.01:
+        # Allow small differences due to rounding (up to 1 SAR)
+        if difference > 1.0:
             frappe.throw(
                 f"Total payments ({total_payments}) must equal grand total ({grand_total}). "
                 f"Difference: {difference}"
             )
+        
+        # Auto-adjust payment if difference is small (rounding issue)
+        if 0.01 <= difference <= 1.0:
+            # Adjust the first payment to match grand total
+            if doc.payments:
+                doc.payments[0].amount = frappe.utils.flt(doc.payments[0].amount) - (total_payments - grand_total)
+                frappe.msgprint(f"Payment adjusted by {total_payments - grand_total} due to rounding")
