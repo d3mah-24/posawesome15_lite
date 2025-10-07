@@ -18,11 +18,8 @@
         {
             "root": "/home/frappe/frappe-bench-15/apps/posawesome",
             "extraPaths": [
-                "/home/frappe/frappe-bench-15/apps",
                 "/home/frappe/frappe-bench-15/apps/frappe",
-                "/home/frappe/frappe-bench-15/apps/erpnext",
-                "/home/frappe/frappe-bench-15/env/lib/python3.10/site-packages",
-                "/home/frappe/frappe-bench-15/apps/posawesome/typings"
+                "/home/frappe/frappe-bench-15/apps/erpnext"
             ]
         }
     ]

@@ -2,37 +2,47 @@
 # Copyright (c) 2021, Youssef Restom and contributors
 # For license information, please see license.txt
 
+"""
+POS Awesome Invoice API Module
+
+This module provides API functions for POS invoice operations including:
+- Offer management (apply/remove offers)
+- Coupon code validation and application
+- Invoice returns and credit notes
+- Payment processing
+- Batch number management
+- Customer credit handling
+- Loyalty points management
+- Discount validation
+"""
 
 from __future__ import unicode_literals
+
 import json
+
 import frappe
 from frappe import _
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import flt, add_days, nowdate, cstr, getdate
-from frappe.utils.data import money_in_words
-from erpnext.setup.utils import get_exchange_rate
-from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
-from erpnext.accounts.doctype.pos_profile.pos_profile import get_item_groups
+from frappe.utils import flt, add_days, nowdate, getdate
 from frappe.utils.background_jobs import enqueue
-from erpnext.accounts.party import get_party_bank_account
+
+from erpnext.accounts.doctype.sales_invoice.sales_invoice import (
+    get_bank_cash_account,
+)
 from erpnext.stock.doctype.batch.batch import (
     get_batch_no,
     get_batch_qty,
 )
-from erpnext.accounts.doctype.payment_request.payment_request import (
-    get_dummy_message,
-    get_existing_payment_request_amount,
+
+from posawesome.posawesome.doctype.pos_coupon.pos_coupon import (
+    update_coupon_code_count,
 )
-from erpnext.accounts.doctype.loyalty_program.loyalty_program import (
-    get_loyalty_program_details_with_points,
-)
-from posawesome.posawesome.doctype.pos_coupon.pos_coupon import update_coupon_code_count, check_coupon_code
 
 # =============================================================================
 # OFFER API FUNCTIONS
 # =============================================================================
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def apply_offers_to_invoice(invoice_name, offer_names):
     """
     POST - Apply specific offers to an invoice
@@ -40,38 +50,45 @@ def apply_offers_to_invoice(invoice_name, offer_names):
     try:
         if not invoice_name or not offer_names:
             return None
-        
+
         # Handle both string and list inputs
         if isinstance(offer_names, str):
             try:
                 offer_names = json.loads(offer_names)
-            except:
+            except (json.JSONDecodeError, ValueError):
                 offer_names = [offer_names]
-        
+
         if not isinstance(offer_names, list):
             offer_names = [offer_names]
-        
-        doc = frappe.get_doc("Sales Invoice", invoice_name)
-        
+
+        doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
+
         # Apply each offer
         for offer_name in offer_names:
             try:
                 _apply_single_offer(doc, offer_name)
             except Exception as e:
-                frappe.log_error(f"Error applying offer {offer_name}: {str(e)}")
+                # type: ignore
+                frappe.log_error(
+                    f"Error applying offer {offer_name}: {str(e)}"
+                )
                 continue
-        
+
         # Let ERPNext handle all calculations
         doc.set_missing_values()
         doc.calculate_taxes_and_totals()
         doc.save()
-        
+
         return doc.as_dict()
     except Exception as e:
-        frappe.log_error(f"Error in apply_offers_to_invoice: {str(e)}")
+        # type: ignore
+        frappe.log_error(
+            f"Error in apply_offers_to_invoice: {str(e)}"
+        )
         raise
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def remove_offers_from_invoice(invoice_name, offer_names):
     """
     DELETE - Remove specific offers from an invoice
@@ -79,36 +96,43 @@ def remove_offers_from_invoice(invoice_name, offer_names):
     try:
         if not invoice_name or not offer_names:
             return None
-        
+
         # Handle both string and list inputs
         if isinstance(offer_names, str):
             try:
                 offer_names = json.loads(offer_names)
-            except:
+            except (json.JSONDecodeError, ValueError):
                 offer_names = [offer_names]
-        
+
         if not isinstance(offer_names, list):
             offer_names = [offer_names]
-        
-        doc = frappe.get_doc("Sales Invoice", invoice_name)
-        
+
+        doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
+
         # Remove each offer
         for offer_name in offer_names:
             try:
                 _remove_single_offer(doc, offer_name)
             except Exception as e:
-                frappe.log_error(f"Error removing offer {offer_name}: {str(e)}")
+                # type: ignore
+                frappe.log_error(
+                    f"Error removing offer {offer_name}: {str(e)}"
+                )
                 continue
-        
+
         # Let ERPNext handle all calculations
         doc.set_missing_values()
         doc.calculate_taxes_and_totals()
         doc.save()
-        
+
         return doc.as_dict()
     except Exception as e:
-        frappe.log_error(f"Error in remove_offers_from_invoice: {str(e)}")
+        # type: ignore
+        frappe.log_error(
+            f"Error in remove_offers_from_invoice: {str(e)}"
+        )
         raise
+
 
 def _apply_single_offer(doc, offer_name):
     """
@@ -116,11 +140,11 @@ def _apply_single_offer(doc, offer_name):
     """
     try:
         # Get the offer details
-        offer = frappe.get_doc("POS Offer", offer_name)
-        
+        offer = frappe.get_doc("POS Offer", offer_name)  # type: ignore
+
         if not offer or offer.disabled:
             return
-        
+
         if offer.apply_on == "Item Code":
             _apply_item_code_offer(doc, offer)
         elif offer.apply_on == "Item Group":
@@ -130,8 +154,12 @@ def _apply_single_offer(doc, offer_name):
         elif offer.apply_on == "Transaction":
             _apply_transaction_offer(doc, offer)
     except Exception as e:
-        frappe.log_error(f"Error in _apply_single_offer for {offer_name}: {str(e)}")
+        # type: ignore
+        frappe.log_error(
+            f"Error in _apply_single_offer for {offer_name}: {str(e)}"
+        )
         raise
+
 
 def _remove_single_offer(doc, offer_name):
     """
@@ -145,33 +173,40 @@ def _remove_single_offer(doc, offer_name):
                 item.discount_percentage = 0
                 item.discount_amount = 0
                 item.rate = item.price_list_rate
-        
+
         # Reset transaction level discounts
         doc.additional_discount_percentage = 0
         doc.discount_amount = 0
     except Exception as e:
-        frappe.log_error(f"Error in _remove_single_offer for {offer_name}: {str(e)}")
+        # type: ignore
+        frappe.log_error(
+            f"Error in _remove_single_offer for {offer_name}: {str(e)}"
+        )
         raise
+
 
 def _apply_item_code_offer(doc, offer):
     """
     Apply item code specific offer
     """
     for item in doc.items:
-        if item.item_code == offer.item and not getattr(item, 'posa_is_offer', False):
+        is_not_offer_item = not getattr(item, 'posa_is_offer', False)
+        if item.item_code == offer.item and is_not_offer_item:
             if offer.discount_type == "Rate":
                 item.rate = offer.rate
             elif offer.discount_type == "Discount Percentage":
                 item.discount_percentage = offer.discount_percentage
             elif offer.discount_type == "Discount Amount":
                 item.discount_amount = offer.discount_amount
+
 
 def _apply_item_group_offer(doc, offer):
     """
     Apply item group specific offer
     """
     for item in doc.items:
-        if item.item_group == offer.item_group and not getattr(item, 'posa_is_offer', False):
+        is_not_offer_item = not getattr(item, 'posa_is_offer', False)
+        if item.item_group == offer.item_group and is_not_offer_item:
             if offer.discount_type == "Rate":
                 item.rate = offer.rate
             elif offer.discount_type == "Discount Percentage":
@@ -179,18 +214,21 @@ def _apply_item_group_offer(doc, offer):
             elif offer.discount_type == "Discount Amount":
                 item.discount_amount = offer.discount_amount
 
+
 def _apply_brand_offer(doc, offer):
     """
     Apply brand specific offer
     """
     for item in doc.items:
-        if item.brand == offer.brand and not getattr(item, 'posa_is_offer', False):
+        is_not_offer_item = not getattr(item, 'posa_is_offer', False)
+        if item.brand == offer.brand and is_not_offer_item:
             if offer.discount_type == "Rate":
                 item.rate = offer.rate
             elif offer.discount_type == "Discount Percentage":
                 item.discount_percentage = offer.discount_percentage
             elif offer.discount_type == "Discount Amount":
                 item.discount_amount = offer.discount_amount
+
 
 def _apply_transaction_offer(doc, offer):
     """
@@ -200,6 +238,7 @@ def _apply_transaction_offer(doc, offer):
         doc.additional_discount_percentage = offer.discount_percentage
     elif offer.discount_type == "Discount Amount":
         doc.discount_amount = offer.discount_amount
+
 
 def validate(doc, method):
     validate_shift(doc)
@@ -218,12 +257,16 @@ def before_cancel(doc, method):
 def add_loyalty_point(invoice_doc):
     for offer in invoice_doc.posa_offers:
         if offer.offer == "Loyalty Point":
+            # type: ignore
             original_offer = frappe.get_doc("POS Offer", offer.offer_name)
             if original_offer.loyalty_points > 0:
-                loyalty_program = frappe.get_value("Customer", invoice_doc.customer, "loyalty_program")
+                # type: ignore
+                loyalty_program = frappe.get_value(
+                    "Customer", invoice_doc.customer, "loyalty_program"
+                )
                 if not loyalty_program:
                     loyalty_program = original_offer.loyalty_program
-                doc = frappe.get_doc(
+                doc = frappe.get_doc(  # type: ignore
                     {
                         "doctype": "Loyalty Point Entry",
                         "loyalty_program": loyalty_program,
@@ -232,7 +275,9 @@ def add_loyalty_point(invoice_doc):
                         "invoice_type": "Sales Invoice",
                         "invoice": invoice_doc.name,
                         "loyalty_points": original_offer.loyalty_points,
-                        "expiry_date": add_days(invoice_doc.posting_date, 10000),
+                        "expiry_date": add_days(
+                            invoice_doc.posting_date, 10000
+                        ),
                         "posting_date": invoice_doc.posting_date,
                         "company": invoice_doc.company,
                     }
@@ -247,14 +292,15 @@ def update_coupon(doc, transaction_type):
         update_coupon_code_count(coupon.coupon, transaction_type)
 
 
-
-
 def apply_tax_inclusive(doc):
     """Mark taxes as inclusive based on POS Profile setting."""
     if not doc.pos_profile:
         return
     try:
-        tax_inclusive = frappe.get_cached_value("POS Profile", doc.pos_profile, "posa_tax_inclusive")
+        # type: ignore
+        tax_inclusive = frappe.get_cached_value(
+            "POS Profile", doc.pos_profile, "posa_tax_inclusive"
+        )
     except Exception:
         tax_inclusive = 0
 
@@ -274,15 +320,27 @@ def apply_tax_inclusive(doc):
 def validate_shift(doc):
     if doc.posa_pos_opening_shift and doc.pos_profile and doc.is_pos:
         # check if shift is open
-        shift = frappe.get_cached_doc("POS Opening Shift", doc.posa_pos_opening_shift)
+        # type: ignore
+        shift = frappe.get_cached_doc(
+            "POS Opening Shift", doc.posa_pos_opening_shift
+        )
         if shift.status != "Open":
-            frappe.throw(_("POS Shift {0} is not open").format(shift.name))
+            # type: ignore
+            frappe.throw(
+                _("POS Shift {0} is not open").format(shift.name)
+            )
         # check if shift is for the same profile
         if shift.pos_profile != doc.pos_profile:
-            frappe.throw(_("POS Opening Shift {0} is not for the same POS Profile").format(shift.name))
+            # type: ignore
+            msg = _("POS Opening Shift {0} is not for the same "
+                    "POS Profile").format(shift.name)
+            frappe.throw(msg)
         # check if shift is for the same company
         if shift.company != doc.company:
-            frappe.throw(_("POS Opening Shift {0} is not for the same company").format(shift.name))
+            # type: ignore
+            msg = _("POS Opening Shift {0} is not for the same "
+                    "company").format(shift.name)
+            frappe.throw(msg)
 
 
 # =============================================================================
@@ -294,38 +352,50 @@ def validate_return_items(return_against, items):
     Validate return items against original invoice
     """
     try:
-        original_invoice = frappe.get_doc("Sales Invoice", return_against)
-        original_items = {item.item_code: item.qty for item in original_invoice.items}
-        
+        # type: ignore
+        original_invoice = frappe.get_doc(
+            "Sales Invoice", return_against
+        )
+        original_items = {
+            item.item_code: item.qty
+            for item in original_invoice.items
+        }
+
         for item in items:
             item_code = item.get("item_code")
-            qty = abs(item.get("qty", 0))  # Return qty is negative, so we use abs
-            
+            # Return qty is negative, so we use abs
+            qty = abs(item.get("qty", 0))
+
             if item_code not in original_items:
+                msg = _(
+                    "Item {0} was not found in the original "
+                    "invoice {1}"
+                ).format(item_code, return_against)
                 return {
                     "valid": False,
-                    "message": _("Item {0} was not found in the original invoice {1}").format(
-                        item_code, return_against
-                    )
+                    "message": msg
                 }
-            
+
             if qty > original_items[item_code]:
+                msg = _(
+                    "Return quantity for item {0} cannot be greater "
+                    "than the original quantity {1}"
+                ).format(item_code, original_items[item_code])
                 return {
                     "valid": False,
-                    "message": _("Return quantity for item {0} cannot be greater than the original quantity {1}").format(
-                        item_code, original_items[item_code]
-                    )
+                    "message": msg
                 }
-        
+
         return {"valid": True}
-        
+
     except Exception as e:
         return {
             "valid": False,
             "message": _("Error validating return items: {0}").format(str(e))
         }
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def search_invoices_for_return(invoice_name, company):
     """
     Search for invoices that can be returned.
@@ -342,26 +412,26 @@ def search_invoices_for_return(invoice_name, company):
         "is_pos": 1,     # POS invoices only
         "status": ["not in", ["Cancelled", "Draft"]]  # Exclude cancelled and draft invoices
     }
-    
+
     if invoice_name:
         filters["name"] = ["like", f"%{invoice_name}%"]
     if company:
         filters["company"] = company
 
     # Get list of eligible invoices with limit to prevent loading too many
-    invoices_list = frappe.get_list(
+    invoices_list = frappe.get_list(  # type: ignore
         "Sales Invoice",
         filters=filters,
         fields=["name"],
         limit_page_length=10,  # Maximum 10 invoices to prevent performance issues
         order_by="creation desc",
     )
-    
+
     data = []
-    
+
     for invoice in invoices_list:
         # Double check: Ensure this invoice does not already have a return
-        existing_returns = frappe.get_all(
+        existing_returns = frappe.get_all(  # type: ignore
             "Sales Invoice",
             filters={
                 "return_against": invoice["name"],
@@ -370,21 +440,28 @@ def search_invoices_for_return(invoice_name, company):
             },
             fields=["name"]
         )
-        
+
         # Include only invoices that don't have returns yet
         if not existing_returns:
             try:
-                invoice_doc = frappe.get_doc("Sales Invoice", invoice["name"])
+                # type: ignore
+                invoice_doc = frappe.get_doc(
+                    "Sales Invoice", invoice["name"]
+                )
                 # Ensure items are loaded
                 if not invoice_doc.items:
                     invoice_doc.load_from_db()
                 data.append(invoice_doc)
             except Exception as e:
                 # Skip invoices that cannot be loaded
-                frappe.log_error(f"Error loading invoice {invoice['name']}: {str(e)}")
+                # type: ignore
+                frappe.log_error(
+                    f"Error loading invoice {invoice['name']}: {str(e)}"
+                )
                 continue
-    
+
     return data
+
 
 def add_taxes_from_tax_template(item, parent_doc):
     accounts_settings = frappe.get_cached_doc("Accounts Settings")
@@ -417,16 +494,17 @@ def add_taxes_from_tax_template(item, parent_doc):
                     tax_row.update({"category": "Total", "add_deduct_tax": "Add"})
                 tax_row.db_insert()
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def update_invoice(data):
     """
     Let ERPNext handle all calculations through set_missing_values() and save()
     """
     data = json.loads(data)
-    
+
     if data.get("name"):
         try:
-            invoice_doc = frappe.get_doc("Sales Invoice", data.get("name"))
+            invoice_doc = frappe.get_doc("Sales Invoice", data.get("name"))  # type: ignore
             invoice_doc.update(data)
         except frappe.DoesNotExistError:
             invoice_doc = frappe.new_doc("Sales Invoice")
@@ -436,26 +514,33 @@ def update_invoice(data):
         invoice_doc.update(data)
 
     # Basic validation for return invoices
-    if (data.get("is_return") or invoice_doc.is_return) and invoice_doc.get("return_against"):
+    is_return_invoice = (
+        data.get("is_return") or invoice_doc.is_return
+    )
+    if is_return_invoice and invoice_doc.get("return_against"):
+        invoice_items = [d.as_dict() for d in invoice_doc.items]
         validation = validate_return_items(
-            invoice_doc.return_against, [d.as_dict() for d in invoice_doc.items]
+            invoice_doc.return_against, invoice_items
         )
         if not validation.get("valid"):
             frappe.throw(validation.get("message"))
 
-    #Let ERPNext handle all calculations
+    # Let ERPNext handle all calculations
     invoice_doc.set_missing_values()
-    
+
     # Basic business rules (not calculations)
     allow_zero_rated_items = frappe.get_cached_value(
-        "POS Profile", invoice_doc.pos_profile, "posa_allow_zero_rated_items"
+        "POS Profile",
+        invoice_doc.pos_profile,
+        "posa_allow_zero_rated_items"
     )
     for item in invoice_doc.items:
         if not item.rate or item.rate == 0:
             if allow_zero_rated_items:
                 item.is_free_item = 1
             else:
-                frappe.throw(_("Rate cannot be zero for item {0}").format(item.item_code))
+                msg = _("Rate cannot be zero for item {0}")
+                frappe.throw(msg.format(item.item_code))
         else:
             item.is_free_item = 0
 
@@ -469,12 +554,13 @@ def update_invoice(data):
     invoice_doc.docstatus = 0
     invoice_doc.save()
 
-    #Return ERPNext calculated data as-is
+    # Return ERPNext calculated data as-is
     return invoice_doc.as_dict()
 
 # =============================================================================
 # FUNCTIONS COPIED FROM submit_invoice.py
 # =============================================================================
+
 
 def set_batch_nos_for_bundels(doc, warehouse_field, throw=False):
     """Automatically select `batch_no` for outgoing items in item table"""
@@ -496,22 +582,30 @@ def set_batch_nos_for_bundels(doc, warehouse_field, throw=False):
                         ).format(d.idx, d.batch_no, batch_qty, qty)
                     )
 
+
 def set_batch_nos(doc, warehouse_field, throw=False, child_table="items"):
     """Automatically select `batch_no` for outgoing items in item table"""
     for d in doc.get(child_table):
         qty = d.get("stock_qty") or d.get("transfer_qty") or d.get("qty") or 0
         warehouse = d.get(warehouse_field, None)
-        if warehouse and qty > 0 and frappe.db.get_value("Item", d.item_code, "has_batch_no"):
+        has_batch = frappe.db.get_value("Item", d.item_code, "has_batch_no")
+        if warehouse and qty > 0 and has_batch:
             if not d.batch_no:
-                d.batch_no = get_batch_no(d.item_code, warehouse, qty, throw, d.serial_no)
+                d.batch_no = get_batch_no(
+                    d.item_code, warehouse, qty, throw, d.serial_no
+                )
             else:
-                batch_qty = get_batch_qty(batch_no=d.batch_no, warehouse=warehouse)
-                if flt(batch_qty, d.precision("qty")) < flt(qty, d.precision("qty")):
+                batch_qty = get_batch_qty(
+                    batch_no=d.batch_no, warehouse=warehouse
+                )
+                qty_precision = d.precision("qty")
+                if flt(batch_qty, qty_precision) < flt(qty, qty_precision):
                     frappe.throw(
                         _(
                             "Row #{0}: The batch {1} has only {2} qty. Please select another batch which has {3} qty available or split the row into multiple rows, to deliver/issue from multiple batches"
                         ).format(d.idx, d.batch_no, batch_qty, qty)
                     )
+
 
 def redeeming_customer_credit(
     invoice_doc, data, is_payment_entry, total_cash, cash_account, payments
@@ -534,11 +628,11 @@ def redeeming_customer_credit(
             )
         for row in data.get("customer_credit_dict"):
             if row["type"] == "Invoice" and row["credit_to_redeem"]:
-                outstanding_invoice = frappe.get_doc(
+                outstanding_invoice = frappe.get_doc(  # type: ignore
                     "Sales Invoice", row["credit_origin"]
                 )
 
-                jv_doc = frappe.get_doc(
+                jv_doc = frappe.get_doc(  # type: ignore
                     {
                         "doctype": "Journal Entry",
                         "voucher_type": "Journal Entry",
@@ -580,7 +674,7 @@ def redeeming_customer_credit(
         for payment in payments:
             if not payment.amount:
                 continue
-            payment_entry_doc = frappe.get_doc(
+            payment_entry_doc = frappe.get_doc(  # type: ignore
                 {
                     "doctype": "Payment Entry",
                     "posting_date": today,
@@ -611,6 +705,7 @@ def redeeming_customer_credit(
             payment_entry_doc.save()
             payment_entry_doc.submit()
 
+
 def submit_in_background_job(kwargs):
     invoice = kwargs.get("invoice")
     invoice_doc = kwargs.get("invoice_doc")
@@ -620,17 +715,18 @@ def submit_in_background_job(kwargs):
     cash_account = kwargs.get("cash_account")
     payments = kwargs.get("payments")
 
-    invoice_doc = frappe.get_doc("Sales Invoice", invoice)
+    invoice_doc = frappe.get_doc("Sales Invoice", invoice)  # type: ignore
     invoice_doc.submit()
     redeeming_customer_credit(
         invoice_doc, data, is_payment_entry, total_cash, cash_account, payments
     )
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def submit_invoice(invoice, data):
     data = json.loads(data)
     invoice = json.loads(invoice)
-    invoice_doc = frappe.get_doc("Sales Invoice", invoice.get("name"))
+    invoice_doc = frappe.get_doc("Sales Invoice", invoice.get("name"))  # type: ignore
     invoice_doc.update(invoice)
     if invoice.get("posa_delivery_date"):
         invoice_doc.update_stock = 0
@@ -640,17 +736,18 @@ def submit_invoice(invoice, data):
         if "cash" in i.mode_of_payment.lower() and i.type == "Cash"
     ]
     if len(mop_cash_list) > 0:
-        cash_account = get_bank_cash_account(mop_cash_list[0], invoice_doc.company)
+        cash_account = get_bank_cash_account(
+            mop_cash_list[0], invoice_doc.company
+        )
     else:
-        cash_account = {
-            "account": frappe.get_value(
-                "Company", invoice_doc.company, "default_cash_account"
-            )
-        }
+        default_cash = frappe.get_value(
+            "Company", invoice_doc.company, "default_cash_account"
+        )
+        cash_account = {"account": default_cash}
 
     # creating advance payment
     if data.get("credit_change"):
-        advance_payment_entry = frappe.get_doc(
+        advance_payment_entry = frappe.get_doc(  # type: ignore
             {
                 "doctype": "Payment Entry",
                 "mode_of_payment": "Cash",
@@ -672,13 +769,14 @@ def submit_invoice(invoice, data):
     # calculating cash
     total_cash = 0
     if data.get("redeemed_customer_credit"):
-        total_cash = invoice_doc.total - float(data.get("redeemed_customer_credit"))
+        redeemed_credit = float(data.get("redeemed_customer_credit"))
+        total_cash = invoice_doc.total - redeemed_credit
 
     is_payment_entry = 0
     if data.get("redeemed_customer_credit"):
         for row in data.get("customer_credit_dict"):
             if row["type"] == "Advance" and row["credit_to_redeem"]:
-                advance = frappe.get_doc("Payment Entry", row["credit_origin"])
+                advance = frappe.get_doc("Payment Entry", row["credit_origin"])  # type: ignore
 
                 advance_payment = {
                     "reference_type": "Payment Entry",
@@ -694,10 +792,15 @@ def submit_invoice(invoice, data):
 
     payments = invoice_doc.payments
 
-    if frappe.get_value("POS Profile", invoice_doc.pos_profile, "posa_auto_set_batch"):
+    auto_set_batch = frappe.get_value(
+        "POS Profile", invoice_doc.pos_profile, "posa_auto_set_batch"
+    )
+    if auto_set_batch:
         set_batch_nos(invoice_doc, "warehouse", throw=True)
     set_batch_nos_for_bundels(invoice_doc, "warehouse", throw=True)
-    invoice_doc.cost_center = frappe.get_value("POS Profile", invoice_doc.pos_profile, "cost_center")
+    invoice_doc.cost_center = frappe.get_value(
+        "POS Profile", invoice_doc.pos_profile, "cost_center"
+    )
     invoice_doc.flags.ignore_permissions = True
     frappe.flags.ignore_account_permission = True
     invoice_doc.posa_is_printed = 1
@@ -744,14 +847,14 @@ def submit_invoice(invoice, data):
 # FUNCTIONS COPIED FROM get_draft_invoices.py
 # =============================================================================
 
-@frappe.whitelist()
+@frappe.whitelist()  # type: ignore
 def get_draft_invoices(pos_opening_shift):
     """
     Get draft invoices for a specific POS opening shift
-    
+
     Args:
         pos_opening_shift: POS Opening Shift name
-    
+
     Returns:
         List of draft Sales Invoice documents
     """
@@ -771,11 +874,13 @@ def get_draft_invoices(pos_opening_shift):
         data.append(frappe.get_cached_doc("Sales Invoice", invoice["name"]))
     return data
 
+
 # ===========================================================
 # INVOICE COMPUTED PROPERTIES FOR FRONTEND
 # ===========================================================
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def create_invoice(customer, pos_profile, pos_opening_shift):
     """
     POST - Create new invoice
@@ -788,23 +893,25 @@ def create_invoice(customer, pos_profile, pos_opening_shift):
     doc.save()
     return doc.as_dict()
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def get_invoice(invoice_name):
     """
     GET - Get invoice with all data
     """
     if not invoice_name:
         return None
-    
-    doc = frappe.get_doc("Sales Invoice", invoice_name)
+
+    doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
     return doc.as_dict()
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def add_item_to_invoice(invoice_name, item_code, qty, rate, uom):
     """
     POST - Add item to invoice
     """
-    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
     doc.append("items", {
         "item_code": item_code,
         "qty": qty,
@@ -814,28 +921,31 @@ def add_item_to_invoice(invoice_name, item_code, qty, rate, uom):
     doc.save()
     return doc.as_dict()
 
-@frappe.whitelist()
-def update_item_in_invoice(invoice_name, item_idx, qty=None, rate=None, discount_percentage=None):
+
+@frappe.whitelist()  # type: ignore
+def update_item_in_invoice(
+    invoice_name, item_idx, qty=None, rate=None, discount_percentage=None
+):
     """
     PUT - Update item in invoice
     """
     try:
-        doc = frappe.get_doc("Sales Invoice", invoice_name)
+        doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
         # Convert item_idx to integer since it comes as string from frontend
         item_idx = int(item_idx)
-        
+
         if item_idx < 0 or item_idx >= len(doc.items):
             frappe.throw(_("Invalid item index: {0}").format(item_idx))
-            
+
         item = doc.items[item_idx]
-        
+
         if qty is not None:
             item.qty = flt(qty)
         if rate is not None:
             item.rate = flt(rate)
         if discount_percentage is not None:
             item.discount_percentage = flt(discount_percentage)
-            
+
         doc.save()
         return doc.as_dict()
     except ValueError:
@@ -843,19 +953,20 @@ def update_item_in_invoice(invoice_name, item_idx, qty=None, rate=None, discount
     except Exception as e:
         frappe.throw(_("Error updating item: {0}").format(str(e)))
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def delete_item_from_invoice(invoice_name, item_idx):
     """
     DELETE - Remove item from invoice
     """
     try:
-        doc = frappe.get_doc("Sales Invoice", invoice_name)
+        doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
         # Convert item_idx to integer since it comes as string from frontend
         item_idx = int(item_idx)
-        
+
         if item_idx < 0 or item_idx >= len(doc.items):
             frappe.throw(_("Invalid item index: {0}").format(item_idx))
-            
+
         doc.items.pop(item_idx)
         doc.save()
         return doc.as_dict()
@@ -864,12 +975,13 @@ def delete_item_from_invoice(invoice_name, item_idx):
     except Exception as e:
         frappe.throw(_("Error deleting item: {0}").format(str(e)))
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def add_payment_to_invoice(invoice_name, mode_of_payment, amount):
     """
     POST - Add payment to invoice
     """
-    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
     doc.append("payments", {
         "mode_of_payment": mode_of_payment,
         "amount": amount
@@ -877,51 +989,56 @@ def add_payment_to_invoice(invoice_name, mode_of_payment, amount):
     doc.save()
     return doc.as_dict()
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def submit_invoice_simple(invoice_name):
     """
     PUT - Submit invoice (simple version)
     """
-    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
     doc.submit()
     return doc.as_dict()
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def delete_invoice(invoice_name):
     """
     DELETE - Delete draft invoice
     """
-    doc = frappe.get_doc("Sales Invoice", invoice_name)
+    doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
     if doc.docstatus == 0:  # Only delete drafts
         doc.delete()
         return {"deleted": True}
     return {"deleted": False, "error": "Cannot delete submitted invoice"}
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def get_total_items_discount(invoice_name):
     """
     GET - Get sum of all item-level discounts
     """
     if not invoice_name:
         return 0
-    
-    doc = frappe.get_doc("Sales Invoice", invoice_name)
+
+    doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
     total_discount = 0
-    
+
     for item in doc.items:
         if item.discount_amount:
             total_discount += item.discount_amount
         elif item.discount_percentage:
             discount_amount = (item.price_list_rate * item.discount_percentage) / 100
             total_discount += discount_amount
-    
+
     return total_discount
+
 
 # ===========================================================
 # OFFER OPERATIONS - Following 1:1 Architecture
 # ===========================================================
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def get_applicable_offers(invoice_name):
     """
     GET - Get all applicable offers for an invoice
@@ -929,13 +1046,13 @@ def get_applicable_offers(invoice_name):
     try:
         if not invoice_name:
             return []
-        
-        doc = frappe.get_doc("Sales Invoice", invoice_name)
-        
+
+        doc = frappe.get_doc("Sales Invoice", invoice_name)  # type: ignore
+
         if not doc.pos_profile:
             return []
-            
-        pos_profile = frappe.get_doc("POS Profile", doc.pos_profile)
+
+        pos_profile = frappe.get_doc("POS Profile", doc.pos_profile)  # type: ignore
         company = pos_profile.company
         warehouse = pos_profile.warehouse
         date = frappe.utils.nowdate()
@@ -948,12 +1065,12 @@ def get_applicable_offers(invoice_name):
             "valid_from": date,
             "valid_upto": date,
         }
-        
+
         offers = frappe.db.sql(
             """
             SELECT *
             FROM `tabPOS Offer`
-            WHERE 
+            WHERE
             disable = 0 AND
             company = %(company)s AND
             (pos_profile is NULL OR pos_profile = '' OR pos_profile = %(pos_profile)s) AND
@@ -964,34 +1081,97 @@ def get_applicable_offers(invoice_name):
             values=values,
             as_dict=1,
         )
-        
+
         # Filter offers based on invoice conditions
         applicable_offers = []
         for offer in offers:
             if _check_offer_conditions(doc, offer):
                 applicable_offers.append(offer)
-        
+
         return applicable_offers
-        
+
     except Exception as e:
-        frappe.log_error(f"Error in get_applicable_offers: {str(e)}")
+        frappe.log_error(
+            f"Error in get_applicable_offers: {str(e)}"
+        )
         return []
 
 
-@frappe.whitelist()
+def _check_offer_conditions(doc, offer):
+    """
+    Check if an offer's conditions are met for the given invoice
+    """
+    try:
+        # Basic validation - check if offer is applicable
+        if offer.get('disabled'):
+            return False
+
+        # Check date validity
+        from frappe.utils import nowdate
+        today = nowdate()
+        if offer.get('valid_from') and offer.get('valid_from') > today:
+            return False
+        if offer.get('valid_upto') and offer.get('valid_upto') < today:
+            return False
+
+        # Check minimum/maximum conditions based on offer type
+        if offer.get('apply_on') == 'Item Code':
+            # Check if the specific item is in the invoice
+            target_item = offer.get('item')
+            for item in doc.items:
+                if item.item_code == target_item:
+                    return True
+            return False
+
+        elif offer.get('apply_on') == 'Item Group':
+            # Check if any item from the group is in the invoice
+            target_group = offer.get('item_group')
+            for item in doc.items:
+                if item.item_group == target_group:
+                    return True
+            return False
+
+        elif offer.get('apply_on') == 'Brand':
+            # Check if any item from the brand is in the invoice
+            target_brand = offer.get('brand')
+            for item in doc.items:
+                if item.brand == target_brand:
+                    return True
+            return False
+
+        elif offer.get('apply_on') == 'Transaction':
+            # Check transaction-level conditions
+            total_amount = doc.total
+            if offer.get('min_amt') and total_amount < offer.get('min_amt'):
+                return False
+            if offer.get('max_amt') and total_amount > offer.get('max_amt'):
+                return False
+            return True
+
+        return True
+
+    except Exception as e:
+        frappe.log_error(
+            f"Error checking offer conditions: {str(e)}"
+        )
+        return False
+
+
+@frappe.whitelist()  # type: ignore
 def calculate_item_discount_amount(price_list_rate, discount_percentage):
     """
     Calculate discount amount based on price and percentage
     """
     price_list_rate = flt(price_list_rate) or 0
     discount_percentage = flt(discount_percentage) or 0
-    
+
     if discount_percentage > 0 and price_list_rate > 0:
         return flt((price_list_rate * discount_percentage) / 100, 2)
-    
+
     return 0
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def calculate_item_price(item_data):
     """
     Calculate item price with discounts - ERPNext handles this automatically
@@ -1000,31 +1180,38 @@ def calculate_item_price(item_data):
     # Convert string to dict if needed
     if isinstance(item_data, str):
         item_data = json.loads(item_data)
-    
+
     # Let ERPNext handle the calculations
     # We just validate and return the data
-    original_rate = flt(item_data.get('base_rate')) or flt(item_data.get('price_list_rate')) or 0
-    
+    base_rate = flt(item_data.get('base_rate'))
+    price_list_rate = flt(item_data.get('price_list_rate'))
+    original_rate = base_rate or price_list_rate or 0
+
     if original_rate <= 0:
         frappe.throw(_("Price is invalid for item"))
-    
+
+    msg = 'Use ERPNext calculated fields: doc.total, doc.grand_total, etc.'
     return {
         'original_rate': original_rate,
-        'message': 'Use ERPNext calculated fields: doc.total, doc.grand_total, etc.'
+        'message': msg
     }
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def calculate_stock_qty(qty, conversion_factor):
     """
     Calculate stock quantity based on UOM conversion
     """
     qty = flt(qty) or 1
     conversion_factor = flt(conversion_factor) or 1
-    
+
     return qty * conversion_factor
 
-@frappe.whitelist()
-def validate_invoice_items(items_data, pos_profile_name, stock_settings):
+
+@frappe.whitelist()  # type: ignore
+def validate_invoice_items(
+    items_data, pos_profile_name, stock_settings
+):
     """
     Validate invoice items - business logic should be in Python
     """
@@ -1032,11 +1219,11 @@ def validate_invoice_items(items_data, pos_profile_name, stock_settings):
         items_data = json.loads(items_data)
     if isinstance(stock_settings, str):
         stock_settings = json.loads(stock_settings)
-    
+
     pos_profile = frappe.get_cached_doc("POS Profile", pos_profile_name)
-    
+
     validation_errors = []
-    
+
     for item in items_data:
         # Check quantity
         if item.get('qty') == 0:
@@ -1045,7 +1232,7 @@ def validate_invoice_items(items_data, pos_profile_name, stock_settings):
                 'error': 'Quantity cannot be zero'
             })
             continue
-        
+
         # Check negative quantity for regular invoices
         if not item.get('is_return') and item.get('qty', 0) < 0:
             validation_errors.append({
@@ -1053,40 +1240,62 @@ def validate_invoice_items(items_data, pos_profile_name, stock_settings):
                 'error': 'Quantity cannot be negative for regular invoices'
             })
             continue
-        
+
         # Check discount limits
-        if pos_profile.posa_item_max_discount_allowed and not item.get('posa_offer_applied'):
-            if item.get('discount_amount') and flt(item.get('discount_amount')) > 0:
-                discount_percentage = (flt(item.get('discount_amount')) * 100) / flt(item.get('price_list_rate', 0))
-                if discount_percentage > pos_profile.posa_item_max_discount_allowed:
+        max_discount = pos_profile.posa_item_max_discount_allowed
+        is_offer_applied = item.get('posa_offer_applied')
+        if max_discount and not is_offer_applied:
+            discount_amt = item.get('discount_amount')
+            if discount_amt and flt(discount_amt) > 0:
+                disc_amt = flt(discount_amt)
+                price = flt(item.get('price_list_rate', 0))
+                discount_percentage = (disc_amt * 100) / price
+                if discount_percentage > max_discount:
+                    item_name = item.get('item_name', item.get('item_code'))
+                    error_msg = (
+                        f'Discount percentage cannot exceed '
+                        f'{max_discount}%'
+                    )
                     validation_errors.append({
-                        'item': item.get('item_name', item.get('item_code')),
-                        'error': f'Discount percentage cannot exceed {pos_profile.posa_item_max_discount_allowed}%'
+                        'item': item_name,
+                        'error': error_msg
                     })
                     continue
-        
+
         # Check stock availability
         if stock_settings.get('allow_negative_stock') != 1:
-            if (not item.get('is_return') and item.get('is_stock_item') and 
-                item.get('stock_qty') and item.get('actual_qty') is not None and
-                item.get('stock_qty') > item.get('actual_qty')):
+            is_return = item.get('is_return')
+            is_stock = item.get('is_stock_item')
+            stock_qty = item.get('stock_qty')
+            actual_qty = item.get('actual_qty')
+            if (not is_return and is_stock and stock_qty
+                    and actual_qty is not None
+                    and stock_qty > actual_qty):
+                item_name = item.get('item_name', item.get('item_code'))
+                error_msg = (
+                    f'Available quantity {actual_qty} is insufficient'
+                )
                 validation_errors.append({
-                    'item': item.get('item_name', item.get('item_code')),
-                    'error': f'Available quantity {item.get("actual_qty")} is insufficient'
+                    'item': item_name,
+                    'error': error_msg
                 })
                 continue
-    
+
     return {
         'valid': len(validation_errors) == 0,
         'errors': validation_errors
     }
 
+
 # =============================================================================
 # BATCH MANAGEMENT API FUNCTIONS - MOVED FROM VUE FRONTEND
 # =============================================================================
 
-@frappe.whitelist()
-def calculate_batch_quantities(item_code, current_item_row_id, existing_items_data, batch_no_data):
+
+@frappe.whitelist()  # type: ignore
+def calculate_batch_quantities(
+    item_code, current_item_row_id, existing_items_data, batch_no_data
+):
     """
     Calculate used and remaining quantities for each batch
     Moved from Vue set_batch_qty method
@@ -1095,13 +1304,14 @@ def calculate_batch_quantities(item_code, current_item_row_id, existing_items_da
         existing_items_data = json.loads(existing_items_data)
     if isinstance(batch_no_data, str):
         batch_no_data = json.loads(batch_no_data)
-    
+
     # Filter existing items for the same item code (excluding current item)
     existing_items = [
-        item for item in existing_items_data 
-        if item.get('item_code') == item_code and item.get('posa_row_id') != current_item_row_id
+        item for item in existing_items_data
+        if (item.get('item_code') == item_code
+            and item.get('posa_row_id') != current_item_row_id)
     ]
-    
+
     # Calculate used quantities for each batch
     used_batches = {}
     for batch in batch_no_data:
@@ -1111,17 +1321,18 @@ def calculate_batch_quantities(item_code, current_item_row_id, existing_items_da
             'used_qty': 0,
             'remaining_qty': flt(batch.get('batch_qty', 0)),
         }
-        
+
         # Calculate used quantity from existing items
         for existing_item in existing_items:
             if existing_item.get('batch_no') == batch_no:
                 used_qty = flt(existing_item.get('qty', 0))
                 used_batches[batch_no]['used_qty'] += used_qty
                 used_batches[batch_no]['remaining_qty'] -= used_qty
-    
+
     return list(used_batches.values())
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def select_optimal_batch(batch_data, preferred_batch_no=None):
     """
     Select the optimal batch based on business rules:
@@ -1129,48 +1340,57 @@ def select_optimal_batch(batch_data, preferred_batch_no=None):
     2. Prioritize batches with expiry dates (FIFO - First Expiry First Out)
     3. Then by manufacturing date (FIFO - First In First Out)
     4. Finally by highest remaining quantity
-    
+
     Moved from Vue set_batch_qty method
     """
     if isinstance(batch_data, str):
         batch_data = json.loads(batch_data)
-    
+
     # Filter batches with remaining quantity > 0
     available_batches = [
-        batch for batch in batch_data 
+        batch for batch in batch_data
         if flt(batch.get('remaining_qty', 0)) > 0
     ]
-    
+
     if not available_batches:
         return None
-    
+
     # If preferred batch is specified and available, use it
     if preferred_batch_no:
-        preferred_batch = next(
-            (batch for batch in available_batches if batch.get('batch_no') == preferred_batch_no),
-            None
-        )
-        if preferred_batch:
-            return preferred_batch
-    
+        for batch in available_batches:
+            if batch.get('batch_no') == preferred_batch_no:
+                return batch
+
     # Sort batches by business rules
     def sort_key(batch):
         expiry_date = batch.get('expiry_date')
         manufacturing_date = batch.get('manufacturing_date')
         remaining_qty = flt(batch.get('remaining_qty', 0))
+
+        # Convert dates to sortable format
+        # None becomes a large number for sorting
+        if expiry_date:
+            expiry_sort = getdate(expiry_date)
+        else:
+            expiry_sort = getdate('2099-12-31')
         
-        # Convert dates to sortable format (None becomes a large number for sorting)
-        expiry_sort = getdate(expiry_date) if expiry_date else getdate('2099-12-31')
-        mfg_sort = getdate(manufacturing_date) if manufacturing_date else getdate('1900-01-01')
-        
-        # Sort by: expiry_date (asc), manufacturing_date (asc), remaining_qty (desc)
+        if manufacturing_date:
+            mfg_sort = getdate(manufacturing_date)
+        else:
+            mfg_sort = getdate('1900-01-01')
+
+        # Sort by: expiry (asc), mfg (asc), remaining qty (desc)
         return (expiry_sort, mfg_sort, -remaining_qty)
-    
+
     sorted_batches = sorted(available_batches, key=sort_key)
     return sorted_batches[0]
 
-@frappe.whitelist()
-def process_batch_selection(item_code, current_item_row_id, existing_items_data, batch_no_data, preferred_batch_no=None):
+
+@frappe.whitelist()  # type: ignore
+def process_batch_selection(
+    item_code, current_item_row_id, existing_items_data,
+    batch_no_data, preferred_batch_no=None
+):
     """
     Complete batch selection process combining calculation and selection
     Returns the selected batch with all necessary data
@@ -1180,17 +1400,17 @@ def process_batch_selection(item_code, current_item_row_id, existing_items_data,
         calculated_batches = calculate_batch_quantities(
             item_code, current_item_row_id, existing_items_data, batch_no_data
         )
-        
+
         # Select optimal batch
         selected_batch = select_optimal_batch(calculated_batches, preferred_batch_no)
-        
+
         if not selected_batch:
             return {
                 'success': False,
                 'message': 'No available batches with sufficient quantity',
                 'batch_data': calculated_batches
             }
-        
+
         return {
             'success': True,
             'selected_batch': {
@@ -1203,7 +1423,7 @@ def process_batch_selection(item_code, current_item_row_id, existing_items_data,
             },
             'batch_data': calculated_batches
         }
-        
+
     except Exception as e:
         return {
             'success': False,
@@ -1211,121 +1431,103 @@ def process_batch_selection(item_code, current_item_row_id, existing_items_data,
             'batch_data': []
         }
 
+
 # =============================================================================
 # OFFER MANAGEMENT API FUNCTIONS - SIMPLIFIED
 # =============================================================================
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def validate_offer_coupon(offer_data):
     """Simple coupon validation"""
     if isinstance(offer_data, str):
         offer_data = json.loads(offer_data)
-    
+
     if not offer_data.get('coupon_based'):
         return {'valid': True}
-    
+
     coupon_code = offer_data.get('coupon')
     if not coupon_code:
         return {'valid': False, 'message': 'Coupon required'}
-    
+
     try:
-        coupon = frappe.get_doc('POS Coupon', coupon_code)
-        if coupon.disabled or (coupon.maximum_use > 0 and coupon.used >= coupon.maximum_use):
+        coupon = frappe.get_doc('POS Coupon', coupon_code)  # type: ignore
+        is_maxed_out = (coupon.maximum_use > 0
+                        and coupon.used >= coupon.maximum_use)
+        if coupon.disabled or is_maxed_out:
             return {'valid': False, 'message': 'Coupon not available'}
         return {'valid': True}
-    except:
+    except (frappe.DoesNotExistError, frappe.ValidationError):
         return {'valid': False, 'message': 'Invalid coupon'}
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def check_offer_conditions(offer_data, qty, amount):
     """Check if qty/amount meets offer conditions"""
     if isinstance(offer_data, str):
         offer_data = json.loads(offer_data)
-    
+
     # Simple validation - same logic as Vue checkOfferEligibility
-    checks = {
-        'min_qty': flt(offer_data.get('min_qty', 0)) <= 0 or qty >= flt(offer_data.get('min_qty', 0)),
-        'max_qty': flt(offer_data.get('max_qty', 0)) <= 0 or qty <= flt(offer_data.get('max_qty', 0)),
-        'min_amt': flt(offer_data.get('min_amt', 0)) <= 0 or amount >= flt(offer_data.get('min_amt', 0)),
-        'max_amt': flt(offer_data.get('max_amt', 0)) <= 0 or amount <= flt(offer_data.get('max_amt', 0))
-    }
+    min_qty = flt(offer_data.get('min_qty', 0))
+    max_qty = flt(offer_data.get('max_qty', 0))
+    min_amt = flt(offer_data.get('min_amt', 0))
+    max_amt = flt(offer_data.get('max_amt', 0))
     
+    checks = {
+        'min_qty': min_qty <= 0 or qty >= min_qty,
+        'max_qty': max_qty <= 0 or qty <= max_qty,
+        'min_amt': min_amt <= 0 or amount >= min_amt,
+        'max_amt': max_amt <= 0 or amount <= max_amt
+    }
+
     return {'apply': all(checks.values()), 'conditions': checks}
 
-@frappe.whitelist()
+
+@frappe.whitelist()  # type: ignore
 def process_item_offer(offer_data, items_data):
     """Simplified offer processing - mirrors original Vue logic"""
     if isinstance(offer_data, str):
         offer_data = json.loads(offer_data)
     if isinstance(items_data, str):
         items_data = json.loads(items_data)
-    
+
     # Check coupon first
     coupon_check = validate_offer_coupon(offer_data)
     if not coupon_check['valid']:
         return {'success': False, 'message': coupon_check.get('message')}
-    
+
     if offer_data.get('apply_on') != 'Item Code':
         return {'success': False, 'message': 'Only Item Code offers supported'}
-    
+
     target_item = offer_data.get('item')
     eligible_items = []
-    
+
     for item in items_data:
         # Skip offer items and non-matching items
         if item.get('posa_is_offer') or item.get('item_code') != target_item:
             continue
-            
+
         # Skip if price offer already applied
-        if (offer_data.get('offer') == 'Item Price' and item.get('posa_offer_applied')):
+        is_price_offer = offer_data.get('offer') == 'Item Price'
+        is_offer_applied = item.get('posa_offer_applied')
+        if is_price_offer and is_offer_applied:
             continue
-        
+
         # Calculate quantities
         qty = flt(item.get('qty', 1)) or 1
         stock_qty = flt(item.get('stock_qty', qty)) or qty
         amount = stock_qty * flt(item.get('price_list_rate', 0))
-        
+
         # Check conditions
         conditions = check_offer_conditions(offer_data, stock_qty, amount)
         if conditions['apply']:
             eligible_items.append(item.get('posa_row_id'))
-    
+
     if not eligible_items:
         return {'success': True, 'offer': None}
-    
+
     # Return offer with eligible items
     offer_result = offer_data.copy()
     offer_result['items'] = eligible_items
-    
+
     return {'success': True, 'offer': offer_result}
-
-# =============================================================================
-# FUNCTIONS COPIED FROM get_draft_invoices.py
-# =============================================================================
-
-@frappe.whitelist()
-def get_draft_invoices(pos_opening_shift):
-    """
-    Get draft invoices for a specific POS opening shift
-    
-    Args:
-        pos_opening_shift: POS Opening Shift name
-    
-    Returns:
-        List of draft Sales Invoice documents
-    """
-    invoices_list = frappe.get_list(
-        "Sales Invoice",
-        filters={
-            "posa_pos_opening_shift": pos_opening_shift,
-            "docstatus": 0,
-            "posa_is_printed": 0,
-        },
-        fields=["name"],
-        limit_page_length=0,
-        order_by="creation desc",
-    )
-    data = []
-    for invoice in invoices_list:
-        data.append(frappe.get_cached_doc("Sales Invoice", invoice["name"]))
-    return data

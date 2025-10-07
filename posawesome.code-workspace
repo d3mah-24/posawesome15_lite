@@ -1,0 +1,33 @@
+{
+    "folders": [
+        {
+            "path": "/home/frappe/frappe-bench-15/apps/posawesome",
+            "name": "POSAwesome"
+        }
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": "/home/frappe/frappe-bench-15/env/bin/python",
+        "python.analysis.extraPaths": [
+            "/home/frappe/frappe-bench-15/apps/frappe",
+            "/home/frappe/frappe-bench-15/apps/erpnext"
+        ],
+        "python.analysis.autoSearchPaths": true,
+        "python.analysis.diagnosticMode": "workspace",
+        "python.analysis.typeCheckingMode": "basic",
+        "python.linting.enabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "files.exclude": {
+            "**/__pycache__": true,
+            "**/*.pyc": true,
+            "**/node_modules": true
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-python.python",
+            "ms-python.pylint",
+            "ms-python.black-formatter"
+        ]
+    }
+}
