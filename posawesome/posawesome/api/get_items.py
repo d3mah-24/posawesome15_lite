@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-New optimized get_items function for POS Awesome
-Standalone function with all required fields for frontend
+Simple get_items function using Frappe ORM only
+Returns: item_code, item_name, rate, actual_qty
+Price must match stock_uom (no unit conversion)
 """
 
 import json
 import frappe
 from frappe.utils import nowdate
-from erpnext.stock.doctype.batch.batch import get_batch_qty
 from erpnext.accounts.doctype.pos_profile.pos_profile import get_item_groups
 
 
@@ -16,118 +16,111 @@ def get_items(
     pos_profile, price_list=None, item_group="", search_value="", customer=None
 ):
     """
-    Optimized lightweight function to get items - based on ERPNext approach
-    Only returns essential fields for fast performance
+    Ultra simple function - only items with prices
+    Returns: item_code, item_name, rate, actual_qty
     """
-    pos_profile = json.loads(pos_profile)
-    today = nowdate()
-    warehouse = pos_profile.get("warehouse")
-    
-    if not price_list:
-        price_list = pos_profile.get("selling_price_list")
-    
-    # Build lightweight conditions
-    conditions = ["item.disabled = 0", "item.is_sales_item = 1", "item.is_fixed_asset = 0"]
-    
-    # Item group condition
-    if item_group:
-        conditions.append(f"item.item_group LIKE '%{item_group}%'")
-    
-    # Search condition
-    if search_value:
-        conditions.append(f"(item.name LIKE '%{search_value}%' OR item.item_name LIKE '%{search_value}%')")
-    
-    # POS Profile item groups condition
-    item_groups = get_item_groups(pos_profile.get("name"))
-    if item_groups:
-        item_groups_str = "', '".join(item_groups)
-        conditions.append(f"item.item_group IN ('{item_groups_str}')")
-    
-    # إزالة منطق المتغيرات - عرض كل الأصناف مباشرة
-    # Template items condition - تم إزالته
-    
-    where_clause = " AND ".join(conditions)
-    
-    # Lightweight SQL query - only essential fields (removed variant fields)
-    sql_query = f"""
-    SELECT 
-        item.name AS item_code,
-        item.item_name,
-        item.description,
-        item.stock_uom,
-        item.image,
-        item.is_stock_item,
-        item.item_group,
-        item.has_batch_no,
-        item.has_serial_no,
-        item.max_discount,
-        item.brand
-    FROM `tabItem` item
-    WHERE {where_clause}
-    ORDER BY item.item_name ASC
-    LIMIT 50
-    """
-    
-    # Execute lightweight query
-    items_data = frappe.db.sql(sql_query, as_dict=True)
-    
-    # Process items with minimal additional queries
-    result = []
-    for item in items_data:
-        item_code = item['item_code']
+    try:
+        pos_profile = json.loads(pos_profile)
         
-        # Get stock quantity - lightweight query
-        stock_qty = frappe.db.sql(f"""
-            SELECT COALESCE(SUM(qty_after_transaction), 0) as qty
-            FROM `tabStock Ledger Entry`
-            WHERE item_code = %s AND warehouse = %s AND is_cancelled = 0
-            ORDER BY posting_date DESC, posting_time DESC
-            LIMIT 1
-        """, (item_code, warehouse), as_dict=True)
+        if not price_list:
+            price_list = pos_profile.get("selling_price_list")
         
-        item['actual_qty'] = stock_qty[0]['qty'] if stock_qty else 0
+        # Simple filters - only enabled sales items
+        filters = {
+            "disabled": 0,
+            "is_sales_item": 1
+        }
         
-        # Get price - lightweight query
-        price_data = frappe.db.sql(f"""
-            SELECT price_list_rate, currency
-            FROM `tabItem Price`
-            WHERE item_code = %s AND price_list = %s AND selling = 1
-                AND (valid_from IS NULL OR valid_from <= %s)
-                AND (valid_upto IS NULL OR valid_upto >= %s)
-            ORDER BY valid_from DESC
-            LIMIT 1
-        """, (item_code, price_list, today, today), as_dict=True)
+        # Search filter - only by item_code or item_name
+        if search_value:
+            filters["name"] = ["like", f"%{search_value}%"]
         
-        if price_data:
-            item['rate'] = price_data[0]['price_list_rate']
-            item['currency'] = price_data[0]['currency']
-        else:
-            item['rate'] = 0
-            item['currency'] = pos_profile.get("currency", "SAR")
+        # Get items using ORM
+        items = frappe.get_all(
+            "Item",
+            filters=filters,
+            fields=["name as item_code", "item_name", "stock_uom"],
+            limit=50,
+            order_by="item_name asc"
+        )
         
-        # Filter by stock if required
-        if pos_profile.get("posa_display_items_in_stock") and item['actual_qty'] <= 0:
-            continue
+        result = []
+        for item in items:
+            item_code = item['item_code']
             
-        result.append(item)
-    
-    return result
+            # Get price for this item - MUST have price
+            price = frappe.get_value(
+                "Item Price",
+                {
+                    "item_code": item_code,
+                    "price_list": price_list,
+                    "selling": 1
+                },
+                ["price_list_rate", "currency"]
+            )
+            
+            # Only add items that have prices
+            if price and price[0] > 0:
+                result.append({
+                    "item_code": item_code,
+                    "item_name": item['item_name'],
+                    "rate": price[0],
+                    "currency": price[1],
+                    "actual_qty": 0,  # Simple - no stock check
+                    "stock_uom": item['stock_uom']
+                })
+        
+        return result
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_items: {str(e)}")
+        return []
 
+
+@frappe.whitelist()
+def get_items_simple_test():
+    """
+    Simple test function to debug items loading
+    """
+    # Get first 10 items without any filters
+    items = frappe.get_all(
+        "Item",
+        filters={"disabled": 0},
+        fields=["name as item_code", "item_name", "stock_uom"],
+        limit=10
+    )
+    
+    result = []
+    for item in items:
+        # Get any price for this item
+        price = frappe.get_value(
+            "Item Price",
+            {"item_code": item['item_code'], "selling": 1},
+            ["price_list_rate", "currency"]
+        )
+        
+        if price:
+            result.append({
+                "item_code": item['item_code'],
+                "item_name": item['item_name'],
+                "rate": price[0],
+                "currency": price[1],
+                "stock_uom": item['stock_uom']
+            })
+    
+    frappe.log_error(f"Test function returning {len(result)} items")
+    return result
 
 
 @frappe.whitelist()
 def get_items_groups():
     """
     Get list of item groups for POS interface
-    Returns list of item group names
     """
-    return frappe.db.sql(
-        """
-        SELECT name 
-        FROM `tabItem Group`
-        WHERE is_group = 0
-        ORDER BY name
-        LIMIT 200
-        """,
-        as_dict=1,
+    return frappe.get_all(
+        "Item Group",
+        filters={"is_group": 0},
+        fields=["name"],
+        limit=200,
+        order_by="name"
     )

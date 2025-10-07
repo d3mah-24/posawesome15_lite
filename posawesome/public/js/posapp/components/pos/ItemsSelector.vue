@@ -480,17 +480,23 @@ export default {
         callback: function (r) {
           console.log('[ItemsSelector.vue:get_items] response', r && r.message ? r.message.length : 0);
           if (r.message) {
+            // Simple data mapping - only essential fields
             vm.items = (r.message || []).map(it => ({
-              ...it,
-              item_barcode: Array.isArray(it.item_barcode) ? it.item_barcode : [],
-              serial_no_data: Array.isArray(it.serial_no_data) ? it.serial_no_data : [],
-              batch_no_data: Array.isArray(it.batch_no_data) ? it.batch_no_data : []
+              item_code: it.item_code,
+              item_name: it.item_name,
+              rate: it.rate,
+              currency: it.currency,
+              actual_qty: it.actual_qty,
+              stock_uom: it.stock_uom,
+              // Empty arrays for compatibility
+              item_barcode: [],
+              serial_no_data: [],
+              batch_no_data: []
             }));
             vm._buildItemsMap();
             evntBus.emit("set_all_items", vm.items);
             vm.loading = false;
             vm.search_loading = false;
-            // Re-evaluate scrolling once fresh items render
             vm.scheduleScrollHeightUpdate();
           }
         },
@@ -502,20 +508,12 @@ export default {
       this._itemsMap.clear();
       
       this.items.forEach(item => {
-        // Add search by code
+        // Add search by item_code
         this._itemsMap.set(item.item_code.toLowerCase(), item);
         
-        // Add search by barcode
-        if (item.item_barcode) {
-          item.item_barcode.forEach(barcode => {
-            this._itemsMap.set(barcode.barcode.toLowerCase(), item);
-          });
-        }
-        
-        // Add search by name
+        // Add search by item_name
         this._itemsMap.set(item.item_name.toLowerCase(), item);
       });
-      
     },
 
     get_items_groups() {
@@ -970,26 +968,6 @@ export default {
       });
     },
 
-    // Improve word combinations generation function
-    generateWordCombinations(inputString) {
-      const words = inputString.split(" ");
-      const combinations = [];
-      
-      function permute(arr, m = []) {
-        if (arr.length === 0) {
-          combinations.push(m.join(" "));
-        } else {
-          for (let i = 0; i < arr.length; i++) {
-            const current = arr.slice();
-            const next = current.splice(i, 1);
-            permute(current.slice(), m.concat(next));
-          }
-        }
-      }
-      
-      permute(words);
-      return combinations;
-    },
   },
 
   computed: {
@@ -1010,63 +988,24 @@ export default {
         filtred_group_list = this.items;
       }
       
-      // Filter by search
+      // Simple search logic - only item_code and item_name
       if (!this.search || this.search.length < 3) {
-        // إزالة منطق المتغيرات - عرض كل الأصناف مباشرة
         filtred_list = filtred_group_list.slice(0, 50);
       } else if (this.search) {
-        // Search in barcode first
-        filtred_list = filtred_group_list.filter((item) => {
-          return item.item_barcode.some(element => element.barcode === this.search);
-        });
+        // Search in item_code
+        filtred_list = filtred_group_list.filter((item) =>
+          item.item_code.toLowerCase().includes(this.search.toLowerCase())
+        );
         
-        // Search in code
+        // Search in item_name if no results
         if (filtred_list.length === 0) {
           filtred_list = filtred_group_list.filter((item) =>
-            item.item_code.toLowerCase().includes(this.search.toLowerCase())
+            item.item_name.toLowerCase().includes(this.search.toLowerCase())
           );
-        }
-        
-        // Search in name
-        if (filtred_list.length === 0) {
-          const search_combinations = this.generateWordCombinations(this.search);
-          filtred_list = filtred_group_list.filter((item) => {
-            return search_combinations.some(element => {
-              element = element.toLowerCase().trim();
-              let element_regex = new RegExp(`.*${element.split("").join(".*")}.*`);
-              return element_regex.test(item.item_name.toLowerCase());
-            });
-          });
-        }
-        
-        // Search in serial numbers
-        if (filtred_list.length === 0) {
-          filtred_list = filtred_group_list.filter((item) => {
-            return item.serial_no_data.some(element => {
-              if (element.serial_no === this.search) {
-                this.flags.serial_no = this.search;
-                return true;
-              }
-              return false;
-            });
-          });
-        }
-        
-        // Search in batch numbers
-        if (filtred_list.length === 0) {
-          filtred_list = filtred_group_list.filter((item) => {
-            return item.batch_no_data.some(element => {
-              if (element.batch_no === this.search) {
-                this.flags.batch_no = this.search;
-                return true;
-              }
-              return false;
-            });
-          });
         }
       }
       
-      // إزالة منطق المتغيرات - عرض كل الأصناف مباشرة
+      // Final filtering - show all items directly
       filtred_list = filtred_list.slice(0, 50);
       
       return filtred_list;
