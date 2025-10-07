@@ -312,7 +312,7 @@ export default {
           customer_type: this.customer_type,
           gender: this.gender,
           method: this.customer_id ? 'update' : 'create',
-          pos_profile_doc: this.pos_profile,
+          pos_profile_name: this.pos_profile.name,
         };
         frappe.call({
           method: 'posawesome.posawesome.api.customer.create_customer',
