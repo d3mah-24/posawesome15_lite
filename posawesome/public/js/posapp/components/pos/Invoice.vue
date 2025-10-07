@@ -792,7 +792,7 @@ export default {
 
     async create_draft_invoice() {
       try {
-        const doc = this.get_invoice_doc();
+        const doc = this.get_invoice_doc("draft");
         const result = await this.update_invoice(doc);
         
         if (result) {
@@ -815,7 +815,7 @@ export default {
         return;
       }
 
-      const payload = doc || this.get_invoice_doc();
+      const payload = doc || this.get_invoice_doc(reason);
 
       try {
         const result = await this.update_invoice(payload);
@@ -847,7 +847,7 @@ export default {
         return;
       }
 
-      this._pendingAutoSaveDoc = this.get_invoice_doc();
+      this._pendingAutoSaveDoc = this.get_invoice_doc(reason);
       this._pendingAutoSaveReason = reason;
 
       if (!this._autoSaveProcessing) {
@@ -1125,55 +1125,54 @@ export default {
       return old_invoice;
     },
 
-    get_invoice_doc() {
-      let doc = {};
-      if (this.invoice_doc.name && !this.invoice_doc.submitted_for_payment) {
-        doc = { ...this.invoice_doc };
+    get_invoice_doc(reason = "auto") {
+      const isPaymentFlow = reason === "payment" || reason === "print";
+      const doc = {};
+
+      if (this.invoice_doc && this.invoice_doc.name && !this.invoice_doc.submitted_for_payment) {
+        doc.name = this.invoice_doc.name;
       }
+
       doc.doctype = "Sales Invoice";
       doc.is_pos = 1;
       doc.ignore_pricing_rule = 1;
-      doc.company = doc.company || this.pos_profile.company;
-      doc.pos_profile = doc.pos_profile || this.pos_profile.name;
-      doc.currency = doc.currency || this.pos_profile.currency;
-      doc.naming_series = doc.naming_series || this.pos_profile.naming_series;
+      doc.company = this.pos_profile.company;
+      doc.pos_profile = this.pos_profile.name;
+      doc.currency = this.pos_profile.currency;
+      doc.naming_series = this.pos_profile.naming_series;
       doc.customer = this.customer;
-      doc.items = this.get_invoice_items();
+      doc.posting_date = this.posting_date;
+      doc.posa_pos_opening_shift = this.pos_opening_shift.name;
+
+      doc.items = this.get_invoice_items_minimal();
+
       doc.discount_amount = flt(this.discount_amount);
       doc.additional_discount_percentage = flt(this.additional_discount_percentage);
-      doc.posa_pos_opening_shift = this.pos_opening_shift.name;
-      doc.payments = this.get_payments();
-      doc.taxes = [];
-      doc.is_return = this.invoice_doc.is_return;
-      doc.return_against = this.invoice_doc.return_against;
-      doc.posa_offers = this.posa_offers;
-      doc.posa_coupons = this.posa_coupons;
-      doc.posting_date = this.posting_date;
+
+      if (isPaymentFlow) {
+        doc.payments = this.get_payments();
+      }
+
+      if (this.invoice_doc) {
+        doc.is_return = this.invoice_doc.is_return;
+        doc.return_against = this.invoice_doc.return_against;
+      }
+
       return doc;
     },
 
-    get_invoice_items() {
-      return this.items.map(item => {
-        return {
-          item_code: item.item_code,
-          posa_row_id: item.posa_row_id,
-          posa_offers: item.posa_offers,
-          posa_offer_applied: item.posa_offer_applied,
-          posa_is_offer: item.posa_is_offer,
-          posa_is_replace: item.posa_is_replace,
-          is_free_item: item.is_free_item,
-          qty: item.qty || 1,
-          rate: item.rate || item.price_list_rate || 0,
-          uom: item.uom || item.stock_uom,
-          conversion_factor: item.conversion_factor || 1,
-          serial_no: item.serial_no,
-          discount_percentage: item.discount_percentage || 0,
-          discount_amount: item.discount_amount || 0,
-          batch_no: item.batch_no,
-          posa_notes: item.posa_notes,
-          price_list_rate: item.price_list_rate || item.rate || 0,
-        };
-      });
+    get_invoice_items_minimal() {
+      return this.items.map((item) => ({
+        item_code: item.item_code,
+        qty: item.qty || 1,
+        rate: item.rate || item.price_list_rate || 0,
+        uom: item.uom || item.stock_uom,
+        conversion_factor: item.conversion_factor || 1,
+        serial_no: item.serial_no,
+        discount_percentage: item.discount_percentage || 0,
+        discount_amount: item.discount_amount || 0,
+        batch_no: item.batch_no,
+      }));
     },
 
     get_payments() {
@@ -1244,7 +1243,7 @@ export default {
     },
 
     async process_invoice() {
-      const doc = this.get_invoice_doc();
+      const doc = this.get_invoice_doc("payment");
       
       try {
         const result = await this.update_invoice(doc);
