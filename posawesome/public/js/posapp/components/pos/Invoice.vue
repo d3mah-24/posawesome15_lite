@@ -611,7 +611,7 @@ export default {
       if (discountPercentage > 0 && basePrice > 0) {
         let result = 0;
         frappe.call({
-          method: "posawesome.posawesome.api.invoice.calculate_item_discount_amount",
+          method: "posawesome.posawesome.api.calculate_item_discount_amount.calculate_item_discount_amount",
           args: {
             price_list_rate: basePrice,
             discount_percentage: discountPercentage
@@ -733,7 +733,7 @@ export default {
         
         if (this.invoice_doc && this.invoice_doc.name) {
           frappe.call({
-            method: "posawesome.posawesome.api.invoice.update_item_in_invoice",
+            method: "posawesome.posawesome.api.update_item_in_invoice.update_item_in_invoice",
             args: {
               invoice_name: this.invoice_doc.name,
               item_idx: existing_idx,
@@ -761,7 +761,7 @@ export default {
         
         if (this.invoice_doc && this.invoice_doc.name) {
           frappe.call({
-            method: "posawesome.posawesome.api.invoice.add_item_to_invoice",
+            method: "posawesome.posawesome.api.add_item_to_invoice.add_item_to_invoice",
             args: {
               invoice_name: this.invoice_doc.name,
               item_code: new_item.item_code,
@@ -1037,8 +1037,8 @@ export default {
         return;
       }
 
-        frappe.call({
-        method: "posawesome.posawesome.api.invoice.delete_invoice",
+  frappe.call({
+  method: "posawesome.posawesome.api.delete_invoice.delete_invoice",
         args: { invoice_name: name }
       }).then(reset).catch(reset);
     },
@@ -1206,7 +1206,7 @@ export default {
       const vm = this;
       return new Promise((resolve, reject) => {
         frappe.call({
-          method: "posawesome.posawesome.api.invoice.update_invoice",
+          method: "posawesome.posawesome.api.update_invoice.update_invoice",
           args: {
             data: doc,
           },
@@ -1315,7 +1315,7 @@ export default {
       let isValid = true;
       
       frappe.call({
-        method: "posawesome.posawesome.api.invoice.validate_invoice_items",
+        method: "posawesome.posawesome.api.validate_invoice_items.validate_invoice_items",
         args: {
           items_data: this.items,
           pos_profile_name: this.pos_profile.name,
@@ -1345,7 +1345,7 @@ export default {
     get_draft_invoices() {
       const vm = this;
       frappe.call({
-        method: "posawesome.posawesome.api.invoice.get_draft_invoices",
+        method: "posawesome.posawesome.api.get_draft_invoices.get_draft_invoices",
         args: {
           pos_opening_shift: this.pos_opening_shift.name,
         },
@@ -1528,7 +1528,7 @@ export default {
 
       const vm = this;
       frappe.call({
-        method: "posawesome.posawesome.api.invoice.process_batch_selection",
+        method: "posawesome.posawesome.api.process_batch_selection.process_batch_selection",
         args: {
           item_code: item.item_code,
           current_item_row_id: item.posa_row_id,
@@ -1652,7 +1652,7 @@ export default {
       if (!this.invoice_doc?.name) return;
       
       frappe.call({
-        method: "posawesome.posawesome.api.invoice.get_applicable_offers",
+        method: "posawesome.posawesome.api.get_applicable_offers.get_applicable_offers",
         args: {
           invoice_name: this.invoice_doc.name
         },
@@ -1698,7 +1698,7 @@ export default {
       let apply_offer = null;
 
       frappe.call({
-        method: "posawesome.posawesome.api.invoice.process_item_offer",
+        method: "posawesome.posawesome.api.process_item_offer.process_item_offer",
         args: {
           offer_data: offer,
           items_data: this.items
@@ -1767,7 +1767,7 @@ export default {
       if (!this.invoice_doc?.name || !offer_names?.length) return;
       
       frappe.call({
-        method: "posawesome.posawesome.api.invoice.apply_offers_to_invoice",
+        method: "posawesome.posawesome.api.apply_offers_to_invoice.apply_offers_to_invoice",
         args: {
           invoice_name: this.invoice_doc.name,
           offer_names: offer_names
@@ -1789,7 +1789,7 @@ export default {
       if (!this.invoice_doc?.name || !offer_names?.length) return;
       
       frappe.call({
-        method: "posawesome.posawesome.api.invoice.remove_offers_from_invoice",
+        method: "posawesome.posawesome.api.remove_offers_from_invoice.remove_offers_from_invoice",
         args: {
           invoice_name: this.invoice_doc.name,
           offer_names: offer_names
@@ -1880,7 +1880,7 @@ export default {
           }
           // Submit and print the invoice
       frappe.call({
-            method: "posawesome.posawesome.api.invoice.submit_invoice",
+            method: "posawesome.posawesome.api.submit_invoice.submit_invoice",
         args: {
               data: {
                 total_change: 0,
