@@ -611,7 +611,27 @@ export default {
         method: "posawesome.posawesome.api.submit_invoice.submit_invoice",
         args: {
           data: data,
-          invoice: this.invoice_doc,
+          invoice: {
+            name: this.invoice_doc.name,
+            customer: this.invoice_doc.customer,
+            is_return: this.invoice_doc.is_return,
+            is_pos: this.invoice_doc.is_pos,
+            payments: this.invoice_doc.payments,
+            loyalty_amount: this.invoice_doc.loyalty_amount,
+            redeem_loyalty_points: this.invoice_doc.redeem_loyalty_points,
+            loyalty_points: this.invoice_doc.loyalty_points,
+            write_off_amount: this.invoice_doc.write_off_amount,
+            write_off_outstanding_amount_automatically: this.invoice_doc.write_off_outstanding_amount_automatically,
+            contact_mobile: this.invoice_doc.contact_mobile,
+            contact_person: this.invoice_doc.contact_person,
+            contact_email: this.invoice_doc.contact_email,
+            due_date: this.invoice_doc.due_date,
+            delivery_date: this.invoice_doc.delivery_date,
+            address_display: this.invoice_doc.address_display,
+            shipping_address_name: this.invoice_doc.shipping_address_name,
+            customer_address: this.invoice_doc.customer_address,
+            shipping_address: this.invoice_doc.shipping_address
+          },
         },
         async: true,
         callback: function (r) {
@@ -941,7 +961,16 @@ export default {
         .call({
           method: "posawesome.posawesome.api.posapp.create_payment_request",
           args: {
-            doc: vm.invoice_doc,
+            doc: {
+              name: vm.invoice_doc.name,
+              customer: vm.invoice_doc.customer,
+              contact_mobile: vm.invoice_doc.contact_mobile,
+              contact_person: vm.invoice_doc.contact_person,
+              contact_email: vm.invoice_doc.contact_email,
+              grand_total: vm.invoice_doc.grand_total,
+              payments: vm.invoice_doc.payments,
+              is_return: vm.invoice_doc.is_return
+            },
           },
         })
         .then(({ message }) => {
