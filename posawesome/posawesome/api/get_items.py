@@ -43,13 +43,12 @@ def get_items(
         item_groups_str = "', '".join(item_groups)
         conditions.append(f"item.item_group IN ('{item_groups_str}')")
     
-    # Template items condition
-    if not pos_profile.get("posa_show_template_items"):
-        conditions.append("item.has_variants = 0")
+    # إزالة منطق المتغيرات - عرض كل الأصناف مباشرة
+    # Template items condition - تم إزالته
     
     where_clause = " AND ".join(conditions)
     
-    # Lightweight SQL query - only essential fields
+    # Lightweight SQL query - only essential fields (removed variant fields)
     sql_query = f"""
     SELECT 
         item.name AS item_code,
@@ -58,8 +57,6 @@ def get_items(
         item.stock_uom,
         item.image,
         item.is_stock_item,
-        item.has_variants,
-        item.variant_of,
         item.item_group,
         item.has_batch_no,
         item.has_serial_no,
@@ -117,35 +114,6 @@ def get_items(
     return result
 
 
-def get_item_attributes(item_code):
-    """
-    Get item attributes for template items
-    """
-    try:
-        attributes = frappe.db.get_all(
-            "Item Variant Attribute",
-            fields=["attribute"],
-            filters={"parenttype": "Item", "parent": item_code},
-            order_by="idx asc",
-        )
-
-        optional_attributes = get_item_optional_attributes(item_code)
-
-        for a in attributes:
-            values = frappe.db.get_all(
-                "Item Attribute Value",
-                fields=["attribute_value", "abbr"],
-                filters={"parenttype": "Item Attribute", "parent": a.attribute},
-                order_by="idx asc",
-            )
-            a.values = values
-            if a.attribute in optional_attributes:
-                a.optional = True
-
-        return attributes
-    except Exception as e:
-        frappe.logger().error(f'Error in get_item_attributes: {e}')
-        return []
 
 @frappe.whitelist()
 def get_items_groups():

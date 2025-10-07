@@ -5,7 +5,6 @@
     <Drafts></Drafts>
     <Returns></Returns>
     <NewAddress></NewAddress>
-    <Variants></Variants>
     <OpeningDialog v-if="dialog" :dialog="dialog"></OpeningDialog>
     <v-row v-show="!dialog">
       <v-col
@@ -72,7 +71,6 @@ import PosCoupons from './PosCoupons.vue';
 import Drafts from './Drafts.vue';
 import ClosingDialog from './ClosingDialog.vue';
 import NewAddress from './NewAddress.vue';
-import Variants from './Variants.vue';
 import Returns from './Returns.vue';
 
 // ===== SECTION 2: EXPORT DEFAULT =====
@@ -100,7 +98,6 @@ export default {
     PosOffers,
     PosCoupons,
     NewAddress,
-    Variants,
   },
   // ===== SECTION 5: METHODS =====
   methods: {

@@ -575,45 +575,39 @@ export default {
     // Improve function to add item
     add_item_table(event, item){
       item = { ...item.item };
-      if (item.has_variants) {
-        evntBus.emit("open_variants_model", item, this.items);
-      } else {
-    // Set quantity correctly always
-    const currentQty = Number(this.qty);
-    if (!item.qty || item.qty === 1) {
-      item.qty = currentQty > 0 ? currentQty : 1;
-    }
-    // Make sure stock_qty is defined and numeric
-    const convFactor = Number(item.conversion_factor || 1);
-    item.stock_qty = Number(item.qty) * convFactor;
-        evntBus.emit("add_item", item);
-        this.qty = 1;
+      // إزالة منطق المتغيرات - إضافة مباشرة
+      // Set quantity correctly always
+      const currentQty = Number(this.qty);
+      if (!item.qty || item.qty === 1) {
+        item.qty = currentQty > 0 ? currentQty : 1;
       }
+      // Make sure stock_qty is defined and numeric
+      const convFactor = Number(item.conversion_factor || 1);
+      item.stock_qty = Number(item.qty) * convFactor;
+      evntBus.emit("add_item", item);
+      this.qty = 1;
     },
 
     add_item(item) {
       item = { ...item };
-      if (item.has_variants) {
-        evntBus.emit("open_variants_model", item, this.items);
+      // إزالة منطق المتغيرات - إضافة مباشرة
+      // Set quantity correctly always
+      const currentQty = Number(this.qty);
+      if (!item.qty || item.qty === 1) {
+        item.qty = currentQty > 0 ? currentQty : 1;
       } else {
-    // Set quantity correctly always
-    const currentQty = Number(this.qty);
-    if (!item.qty || item.qty === 1) {
-      item.qty = currentQty > 0 ? currentQty : 1;
-    } else {
-      item.qty = Number(item.qty) || 1;
-    }
-    
-    // Make sure stock_qty is defined and numeric
-    const convFactor = Number(item.conversion_factor || 1);
-    item.stock_qty = Number(item.qty) * convFactor;
-    
-    // Make sure price_list_rate is defined and numeric
-    item.price_list_rate = Number(item.price_list_rate || item.rate || 0);
-        
-        evntBus.emit("add_item", item);
-        this.qty = 1;
+        item.qty = Number(item.qty) || 1;
       }
+      
+      // Make sure stock_qty is defined and numeric
+      const convFactor = Number(item.conversion_factor || 1);
+      item.stock_qty = Number(item.qty) * convFactor;
+      
+      // Make sure price_list_rate is defined and numeric
+      item.price_list_rate = Number(item.price_list_rate || item.rate || 0);
+          
+      evntBus.emit("add_item", item);
+      this.qty = 1;
     },
 
     // Improve search processing function
@@ -1018,13 +1012,8 @@ export default {
       
       // Filter by search
       if (!this.search || this.search.length < 3) {
-        if (this.pos_profile.posa_show_template_items && this.pos_profile.posa_hide_variants_items) {
-          filtred_list = filtred_group_list
-            .filter((item) => !item.variant_of)
-            .slice(0, 50);
-        } else {
-          filtred_list = filtred_group_list.slice(0, 50);
-        }
+        // إزالة منطق المتغيرات - عرض كل الأصناف مباشرة
+        filtred_list = filtred_group_list.slice(0, 50);
       } else if (this.search) {
         // Search in barcode first
         filtred_list = filtred_group_list.filter((item) => {
@@ -1077,12 +1066,8 @@ export default {
         }
       }
       
-      // Final filtering
-      if (this.pos_profile.posa_show_template_items && this.pos_profile.posa_hide_variants_items) {
-        filtred_list = filtred_list.filter((item) => !item.variant_of).slice(0, 50);
-      } else {
-        filtred_list = filtred_list.slice(0, 50);
-      }
+      // إزالة منطق المتغيرات - عرض كل الأصناف مباشرة
+      filtred_list = filtred_list.slice(0, 50);
       
       return filtred_list;
     },
