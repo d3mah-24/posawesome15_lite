@@ -2,91 +2,106 @@
   <v-row justify="center">
     <v-dialog
       v-model="customerDialog"
-      max-width="600px"
+      max-width="480px"
       @click:outside="clear_customer"
     >
-      <v-card>
-        <v-card-title>
-          <span v-if="customer_id" class="headline primary--text">Update Customer Data</span>
-          <span v-else class="headline primary--text">Register New Customer</span>
+      <v-card class="compact-dialog">
+        <v-card-title class="">
+          <span v-if="customer_id" class="text-h6 p-0 primary--text font-weight-bold">Update Customer</span>
+          <span v-else class="text-h6 p-0 primary--text font-weight-bold">New Customer</span>
         </v-card-title>
-        <v-card-text class="pa-0">
-          <v-container>
-            <v-row>
-              <v-col cols="12">
+        <v-card-text class="pa-2">
+          <v-container class="pa-2">
+            <v-row dense>
+              <v-col cols="12" class="pb-1">
                 <v-text-field
                   dense
+                  outlined
                   color="primary"
                   label="Customer Name *"
                   background-color="white"
-                  hide-details
+                  hide-details="auto"
                   v-model="customer_name"
+                  class="compact-field"
                 ></v-text-field>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="6" class="pb-1 pr-1">
                 <v-text-field
                   dense
+                  outlined
                   color="primary"
                   label="Tax ID"
                   background-color="white"
-                  hide-details
+                  hide-details="auto"
                   v-model="tax_id"
+                  class="compact-field"
                 ></v-text-field>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="6" class="pb-1 pl-1">
                 <v-text-field
                   dense
+                  outlined
                   color="primary"
-                  label="Mobile Number"
+                  label="Mobile"
                   background-color="white"
-                  hide-details
+                  hide-details="auto"
                   v-model="mobile_no"
+                  class="compact-field"
                 ></v-text-field>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="6" class="pb-1 pr-1">
                 <v-text-field
                   dense
+                  outlined
                   color="primary"
                   label="Email"
                   background-color="white"
-                  hide-details
+                  hide-details="auto"
                   v-model="email_id"
+                  class="compact-field"
                 ></v-text-field>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="6" class="pb-1 pl-1">
                 <v-select
                   dense
+                  outlined
                   label="Gender"
                   :items="genders"
                   v-model="gender"
+                  hide-details="auto"
+                  class="compact-field"
                 ></v-select>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="6" class="pb-1 pr-1">
                 <v-text-field
                   dense
+                  outlined
                   color="primary"
                   label="Referral Code"
                   background-color="white"
-                  hide-details
+                  hide-details="auto"
                   v-model="referral_code"
+                  class="compact-field"
                 ></v-text-field>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="6" class="pb-1 pl-1">
                 <v-text-field
                   v-model="birthday"
                   label="Date of Birth"
                   readonly
                   dense
+                  outlined
                   clearable
-                  hide-details
+                  hide-details="auto"
                   color="primary"
                   prepend-inner-icon="mdi-calendar"
                   @click="birthday_menu = true"
+                  class="compact-field"
                 ></v-text-field>
                 
                 <v-dialog
                   v-model="birthday_menu"
-                  max-width="400px"
+                  max-width="320px"
                 >
                   <v-date-picker
                     v-model="birthday"
@@ -98,10 +113,11 @@
                   </v-date-picker>
                 </v-dialog>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="6" class="pb-1 pr-1">
                 <v-autocomplete
                   clearable
                   dense
+                  outlined
                   auto-select-first
                   color="primary"
                   label="Customer Group *"
@@ -109,14 +125,16 @@
                   :items="groups"
                   background-color="white"
                   no-data-text="Group not found"
-                  hide-details
+                  hide-details="auto"
                   required
+                  class="compact-field"
                 ></v-autocomplete>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="6" class="pb-1 pl-1">
                 <v-autocomplete
                   clearable
                   dense
+                  outlined
                   auto-select-first
                   color="primary"
                   label="Territory *"
@@ -124,35 +142,56 @@
                   :items="territorys"
                   background-color="white"
                   no-data-text="Territory not found"
-                  hide-details
+                  hide-details="auto"
                   required
+                  class="compact-field"
                 ></v-autocomplete>
               </v-col>
-              <v-col cols="6" v-if="loyalty_program">
+              <v-col cols="6" v-if="loyalty_program" class="pb-1 pr-1">
                 <v-text-field
                   v-model="loyalty_program"
                   label="Loyalty Program"
                   dense
+                  outlined
                   readonly
-                  hide-details
+                  hide-details="auto"
+                  class="compact-field"
                 ></v-text-field>
               </v-col>
-              <v-col cols="6" v-if="loyalty_points">
+              <v-col cols="6" v-if="loyalty_points" class="pb-1" :class="loyalty_program ? 'pl-1' : 'pr-1'">
                 <v-text-field
                   v-model="loyalty_points"
                   label="Loyalty Points"
                   dense
+                  outlined
                   readonly
-                  hide-details
+                  hide-details="auto"
+                  class="compact-field"
                 ></v-text-field>
               </v-col>
             </v-row>
           </v-container>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pa-3 pt-0">
           <v-spacer></v-spacer>
-          <v-btn color="error" dark @click="close_dialog">Close</v-btn>
-          <v-btn color="success" dark @click="submit_dialog">{{ customer_id ? 'Update Customer Data' : 'Register Customer' }}</v-btn>
+          <v-btn 
+            outlined
+            color="grey darken-1" 
+            class="mr-2 compact-btn" 
+            @click="close_dialog"
+            small
+          >
+            Cancel
+          </v-btn>
+          <v-btn 
+            color="primary" 
+            class="compact-btn white--text" 
+            @click="submit_dialog"
+            small
+            elevation="2"
+          >
+            {{ customer_id ? 'Update' : 'Register' }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -384,3 +423,90 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.v-card-title{
+  padding: .5rem 1rem 0 !important;
+}
+.compact-dialog {
+  border-radius: 12px !important;
+}
+
+.compact-dialog .v-card__title {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.compact-field {
+  margin-bottom: 4px !important;
+}
+
+.compact-field .v-input__control {
+  min-height: 40px !important;
+}
+
+.compact-field .v-text-field__details {
+  margin-top: 2px !important;
+  padding-top: 0 !important;
+}
+
+.compact-btn {
+  text-transform: none !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+  min-width: 80px !important;
+  height: 36px !important;
+}
+
+.v-input--dense .v-input__control {
+  min-height: 40px !important;
+}
+
+.v-text-field--outlined.v-input--dense .v-input__control {
+  min-height: 40px !important;
+}
+
+.v-text-field--outlined .v-input__control {
+  min-height: 40px !important;
+}
+
+/* Custom styling for better visual hierarchy */
+.v-card__title .text-h6 {
+  font-size: 1.1rem !important;
+  line-height: 1.3 !important;
+}
+
+/* Reduce spacing in rows */
+.row.dense {
+  margin: -2px !important;
+}
+
+.row.dense > .col {
+  padding: 2px !important;
+}
+
+/* Better button styling */
+.v-btn.compact-btn {
+  border-radius: 6px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.v-btn.compact-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+  transition: all 0.2s ease;
+}
+
+/* Outlined text fields styling */
+.v-text-field--outlined > .v-input__control > .v-input__slot {
+  border-radius: 6px !important;
+}
+
+.v-select--outlined > .v-input__control > .v-input__slot {
+  border-radius: 6px !important;
+}
+
+/* Date picker dialog smaller */
+.v-picker {
+  border-radius: 8px !important;
+}
+</style>
