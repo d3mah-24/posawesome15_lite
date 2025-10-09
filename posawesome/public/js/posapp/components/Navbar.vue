@@ -14,49 +14,49 @@
       </v-toolbar-title>
 
       <div class="company-name-badge">
-        <v-icon size="18" color="primary">mdi-domain</v-icon>
+        <v-icon size="14" color="primary">mdi-domain</v-icon>
         <span class="company-name-text">
           {{ company_name }}
         </span>
       </div>
 
       <div class="invoice-number-badge" :class="invoiceNumberClass">
-        <v-icon size="18" :color="invoiceIconColor">mdi-receipt</v-icon>
+        <v-icon size="14" :color="invoiceIconColor">mdi-receipt</v-icon>
         <span class="invoice-number-text">
           {{ invoiceNumberText }}
         </span>
       </div>
 
       <div class="shift-number-badge" :class="shiftNumberClass">
-        <v-icon size="18" :color="shiftIconColor">mdi-clock-outline</v-icon>
+        <v-icon size="14" :color="shiftIconColor">mdi-clock-outline</v-icon>
         <span class="shift-number-text">
           {{ shiftNumberText }}
         </span>
       </div>
 
       <div class="user-name-badge">
-        <v-icon size="18" color="primary">mdi-account</v-icon>
+        <v-icon size="14" color="primary">mdi-account</v-icon>
         <span class="user-name-text">
           {{ currentUserName }}
         </span>
       </div>
 
       <div class="shift-start-badge" :class="shiftStartClass">
-        <v-icon size="18" :color="shiftStartIconColor">mdi-clock-start</v-icon>
+        <v-icon size="14" :color="shiftStartIconColor">mdi-clock-start</v-icon>
         <span class="shift-start-text">
           {{ shiftStartText }}
         </span>
       </div>
 
       <div class="totals-badge">
-        <v-icon size="18" color="primary">mdi-counter</v-icon>
+        <v-icon size="14" color="primary">mdi-counter</v-icon>
         <span class="totals-text">
           SINV_QTY: {{ totalInvoicesQty }}
         </span>
       </div>
 
       <div class="ping-badge" :class="pingClass">
-        <v-icon size="18" :color="pingIconColor">mdi-wifi</v-icon>
+        <v-icon size="14" :color="pingIconColor">mdi-wifi</v-icon>
         <span class="ping-text">
           Connection: {{ pingTime }}ms
         </span>
@@ -553,7 +553,7 @@ export default {
   border: 1px solid #e0e0e0;
   background: #f9f9f9;
   margin-left: 16px;
-  font-size: 0.8rem;
+  font-size: 0.5rem;
   line-height: 1;
 }
 
@@ -596,7 +596,7 @@ export default {
   border: 1px solid #e0e0e0;
   background: #f9f9f9;
   margin-left: 8px;
-  font-size: 0.8rem;
+  font-size: 0.5rem;
   line-height: 1;
 }
 
@@ -615,7 +615,7 @@ export default {
   border: 1px solid #e0e0e0;
   background: #f9f9f9;
   margin-left: 8px;
-  font-size: 0.8rem;
+  font-size: 0.5rem;
   line-height: 1;
 }
 
@@ -658,7 +658,7 @@ export default {
   border: 1px solid #e0e0e0;
   background: #f9f9f9;
   margin-left: 8px;
-  font-size: 0.8rem;
+  font-size: 0.5rem;
   line-height: 1;
 }
 
@@ -677,7 +677,7 @@ export default {
   border: 1px solid #e0e0e0;
   background: #f9f9f9;
   margin-left: 8px;
-  font-size: 0.8rem;
+  font-size: 0.5rem;
   line-height: 1;
 }
 
@@ -723,7 +723,7 @@ export default {
   border: 1px solid #e0e0e0;
   background: #f9f9f9;
   margin-left: 8px;
-  font-size: 0.8rem;
+  font-size: 0.5rem;
   line-height: 1;
 }
 
@@ -742,7 +742,7 @@ export default {
   border: 1px solid #e0e0e0;
   background: #f9f9f9;
   margin-left: 8px;
-  font-size: 0.8rem;
+  font-size: 0.5rem;
   line-height: 1;
 }
 
