@@ -16,14 +16,26 @@ def update_invoice(data):
     """
     PUT - Update invoice data
     Let ERPNext handle all calculations through set_missing_values() and save()
+    
+    This is the PRIMARY API for all invoice operations (create, update, add/remove items).
+    Replaces: add_item_to_invoice, update_item_in_invoice, delete_item_from_invoice
     """
-    data = json.loads(data)
+    try:
+        data = json.loads(data) if isinstance(data, str) else data
+    except (json.JSONDecodeError, ValueError) as e:
+        frappe.throw(_("Invalid JSON data: {0}").format(str(e)))
 
     if data.get("name"):
         try:
             invoice_doc = frappe.get_doc("Sales Invoice", data.get("name"))  # type: ignore
+            
+            # Validate draft status
+            if invoice_doc.docstatus != 0:
+                frappe.throw(_("Cannot update submitted invoice"))
+            
             invoice_doc.update(data)
         except frappe.DoesNotExistError:
+            # Invoice was deleted, create new one
             invoice_doc = frappe.new_doc("Sales Invoice")
             invoice_doc.update(data)
     else:

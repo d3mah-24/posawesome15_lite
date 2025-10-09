@@ -696,7 +696,7 @@ export default {
       }
     },
 
-    add_item(item) {
+    async add_item(item) {
       if (!item || !item.item_code) {
         evntBus.emit("show_mesage", {
           text: "Item data is incorrect or missing",
@@ -728,27 +728,11 @@ export default {
         return basicMatch;
       });
       
+      let reason = "item-added";
+
       if (existing_item) {
-        const existing_idx = this.items.indexOf(existing_item);
-        
-        if (this.invoice_doc && this.invoice_doc.name) {
-          frappe.call({
-            method: "posawesome.posawesome.api.update_item_in_invoice.update_item_in_invoice",
-            args: {
-              invoice_name: this.invoice_doc.name,
-              item_idx: existing_idx,
-              qty: flt(existing_item.qty) + flt(new_item.qty) // Python will handle this
-            },
-            callback: (r) => {
-              if (r.message) {
-                this.invoice_doc = r.message;
-                this.items = r.message.items;
-              }
-            }
-          });
-        } else {
-          existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
-        }
+        existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
+        reason = "item-updated";
       } else {
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
@@ -759,32 +743,16 @@ export default {
 
         const rate = new_item.price_list_rate || new_item.rate || 0;
         
-        if (this.invoice_doc && this.invoice_doc.name) {
-          frappe.call({
-            method: "posawesome.posawesome.api.add_item_to_invoice.add_item_to_invoice",
-            args: {
-              invoice_name: this.invoice_doc.name,
-              item_code: new_item.item_code,
-              qty: new_item.qty || 1,
-              rate: rate,
-              uom: new_item.uom
-            },
-            callback: (r) => {
-              if (r.message) {
-                this.invoice_doc = r.message;
-                this.items = r.message.items;
-              }
-            }
-          });
-        } else {
-          new_item.rate = rate;
-          new_item.price_list_rate = rate;
-          new_item.base_rate = rate;
-          this.items.push(new_item);
-          this.debounced_auto_update("item-added");
-        }
+        new_item.rate = rate;
+        new_item.price_list_rate = rate;
+        new_item.base_rate = rate;
+        this.items.push(new_item);
       }
 
+      this.refreshTotals();
+
+      // إنشاء/تحديث الفاتورة مع debouncing موحد
+      this.debounced_auto_update(reason);
     },
     generateRowId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -919,7 +887,7 @@ export default {
 
       this._autoUpdateTimer = setTimeout(() => {
         this.queue_auto_save(reason);
-      }, 400);
+      }, 200);
     },
 
     get_new_item(item) {
