@@ -225,10 +225,12 @@ export default {
   watch: {},
   methods: {
     close_dialog() {
+      console.log('[UpdateCustomer] closing dialog');
       this.customerDialog = false;
       this.clear_customer();
     },
     clear_customer() {
+      console.log('[UpdateCustomer] clearing customer data');
       this.customer_name = '';
       this.tax_id = '';
       this.mobile_no = '';
@@ -245,6 +247,7 @@ export default {
     },
     getCustomerGroups() {
       if (this.groups.length > 0) return;
+      console.log('[UpdateCustomer] loading customer groups');
       const vm = this;
       frappe.db
         .get_list('Customer Group', {
@@ -255,12 +258,14 @@ export default {
         })
         .then((data) => {
           if (data.length > 0) {
+            console.log('[UpdateCustomer] customer groups loaded', data.length);
             data.forEach((el) => {
               vm.groups.push(el.name);
             });
           }
         })
         .catch((err) => {
+          console.log('[UpdateCustomer] error loading customer groups', err);
           evntBus.emit('show_mesage', {
             text: 'Error loading customer groups',
             color: 'error',
@@ -269,6 +274,7 @@ export default {
     },
     getCustomerTerritorys() {
       if (this.territorys.length > 0) return;
+      console.log('[UpdateCustomer] loading territories');
       const vm = this;
       frappe.db
         .get_list('Territory', {
@@ -279,12 +285,14 @@ export default {
         })
         .then((data) => {
           if (data.length > 0) {
+            console.log('[UpdateCustomer] territories loaded', data.length);
             data.forEach((el) => {
               vm.territorys.push(el.name);
             });
           }
         })
         .catch((err) => {
+          console.log('[UpdateCustomer] error loading territories', err);
           evntBus.emit('show_mesage', {
             text: 'Error loading territories',
             color: 'error',
@@ -292,6 +300,7 @@ export default {
         });
     },
     getGenders() {
+      console.log('[UpdateCustomer] loading genders');
       const vm = this;
       frappe.db
         .get_list('Gender', {
@@ -300,12 +309,14 @@ export default {
         })
         .then((data) => {
           if (data.length > 0) {
+            console.log('[UpdateCustomer] genders loaded', data.length);
             data.forEach((el) => {
               vm.genders.push(el.name);
             });
           }
         })
         .catch((err) => {
+          console.log('[UpdateCustomer] error loading genders', err);
           evntBus.emit('show_mesage', {
             text: 'Error loading genders',
             color: 'error',
@@ -313,8 +324,10 @@ export default {
         });
     },
     submit_dialog() {
+      console.log('[UpdateCustomer] submitting dialog', this.customer_name);
       // validate if all required fields are filled
       if (!this.customer_name) {
+        console.log('[UpdateCustomer] customer name missing');
         evntBus.emit('show_mesage', {
           text: 'Customer name is required.',
           color: 'error',
@@ -322,6 +335,7 @@ export default {
         return;
       }
       if (!this.group) {
+        console.log('[UpdateCustomer] customer group missing');
         evntBus.emit('show_mesage', {
           text: 'Customer group name is required.',
           color: 'error',
@@ -329,6 +343,7 @@ export default {
         return;
       }
       if (!this.territory) {
+        console.log('[UpdateCustomer] territory missing');
         evntBus.emit('show_mesage', {
           text: 'Territory name is required.',
           color: 'error',
@@ -336,6 +351,7 @@ export default {
         return;
       }
       if (this.customer_name) {
+        console.log('[UpdateCustomer] creating customer');
         const vm = this;
         const args = {
           customer_id: this.customer_id,
@@ -358,6 +374,7 @@ export default {
           args: args,
           callback: (r) => {
             if (!r.exc && r.message.name) {
+              console.log('[UpdateCustomer] customer created/updated', r.message.name);
               let text = 'Customer created successfully.';
               if (vm.customer_id) {
                 text = 'Customer data updated successfully.';
@@ -366,18 +383,22 @@ export default {
               frappe.utils.play_sound('submit');
               // Add customer to list only when creating
               if (!vm.customer_id) {
+                console.log('[UpdateCustomer] adding customer to list');
                 evntBus.emit('add_customer_to_list', args);
               }
               // Don't send set_customer when updating to avoid rewriting customer name
               if (!vm.customer_id) {
+                console.log('[UpdateCustomer] setting customer');
                 evntBus.emit('set_customer', r.message.name);
               }
               // Don't refetch customer list when updating to avoid duplication
               if (!vm.customer_id) {
+                console.log('[UpdateCustomer] fetching customer details');
                 evntBus.emit('fetch_customer_details');
               }
               this.close_dialog();
             } else {
+              console.log('[UpdateCustomer] failed to create customer');
               frappe.utils.play_sound('error');
               evntBus.emit('show_mesage', {
                 text: 'Failed to create customer.',
@@ -391,7 +412,9 @@ export default {
     },
   },
   created: function () {
+    console.log('[UpdateCustomer] component created');
     evntBus.on('open_update_customer', (data) => {
+      console.log('[UpdateCustomer] opening update customer dialog', data?.name);
       this.customerDialog = true;
       if (data) {
         this.customer_name = data.customer_name;
@@ -407,16 +430,21 @@ export default {
         this.loyalty_program = data.loyalty_program;
         this.gender = data.gender;
       }
+      
+      // Load data only when dialog is opened
+      console.log('[UpdateCustomer] loading data for dialog');
+      this.getCustomerGroups();
+      this.getCustomerTerritorys();
+      this.getGenders();
     });
     evntBus.on('register_pos_profile', (data) => {
+      console.log('[UpdateCustomer] pos profile registered');
       this.pos_profile = data.pos_profile;
     });
     evntBus.on('payments_register_pos_profile', (data) => {
+      console.log('[UpdateCustomer] payments pos profile registered');
       this.pos_profile = data.pos_profile;
     });
-    this.getCustomerGroups();
-    this.getCustomerTerritorys();
-    this.getGenders();
     // set default values for customer group and territory from user defaults
     this.group = frappe.defaults.get_user_default('Customer Group');
     this.territory = frappe.defaults.get_user_default('Territory');

@@ -226,7 +226,7 @@
             </template>
             <template v-slot:item.price_list_rate="{ item }">
               <div :class="{ 'discounted-price': flt(item.rate, currency_precision) < flt(item.base_rate, currency_precision) }">
-                {{ formatCurrency(item.price_list_rate) }}
+                {{ logPriceDisplay(item) }}{{ formatCurrency(item.price_list_rate) }}
               </div>
             </template>
           </v-data-table>
@@ -437,16 +437,27 @@ export default {
       _pendingAutoSaveReason: "auto",
       _autoSaveWorkerTimer: null,
       _autoUpdateTimer: null,
+      
+      // Offers optimization variables
+      _offersDebounceTimer: null,
+      _offersCache: null,
+      _offersProcessing: false,
+      
+      // Item operations debounce
+      _itemOperationTimer: null,
+      _updatingFromAPI: false,
+      _itemOperationsQueue: [],
+      _processingOperations: false,
       items_headers: [
-        { title: "Delete", key: "actions", align: "center", sortable: false },
-        { title: "Total", key: "amount", align: "center" },
-        { title: "Disc. Amount", key: "discount_amount", align: "center" },
-        { title: "Disc. %", key: "discount_percentage", align: "center" },
-        { title: "After Disc.", key: "rate", align: "center" },
-        { title: "Price", key: "price_list_rate", align: "center" },
-        { title: "Unit", key: "uom", align: "center" },
+        { title: "Item Name", align: "start", sortable: true, key: "item_name" },
         { title: "Qty", key: "qty", align: "center" },
-        { title: "Item Name", align: "end", sortable: true, key: "item_name" },
+        { title: "Unit", key: "uom", align: "center" },
+        { title: "Price", key: "price_list_rate", align: "center" },
+        { title: "After Disc.", key: "rate", align: "center" },
+        { title: "Disc. %", key: "discount_percentage", align: "center" },
+        { title: "Disc. Amount", key: "discount_amount", align: "center" },
+        { title: "Total", key: "amount", align: "center" },
+        { title: "Delete", key: "actions", align: "center", sortable: false },
       ],
       _cachedCalculations: new Map(),
       _lastCalculationTime: 0,
@@ -503,7 +514,15 @@ export default {
       const invoicePayments = (this.invoice_doc && Array.isArray(this.invoice_doc.payments)) ? this.invoice_doc.payments : [];
       const profilePayments = (this.pos_profile && Array.isArray(this.pos_profile.payments)) ? this.pos_profile.payments : [];
       const payments = invoicePayments.length ? invoicePayments : profilePayments;
-      const defaultRow = payments.find(payment => payment.default == 1);
+      
+      // First try to find a payment marked as default
+      let defaultRow = payments.find(payment => payment.default == 1);
+      
+      // If no default payment is found, use the first payment as default
+      if (!defaultRow && payments.length > 0) {
+        defaultRow = payments[0];
+      }
+      
       return defaultRow ? defaultRow.mode_of_payment : null;
     },
     canPrintInvoice() {
@@ -531,9 +550,8 @@ export default {
         const newQty = Number(item.qty) || 0;
         item.qty = newQty;
         this.refreshTotals();
-        if (this.invoice_doc && this.invoice_doc.name) {
-          this.debounced_auto_update();
-        }
+        // Use unified debounce for all item operations
+        this.debouncedItemOperation("qty-change");
       } catch (error) {
         evntBus.emit("show_mesage", {
           text: "Error updating quantity",
@@ -547,6 +565,7 @@ export default {
       this.refreshTotals();
     },
     refreshTotals() {
+      console.log("[Invoice] refreshTotals called");
       this._cachedCalculations.clear();
       this.$forceUpdate();
     },
@@ -561,9 +580,8 @@ export default {
         this._cachedCalculations.clear();
         this.$forceUpdate();
         
-        if (this.invoice_doc && this.invoice_doc.name) {
-          this.debounced_auto_update();
-        }
+        // Emit event for Event-driven approach
+        evntBus.emit("item_updated", item);
       } catch (error) {
         evntBus.emit("show_mesage", {
           text: "Error increasing quantity",
@@ -587,9 +605,8 @@ export default {
         this._cachedCalculations.clear();
         this.$forceUpdate();
         
-        if (this.invoice_doc && this.invoice_doc.name) {
-          this.debounced_auto_update();
-        }
+        // Emit event for Event-driven approach
+        evntBus.emit("item_updated", item);
       } catch (error) {
         evntBus.emit("show_mesage", {
           text: "Error decreasing quantity",
@@ -610,9 +627,9 @@ export default {
       
       if (discountPercentage > 0 && basePrice > 0) {
         let result = 0;
-        frappe.call({
-          method: "posawesome.posawesome.api.calculate_item_discount_amount.calculate_item_discount_amount",
-          args: {
+          frappe.call({
+            method: "posawesome.posawesome.api.sales_invoice_item.calculate_item_discount_amount",
+            args: {
             price_list_rate: basePrice,
             discount_percentage: discountPercentage
           },
@@ -625,6 +642,11 @@ export default {
       }
       
       return 0;
+    },
+    
+    logPriceDisplay(item) {
+      console.log("[Invoice] displaying price for item", item.item_code, "rate", item.rate);
+      return ""; // Return empty string so it doesn't show in UI
     },
     
     quick_return() {
@@ -665,8 +687,9 @@ export default {
         
         if (this.items.length === 0 && this.invoice_doc && this.invoice_doc.name) {
           this.delete_draft_invoice();
-        } else if (this.invoice_doc && this.invoice_doc.name) {
-          this.debounced_auto_update("item-removed");
+        } else {
+          // Emit event for Event-driven approach
+          evntBus.emit("item_removed", item);
         }
       }
     },
@@ -678,9 +701,8 @@ export default {
       } else {
         this.$forceUpdate();
 
-        if (this.invoice_doc && this.invoice_doc.name) {
-          this.debounced_auto_update("qty-increment");
-        }
+        // Emit event for Event-driven approach
+        evntBus.emit("item_updated", item);
       }
     },
     subtract_one(item) {
@@ -690,13 +712,13 @@ export default {
       } else {
         this.$forceUpdate();
 
-        if (this.invoice_doc && this.invoice_doc.name) {
-          this.debounced_auto_update("qty-decrement");
-        }
+        // Emit event for Event-driven approach
+        evntBus.emit("item_updated", item);
       }
     },
 
     async add_item(item) {
+      console.log("[Invoice] received item", item.item_code, "rate", item.rate, "qty", item.qty);
       if (!item || !item.item_code) {
         evntBus.emit("show_mesage", {
           text: "Item data is incorrect or missing",
@@ -707,58 +729,53 @@ export default {
       
       const new_item = Object.assign({}, item);
       
-      if (!new_item.rate && !new_item.price_list_rate) {
-        evntBus.emit("show_mesage", {
-          text: `No price for item '${new_item.item_name || new_item.item_code}'`,
-          color: "error",
-        });
-        return;
-      }
-      
       if (!new_item.uom) {
         new_item.uom = new_item.stock_uom || 'Nos';
       }
       
-      const existing_item = this.items.find(existing => {
-        const basicMatch = existing.item_code === new_item.item_code &&  existing.uom === new_item.uom;
-        
-        if (existing.batch_no || new_item.batch_no) {
-          return basicMatch && existing.batch_no === new_item.batch_no;
-        }
-        return basicMatch;
-      });
+      const existing_item = this.items.find(existing => 
+        existing.item_code === new_item.item_code && 
+        existing.uom === new_item.uom
+      );
       
       let reason = "item-added";
 
       if (existing_item) {
+        console.log("[Invoice] updating existing item", existing_item.item_code, "new qty", flt(existing_item.qty) + flt(new_item.qty));
         existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
         reason = "item-updated";
       } else {
+        console.log("[Invoice] adding new item", new_item.item_code);
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
         new_item.posa_offer_applied = 0;
         new_item.posa_is_offer = 0;
         new_item.posa_is_replace = 0;
         new_item.is_free_item = 0;
-
-        const rate = new_item.price_list_rate || new_item.rate || 0;
         
-        new_item.rate = rate;
-        new_item.price_list_rate = rate;
-        new_item.base_rate = rate;
         this.items.push(new_item);
       }
 
       this.refreshTotals();
 
-      // إنشاء/تحديث الفاتورة مع debouncing موحد
-      this.debounced_auto_update(reason);
+      // Check if this is the first item and no invoice exists
+      if (this.items.length === 1 && !this.invoice_doc?.name) {
+        console.log("[Invoice] creating new invoice");
+        // Create draft invoice immediately for first item
+        this.create_draft_invoice();
+        return;
+      } else {
+        console.log("[Invoice] updating existing invoice");
+        // Emit event for Event-driven approach
+        evntBus.emit("item_added", existing_item || new_item);
+      }
     },
     generateRowId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
     },
 
     async create_draft_invoice() {
+      console.log("[Invoice] create_draft_invoice called");
       try {
         const doc = this.get_invoice_doc("draft");
         const result = await this.update_invoice(doc);
@@ -769,6 +786,11 @@ export default {
             text: "Draft invoice created",
             color: "success",
           });
+        } else {
+          // Handle case when API returns null (no items)
+          console.log("[Invoice] draft invoice creation returned null");
+          this.invoice_doc = null;
+          this.items = [];
         }
       } catch (error) {
         evntBus.emit("show_mesage", {
@@ -783,13 +805,81 @@ export default {
         return;
       }
 
+      // Skip auto-update if no items and no invoice doc
+      if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
+        console.log("[Invoice] skipping auto-update - no items");
+        return;
+      }
+
       const payload = doc || this.get_invoice_doc(reason);
 
       try {
         const result = await this.update_invoice(payload);
-        if (result && Array.isArray(result.items)) {
-          this.items = result.items;
+        
+        console.log("[Invoice] API response received", result ? "has items" : "no items");
+        
+        // Handle case when API returns null (no items)
+        if (!result) {
+          console.log("[Invoice] API returned null - invoice deleted");
+          this.invoice_doc = null;
+          this.items = [];
+          return null;
         }
+        
+        if (result && Array.isArray(result.items)) {
+          console.log("[Invoice] updating local items from API");
+          
+          // Set flag to prevent watcher loop
+          this._updatingFromAPI = true;
+          
+          // Log first item for comparison
+          if (result.items.length > 0) {
+            console.log("[Invoice] first API item", result.items[0].item_code, "rate", result.items[0].rate);
+          }
+          
+          // Log current local items before update
+          if (this.items.length > 0) {
+            console.log("[Invoice] first local item before update", this.items[0].item_code, "rate", this.items[0].rate);
+          }
+          
+          // Merge API items with local items instead of replacing
+          this.mergeItemsFromAPI(result.items);
+          
+          // Reset flag after update
+          this.$nextTick(() => {
+            this._updatingFromAPI = false;
+          });
+          
+          // Log after update
+          if (this.items.length > 0) {
+            console.log("[Invoice] first local item after update", this.items[0].item_code, "rate", this.items[0].rate);
+          }
+        }
+        
+        // Always update invoice_doc with API response (totals, taxes, etc.)
+        if (result) {
+          if (result.name && !this.invoice_doc?.name) {
+            console.log("[Invoice] setting new invoice_doc", result.name);
+            evntBus.emit("show_mesage", {
+              text: "Draft invoice created",
+              color: "success",
+            });
+          }
+          
+          // Update invoice_doc with latest totals from server
+          this.invoice_doc = {
+            ...this.invoice_doc,
+            ...result,
+            // Preserve local items if they exist and are more recent
+            items: this.items.length > (result.items?.length || 0) ? this.items : (result.items || [])
+          };
+          
+          console.log("[Invoice] updated invoice_doc totals", this.invoice_doc.total, "grand_total", this.invoice_doc.grand_total);
+        }
+        
+        // Reset flag after invoice_doc is updated
+        this._updatingFromAPI = false;
+        
         return result;
       } catch (error) {
         if (error?.message && error.message.includes("Document has been modified")) {
@@ -806,30 +896,42 @@ export default {
           color: "error",
         });
 
+        // Reset flag on error
+        this._updatingFromAPI = false;
+        
         throw error;
       }
     },
 
     queue_auto_save(reason = "auto") {
+      console.log("[Invoice] queue auto save", reason);
       if (this.invoice_doc?.submitted_for_payment) {
-        return;
+        return Promise.resolve();
+      }
+
+      // Skip auto-save if no items and no invoice doc
+      if (this.items.length === 0 && !this.invoice_doc?.name) {
+        console.log("[Invoice] skip save - no items");
+        return Promise.resolve();
       }
 
       this._pendingAutoSaveDoc = this.get_invoice_doc(reason);
       this._pendingAutoSaveReason = reason;
 
       if (!this._autoSaveProcessing) {
-        this._run_auto_save_worker();
+        return this._run_auto_save_worker();
       }
+      
+      return Promise.resolve();
     },
 
     _run_auto_save_worker() {
       if (this._autoSaveProcessing) {
-        return;
+        return Promise.resolve();
       }
 
       if (!this._pendingAutoSaveDoc) {
-        return;
+        return Promise.resolve();
       }
 
       const doc = this._pendingAutoSaveDoc;
@@ -838,10 +940,15 @@ export default {
       this._pendingAutoSaveDoc = null;
       this._pendingAutoSaveReason = "auto";
       this._autoSaveProcessing = true;
+      
+      console.log("[Invoice] running auto save worker");
 
-      this.auto_update_invoice(doc, reason)
+      return this.auto_update_invoice(doc, reason)
+        .then(() => {
+          console.log("[Invoice] auto save success");
+        })
         .catch((error) => {
-          console.error(`[POS] Auto save draft failed (${reason})`, error);
+          console.log("[Invoice] auto save error", error);
         })
         .finally(() => {
           this._autoSaveProcessing = false;
@@ -1005,9 +1112,9 @@ export default {
         return;
       }
 
-  frappe.call({
-  method: "posawesome.posawesome.api.delete_invoice.delete_invoice",
-        args: { invoice_name: name }
+    frappe.call({
+      method: "posawesome.posawesome.api.sales_invoice.delete_invoice",
+      args: { invoice_name: name }
       }).then(reset).catch(reset);
     },
 
@@ -1097,8 +1204,12 @@ export default {
       const isPaymentFlow = reason === "payment" || reason === "print";
       const doc = {};
 
+      // Always create a new invoice if no invoice exists or if we have items but no invoice name
       if (this.invoice_doc && this.invoice_doc.name && !this.invoice_doc.submitted_for_payment) {
         doc.name = this.invoice_doc.name;
+      } else if (this.items.length > 0) {
+        // Create new invoice when we have items but no existing invoice
+        console.log("[Invoice] creating new invoice - items count", this.items.length);
       }
 
       doc.doctype = "Sales Invoice";
@@ -1110,7 +1221,7 @@ export default {
       doc.naming_series = this.pos_profile.naming_series;
       doc.customer = this.customer;
       doc.posting_date = this.posting_date;
-      doc.posa_pos_opening_shift = this.pos_opening_shift.name;
+      doc.posa_pos_opening_shift = this.pos_opening_shift ? this.pos_opening_shift.name : null;
 
       doc.items = this.get_invoice_items_minimal();
 
@@ -1157,14 +1268,24 @@ export default {
       // Fallback to POS Profile payments with zero amounts
       const payments = [];
       if (this.pos_profile && Array.isArray(this.pos_profile.payments)) {
-        this.pos_profile.payments.forEach((payment) => {
+        let hasDefault = false;
+        
+        // First pass: add all payments and check if any is default
+        this.pos_profile.payments.forEach((payment, index) => {
+          if (payment.default) hasDefault = true;
           payments.push({
             amount: 0,
             mode_of_payment: payment.mode_of_payment,
             default: payment.default,
             account: "",
+            idx: index + 1, // Add idx for payment method identification
           });
         });
+        
+        // If no default payment is set, make the first one default
+        if (!hasDefault && payments.length > 0) {
+          payments[0].default = 1;
+        }
       }
       return payments;
     },
@@ -1172,17 +1293,42 @@ export default {
     update_invoice(doc) {
       const vm = this;
       return new Promise((resolve, reject) => {
-        frappe.call({
-          method: "posawesome.posawesome.api.update_invoice.update_invoice",
-          args: {
+          frappe.call({
+            method: "posawesome.posawesome.api.sales_invoice.update_invoice",
+            args: {
             data: doc,
           },
           async: true,
           callback: function (r) {
-            if (r.message) {
-              vm.invoice_doc = r.message;
-              resolve(vm.invoice_doc);
+            if (r.message !== undefined) {
+              console.log("[Invoice] raw API response received");
+              
+              // Handle null response (invoice deleted)
+              if (r.message === null) {
+                console.log("[Invoice] invoice was deleted (null response)");
+                vm.invoice_doc = null;
+                vm.items = [];
+                resolve(null);
+              } else {
+                vm.invoice_doc = r.message;
+                
+                // Update posa_offers from backend response
+                if (r.message.posa_offers) {
+                  vm.posa_offers = r.message.posa_offers;
+                  console.log('[Invoice] updated posa_offers from backend', vm.posa_offers.length);
+                  
+                  // Send applied offers to PosOffers component
+                  const appliedOffers = vm.posa_offers.filter(offer => offer.offer_applied);
+                  if (appliedOffers.length > 0) {
+                    console.log('[Invoice] sending applied offers to PosOffers', appliedOffers.length);
+                    evntBus.emit('update_pos_offers', appliedOffers);
+                  }
+                }
+                
+                resolve(vm.invoice_doc);
+              }
             } else {
+              console.log("[Invoice] no message in API response");
               reject(new Error('Failed to update invoice'));
             }
           },
@@ -1211,12 +1357,16 @@ export default {
     },
 
     async process_invoice() {
+      console.log("[Invoice] process_invoice called");
       const doc = this.get_invoice_doc("payment");
+      console.log("[Invoice] generated invoice doc", doc.name, "items", doc.items?.length || 0);
       
       try {
         const result = await this.update_invoice(doc);
+        console.log("[Invoice] process_invoice result", result ? "success" : "failed");
         return result;
       } catch (error) {
+        console.error("[Invoice] process_invoice error:", error);
         evntBus.emit('show_mesage', {
           text: 'Error processing invoice',
           color: 'error'
@@ -1250,6 +1400,45 @@ export default {
       try {
         const invoice_doc = await this.process_invoice();
         
+        // Add default payment method if no payments exist
+        if (!invoice_doc.payments || invoice_doc.payments.length === 0) {
+          console.log("[Invoice] adding default payment method");
+          try {
+            const defaultPayment = await frappe.call({
+              method: "posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile",
+              args: {
+                pos_profile: this.pos_profile.name,
+                company: this.pos_profile.company || frappe.defaults.get_user_default("Company")
+              }
+            });
+            
+            if (defaultPayment.message) {
+              invoice_doc.payments = [{
+                mode_of_payment: defaultPayment.message.mode_of_payment,
+                amount: flt(invoice_doc.grand_total),
+                account: defaultPayment.message.account,
+                default: 1
+              }];
+              console.log("[Invoice] default payment added", defaultPayment.message.mode_of_payment);
+              
+              // Save default payment to server
+              try {
+                await frappe.call({
+                  method: "posawesome.posawesome.api.sales_invoice.update_invoice",
+                  args: {
+                    invoice_data: invoice_doc
+                  }
+                });
+                console.log("[Invoice] default payment saved to server");
+              } catch (error) {
+                console.log("[Invoice] failed to save default payment to server", error);
+              }
+            }
+          } catch (error) {
+            console.log("[Invoice] failed to get default payment", error);
+          }
+        }
+        
         evntBus.emit("send_invoice_doc_payment", invoice_doc);
         evntBus.emit("show_payment", "true");
         
@@ -1281,9 +1470,9 @@ export default {
       
       let isValid = true;
       
-      frappe.call({
-        method: "posawesome.posawesome.api.validate_invoice_items.validate_invoice_items",
-        args: {
+        frappe.call({
+          method: "posawesome.posawesome.api.sales_invoice_item.validate_invoice_items",
+          args: {
           items_data: this.items,
           pos_profile_name: this.pos_profile.name,
           stock_settings: this.stock_settings
@@ -1311,10 +1500,10 @@ export default {
 
     get_draft_invoices() {
       const vm = this;
-      frappe.call({
-        method: "posawesome.posawesome.api.get_draft_invoices.get_draft_invoices",
-        args: {
-          pos_opening_shift: this.pos_opening_shift.name,
+        frappe.call({
+          method: "posawesome.posawesome.api.sales_invoice.get_draft_invoices",
+          args: {
+          pos_opening_shift: this.pos_opening_shift ? this.pos_opening_shift.name : null,
         },
         async: true,
         callback: function (r) {
@@ -1342,7 +1531,7 @@ export default {
       
       evntBus.emit("open_returns", {
         pos_profile: this.pos_profile,
-        pos_opening_shift: this.pos_opening_shift
+        pos_opening_shift: this.pos_opening_shift || null
       });
     },
 
@@ -1353,9 +1542,8 @@ export default {
     update_items_details(items) {
       if (!items.length) return;
       
-      if (this.invoice_doc?.name) {
-        this.debounced_auto_update();
-      }
+      // Use unified debounce for all item operations
+      this.debouncedItemOperation("items-details-update");
     },
 
     update_item_detail(item) {
@@ -1363,9 +1551,8 @@ export default {
         return;
       }
       
-      if (this.invoice_doc?.name) {
-        this.debounced_auto_update();
-      }
+      // Use unified debounce for all item operations
+      this.debouncedItemOperation("item-detail-update");
     },
 
     fetch_customer_details() {
@@ -1439,9 +1626,8 @@ export default {
       // Recalculate item with new discount for immediate visual feedback
       this.refreshTotals();
 
-      if (this.invoice_doc && this.invoice_doc.name) {
-        this.debounced_auto_update();
-      }
+      // Use unified debounce for all item operations
+      this.debouncedItemOperation("discount-change");
       
       this.$forceUpdate();
     },
@@ -1468,9 +1654,8 @@ export default {
         });
       }
       
-      if (this.invoice_doc && this.invoice_doc.name) {
-        this.debounced_auto_update();
-      }
+      // Use unified debounce for all item operations
+      this.debouncedItemOperation("invoice-discount-change");
     },
 
 
@@ -1494,9 +1679,9 @@ export default {
       }
 
       const vm = this;
-      frappe.call({
-        method: "posawesome.posawesome.api.process_batch_selection.process_batch_selection",
-        args: {
+        frappe.call({
+          method: "posawesome.posawesome.api.batch.process_batch_selection",
+          args: {
           item_code: item.item_code,
           current_item_row_id: item.posa_row_id,
           existing_items_data: this.items,
@@ -1594,41 +1779,201 @@ export default {
 
     checkOfferIsAppley(item, offer) {
       let applied = false;
-      const item_offers = JSON.parse(item.posa_offers);
-      for (const row_id of item_offers) {
-        const exist_offer = this.posa_offers.find((el) => row_id == el.row_id);
-        if (exist_offer && exist_offer.offer_name == offer.name) {
-          applied = true;
-          break;
-        }
+      
+      // Handle null or undefined posa_offers
+      if (!item.posa_offers) {
+        return false;
       }
+      
+      try {
+        const item_offers = JSON.parse(item.posa_offers);
+        if (!Array.isArray(item_offers)) {
+          return false;
+        }
+        
+        for (const row_id of item_offers) {
+          const exist_offer = this.posa_offers.find((el) => row_id == el.row_id);
+          if (exist_offer && exist_offer.offer_name == offer.name) {
+            applied = true;
+            break;
+          }
+        }
+      } catch (error) {
+        console.error("[Invoice] error parsing posa_offers:", error);
+        return false;
+      }
+      
       return applied;
     },
 
+    mergeItemsFromAPI(apiItems) {
+      console.log("[Invoice] merging items from API");
+      console.log("[Invoice] local items count", this.items.length);
+      console.log("[Invoice] API items count", apiItems.length);
+      
+      // Handle null or undefined apiItems
+      if (!apiItems || !Array.isArray(apiItems)) {
+        console.log("[Invoice] API items is null - keeping local items");
+        return;
+      }
+      
+      console.log("[Invoice] API items count", apiItems.length);
+      
+      // Always update invoice_doc with API totals, regardless of items merge strategy
+      // This ensures totals are always updated from server
+      
+      // If local items are more than API items, keep local items
+      // This happens when user adds items quickly before API responds
+      if (this.items.length > (apiItems?.length || 0)) {
+        console.log("[Invoice] keeping local items (more than API)");
+        return;
+      }
+      
+      // If API has more items, use API items
+      if ((apiItems?.length || 0) > this.items.length) {
+        console.log("[Invoice] using API items (more than local)");
+        this.items = apiItems;
+        return;
+      }
+      
+      // If counts are equal, merge by updating existing items
+      console.log("[Invoice] merging equal counts");
+      if (Array.isArray(apiItems)) {
+        apiItems.forEach(apiItem => {
+        const localIndex = this.items.findIndex(localItem => 
+          localItem.item_code === apiItem.item_code && 
+          localItem.posa_row_id === apiItem.posa_row_id
+        );
+        
+        if (localIndex >= 0) {
+          // Update existing item with API data
+          console.log("[Invoice] updating existing item", apiItem.item_code);
+          this.items[localIndex] = { ...this.items[localIndex], ...apiItem };
+        } else {
+          // Check if item exists with different criteria (same item_code and uom)
+          const existingItemIndex = this.items.findIndex(localItem => 
+            localItem.item_code === apiItem.item_code && 
+            localItem.uom === apiItem.uom
+          );
+          
+          if (existingItemIndex >= 0) {
+            console.log("[Invoice] updating existing item by item_code and uom", apiItem.item_code);
+            this.items[existingItemIndex] = { ...this.items[existingItemIndex], ...apiItem };
+          } else {
+            console.log("[Invoice] adding new item from API", apiItem.item_code);
+            this.items.push(apiItem);
+          }
+        }
+        });
+      }
+    },
+
+    debouncedItemOperation(operation = "item-operation") {
+      console.log("[Invoice] debounced operation", operation);
+      // Add operation to queue
+      if (!this._itemOperationsQueue.includes(operation)) {
+        this._itemOperationsQueue.push(operation);
+      }
+      
+      // Clear existing timer
+      if (this._itemOperationTimer) {
+        clearTimeout(this._itemOperationTimer);
+      }
+      
+      // Set new debounced timer for all item operations
+      this._itemOperationTimer = setTimeout(() => {
+        this.processItemOperations();
+      }, 200); // 200ms for fast response
+    },
+
+    processItemOperations() {
+      if (this._processingOperations) {
+        return;
+      }
+      
+      this._processingOperations = true;
+      
+      console.log("[Invoice] processing operations");
+      
+      // Process offers after all item operations are complete
+      this.handelOffers();
+      
+      // Use queue_auto_save for better batching with combined operations
+      const combinedReason = this._itemOperationsQueue.join("-") || "item-operation";
+      console.log("[Invoice] auto save", combinedReason);
+      
+      // Clear queue immediately
+      this._itemOperationsQueue = [];
+      
+      // Call queue_auto_save and reset processing flag after completion
+      this.queue_auto_save(combinedReason).finally(() => {
+        this._processingOperations = false;
+        console.log("[Invoice] processing operations completed");
+      });
+    },
+
     handelOffers() {
+      // Clear existing timer
       if (this._offersDebounceTimer) {
         clearTimeout(this._offersDebounceTimer);
       }
       
+      // Set new debounced timer with same delay
       this._offersDebounceTimer = setTimeout(() => {
         this._processOffers();
-      }, 300);
+      }, 200); // 200ms for fast response
     },
 
     _processOffers() {
       if (!this.invoice_doc?.name) return;
       
+      // Skip offers processing if no items or only one item
+      if (!this.items || this.items.length <= 1) {
+        return;
+      }
+      
+      // Check cache first (cache for 30 seconds)
+      const cacheKey = `${this.invoice_doc.name}_${this.items.length}`;
+      const now = Date.now();
+      
+      if (this._offersCache && 
+          this._offersCache.key === cacheKey && 
+          now - this._offersCache.timestamp < 30000) {
+        console.log("[Invoice] using cached offers");
+        this.updatePosOffers(this._offersCache.data);
+        return;
+      }
+      
+      // Prevent multiple simultaneous calls
+      if (this._offersProcessing) {
+        console.log("[Invoice] offers processing already in progress");
+        return;
+      }
+      
+      this._offersProcessing = true;
+      
       frappe.call({
-        method: "posawesome.posawesome.api.get_applicable_offers.get_applicable_offers",
+        method: "posawesome.posawesome.api.pos_offer.get_applicable_offers",
         args: {
           invoice_name: this.invoice_doc.name
         },
         callback: (r) => {
+          this._offersProcessing = false;
+          
           if (r.message) {
+            // Cache the results
+            this._offersCache = {
+              key: cacheKey,
+              data: r.message,
+              timestamp: now
+            };
+            
             this.updatePosOffers(r.message);
           }
         },
         error: (r) => {
+          this._offersProcessing = false;
+          console.error("[Invoice] error fetching offers:", r);
         }
       });
     },
@@ -1664,9 +2009,9 @@ export default {
     getItemOffer(offer) {
       let apply_offer = null;
 
-      frappe.call({
-        method: "posawesome.posawesome.api.process_item_offer.process_item_offer",
-        args: {
+        frappe.call({
+          method: "posawesome.posawesome.api.pos_offer.process_item_offer",
+          args: {
           offer_data: offer,
           items_data: this.items
         },
@@ -1731,47 +2076,15 @@ export default {
     },
 
     applyOffersToInvoice(offer_names) {
-      if (!this.invoice_doc?.name || !offer_names?.length) return;
-      
-      frappe.call({
-        method: "posawesome.posawesome.api.apply_offers_to_invoice.apply_offers_to_invoice",
-        args: {
-          invoice_name: this.invoice_doc.name,
-          offer_names: offer_names
-        },
-        callback: (r) => {
-          if (r.message) {
-            this.invoice_doc = r.message;
-            this.refreshTotals();
-            evntBus.emit("show_mesage", {
-              text: "Offers applied successfully",
-              color: "success",
-            });
-          }
-        }
-      });
+      // Offers are now applied automatically in sales_invoice.py
+      // No need to call backend API here
+      console.log('[Invoice] offers applied automatically by backend', offer_names);
     },
 
     removeOffersFromInvoice(offer_names) {
-      if (!this.invoice_doc?.name || !offer_names?.length) return;
-      
-      frappe.call({
-        method: "posawesome.posawesome.api.remove_offers_from_invoice.remove_offers_from_invoice",
-        args: {
-          invoice_name: this.invoice_doc.name,
-          offer_names: offer_names
-        },
-        callback: (r) => {
-          if (r.message) {
-            this.invoice_doc = r.message;
-            this.refreshTotals();
-            evntBus.emit("show_mesage", {
-              text: "Offers removed successfully",
-              color: "info",
-            });
-          }
-        }
-      });
+      // Offers removal is now handled automatically in sales_invoice.py
+      // No need to call backend API here
+      console.log('[Invoice] offers removal handled automatically by backend', offer_names);
     },
 
     load_print_page(invoice_name) {
@@ -1837,17 +2150,25 @@ export default {
         color: "info",
       });
 
+      console.log("[Invoice] starting invoice submission process");
       this.process_invoice()
         .then((invoice_doc) => {
+          console.log("[Invoice] process_invoice completed", invoice_doc.name);
           const hasChosen = (invoice_doc.payments || []).some((p) => this.flt(p.amount) > 0);
+          console.log("[Invoice] payment check - hasChosen", hasChosen, "payments", invoice_doc.payments?.length || 0);
+          
           if (!hasChosen) {
             evntBus.emit("show_mesage", { text: "Choose a payment method amount first", color: "warning" });
             evntBus.emit("show_payment", "true");
             throw new Error('No payment chosen');
           }
+          
+          console.log("[Invoice] calling submit_invoice API");
+          console.log("[Invoice] invoice doc being sent", invoice_doc.name);
+          
           // Submit and print the invoice
       frappe.call({
-            method: "posawesome.posawesome.api.submit_invoice.submit_invoice",
+            method: "posawesome.posawesome.api.sales_invoice.submit_invoice",
         args: {
               data: {
                 total_change: 0,
@@ -1861,18 +2182,61 @@ export default {
         },
         async: true,
             callback: (r) => {
+              console.log("[Invoice] submit_invoice callback received");
+              console.log("[Invoice] full response:", r);
+              console.log("[Invoice] r.message:", r.message);
               evntBus.emit("unfreeze");
-          if (r.message) {
-                this.load_print_page(r.message.name);
-                evntBus.emit("set_last_invoice", r.message.name);
-                evntBus.emit("show_mesage", {
-                  text: `Invoice ${r.message.name} submitted and printed successfully`,
-                  color: "success",
-                });
-                frappe.utils.play_sound("submit");
-                evntBus.emit("new_invoice", "false");
-                evntBus.emit("invoice_submitted");
+              
+              if (r.message) {
+                console.log("[Invoice] invoice submitted successfully");
+                
+                // Handle different response formats
+                let invoice_data = null;
+                if (r.message.success && r.message.invoice) {
+                  // New format: { success: true, invoice: {...} }
+                  invoice_data = r.message.invoice;
+                  console.log("[Invoice] using invoice from success response", invoice_data.name);
+                } else if (r.message.name) {
+                  // Old format: direct invoice object
+                  invoice_data = r.message;
+                  console.log("[Invoice] using direct invoice object", invoice_data.name);
+                } else {
+                  console.log("[Invoice] unexpected response format");
+                  console.log("[Invoice] r.message keys:", Object.keys(r.message));
+                  evntBus.emit("show_mesage", {
+                    text: "Unexpected response format from server",
+                    color: "error",
+                  });
+                  return;
+                }
+                
+                if (invoice_data && invoice_data.name) {
+                  console.log("[Invoice] invoice submitted successfully", invoice_data.name);
+                  
+                  this.load_print_page(invoice_data.name);
+                  evntBus.emit("set_last_invoice", invoice_data.name);
+                  evntBus.emit("show_mesage", {
+                    text: `Invoice ${invoice_data.name} submitted and printed successfully`,
+                    color: "success",
+                  });
+                  frappe.utils.play_sound("submit");
+                  
+                  // Clear local data after successful submission to prevent auto-save errors
+                  console.log("[Invoice] clearing local data after successful submission");
+                  this.items = [];
+                  this.invoice_doc = null;
+                  
+                  evntBus.emit("new_invoice", "false");
+                  evntBus.emit("invoice_submitted");
+                } else {
+                  console.log("[Invoice] no invoice name in response");
+                  evntBus.emit("show_mesage", {
+                    text: "Invoice submitted but no name received",
+                    color: "warning",
+                  });
+                }
               } else {
+                console.log("[Invoice] no message in submit_invoice response");
                 evntBus.emit("show_mesage", {
                   text: "Failed to submit invoice",
                   color: "error",
@@ -1880,6 +2244,7 @@ export default {
               }
             },
             error: (err) => {
+              console.error("[Invoice] submit_invoice error:", err);
               evntBus.emit("unfreeze");
               evntBus.emit("show_mesage", {
                 text: err?.message || "Failed to submit invoice",
@@ -1889,6 +2254,7 @@ export default {
           });
         })
         .catch((error) => {
+          console.error("[Invoice] process_invoice catch error:", error);
           evntBus.emit("unfreeze");
           evntBus.emit("show_mesage", {
             text: "Failed to prepare invoice for printing: " + error.message,
@@ -1970,7 +2336,7 @@ export default {
     });
     evntBus.on("update_invoice_coupons", (data) => {
       this.posa_coupons = data;
-      this.handelOffers();
+      this.debouncedItemOperation();
     });
     evntBus.on("set_all_items", (data) => {
       this.allItems = data;
@@ -1988,6 +2354,23 @@ export default {
     evntBus.on("set_new_line", (data) => {
       this.new_line = data;
     });
+    
+    // Event-driven approach for items changes
+    evntBus.on("item_added", (item) => {
+      console.log("[Invoice] item_added event received", item.item_code);
+      this.debouncedItemOperation("item-added");
+    });
+    
+    evntBus.on("item_removed", (item) => {
+      console.log("[Invoice] item_removed event received", item.item_code);
+      this.debouncedItemOperation("item-removed");
+    });
+    
+    evntBus.on("item_updated", (item) => {
+      console.log("[Invoice] item_updated event received", item.item_code);
+      this.debouncedItemOperation("item-updated");
+    });
+    
     this.$nextTick(() => {
       this.debugTableDimensions();
     });
@@ -2040,6 +2423,13 @@ export default {
     if (this._offersDebounceTimer) {
       clearTimeout(this._offersDebounceTimer);
     }
+    if (this._itemOperationTimer) {
+      clearTimeout(this._itemOperationTimer);
+    }
+    
+    // Clear operations queue
+    this._itemOperationsQueue = [];
+    this._processingOperations = false;
     if (this._autoUpdateTimer) {
       clearTimeout(this._autoUpdateTimer);
     }
@@ -2083,13 +2473,7 @@ export default {
         value: this.discount_percentage_offer_name,
       });
     },
-    items: {
-      deep: true,
-      handler(items) {
-        this.handelOffers();
-        this.$forceUpdate();
-      },
-    },
+    // items watcher removed - using Event-driven approach instead
     invoiceType() {
       evntBus.emit("update_invoice_type", this.invoiceType);
     },
@@ -2104,7 +2488,7 @@ export default {
     },
     discount_amount() {
       if (this.invoice_doc && this.invoice_doc.name) {
-        this.debounced_auto_update();
+        this.debouncedItemOperation("discount-amount-change");
       }
     }
   },

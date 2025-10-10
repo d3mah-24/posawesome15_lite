@@ -10,6 +10,26 @@ import frappe
 from posawesome.posawesome.api.add_loyalty_point import add_loyalty_point
 from posawesome.posawesome.api.update_coupon import update_coupon
 
+# متغير عام لتجميع التشخيصات
+debug_log = []
+
+def log_debug(message):
+    """إضافة رسالة للتشخيص العام"""
+    debug_log.append(str(message))
+
+def clear_debug_log():
+    """مسح التشخيص العام"""
+    global debug_log
+    debug_log = []
+
+def save_debug_log():
+    """حفظ التشخيص العام في سجل واحد"""
+    global debug_log
+    if debug_log:
+        # حفظ في سجل الأخطاء فقط (بدون مسح)
+        frappe.log_error(message="\n".join(debug_log), title="Before Submit API - تشخيص شامل")
+        # لا نمسح debug_log هنا - نتركه للتجميع
+
 
 def before_submit(doc, method):
     """
@@ -47,3 +67,15 @@ def before_submit(doc, method):
             if doc.payments:
                 doc.payments[0].amount = frappe.utils.flt(doc.payments[0].amount) - (total_payments - grand_total)
                 frappe.msgprint(f"Payment adjusted by {total_payments - grand_total} due to rounding")
+
+
+# دالة لحفظ جميع التشخيصات في Error Log
+def show_all_debug_logs():
+    """حفظ جميع التشخيصات المجمعة في Error Log"""
+    global debug_log
+    if debug_log:
+        # حفظ في سجل الأخطاء فقط
+        frappe.log_error(message="\n".join(debug_log), title="Before Submit API - جميع التشخيصات المجمعة")
+        
+        # مسح التشخيصات بعد الحفظ
+        debug_log = []

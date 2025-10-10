@@ -148,9 +148,11 @@ export default {
   // ===== SECTION 5: METHODS =====
   methods: {
     back_to_invoice() {
+      console.log('[PosOffers] back to invoice');
       evntBus.emit('show_offers', 'false');
     },
     forceUpdateItem() {
+      console.log('[PosOffers] force update item');
       let list_offers = [];
       list_offers = [...this.pos_offers];
       this.pos_offers = list_offers;
@@ -158,15 +160,18 @@ export default {
       this.handleManualOfferChange();
     },
     handleManualOfferChange() {
+      console.log('[PosOffers] handling manual offer change');
       try {
         // Find applied Grand Total offers
         const appliedGrandTotalOffers = this.pos_offers.filter(
           (offer) => offer.offer === 'Grand Total' && offer.offer_applied
         );
         if (appliedGrandTotalOffers.length > 1) {
+          console.log('[PosOffers] multiple grand total offers applied, applying best one');
           // If more than one offer is applied, apply only the best one
           this.applyBestGrandTotalOffer();
         } else if (appliedGrandTotalOffers.length === 1) {
+          console.log('[PosOffers] single grand total offer applied');
           // Update the applied offer name
           this.discount_percentage_offer_name = appliedGrandTotalOffers[0].name;
           // Cancel remaining Grand Total offers
@@ -176,10 +181,12 @@ export default {
             }
           });
         } else {
+          console.log('[PosOffers] no grand total offers applied');
           // No offers applied
           this.discount_percentage_offer_name = null;
         }
       } catch (error) {
+        console.log('[PosOffers] error processing offer change', error);
         evntBus.emit('show_mesage', {
           text: 'Error processing offer change',
           color: 'error'
@@ -205,66 +212,25 @@ export default {
         return '';
       }
     },
-    updatePosOffers(offers) {
+    updatePosOffers(appliedOffers) {
+      console.log('[PosOffers] updating applied offers', appliedOffers.length);
       try {
-        const toRemove = [];
+        // Update application status for existing offers
         this.pos_offers.forEach((pos_offer) => {
-          const offer = offers.find((offer) => offer.name === pos_offer.name);
-          if (!offer) {
-            toRemove.push(pos_offer.row_id);
-          }
-        });
-        this.removeOffers(toRemove);
-        offers.forEach((offer) => {
-          const pos_offer = this.pos_offers.find(
-            (pos_offer) => offer.name === pos_offer.name
+          const appliedOffer = appliedOffers.find((offer) => 
+            offer.name === pos_offer.name || 
+            offer.offer_name === pos_offer.name ||
+            offer.name === pos_offer.title
           );
-          if (pos_offer) {
-            pos_offer.items = offer.items;
-            pos_offer.min_amount = offer.min_amount;
-            pos_offer.discount_percentage = offer.discount_percentage;
-            pos_offer.discount_amount = offer.discount_amount;
-            // Don't change application status for existing offers until we apply new logic
+          if (appliedOffer) {
+            pos_offer.offer_applied = true;
+            console.log('[PosOffers] marked offer as applied:', pos_offer.name, 'matched with:', appliedOffer.name || appliedOffer.offer_name);
           } else {
-            const newOffer = { ...offer };
-            if (!offer.row_id) {
-              newOffer.row_id = this.makeid(20);
-            }
-            if (offer.apply_type == 'Item Code') {
-              newOffer.give_item = offer.apply_item_code || 'Nothing';
-            }
-            // Set initial application state
-            if (offer.offer_applied) {
-              newOffer.offer_applied = !!offer.offer_applied;
-            } else {
-              if (
-                offer.apply_type == 'Item Group' &&
-                offer.offer == 'Give Product' &&
-                !offer.replace_cheapest_item &&
-                !offer.replace_item
-              ) {
-                newOffer.offer_applied = false;
-              } else {
-                newOffer.offer_applied = !!offer.auto;
-              }
-            }
-            if (newOffer.offer == 'Give Product' && !newOffer.give_item) {
-              newOffer.give_item = this.get_give_items(newOffer)[0].item_code;
-            }
-            this.pos_offers.push(newOffer);
-            evntBus.emit('show_mesage', {
-              text: 'Offer applied to invoice',
-              color: 'warning',
-            });
+            pos_offer.offer_applied = false;
           }
         });
-        // Apply best offer logic for overlapping offers
-        this.applyBestGrandTotalOffer();
       } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error updating offers',
-          color: 'error'
-        });
+        console.error('[PosOffers] error updating applied offers:', error);
       }
     },
     applyBestGrandTotalOffer() {
@@ -306,11 +272,13 @@ export default {
       }
     },
     removeOffers(offers_id_list) {
+      console.log('[PosOffers] removing offers', offers_id_list.length);
       try {
         this.pos_offers = this.pos_offers.filter(
           (offer) => !offers_id_list.includes(offer.row_id)
         );
       } catch (error) {
+        console.log('[PosOffers] error removing offers', error);
         evntBus.emit('show_mesage', {
           text: 'Error removing offers',
           color: 'error'
@@ -318,12 +286,14 @@ export default {
       }
     },
     handelOffers() {
+      console.log('[PosOffers] handling offers');
       try {
         const applyedOffers = this.pos_offers.filter(
           (offer) => offer.offer_applied
         );
         evntBus.emit('update_invoice_offers', applyedOffers);
       } catch (error) {
+        console.log('[PosOffers] error processing offers', error);
         evntBus.emit('show_mesage', {
           text: 'Error processing offers',
           color: 'error'
@@ -426,6 +396,14 @@ export default {
         if (this.customer != customer) {
           this.offers = [];
         }
+      });
+      evntBus.on('set_offers', (data) => {
+        console.log('[PosOffers] received all offers', data.length);
+        this.pos_offers = data.map(offer => ({
+          ...offer,
+          row_id: offer.row_id || this.makeid(20),
+          offer_applied: !!offer.offer_applied
+        }));
       });
       evntBus.on('update_pos_offers', (data) => {
         this.updatePosOffers(data);

@@ -245,15 +245,11 @@ export default {
     },
     customer(newVal, oldVal) {
       if (this._suppressCustomerWatcher) {
-        console.log('[ItemsSelector.vue:watch customer] suppressed initial change');
         this._suppressCustomerWatcher = false;
         return;
       }
       if (oldVal !== undefined && newVal !== oldVal) {
-        console.log('[ItemsSelector.vue:watch customer] changed', { oldVal, newVal });
         this.get_items();
-      } else {
-        console.log('[ItemsSelector.vue:watch customer] ignored', { oldVal, newVal });
       }
     },
     new_line() {
@@ -346,9 +342,9 @@ export default {
         
         
         // Search for barcode
-        frappe.call({
-          method: 'posawesome.posawesome.api.search_scale_barcode.search_scale_barcode',
-          args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
+          frappe.call({
+            method: 'posawesome.posawesome.api.item.search_scale_barcode',
+            args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
           callback: (response) => {
             if (response?.message?.item_code) {
               this.add_item_to_cart(response.message);
@@ -377,9 +373,9 @@ export default {
         
         
         // Search for barcode
-        frappe.call({
-          method: 'posawesome.posawesome.api.search_private_barcode.search_private_barcode',
-          args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
+          frappe.call({
+            method: 'posawesome.posawesome.api.item.search_private_barcode',
+            args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
           callback: (response) => {
             if (response?.message?.item_code) {
               this.add_item_to_cart(response.message);
@@ -396,9 +392,9 @@ export default {
     
     // Normal barcode processing (direct search)
     process_normal_barcode(barcode_value) {
-      frappe.call({
-        method: 'posawesome.posawesome.api.search_items_barcode.search_items_barcode',
-        args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
+        frappe.call({
+          method: 'posawesome.posawesome.api.item.search_items_barcode',
+          args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
         callback: (response) => {
           if (response?.message?.item_code) {
             this.add_item_to_cart(response.message);
@@ -426,7 +422,7 @@ export default {
     },
 
     onItemGroupChange() {
-      console.log('[ItemsSelector.vue:onItemGroupChange] group change', this.item_group);
+      console.log('[ItemsSelector] group change', this.item_group);
       
       // Clear search when group changes to avoid confusion
       if (this.debounce_search) {
@@ -450,11 +446,6 @@ export default {
         return;
       }
       
-      console.log('[ItemsSelector.vue:get_items] calling get_items API', {
-        item_group: this.item_group,
-        search: this.first_search,
-        customer: this.customer
-      });
       const vm = this;
       this.loading = true;
       let search = this.get_search(this.first_search);
@@ -468,9 +459,9 @@ export default {
         gr = vm.item_group.toLowerCase();
       }
       
-      frappe.call({
-        method: "posawesome.posawesome.api.get_items.get_items",
-        args: {
+        frappe.call({
+          method: "posawesome.posawesome.api.item.get_items",
+          args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
           item_group: gr,
@@ -478,13 +469,14 @@ export default {
           customer: vm.customer,
         },
         callback: function (r) {
-          console.log('[ItemsSelector.vue:get_items] response', r && r.message ? r.message.length : 0);
           if (r.message) {
             // Simple data mapping - only essential fields
             vm.items = (r.message || []).map(it => ({
               item_code: it.item_code,
               item_name: it.item_name,
               rate: it.rate,
+              price_list_rate: it.price_list_rate,
+              base_rate: it.base_rate,
               currency: it.currency,
               actual_qty: it.actual_qty,
               stock_uom: it.stock_uom,
@@ -529,11 +521,10 @@ export default {
         });
       } else {
         const vm = this;
-        frappe.call({
-          method: "posawesome.posawesome.api.get_items.get_items_groups",
-          args: {},
+          frappe.call({
+            method: "posawesome.posawesome.api.item.get_items_groups",
+            args: {},
           callback: function (r) {
-            console.log('[ItemsSelector.vue:get_items_groups] response', r && r.message ? r.message.length : 0);
             if (r.message) {
               r.message.forEach((element) => {
                 vm.items_group.push(element.name);
@@ -572,39 +563,22 @@ export default {
 
     // Improve function to add item
     add_item_table(event, item){
-      item = { ...item.item };
-      // إزالة منطق المتغيرات - إضافة مباشرة
-      // Set quantity correctly always
-      const currentQty = Number(this.qty);
-      if (!item.qty || item.qty === 1) {
-        item.qty = currentQty > 0 ? currentQty : 1;
-      }
-      // Make sure stock_qty is defined and numeric
-      const convFactor = Number(item.conversion_factor || 1);
-      item.stock_qty = Number(item.qty) * convFactor;
-      evntBus.emit("add_item", item);
+      console.log("[ItemsSelector] clicked on table item", item.item.item_code, "rate", item.item.rate, "qty", this.qty || 1);
+      // إضافة الصنف كما هو من API مع الحد الأدنى من التعديلات
+      evntBus.emit("add_item", {
+        ...item.item,
+        qty: this.qty || 1  // فقط الكمية المطلوبة
+      });
       this.qty = 1;
     },
 
     add_item(item) {
-      item = { ...item };
-      // إزالة منطق المتغيرات - إضافة مباشرة
-      // Set quantity correctly always
-      const currentQty = Number(this.qty);
-      if (!item.qty || item.qty === 1) {
-        item.qty = currentQty > 0 ? currentQty : 1;
-      } else {
-        item.qty = Number(item.qty) || 1;
-      }
-      
-      // Make sure stock_qty is defined and numeric
-      const convFactor = Number(item.conversion_factor || 1);
-      item.stock_qty = Number(item.qty) * convFactor;
-      
-      // Make sure price_list_rate is defined and numeric
-      item.price_list_rate = Number(item.price_list_rate || item.rate || 0);
-          
-      evntBus.emit("add_item", item);
+      console.log("[ItemsSelector] clicked on item", item.item_code, "rate", item.rate, "qty", this.qty || 1);
+      // إضافة الصنف كما هو من API مع الحد الأدنى من التعديلات
+      evntBus.emit("add_item", {
+        ...item,
+        qty: this.qty || 1  // فقط الكمية المطلوبة
+      });
       this.qty = 1;
     },
 
@@ -721,16 +695,16 @@ export default {
       
       // If search is empty, reload all items
       if (!searchValue || searchValue.trim() === '') {
-        console.log('[ItemsSelector.vue:performLiveSearch] empty search, calling get_items');
+        console.log('[ItemsSelector] empty search, calling get_items');
         this.get_items();
         return;
       }
       
       // Perform live search using get_items
-      console.log('[ItemsSelector.vue:performLiveSearch] calling get_items with search', searchValue);
-      frappe.call({
-        method: "posawesome.posawesome.api.get_items.get_items",
-        args: {
+      console.log('[ItemsSelector] calling get_items with search', searchValue);
+        frappe.call({
+          method: "posawesome.posawesome.api.item.get_items",
+          args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
           item_group: vm.item_group !== "ALL" ? vm.item_group.toLowerCase() : "",
@@ -741,10 +715,12 @@ export default {
           // Stop search progress bar
           vm.search_loading = false;
           
-          console.log('[ItemsSelector.vue:performLiveSearch] response', r && r.message ? r.message.length : 0);
+          console.log('[ItemsSelector] response', r && r.message ? r.message.length : 0);
           if (r.message) {
             vm.items = (r.message || []).map(it => ({
               ...it,
+              price_list_rate: it.price_list_rate || it.rate,
+              base_rate: it.base_rate || it.rate,
               item_barcode: Array.isArray(it.item_barcode) ? it.item_barcode : [],
               serial_no_data: Array.isArray(it.serial_no_data) ? it.serial_no_data : [],
               batch_no_data: Array.isArray(it.batch_no_data) ? it.batch_no_data : []
@@ -771,10 +747,10 @@ export default {
       }
 
       // Search by name/code/batch/serial using get_items
-      console.log('[ItemsSelector.vue:_performItemSearch] calling get_items with debounce_search', vm.debounce_search);
-      frappe.call({
-        method: "posawesome.posawesome.api.get_items.get_items",
-        args: {
+      console.log('[ItemsSelector] calling get_items with debounce_search', vm.debounce_search);
+        frappe.call({
+          method: "posawesome.posawesome.api.item.get_items",
+          args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
           item_group: "",
@@ -783,11 +759,13 @@ export default {
         },
         callback: function (r) {
           
-          console.log('[ItemsSelector.vue:_performItemSearch] response', r && r.message ? r.message.length : 0);
+          console.log('[ItemsSelector] response', r && r.message ? r.message.length : 0);
           if (r.message && r.message.length > 0) {
             // Results found, display for selection
             vm.items = (r.message || []).map(it => ({
               ...it,
+              price_list_rate: it.price_list_rate || it.rate,
+              base_rate: it.base_rate || it.rate,
               item_barcode: Array.isArray(it.item_barcode) ? it.item_barcode : [],
               serial_no_data: Array.isArray(it.serial_no_data) ? it.serial_no_data : [],
               batch_no_data: Array.isArray(it.batch_no_data) ? it.batch_no_data : []
@@ -843,16 +821,15 @@ export default {
       // Avoid triggering on initial load — wait until first list is displayed
       if (!this._detailsReady) {
         this._detailsReady = true;
-        console.log('[ItemsSelector.vue:update_items_details] skipped on initial load');
         return;
       }
       
       // Get item codes from the items to update
       const item_codes = items.map(item => item.item_code);
       
-      frappe.call({
-        method: "posawesome.posawesome.api.get_items.get_items",
-        args: {
+        frappe.call({
+          method: "posawesome.posawesome.api.item.get_items",
+          args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
           item_group: "",
@@ -860,7 +837,6 @@ export default {
           customer: vm.customer,
         },
         callback: function (r) {
-          console.log('[ItemsSelector.vue:update_items_details] response for refresh', r && r.message ? r.message.length : 0);
           if (r.message) {
             // Use Map for faster search
             const updatedItemsMap = new Map();
@@ -925,9 +901,9 @@ export default {
       
       
       // Use get_items to search by barcode
-      frappe.call({
-        method: "posawesome.posawesome.api.get_items.get_items",
-        args: {
+        frappe.call({
+          method: "posawesome.posawesome.api.item.get_items",
+          args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
           item_group: "",
@@ -1040,7 +1016,6 @@ export default {
       // Set customer without triggering watcher for first time
       this._suppressCustomerWatcher = true;
       this.customer = this.pos_profile && this.pos_profile.customer ? this.pos_profile.customer : this.customer;
-      console.log('[ItemsSelector.vue:register_pos_profile] init', { customer: this.customer });
       this.get_items();
       this.get_items_groups();
       this.items_view = this.pos_profile.posa_default_card_view ? "card" : "list";

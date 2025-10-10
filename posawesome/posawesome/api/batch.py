@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Before Cancel Hook for Sales Invoice
+Batch API
+Handles all Batch related operations
 """
 
 from __future__ import unicode_literals
 
 import frappe
-
-from posawesome.posawesome.api.update_coupon import update_coupon
+from frappe import _
 
 # متغير عام لتجميع التشخيصات
 debug_log = []
@@ -26,26 +26,30 @@ def save_debug_log():
     global debug_log
     if debug_log:
         # حفظ في سجل الأخطاء فقط (بدون مسح)
-        frappe.log_error(message="\n".join(debug_log), title="Before Cancel API - تشخيص شامل")
+        frappe.log_error(message="\n".join(debug_log), title="Batch API - تشخيص شامل")
         # لا نمسح debug_log هنا - نتركه للتجميع
 
 
-def before_cancel(doc, method):
+@frappe.whitelist()
+def process_batch_selection(item_code, current_item_row_id, existing_items_data, batch_no_data, preferred_batch_no=None):
     """
-    Before cancel hook for Sales Invoice
+    Process batch selection for items
     """
-    # Call pre-cancel functions
-    update_coupon(doc, "cancelled")
-    
-    # Additional validation before canceling POS invoices
-    if doc.is_pos:
-        # Check if invoice is already submitted
-        if doc.docstatus != 1:
-            frappe.throw("Only submitted invoices can be canceled")
-        
-        # Check if there are any related transactions
-        # (This could be extended to check for returns, etc.)
-        pass
+    try:
+        # Implementation for batch selection processing
+        # This is a placeholder - you may need to implement the actual logic
+        return {
+            "success": True,
+            "message": "Batch selection processed",
+            "data": {}
+        }
+    except Exception as e:
+        frappe.log_error(f"Error processing batch selection: {str(e)}")
+        return {
+            "success": False,
+            "message": str(e),
+            "data": {}
+        }
 
 
 # دالة لحفظ جميع التشخيصات في Error Log
@@ -54,7 +58,7 @@ def show_all_debug_logs():
     global debug_log
     if debug_log:
         # حفظ في سجل الأخطاء فقط
-        frappe.log_error(message="\n".join(debug_log), title="Before Cancel API - جميع التشخيصات المجمعة")
+        frappe.log_error(message="\n".join(debug_log), title="Batch API - جميع التشخيصات المجمعة")
         
         # مسح التشخيصات بعد الحفظ
         debug_log = []

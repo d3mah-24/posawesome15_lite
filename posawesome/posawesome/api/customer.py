@@ -13,6 +13,26 @@ from erpnext.accounts.doctype.loyalty_program.loyalty_program import (
     get_loyalty_program_details_with_points,
 )
 
+# متغير عام لتجميع التشخيصات
+debug_log = []
+
+def log_debug(message):
+    """إضافة رسالة للتشخيص العام"""
+    debug_log.append(str(message))
+
+def clear_debug_log():
+    """مسح التشخيص العام"""
+    global debug_log
+    debug_log = []
+
+def save_debug_log():
+    """حفظ التشخيص العام في سجل واحد"""
+    global debug_log
+    if debug_log:
+        # حفظ في سجل الأخطاء فقط (بدون مسح)
+        frappe.log_error(message="\n".join(debug_log), title="Customer API - تشخيص شامل")
+        # لا نمسح debug_log هنا - نتركه للتجميع
+
 
 def after_insert(doc, method):
     create_customer_referral_code(doc)
@@ -379,29 +399,54 @@ def set_customer_info(customer, fieldname, value=""):
 
 @frappe.whitelist()
 def get_customer_addresses(customer):
-    return frappe.db.sql(
-        """
-        SELECT 
-            address.name,
-            address.address_line1,
-            address.address_line2,
-            address.address_title,
-            address.city,
-            address.state,
-            address.country,
-            address.address_type
-        FROM `tabAddress` as address
-        INNER JOIN `tabDynamic Link` AS link
-                ON address.name = link.parent
-        WHERE link.link_doctype = 'Customer'
-            AND link.link_name = '{0}'
-            AND address.disabled = 0
-        ORDER BY address.name
-        """.format(
-            customer
-        ),
-        as_dict=1,
-    )
+    """
+    Get customer addresses using Frappe ORM
+    """
+    if not customer:
+        frappe.throw(_("Customer parameter is required"))
+    
+    try:
+        # First get the address names linked to this customer
+        dynamic_links = frappe.get_all(
+            "Dynamic Link",
+            filters={
+                "link_doctype": "Customer",
+                "link_name": customer
+            },
+            fields=["parent"]
+        )
+        
+        # Extract address names
+        address_names = [link.parent for link in dynamic_links]
+        
+        if not address_names:
+            return []
+        
+        # Get the actual address details
+        addresses = frappe.get_all(
+            "Address",
+            filters={
+                "name": ["in", address_names],
+                "disabled": 0
+            },
+            fields=[
+                "name",
+                "address_line1", 
+                "address_line2",
+                "address_title",
+                "city",
+                "state", 
+                "country",
+                "address_type"
+            ],
+            order_by="name"
+        )
+        
+        return addresses
+        
+    except Exception as e:
+        frappe.log_error(f"Error getting customer addresses for {customer}: {str(e)}")
+        return []
 
 
 @frappe.whitelist()
@@ -462,3 +507,15 @@ def get_customer_info(customer):
         res["conversion_factor"] = lp_details.get("conversion_factor")
 
     return res
+
+
+# دالة لحفظ جميع التشخيصات في Error Log
+def show_all_debug_logs():
+    """حفظ جميع التشخيصات المجمعة في Error Log"""
+    global debug_log
+    if debug_log:
+        # حفظ في سجل الأخطاء فقط
+        frappe.log_error(message="\n".join(debug_log), title="Customer API - جميع التشخيصات المجمعة")
+        
+        # مسح التشخيصات بعد الحفظ
+        debug_log = []

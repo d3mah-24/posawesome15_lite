@@ -14,12 +14,12 @@ class CacheManager {
    */
   async clearAllCaches() {
     if (this.isClearing) {
-      console.log('Cache clearing already in progress...');
+      console.log('[Cache] clearing already in progress');
       return;
     }
 
     this.isClearing = true;
-    console.log('Starting comprehensive cache clearing...');
+    console.log('[Cache] starting comprehensive cache clearing');
 
     try {
       // Clear localStorage
@@ -40,7 +40,7 @@ class CacheManager {
       // Clear Frappe specific caches
       await this.clearFrappeCaches();
       
-      console.log('All caches cleared successfully');
+      console.log('[Cache] all caches cleared successfully');
       return true;
       
     } catch (error) {
@@ -60,7 +60,7 @@ class CacheManager {
       keys.forEach(key => {
         localStorage.removeItem(key);
       });
-      console.log(`Cleared ${keys.length} localStorage items`);
+      console.log('[Cache] cleared localStorage items', keys.length);
     } catch (error) {
       console.error('Error clearing localStorage:', error);
     }
@@ -75,7 +75,7 @@ class CacheManager {
       keys.forEach(key => {
         sessionStorage.removeItem(key);
       });
-      console.log(`Cleared ${keys.length} sessionStorage items`);
+      console.log('[Cache] cleared sessionStorage items', keys.length);
     } catch (error) {
       console.error('Error clearing sessionStorage:', error);
     }
@@ -101,7 +101,7 @@ class CacheManager {
         });
         
         await Promise.all(deletePromises);
-        console.log(`Cleared ${databases.length} IndexedDB databases`);
+        console.log('[Cache] cleared IndexedDB databases', databases.length);
       }
     } catch (error) {
       console.error('Error clearing IndexedDB:', error);
@@ -117,7 +117,7 @@ class CacheManager {
         const cacheNames = await caches.keys();
         const deletePromises = cacheNames.map(cacheName => caches.delete(cacheName));
         await Promise.all(deletePromises);
-        console.log(`Cleared ${cacheNames.length} service worker caches`);
+        console.log('[Cache] cleared service worker caches', cacheNames.length);
       }
     } catch (error) {
       console.error('Error clearing service worker cache:', error);
@@ -139,7 +139,7 @@ class CacheManager {
         await window.clearCustomCaches();
       }
       
-      console.log('Browser cache cleared');
+      console.log('[Cache] browser cache cleared');
     } catch (error) {
       console.error('Error clearing browser cache:', error);
     }
@@ -163,7 +163,7 @@ class CacheManager {
         localStorage.removeItem(key);
       });
       
-      console.log(`Cleared ${frappeKeys.length} Frappe-specific cache items`);
+      console.log('[Cache] cleared Frappe-specific cache items', frappeKeys.length);
       
       // Clear any Frappe global variables
       if (window.frappe && window.frappe.cache) {
@@ -184,7 +184,7 @@ class CacheManager {
    */
   reloadPage(delay = 1000) {
     setTimeout(() => {
-      console.log('Reloading page...');
+      console.log('[Cache] reloading page');
       location.reload();
     }, delay);
   }
@@ -199,7 +199,7 @@ class CacheManager {
         color: type
       });
     } else {
-      console.log(`[${type.toUpperCase()}] ${message}`);
+      console.log(`[Cache] ${type.toUpperCase()} ${message}`);
     }
   }
 }

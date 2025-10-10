@@ -213,7 +213,6 @@ export default {
       return this.invoice_doc.is_return ? 'error' : 'primary';
     },
     shiftNumberText() {
-      console.log('shiftNumberText computed - pos_opening_shift:', this.pos_opening_shift);
       if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
         return 'Shift not opened yet';
       }
@@ -287,13 +286,16 @@ export default {
   // ===== SECTION 4: METHODS =====
   methods: {
     changePage(key) {
+      console.log('[Navbar] changing page to', key);
       this.$emit('changePage', key);
     },
     go_desk() {
+      console.log('[Navbar] going to desk');
       frappe.set_route('/');
       location.reload();
     },
     go_about() {
+      console.log('[Navbar] opening about page');
       const win = window.open(
         'https://github.com/abdopcnet',
         '_blank'
@@ -301,29 +303,38 @@ export default {
       win.focus();
     },
     close_shift_dialog() {
+      console.log('[Navbar] opening closing dialog');
       evntBus.emit('open_closing_dialog');
     },
     show_mesage(data) {
+      console.log('[Navbar] showing message', data.color, data.text);
       this.snack = true;
       this.snackColor = data.color;
       this.snackText = data.text;
     },
     logOut() {
+      console.log('[Navbar] logging out');
       var me = this;
       me.logged_out = true;
       return frappe.call({
         method: 'logout',
         callback: function (r) {
           if (r.exc) {
+            console.log('[Navbar] logout error');
             return;
           }
+          console.log('[Navbar] logout successful');
           frappe.set_route('/login');
           location.reload();
         },
       });
     },
     print_last_invoice() {
-      if (!this.last_invoice) return;
+      if (!this.last_invoice) {
+        console.log('[Navbar] no last invoice to print');
+        return;
+      }
+      console.log('[Navbar] printing last invoice', this.last_invoice);
       const print_format =
         this.pos_profile.print_format_for_online ||
         this.pos_profile.print_format;
@@ -341,6 +352,7 @@ export default {
       printWindow.addEventListener(
         'load',
         function () {
+          console.log('[Navbar] print window loaded');
           printWindow.print();
         },
         true
@@ -348,16 +360,20 @@ export default {
     },
     fetch_company_info() {
       if (this.pos_profile && this.pos_profile.company) {
+        console.log('[Navbar] fetching company info', this.pos_profile.company);
         frappe.db.get_doc('Company', this.pos_profile.company).then((company_doc) => {
+          console.log('[Navbar] company info loaded', company_doc.company_name);
           this.company_name = company_doc.company_name;
           this.company_logo = company_doc.company_logo;
         }).catch(() => {
+          console.log('[Navbar] error fetching company info');
           // Error fetching company info
         });
       }
     },
     async clearCache() {
       try {
+        console.log('[Navbar] clearing cache');
         // Show loading message
         this.show_mesage({
           color: 'info',
@@ -369,6 +385,7 @@ export default {
           const success = await window.cacheManager.clearAllCaches();
           
           if (success) {
+            console.log('[Navbar] cache cleared successfully');
             this.show_mesage({
               color: 'success',
               text: 'Cache cleared successfully. Reloading...'
@@ -376,15 +393,18 @@ export default {
             
             // Reload page after short delay
             setTimeout(() => {
+              console.log('[Navbar] reloading page');
               location.reload();
             }, 1000);
           } else {
+            console.log('[Navbar] error clearing cache');
             this.show_mesage({
               color: 'error',
               text: 'Error clearing cache'
             });
           }
         } else {
+          console.log('[Navbar] using fallback cache clearing');
           // Fallback to basic cache clearing
           localStorage.clear();
           sessionStorage.clear();
@@ -395,11 +415,13 @@ export default {
           });
           
           setTimeout(() => {
+            console.log('[Navbar] reloading page after fallback cache clear');
             location.reload();
           }, 1000);
         }
         
       } catch (error) {
+        console.log('[Navbar] error in clearCache', error);
         this.show_mesage({
           color: 'error',
           text: 'Error clearing cache: ' + error.message
@@ -408,12 +430,14 @@ export default {
     },
     async fetchShiftInvoiceCount() {
       if (!this.pos_profile || !this.pos_opening_shift) {
+        console.log('[Navbar] no pos_profile or pos_opening_shift for invoice count');
         return;
       }
       
       try {
+        console.log('[Navbar] fetching shift invoice count');
         const response = await frappe.call({
-          method: 'posawesome.posawesome.api.sinv_qty.get_user_shift_invoice_count',
+          method: 'posawesome.posawesome.api.pos_opening_shift.get_user_shift_invoice_count',
           args: {
             pos_profile: this.pos_profile.name,
             pos_opening_shift: this.pos_opening_shift.name
@@ -421,10 +445,11 @@ export default {
         });
         
         if (response.message !== undefined) {
+          console.log('[Navbar] shift invoice count loaded', response.message);
           this.shift_invoice_count = response.message;
         }
       } catch (error) {
-        console.error('Error fetching shift invoice count:', error);
+        console.log('[Navbar] error fetching shift invoice count', error);
         this.shift_invoice_count = 0;
       }
     },
@@ -442,7 +467,7 @@ export default {
           }
         });
       } catch (error) {
-        console.error('Ping measurement failed:', error);
+        console.log('[Navbar] ping measurement failed', error);
         this.pingTime = '999';
       }
     },
@@ -456,6 +481,7 @@ export default {
       }, 5000);
     },
     stopPingMonitoring() {
+      console.log('[Navbar] stopping ping monitoring');
       if (this.pingInterval) {
         clearInterval(this.pingInterval);
         this.pingInterval = null;
@@ -463,6 +489,7 @@ export default {
     },
   },
   created: function () {
+    console.log('[Navbar] component created');
     this.$nextTick(function () {
       try {
         // Start ping monitoring
@@ -472,32 +499,37 @@ export default {
           this.show_mesage(data);
         });
         evntBus.on('set_company', (data) => {
+          console.log('[Navbar] company set', data.name);
           this.company_name = data.name;
           this.company_logo = data.company_logo || '';
         });
         evntBus.on('register_pos_profile', (data) => {
-          console.log('Navbar received pos_profile data:', data);
+          console.log('[Navbar] pos profile registered', data.pos_profile?.name);
           this.pos_profile = data.pos_profile;
           this.pos_opening_shift = data.pos_opening_shift;
-          console.log('Navbar pos_opening_shift set to:', this.pos_opening_shift);
           this.fetch_company_info();
           this.fetchShiftInvoiceCount();
           // External payments screen disabled - removed payments option
         });
         evntBus.on('set_last_invoice', (data) => {
+          console.log('[Navbar] last invoice set', data);
           this.last_invoice = data;
         });
         evntBus.on('update_invoice_doc', (data) => {
+          console.log('[Navbar] invoice doc updated');
           this.invoice_doc = data;
         });
         evntBus.on('set_pos_opening_shift', (data) => {
+          console.log('[Navbar] pos opening shift set', data?.name);
           this.pos_opening_shift = data;
           this.fetchShiftInvoiceCount();
         });
         evntBus.on('register_pos_data', (data) => {
+          console.log('[Navbar] pos data registered');
           this.pos_opening_shift = data.pos_opening_shift;
         });
         evntBus.on('invoice_submitted', () => {
+          console.log('[Navbar] invoice submitted, refreshing count');
           // Refresh invoice count when a new invoice is submitted
           // Add delay to wait for background job to complete
           setTimeout(() => {
@@ -505,16 +537,19 @@ export default {
           }, 2000); // Wait 2 seconds for background job
         });
         evntBus.on('freeze', (data) => {
+          console.log('[Navbar] freeze event', data.title);
           this.freeze = true;
           this.freezeTitle = data.title;
           this.freezeMsg = data.msg;
         });
         evntBus.on('unfreeze', () => {
+          console.log('[Navbar] unfreeze event');
           this.freeze = false;
           this.freezTitle = '';
           this.freezeMsg = '';
         });
       } catch (error) {
+        console.log('[Navbar] error in created', error);
         this.show_mesage({
           color: 'error',
           text: 'An error occurred while loading the menu.'
@@ -523,6 +558,7 @@ export default {
     });
   },
   beforeDestroy() {
+    console.log('[Navbar] component destroying');
     // Clean up ping monitoring
     this.stopPingMonitoring();
   }

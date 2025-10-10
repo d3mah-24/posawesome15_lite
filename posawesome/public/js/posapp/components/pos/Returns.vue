@@ -87,6 +87,7 @@ export default {
   },
   methods: {
     close_dialog() {
+      console.log('[Returns] closing dialog');
       this.$nextTick(() => {
         this.invoicesDialog = false;
         this.selected = [];
@@ -95,9 +96,11 @@ export default {
       });
     },
     search_invoices() {
-                // Set company from latest pos_profile or pos_opening_shift if available
+      console.log('[Returns] searching invoices', this.invoice_name, this.company);
+      // Set company from latest pos_profile or pos_opening_shift if available
       this.company = this.pos_profile?.company || this.pos_opening_shift?.company || this.company;
       if (!this.company && !this.invoice_name) {
+        console.log('[Returns] company or invoice name missing');
         evntBus.emit('show_mesage', {
           text: 'Please enter invoice number or select company first',
           color: 'error'
@@ -105,15 +108,16 @@ export default {
         return;
       }
       this.isLoading = true;
-      frappe.call({
-        method: 'posawesome.posawesome.api.search_invoices_for_return.search_invoices_for_return',
-        args: {
+        frappe.call({
+          method: 'posawesome.posawesome.api.sales_invoice.search_invoices_for_return',
+          args: {
           invoice_name: this.invoice_name,
           company: this.company
         },
         callback: (r) => {
           this.isLoading = false;
           if (r.message && r.message.length > 0) {
+            console.log('[Returns] invoices found', r.message.length);
             this.dialog_data = r.message.map(item => ({
               name: item.name,
               customer: item.customer,
@@ -123,6 +127,7 @@ export default {
               items: item.items || []
             }));
           } else {
+            console.log('[Returns] no invoices found');
             this.dialog_data = [];
           }
           
@@ -143,6 +148,7 @@ export default {
         },
         error: (err) => {
           this.isLoading = false;
+          console.log('[Returns] error searching invoices', err);
           evntBus.emit('show_mesage', {
             text: 'Failed to search for invoices',
             color: 'error'
@@ -151,7 +157,9 @@ export default {
       });
     },
     async submit_dialog() {
+      console.log('[Returns] submitting dialog', this.selected.length);
       if (!this.selected.length || !this.dialog_data.length) {
+        console.log('[Returns] no invoices selected');
         evntBus.emit('show_mesage', {
           text: 'Please select a valid invoice',
           color: 'error'
@@ -160,6 +168,7 @@ export default {
       }
       const selectedItem = this.dialog_data.find(item => item.name === this.selected[0]);
       if (!selectedItem) {
+        console.log('[Returns] selected invoice not found');
         evntBus.emit('show_mesage', {
           text: 'Selected invoice not found',
           color: 'error'
@@ -167,6 +176,7 @@ export default {
         return;
       }
       const return_doc = selectedItem;
+      console.log('[Returns] processing return for invoice', return_doc.name);
       // Fetch original invoice from server
       let original_invoice = null;
       try {
@@ -178,7 +188,9 @@ export default {
           }
         });
         original_invoice = response.message;
+        console.log('[Returns] original invoice fetched', original_invoice.name);
       } catch (e) {
+        console.log('[Returns] failed to fetch original invoice', e);
         evntBus.emit('show_mesage', {
           text: 'Failed to fetch original invoice',
           color: 'error'
@@ -186,6 +198,7 @@ export default {
         return;
       }
       if (!original_invoice) {
+        console.log('[Returns] original invoice not found');
         evntBus.emit('show_mesage', {
           text: 'Original invoice not found',
           color: 'error'
@@ -195,12 +208,14 @@ export default {
       const original_items = original_invoice.items.map(i => i.item_code);
       const invalid_items = return_doc.items.filter(item => !original_items.includes(item.item_code));
       if (invalid_items.length > 0) {
+        console.log('[Returns] invalid items found', invalid_items.length);
         evntBus.emit('show_mesage', {
           text: `The following items are not in the original invoice: ${invalid_items.map(i => i.item_code).join(', ')}`,
           color: 'error'
         });
         return;
       }
+      console.log('[Returns] creating return invoice');
       // Save complete objects in document
       const invoice_doc = {
         items: return_doc.items.map(item => ({
@@ -216,12 +231,15 @@ export default {
         pos_opening_shift: this.pos_opening_shift || null, // Save complete object
         pos_profile: this.pos_profile || null // Save complete object
       };
+      console.log('[Returns] emitting load_return_invoice');
       evntBus.emit('load_return_invoice', { invoice_doc, return_doc });
       this.invoicesDialog = false;
     }
   },
   created() {
+    console.log('[Returns] component created');
     evntBus.on('open_returns', (data) => {
+      console.log('[Returns] opening returns dialog');
       this.invoicesDialog = true;
       this.pos_profile = data.pos_profile || null;
       this.pos_opening_shift = data.pos_opening_shift || null;

@@ -391,6 +391,7 @@ export default {
     loading: false,
     pos_profile: "",
     invoice_doc: "",
+    customer: "", // Default customer from POS Profile
     loyalty_amount: 0,
     is_credit_sale: 0,
     is_write_off_change: 0,
@@ -504,10 +505,19 @@ export default {
     },
     getDefaultPayment() {
       const payments = (this.invoice_doc && Array.isArray(this.invoice_doc.payments)) ? this.invoice_doc.payments : [];
-      return payments.find((payment) => payment.default == 1);
+      
+      // First try to find a payment marked as default
+      let defaultPayment = payments.find((payment) => payment.default == 1);
+      
+      // If no default payment is found, use the first payment as default
+      if (!defaultPayment && payments.length > 0) {
+        defaultPayment = payments[0];
+      }
+      
+      return defaultPayment;
     },
     back_to_invoice() {
-      console.log('[Payments.vue:back_to_invoice] closing payment dialog');
+      console.log('[Payments] closing payment dialog');
       evntBus.emit("show_payment", "false");
       evntBus.emit("set_customer_readonly", false);
     },
@@ -607,9 +617,9 @@ export default {
         vm.back_to_invoice();
         return;
       }
-      frappe.call({
-        method: "posawesome.posawesome.api.submit_invoice.submit_invoice",
-        args: {
+        frappe.call({
+          method: "posawesome.posawesome.api.sales_invoice.submit_invoice",
+          args: {
           data: data,
           invoice: {
             name: this.invoice_doc.name,
@@ -768,7 +778,7 @@ export default {
         payment.amount = isReturn ? -Math.abs(total) : total;
         if (typeof payment.base_amount !== 'undefined') payment.base_amount = payment.amount;
       }
-      console.log('[Payments.vue:set_full_amount] selected idx', idx, 'payments:', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
+      console.log('[Payments] selected idx', idx, 'payments count', this.invoice_doc.payments?.length || 0);
       evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
     },
     set_rest_amount(idx) {
@@ -787,7 +797,7 @@ export default {
         if (isReturn) amount = -Math.abs(amount);
         payment.amount = amount;
         if (typeof payment.base_amount !== 'undefined') payment.base_amount = amount;
-        console.log('[Payments.vue:set_rest_amount] filled remaining for idx', idx, 'amount', amount);
+        console.log('[Payments] filled remaining for idx', idx, 'amount', amount);
         evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
       }
     },
@@ -891,12 +901,17 @@ export default {
     },
     get_addresses() {
       const vm = this;
-      if (!vm.invoice_doc) {
+      // Use customer from invoice_doc if available, otherwise use default customer
+      const customer = vm.invoice_doc && vm.invoice_doc.customer ? vm.invoice_doc.customer : vm.customer;
+      
+      if (!customer) {
+        vm.addresses = [];
         return;
       }
+      
       frappe.call({
         method: "posawesome.posawesome.api.customer.get_customer_addresses",
-        args: { customer: vm.invoice_doc.customer },
+        args: { customer: customer },
         async: true,
         callback: function (r) {
           if (!r.exc) {
@@ -959,7 +974,7 @@ export default {
 
       frappe
         .call({
-          method: "posawesome.posawesome.api.posapp.create_payment_request",
+          method: "posawesome.posawesome.api.sales_invoice.create_payment_request",
           args: {
             doc: {
               name: vm.invoice_doc.name,
@@ -998,13 +1013,20 @@ export default {
       evntBus.on("send_invoice_doc_payment", (invoice_doc) => {
         this.invoice_doc = invoice_doc;
         
-        // Ensure payments array exists
+        // Ensure payments array exists and has proper idx values
         if (!this.invoice_doc.payments || !Array.isArray(this.invoice_doc.payments)) {
           evntBus.emit("show_mesage", {
             text: "No payments array in invoice document",
             color: "error",
           });
           this.invoice_doc.payments = [];
+        } else {
+          // Ensure all payments have idx values
+          this.invoice_doc.payments.forEach((payment, index) => {
+            if (!payment.idx) {
+              payment.idx = index + 1;
+            }
+          });
         }
         
         const default_payment = this.invoice_doc.payments.find(
@@ -1037,6 +1059,12 @@ export default {
       });
       evntBus.on("register_pos_profile", (data) => {
         this.pos_profile = data.pos_profile;
+        // Set default customer from POS Profile
+        if (data.pos_profile && data.pos_profile.customer) {
+          this.customer = data.pos_profile.customer;
+          // Load addresses for default customer
+          this.get_addresses();
+        }
       });
       evntBus.on("add_the_new_address", (data) => {
         this.addresses.push(data);

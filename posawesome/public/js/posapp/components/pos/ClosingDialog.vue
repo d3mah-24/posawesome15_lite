@@ -130,10 +130,12 @@ export default {
     const max25chars = (v) => v.length <= 20 || 'Input too long!';
 
     const close_dialog = () => {
+      console.log('[ClosingDialog] closing dialog');
       closingDialog.value = false;
     };
 
     const submit_dialog = () => {
+      console.log('[ClosingDialog] submitting dialog');
       evntBus.emit('submit_closing_pos', dialog_data.value);
       closingDialog.value = false;
     };
@@ -167,11 +169,13 @@ export default {
     };
 
     const openClosingDialogHandler = (data) => {
+      console.log('[ClosingDialog] opening dialog');
       closingDialog.value = true;
       dialog_data.value = data;
     };
 
     const registerPosProfileHandler = (data) => {
+      console.log('[ClosingDialog] pos profile registered', data.pos_profile?.name);
       pos_profile.value = data.pos_profile;
       if (!pos_profile.value.posa_hide_expected_amount) {
         headers.value.push({
@@ -190,11 +194,13 @@ export default {
     };
 
     onMounted(() => {
+      console.log('[ClosingDialog] component mounted');
       evntBus.on('open_ClosingDialog', openClosingDialogHandler);
       evntBus.on('register_pos_profile', registerPosProfileHandler);
     });
 
     onBeforeUnmount(() => {
+      console.log('[ClosingDialog] component unmounting');
       evntBus.off('open_ClosingDialog', openClosingDialogHandler);
       evntBus.off('register_pos_profile', registerPosProfileHandler);
     });

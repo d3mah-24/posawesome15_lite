@@ -95,6 +95,7 @@ class POSOpeningShift(StatusUpdater):
         print(f"[INFO] validate called for POSOpeningShift: {self.name if hasattr(self, 'name') else ''}", file=sys.stdout)
         try:
             self.validate_pos_profile_and_cashier()
+            self.validate_pos_shift()
             self.set_status()
         except Exception as e:
             print(f"[ERROR] Exception in validate: {e}", file=sys.stderr)
@@ -123,6 +124,36 @@ class POSOpeningShift(StatusUpdater):
                     frappe.throw(_("User {} is not registered in POS Profile {}. Please select a user registered in the profile".format(self.user, self.pos_profile)))
         except Exception as e:
             print(f"[ERROR] Exception in validate_pos_profile_and_cashier: {e}", file=sys.stderr)
+            raise
+
+    def validate_pos_shift(self):
+        """
+        Validate POS Opening Shift specific rules
+        """
+        print(f"[INFO] validate_pos_shift called for POSOpeningShift: {self.name if hasattr(self, 'name') else ''}", file=sys.stdout)
+        try:
+            # Validate company
+            if not self.company:
+                frappe.throw(_("Company is required"))
+            
+            # Validate POS Profile
+            if not self.pos_profile:
+                frappe.throw(_("POS Profile is required"))
+            
+            # Validate user
+            if not self.user:
+                frappe.throw(_("User is required"))
+            
+            # Validate opening cash
+            if not self.opening_cash:
+                frappe.throw(_("Opening cash amount is required"))
+            
+            # Validate opening cash is positive
+            if frappe.utils.flt(self.opening_cash) <= 0:
+                frappe.throw(_("Opening cash must be greater than zero"))
+                
+        except Exception as e:
+            print(f"[ERROR] Exception in validate_pos_shift: {e}", file=sys.stderr)
             raise
 
     def on_submit(self):
