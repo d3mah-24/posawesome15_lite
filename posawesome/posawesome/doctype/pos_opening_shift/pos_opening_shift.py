@@ -144,13 +144,30 @@ class POSOpeningShift(StatusUpdater):
             if not self.user:
                 frappe.throw(_("User is required"))
             
-            # Validate opening cash
-            if not self.opening_cash:
-                frappe.throw(_("Opening cash amount is required"))
+            # Validate opening balance details
+            if not self.balance_details:
+                frappe.throw(_("Opening balance details are required"))
             
-            # Validate opening cash is positive
-            if frappe.utils.flt(self.opening_cash) <= 0:
-                frappe.throw(_("Opening cash must be greater than zero"))
+            # Flexible validation - allow zero opening balance
+            total_opening_amount = 0
+            negative_amounts = 0
+            
+            for detail in self.balance_details:
+                amount = frappe.utils.flt(detail.amount) if detail.amount else 0
+                if amount > 0:
+                    total_opening_amount += amount
+                elif amount < 0:
+                    negative_amounts += abs(amount)
+            
+            # Allow zero opening balance (for digital stores)
+            # But prevent negative amounts
+            if negative_amounts > 0:
+                frappe.throw(_("Opening cash amount cannot be negative"))
+            
+            # Removed mandatory positive amount validation
+            # Allow opening shift with zero or positive balance
+            # if total_opening_amount <= 0:
+            #     frappe.throw(_("Opening cash amount must be greater than zero"))
                 
         except Exception as e:
             print(f"[ERROR] Exception in validate_pos_shift: {e}", file=sys.stderr)
