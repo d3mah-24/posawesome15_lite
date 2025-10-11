@@ -191,7 +191,8 @@ def make_closing_shift_from_opening(opening_shift):
     taxes = []
     payments = []
     pos_payments_table = []
-    for detail in opening_shift.get("balance_details"):
+    balance_details = opening_shift.get("balance_details") or []
+    for detail in balance_details:
         payments.append(
             frappe._dict(
                 {
