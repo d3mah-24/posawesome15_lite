@@ -1,199 +1,105 @@
 <template>
   <v-row justify="center">
-    <v-dialog
-      v-model="customerDialog"
-      max-width="480px"
-      @click:outside="clear_customer"
-    >
-      <v-card class="compact-dialog">
-        <v-card-title class="">
-          <span v-if="customer_id" class="text-h6 p-0 primary--text font-weight-bold">Update Customer</span>
-          <span v-else class="text-h6 p-0 primary--text font-weight-bold">New Customer</span>
-        </v-card-title>
-        <v-card-text class="pa-2">
-          <v-container class="pa-2">
-            <v-row dense>
-              <v-col cols="12" class="pb-1">
-                <v-text-field
-                  dense
-                  outlined
-                  color="primary"
-                  label="Customer Name *"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="customer_name"
-                  class="compact-field"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="6" class="pb-1 pr-1">
-                <v-text-field
-                  dense
-                  outlined
-                  color="primary"
-                  label="Tax ID"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="tax_id"
-                  class="compact-field"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="6" class="pb-1 pl-1">
-                <v-text-field
-                  dense
-                  outlined
-                  color="primary"
-                  label="Mobile"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="mobile_no"
-                  class="compact-field"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="6" class="pb-1 pr-1">
-                <v-text-field
-                  dense
-                  outlined
-                  color="primary"
-                  label="Email"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="email_id"
-                  class="compact-field"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="6" class="pb-1 pl-1">
-                <v-select
-                  dense
-                  outlined
-                  label="Gender"
-                  :items="genders"
-                  v-model="gender"
-                  hide-details="auto"
-                  class="compact-field"
-                ></v-select>
-              </v-col>
-              <v-col cols="6" class="pb-1 pr-1">
-                <v-text-field
-                  dense
-                  outlined
-                  color="primary"
-                  label="Referral Code"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="referral_code"
-                  class="compact-field"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="6" class="pb-1 pl-1">
-                <v-text-field
-                  v-model="birthday"
-                  label="Date of Birth"
-                  readonly
-                  dense
-                  outlined
-                  clearable
-                  hide-details="auto"
-                  color="primary"
-                  prepend-inner-icon="mdi-calendar"
-                  @click="birthday_menu = true"
-                  class="compact-field"
-                ></v-text-field>
-                
-                <v-dialog
-                  v-model="birthday_menu"
-                  max-width="320px"
-                >
-                  <v-date-picker
-                    v-model="birthday"
-                    color="primary"
-                    scrollable
-                    :max="frappe.datetime.now_date()"
-                    @input="birthday_menu = false"
-                  >
-                  </v-date-picker>
-                </v-dialog>
-              </v-col>
-              <v-col cols="6" class="pb-1 pr-1">
-                <v-autocomplete
-                  clearable
-                  dense
-                  outlined
-                  auto-select-first
-                  color="primary"
-                  label="Customer Group *"
-                  v-model="group"
-                  :items="groups"
-                  background-color="white"
-                  no-data-text="Group not found"
-                  hide-details="auto"
-                  required
-                  class="compact-field"
-                ></v-autocomplete>
-              </v-col>
-              <v-col cols="6" class="pb-1 pl-1">
-                <v-autocomplete
-                  clearable
-                  dense
-                  outlined
-                  auto-select-first
-                  color="primary"
-                  label="Territory *"
-                  v-model="territory"
-                  :items="territorys"
-                  background-color="white"
-                  no-data-text="Territory not found"
-                  hide-details="auto"
-                  required
-                  class="compact-field"
-                ></v-autocomplete>
-              </v-col>
-              <v-col cols="6" v-if="loyalty_program" class="pb-1 pr-1">
-                <v-text-field
-                  v-model="loyalty_program"
-                  label="Loyalty Program"
-                  dense
-                  outlined
-                  readonly
-                  hide-details="auto"
-                  class="compact-field"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="6" v-if="loyalty_points" class="pb-1" :class="loyalty_program ? 'pl-1' : 'pr-1'">
-                <v-text-field
-                  v-model="loyalty_points"
-                  label="Loyalty Points"
-                  dense
-                  outlined
-                  readonly
-                  hide-details="auto"
-                  class="compact-field"
-                ></v-text-field>
-              </v-col>
-            </v-row>
-          </v-container>
-        </v-card-text>
-        <v-card-actions class="pa-3 pt-0">
-          <v-spacer></v-spacer>
-          <v-btn 
-            outlined
-            color="grey darken-1" 
-            class="mr-2 compact-btn" 
-            @click="close_dialog"
-            small
-          >
-            Cancel
-          </v-btn>
-          <v-btn 
-            color="primary" 
-            class="compact-btn white--text" 
-            @click="submit_dialog"
-            small
-            elevation="2"
-          >
-            {{ customer_id ? 'Update' : 'Register' }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
+    <v-dialog v-model="customerDialog" max-width="400px" @click:outside="clear_customer">
+      <div class="customer-modal">
+        <!-- Compact Header -->
+        <div class="modal-header">
+          <v-icon size="16" color="white">mdi-account-circle</v-icon>
+          <span class="modal-title">{{ customer_id ? 'Update Customer' : 'New Customer' }}</span>
+          <button class="close-icon" @click="close_dialog">
+            <v-icon size="16" color="white">mdi-close</v-icon>
+          </button>
+        </div>
+
+        <!-- Compact Content with Custom Input Fields -->
+        <div class="modal-body">
+          <!-- Full width customer name -->
+          <div class="field-group">
+            <label class="field-label">Customer Name *</label>
+            <input type="text" v-model="customer_name" class="custom-input" placeholder="Enter name" />
+          </div>
+
+          <!-- Two columns -->
+          <div class="field-row">
+            <div class="field-group half">
+              <label class="field-label">Tax ID</label>
+              <input type="text" v-model="tax_id" class="custom-input" placeholder="Tax ID" />
+            </div>
+            <div class="field-group half">
+              <label class="field-label">Mobile</label>
+              <input type="text" v-model="mobile_no" class="custom-input" placeholder="Mobile" />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group half">
+              <label class="field-label">Email</label>
+              <input type="email" v-model="email_id" class="custom-input" placeholder="Email" />
+            </div>
+            <div class="field-group half">
+              <label class="field-label">Gender</label>
+              <select v-model="gender" class="custom-select">
+                <option value="">Select</option>
+                <option v-for="g in genders" :key="g" :value="g">{{ g }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group half">
+              <label class="field-label">Referral Code</label>
+              <input type="text" v-model="referral_code" class="custom-input" placeholder="Code" />
+            </div>
+            <div class="field-group half">
+              <label class="field-label">Date of Birth</label>
+              <input type="text" v-model="birthday" readonly @click="birthday_menu = true" class="custom-input"
+                placeholder="DOB" />
+              <v-dialog v-model="birthday_menu" max-width="290px">
+                <v-date-picker v-model="birthday" color="primary" scrollable :max="frappe.datetime.now_date()"
+                  @input="birthday_menu = false"></v-date-picker>
+              </v-dialog>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group half">
+              <label class="field-label">Customer Group *</label>
+              <select v-model="group" class="custom-select" required>
+                <option value="">Select</option>
+                <option v-for="g in groups" :key="g" :value="g">{{ g }}</option>
+              </select>
+            </div>
+            <div class="field-group half">
+              <label class="field-label">Territory *</label>
+              <select v-model="territory" class="custom-select" required>
+                <option value="">Select</option>
+                <option v-for="t in territorys" :key="t" :value="t">{{ t }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row" v-if="loyalty_program || loyalty_points">
+            <div class="field-group half" v-if="loyalty_program">
+              <label class="field-label">Loyalty Program</label>
+              <input type="text" v-model="loyalty_program" readonly class="custom-input readonly" />
+            </div>
+            <div class="field-group half" v-if="loyalty_points">
+              <label class="field-label">Points</label>
+              <input type="text" v-model="loyalty_points" readonly class="custom-input readonly" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Compact Footer -->
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="close_dialog">
+            <v-icon size="13">mdi-close</v-icon> Cancel
+          </button>
+          <button class="btn-submit" @click="submit_dialog">
+            <v-icon size="13">mdi-check</v-icon> {{ customer_id ? 'Update' : 'Register' }}
+          </button>
+        </div>
+      </div>
     </v-dialog>
   </v-row>
 </template>
@@ -367,7 +273,7 @@ export default {
           customer_type: this.customer_type,
           gender: this.gender,
           method: this.customer_id ? 'update' : 'create',
-          pos_profile_name: this.pos_profile.name,
+          pos_profile_doc: JSON.stringify(this.pos_profile),
         };
         frappe.call({
           method: 'posawesome.posawesome.api.customer.create_customer',
@@ -430,7 +336,7 @@ export default {
         this.loyalty_program = data.loyalty_program;
         this.gender = data.gender;
       }
-      
+
       // Load data only when dialog is opened
       console.log('[UpdateCustomer] loading data for dialog');
       this.getCustomerGroups();
@@ -453,88 +359,171 @@ export default {
 </script>
 
 <style scoped>
-.v-card-title{
-  padding: .5rem 1rem 0 !important;
-}
-.compact-dialog {
-  border-radius: 12px !important;
-}
-
-.compact-dialog .v-card__title {
-  border-bottom: 1px solid #e0e0e0;
+/* Ultra-compact beautiful modal */
+.customer-modal {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
-.compact-field {
-  margin-bottom: 4px !important;
+/* Header - very compact */
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+  color: white;
 }
 
-.compact-field .v-input__control {
-  min-height: 40px !important;
+.modal-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
-.compact-field .v-text-field__details {
-  margin-top: 2px !important;
-  padding-top: 0 !important;
+.close-icon {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 3px;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
 }
 
-.compact-btn {
-  text-transform: none !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.5px !important;
-  min-width: 80px !important;
-  height: 36px !important;
+.close-icon:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
-.v-input--dense .v-input__control {
-  min-height: 40px !important;
+/* Body - minimal padding */
+.modal-body {
+  padding: 8px 10px;
 }
 
-.v-text-field--outlined.v-input--dense .v-input__control {
-  min-height: 40px !important;
+/* Field groups - super compact */
+.field-group {
+  margin-bottom: 6px;
 }
 
-.v-text-field--outlined .v-input__control {
-  min-height: 40px !important;
+.field-group.half {
+  flex: 1;
+  min-width: 0;
 }
 
-/* Custom styling for better visual hierarchy */
-.v-card__title .text-h6 {
-  font-size: 1.1rem !important;
-  line-height: 1.3 !important;
+.field-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
-/* Reduce spacing in rows */
-.row.dense {
-  margin: -2px !important;
+.field-label {
+  display: block;
+  font-size: 11px;
+  color: #555;
+  margin-bottom: 2px;
+  font-weight: 500;
 }
 
-.row.dense > .col {
-  padding: 2px !important;
+/* Custom inputs - beautiful and compact */
+.custom-input,
+.custom-select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #1f2937;
+  background: #fff;
+  transition: all 0.2s;
+  outline: none;
+  height: 28px;
 }
 
-/* Better button styling */
-.v-btn.compact-btn {
-  border-radius: 6px !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+.custom-input:focus,
+.custom-select:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
 }
 
-.v-btn.compact-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
-  transition: all 0.2s ease;
+.custom-input::placeholder {
+  color: #9ca3af;
+  font-size: 11px;
 }
 
-/* Outlined text fields styling */
-.v-text-field--outlined > .v-input__control > .v-input__slot {
-  border-radius: 6px !important;
+.custom-input.readonly {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
 }
 
-.v-select--outlined > .v-input__control > .v-input__slot {
-  border-radius: 6px !important;
+.custom-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  padding-right: 24px;
 }
 
-/* Date picker dialog smaller */
+/* Footer - compact buttons */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-cancel,
+.btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 26px;
+}
+
+.btn-cancel {
+  background: white;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.btn-cancel:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-submit {
+  background: linear-gradient(135deg, #1976d2 0%, #1e88e5 100%);
+  border-color: #1565c0;
+  color: white;
+}
+
+.btn-submit:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
+}
+
+/* Date picker compact */
 .v-picker {
-  border-radius: 8px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+}
+
+.v-date-picker-header {
+  padding: 4px 8px !important;
 }
 </style>
