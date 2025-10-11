@@ -5,26 +5,6 @@ import frappe
 from frappe.utils import nowdate, getdate
 import json
 
-# متغير عام لتجميع التشخيصات
-debug_log = []
-
-def log_debug(message):
-    """إضافة رسالة للتشخيص العام"""
-    debug_log.append(str(message))
-
-def clear_debug_log():
-    """مسح التشخيص العام"""
-    global debug_log
-    debug_log = []
-
-def save_debug_log():
-    """حفظ التشخيص العام في سجل واحد"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط (بدون مسح)
-        frappe.log_error(message="\n".join(debug_log), title="POS Offer API - تشخيص شامل")
-        # لا نمسح debug_log هنا - نتركه للتجميع
-
 
 @frappe.whitelist()
 def get_offers_for_profile(profile):
@@ -32,12 +12,8 @@ def get_offers_for_profile(profile):
     GET - Get all offers for POS Profile
     """
     try:
-        log_debug("=== بدء جلب العروض للملف الشخصي ===")
-        log_debug(f"Profile: {profile}")
-        
         pos_profile = frappe.get_doc("POS Profile", profile)
         company = pos_profile.company
-        log_debug(f"Company: {company}")
         warehouse = pos_profile.warehouse
         date = nowdate()
 
@@ -58,74 +34,111 @@ def get_offers_for_profile(profile):
         # إضافة فلاتر اختيارية
         if profile:
             filters["pos_profile"] = ["in", ["", profile]]
-        if warehouse:
+        # فلتر المستودع: يفحص المخزن إذا كان مطابق، ويتخطى التحقق إذا كان غير محدد في العرض
+        if warehouse and warehouse.strip() and warehouse.strip() != "":
             filters["warehouse"] = ["in", ["", warehouse]]
+        else:
+            # إذا كان المستودع فارغاً، ابحث عن العروض التي لها مستودع فارغ
+            filters["warehouse"] = ""
+        
+        # فلتر التاريخ - إصلاح المنطق
         if date:
             filters["valid_from"] = ["<=", date]
             filters["valid_upto"] = [">=", date]
         
+        
+        # الحقول الأساسية المطلوبة فقط للواجهة الأمامية - مطابقة لجدول tabPOS Offer
+        essential_fields = [
+            "name",                    # اسم العرض (مطلوب للتعريف)
+            "title",                   # عنوان العرض (مطلوب للعرض)
+            "description",             # وصف العرض (مطلوب للعرض)
+            "apply_on",                # نوع التطبيق (مطلوب للمنطق)
+            "offer",                   # نوع العرض (مطلوب للمنطق)
+            "discount_type",           # نوع الخصم (مطلوب للعرض)
+            "discount_percentage",     # نسبة الخصم (مطلوب للعرض)
+            "discount_amount",         # مبلغ الخصم (مطلوب للعرض)
+            "auto",                    # التطبيق التلقائي (مطلوب للمنطق)
+            "coupon_based",            # يتطلب كوبون (مطلوب للمنطق)
+            "min_qty",                 # الحد الأدنى للكمية (مطلوب للمنطق)
+            "max_qty",                 # الحد الأقصى للكمية (مطلوب للمنطق)
+            "min_amt",                 # الحد الأدنى للمبلغ (مطلوب للمنطق)
+            "max_amt",                 # الحد الأقصى للمبلغ (مطلوب للمنطق)
+            "valid_from",              # تاريخ البداية (مطلوب للمنطق)
+            "valid_upto",              # تاريخ النهاية (مطلوب للمنطق)
+            "replace_item",            # استبدال نفس المنتج (مطلوب للمنطق)
+            "replace_cheapest_item"    # استبدال أرخص منتج (مطلوب للمنطق)
+        ]
+        
+        # جلب العروض مع جميع الفلاتر
         data = frappe.get_all(
             "POS Offer",
             filters=filters,
-            fields=["*"],
+            fields=essential_fields,
             order_by="auto DESC, title ASC"
         )
         
-        log_debug(f"تم جلب {len(data)} عرض")
-        log_debug("=== انتهاء جلب العروض للملف الشخصي بنجاح ===")
         
         return data
         
     except Exception as e:
-        log_debug(f"❌ خطأ في جلب العروض للملف الشخصي: {str(e)}")
-        frappe.log_error(f"Error getting offers for profile: {str(e)}")
         return []
     finally:
-        # لا نحفظ هنا - نتركه للتجميع في نهاية الملف
-        pass
+        # تسجيل مختصر لعمل الدالة
+        frappe.log_error(
+            message=f"get_offers_for_profile: Profile={profile}, Company={company if 'company' in locals() else 'N/A'}, Offers={len(data) if 'data' in locals() else 0}",
+            title="POS Offer API - get_offers_for_profile"
+        )
 
 
 @frappe.whitelist()
-def get_offers(invoice_name, offer_type=None, coupon_code=None):
+def get_offers(profile):
     """
-    GET - Main function to get offers based on type
+    GET - Get all offers for POS Profile (مطابق للنسخة القديمة)
     """
     try:
-        log_debug("=== بدء جلب العروض حسب النوع ===")
-        log_debug(f"Invoice Name: {invoice_name}")
-        log_debug(f"Coupon Code: {coupon_code}")
+        pos_profile = frappe.get_doc("POS Profile", profile)
+        company = pos_profile.company
+        warehouse = pos_profile.warehouse
+        date = nowdate()
+
+        values = {
+            "company": company,
+            "pos_profile": profile,
+            "warehouse": warehouse,
+            "valid_from": date,
+            "valid_upto": date,
+        }
         
-        doc = frappe.get_doc("Sales Invoice", invoice_name)
-        log_debug(f"Invoice: {doc.name}, Company: {doc.company}")
+        # استخدام SQL مباشر مثل النسخة القديمة
+        data = (
+            frappe.db.sql(
+                """
+            SELECT *
+            FROM `tabPOS Offer`
+            WHERE
+            disable = 0 AND
+            company = %(company)s AND
+            (pos_profile is NULL OR pos_profile = '' OR pos_profile = %(pos_profile)s) AND
+            (warehouse is NULL OR warehouse = '' OR warehouse = %(warehouse)s) AND
+            (valid_from is NULL OR valid_from = '' OR valid_from <= %(valid_from)s) AND
+            (valid_upto is NULL OR valid_upto = '' OR valid_upto >= %(valid_upto)s)
+        """,
+                values=values,
+                as_dict=1,
+            )
+            or []
+        )
         
-        # Determine offer type if not provided
-        if not offer_type:
-            offer_type = determine_offer_type(doc)
-            log_debug(f"تم تحديد نوع العرض: {offer_type}")
-        
-        log_debug(f"Offer Type: {offer_type}")
-        
-        # Get offers based on type
-        result = get_offers_by_type_handler(offer_type, invoice_name, coupon_code)
-        
-        log_debug(f"تم جلب العروض من نوع: {offer_type}")
-        log_debug("=== انتهاء جلب العروض حسب النوع بنجاح ===")
-        
-        return result
+        return data
         
     except Exception as e:
-        log_debug(f"❌ خطأ في جلب العروض حسب النوع: {str(e)}")
-        frappe.log_error(f"Error getting offers by type: {str(e)}")
-        return {
-            "success": False,
-            "offers": [],
-            "count": 0,
-            "error": str(e),
-            "message": f"خطأ في جلب العروض حسب النوع: {str(e)}"
-        }
+        return []
     finally:
-        # حفظ جميع التشخيصات في نهاية الدالة الرئيسية
-        show_all_debug_logs()
+        # تسجيل مختصر لعمل الدالة
+        frappe.log_error(
+            message=f"get_offers: Profile={profile}, Company={company if 'company' in locals() else 'N/A'}, Offers={len(data) if 'data' in locals() else 0}",
+            title="POS Offer API - get_offers"
+        )
 
 
 def determine_offer_type(invoice_doc):
@@ -133,11 +146,8 @@ def determine_offer_type(invoice_doc):
     Determine the most appropriate offer type based on invoice data
     """
     try:
-        log_debug("=== بدء تحديد نوع العرض المناسب ===")
-        
         # Check if invoice has items
         if not invoice_doc.items:
-            log_debug("لا توجد أصناف في الفاتورة")
             return "unconditional"
         
         # Check for auto offers first
@@ -148,7 +158,6 @@ def determine_offer_type(invoice_doc):
         )
         
         if auto_offers:
-            log_debug("تم العثور على عروض تلقائية")
             return "auto"
         
         # Check for manual offers
@@ -159,7 +168,6 @@ def determine_offer_type(invoice_doc):
         )
         
         if manual_offers:
-            log_debug("تم العثور على عروض يدوية")
             return "manual"
         
         # Check for coupon offers
@@ -170,7 +178,6 @@ def determine_offer_type(invoice_doc):
         )
         
         if coupon_offers:
-            log_debug("تم العثور على عروض كوبون")
             return "coupon"
         
         # Check for give product offers
@@ -181,7 +188,6 @@ def determine_offer_type(invoice_doc):
         )
         
         if give_product_offers:
-            log_debug("تم العثور على عروض إعطاء منتج")
             return "give_product"
         
         # Check for loyalty offers
@@ -192,7 +198,6 @@ def determine_offer_type(invoice_doc):
         )
         
         if loyalty_offers:
-            log_debug("تم العثور على عروض نقاط الولاء")
             return "loyalty"
         
         # Check for percentage offers
@@ -203,7 +208,6 @@ def determine_offer_type(invoice_doc):
         )
         
         if percentage_offers:
-            log_debug("تم العثور على عروض بنسبة خصم")
             return "percentage"
         
         # Check for conditional offers
@@ -214,15 +218,18 @@ def determine_offer_type(invoice_doc):
         )
         
         if conditional_offers:
-            log_debug("تم العثور على عروض مشروطة")
             return "conditional"
         
-        log_debug("لم يتم العثور على عروض خاصة، استخدام العروض غير المشروطة")
         return "unconditional"
         
     except Exception as e:
-        log_debug(f"❌ خطأ في تحديد نوع العرض: {str(e)}")
         return "unconditional"
+    finally:
+        # تسجيل مختصر لعمل الدالة
+        frappe.log_error(
+            message=f"determine_offer_type: Invoice={invoice_name}, Items={len(invoice_doc.items) if 'invoice_doc' in locals() else 0}, Result={offer_type if 'offer_type' in locals() else 'unconditional'}",
+            title="POS Offer API - determine_offer_type"
+        )
 
 
 def get_offers_by_type_handler(offer_type, invoice_name, coupon_code=None):
@@ -230,8 +237,6 @@ def get_offers_by_type_handler(offer_type, invoice_name, coupon_code=None):
     Handler function to route to specific offer type functions
     """
     try:
-        log_debug(f"توجيه إلى نوع العرض: {offer_type}")
-        
         # Get field mapping for each offer type
         field_mapping = get_offer_fields_mapping()
         fields = field_mapping.get(offer_type, ["*"])
@@ -244,17 +249,12 @@ def get_offers_by_type_handler(offer_type, invoice_name, coupon_code=None):
         if offer_type == "coupon" and coupon_code:
             filters["title"] = ["like", f"%{coupon_code}%"]
         
-        log_debug(f"الحقول المطلوبة: {fields}")
-        log_debug(f"الفلاتر: {filters}")
-        
         # Get offers from database
         offers = frappe.get_all(
             "POS Offer",
             filters=filters,
             fields=fields
         )
-        
-        log_debug(f"تم جلب {len(offers)} عرض من نوع {offer_type}")
         
         # Check applicability
         doc = frappe.get_doc("Sales Invoice", invoice_name)
@@ -263,9 +263,6 @@ def get_offers_by_type_handler(offer_type, invoice_name, coupon_code=None):
         for offer in offers:
             if is_offer_applicable(offer, doc):
                 applicable_offers.append(offer)
-                log_debug(f"✅ عرض مناسب: {offer.name}")
-        
-        log_debug(f"تم العثور على {len(applicable_offers)} عرض مناسب")
         
         return {
             "success": True,
@@ -275,7 +272,6 @@ def get_offers_by_type_handler(offer_type, invoice_name, coupon_code=None):
         }
         
     except Exception as e:
-        log_debug(f"❌ خطأ في معالج نوع العرض: {str(e)}")
         return {
             "success": False,
             "offers": [],
@@ -283,6 +279,12 @@ def get_offers_by_type_handler(offer_type, invoice_name, coupon_code=None):
             "error": str(e),
             "message": f"خطأ في معالج نوع العرض: {str(e)}"
         }
+    finally:
+        # تسجيل مختصر لعمل الدالة
+        frappe.log_error(
+            message=f"get_offers_by_type_handler: Type={offer_type}, Invoice={invoice_name}, Coupon={coupon_code}, Result={len(applicable_offers) if 'applicable_offers' in locals() else 0}",
+            title="POS Offer API - get_offers_by_type_handler"
+        )
 
 
 def get_offer_fields_mapping():
@@ -301,6 +303,14 @@ def get_offer_fields_mapping():
         "conditional": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "min_qty", "max_qty", "min_amt", "max_amt"],
         "unconditional": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "discount_type", "discount_percentage", "discount_amount", "rate"]
     }
+    
+    # تسجيل مختصر لعمل الدالة
+    frappe.log_error(
+        message=f"get_offer_fields_mapping: Returned {len(field_mapping)} field mappings",
+        title="POS Offer API - get_offer_fields_mapping"
+    )
+    
+    return field_mapping
 
 
 def get_offer_filters_mapping():
@@ -319,6 +329,14 @@ def get_offer_filters_mapping():
         "conditional": {"disable": 0, "min_qty": [">", 0]},
         "unconditional": {"disable": 0, "min_qty": 0, "max_qty": 0, "min_amt": 0, "max_amt": 0}
     }
+    
+    # تسجيل مختصر لعمل الدالة
+    frappe.log_error(
+        message=f"get_offer_filters_mapping: Returned {len(filter_mapping)} filter mappings",
+        title="POS Offer API - get_offer_filters_mapping"
+    )
+    
+    return filter_mapping
 
 
 def is_offer_applicable(offer, invoice_doc):
@@ -326,140 +344,212 @@ def is_offer_applicable(offer, invoice_doc):
     Helper function to check if offer is applicable based on POS Offer fields
     """
     try:
-        log_debug(f"فحص صحة العرض: {offer.title}")
-        
         # Check company (if offer has specific company, it must match)
-        if offer.company and offer.company != invoice_doc.company:
-            log_debug(f"❌ الشركة غير متطابقة: {offer.company} != {invoice_doc.company}")
+        if offer.get('company') and offer.company != invoice_doc.company:
             return False
-        elif not offer.company:
-            log_debug(f"✅ العرض ينطبق على جميع الشركات")
         
         # Check date validity
-        if offer.valid_from and getdate(offer.valid_from) > getdate():
-            log_debug(f"❌ العرض لم يبدأ بعد: {offer.valid_from}")
+        if offer.get('valid_from') and getdate(offer.valid_from) > getdate():
             return False
         
-        if offer.valid_upto and getdate(offer.valid_upto) < getdate():
-            log_debug(f"❌ العرض انتهى: {offer.valid_upto}")
+        if offer.get('valid_upto') and getdate(offer.valid_upto) < getdate():
             return False
         
         # Check minimum amount (using min_amt field)
-        if offer.min_amt and invoice_doc.grand_total < offer.min_amt:
-            log_debug(f"❌ المبلغ أقل من الحد الأدنى: {invoice_doc.grand_total} < {offer.min_amt}")
+        if offer.get('min_amt') and invoice_doc.grand_total < offer.min_amt:
             return False
         
         # Check maximum amount (using max_amt field)
-        if offer.max_amt and invoice_doc.grand_total > offer.max_amt:
-            log_debug(f"❌ المبلغ أكبر من الحد الأقصى: {invoice_doc.grand_total} > {offer.max_amt}")
+        if offer.get('max_amt') and invoice_doc.grand_total > offer.max_amt:
             return False
-        
-        # Check apply_on field
-        if offer.apply_on == "Item Code" and offer.item:
-            # Check specific item
-            for item in invoice_doc.items:
-                if item.item_code == offer.item:
-                    log_debug(f"✅ العرض مناسب للصنف: {item.item_code}")
-                    return True
-            log_debug(f"❌ الصنف غير موجود: {offer.item}")
-            return False
-        
-        elif offer.apply_on == "Item Group" and offer.item_group:
-            # Check item group
-            for item in invoice_doc.items:
-                if item.item_group == offer.item_group:
-                    log_debug(f"✅ العرض مناسب لمجموعة الصنف: {item.item_group}")
-                    return True
-            log_debug(f"❌ مجموعة الصنف غير موجودة: {offer.item_group}")
-            return False
-        
-        elif offer.apply_on == "Brand" and offer.brand:
-            # Check brand
-            for item in invoice_doc.items:
-                if item.brand == offer.brand:
-                    log_debug(f"✅ العرض مناسب للماركة: {item.brand}")
-                    return True
-            log_debug(f"❌ الماركة غير موجودة: {offer.brand}")
-            return False
-        
-        elif offer.apply_on == "Transaction":
-            # Check transaction-level conditions
-            log_debug("✅ العرض مناسب للمعاملة")
-            return True
         
         # Check minimum quantity (using min_qty field)
-        if offer.min_qty:
+        if offer.get('min_qty'):
             total_qty = sum(item.qty for item in invoice_doc.items)
             if total_qty < offer.min_qty:
-                log_debug(f"❌ الكمية أقل من الحد الأدنى: {total_qty} < {offer.min_qty}")
                 return False
         
         # Check maximum quantity (using max_qty field)
-        if offer.max_qty:
+        if offer.get('max_qty'):
             total_qty = sum(item.qty for item in invoice_doc.items)
             if total_qty > offer.max_qty:
-                log_debug(f"❌ الكمية أكبر من الحد الأقصى: {total_qty} > {offer.max_qty}")
                 return False
         
-        log_debug("✅ العرض مناسب")
+        # Check apply_on field
+        if offer.get('apply_on') == "Item Code" and offer.get('item'):
+            # Check specific item
+            for item in invoice_doc.items:
+                if item.item_code == offer.item:
+                    return True
+            return False
+        
+        elif offer.get('apply_on') == "Item Group" and offer.get('item_group'):
+            # Check item group
+            for item in invoice_doc.items:
+                if item.item_group == offer.item_group:
+                    return True
+            return False
+        
+        elif offer.get('apply_on') == "Brand" and offer.get('brand'):
+            # Check brand
+            for item in invoice_doc.items:
+                if item.brand == offer.brand:
+                    return True
+            return False
+        
+        elif offer.get('apply_on') == "Transaction":
+            # Check transaction-level conditions
+            return True
+        
+        # Default: if no specific conditions, offer is applicable
         return True
         
     except Exception as e:
-        log_debug(f"❌ خطأ في فحص صحة العرض: {str(e)}")
-        frappe.log_error(f"Error checking offer applicability: {str(e)}")
         return False
+    finally:
+        # تسجيل مختصر لعمل الدالة
+        frappe.log_error(
+            message=f"is_offer_applicable: Offer={offer.get('name', 'N/A') if 'offer' in locals() else 'N/A'}, Invoice={invoice_doc.name if 'invoice_doc' in locals() else 'N/A'}, Result={'Applicable' if 'applicable' in locals() else 'N/A'}",
+            title="POS Offer API - is_offer_applicable"
+        )
 
 
 @frappe.whitelist()
 def get_applicable_offers(invoice_name):
     """
-    GET - Get all applicable offers for invoice (legacy function for compatibility)
+    GET - Get all applicable offers for invoice (مطابق للنسخة القديمة مع تحسينات)
     """
     try:
-        log_debug("=== بدء جلب جميع العروض المناسبة ===")
-        log_debug(f"Invoice Name: {invoice_name}")
-        
         doc = frappe.get_doc("Sales Invoice", invoice_name)
-        log_debug(f"Invoice: {doc.name}, Company: {doc.company}")
         
-        # Get all active offers
-        offers = frappe.get_all(
-            "POS Offer",
-            filters={"disable": 0},
-            fields=["*"]
-        )
+        # الحصول على معلومات الملف الشخصي من الفاتورة
+        pos_profile = doc.pos_profile if hasattr(doc, 'pos_profile') else None
+        if not pos_profile:
+            return []
         
-        log_debug(f"تم جلب {len(offers)} عرض نشط")
+        # استخدام دالة get_offers للحصول على العروض المناسبة للملف الشخصي
+        all_offers = get_offers(pos_profile)
         
         applicable_offers = []
         
-        for offer in offers:
+        for offer in all_offers:
             # Check if offer is applicable to this invoice
             if is_offer_applicable(offer, doc):
                 applicable_offers.append(offer)
-                log_debug(f"✅ عرض مناسب: {offer.name}")
-        
-        log_debug(f"تم العثور على {len(applicable_offers)} عرض مناسب")
-        log_debug("=== انتهاء جلب جميع العروض المناسبة بنجاح ===")
         
         return applicable_offers
         
     except Exception as e:
-        log_debug(f"❌ خطأ في جلب جميع العروض المناسبة: {str(e)}")
-        frappe.log_error(f"Error getting applicable offers: {str(e)}")
         return []
     finally:
-        # لا نحفظ هنا - نتركه للتجميع في نهاية الملف
-        pass
+        # تسجيل مختصر لعمل الدالة
+        frappe.log_error(
+            message=f"get_applicable_offers: Invoice={invoice_name}, Total={len(all_offers) if 'all_offers' in locals() else 0}, Applicable={len(applicable_offers) if 'applicable_offers' in locals() else 0}",
+            title="POS Offer API - get_applicable_offers"
+        )
 
 
-# دالة لحفظ جميع التشخيصات في Error Log
-def show_all_debug_logs():
-    """حفظ جميع التشخيصات المجمعة في Error Log"""
-    global debug_log
-    if debug_log:
-        frappe.log_error(message="\n".join(debug_log), title="POS Offer API - تشخيص شامل")
-        clear_debug_log()
+@frappe.whitelist()
+def cleanup_duplicate_offers(invoice_name):
+    """
+    تنظيف العروض المكررة في الفاتورة
+    """
+    try:
+        doc = frappe.get_doc("Sales Invoice", invoice_name)
+        
+        if not doc.posa_offers:
+            return {"message": "لا توجد عروض في هذه الفاتورة"}
+        
+        # تجميع العروض حسب الاسم
+        offers_by_name = {}
+        for row in doc.posa_offers:
+            if row.offer_name not in offers_by_name:
+                offers_by_name[row.offer_name] = []
+            offers_by_name[row.offer_name].append(row)
+        
+        # إزالة العروض المكررة
+        removed_count = 0
+        for offer_name, rows in offers_by_name.items():
+            if len(rows) > 1:
+                # الاحتفاظ بالصف الأول فقط
+                for row in rows[1:]:
+                    doc.remove(row)
+                    removed_count += 1
+        
+        if removed_count > 0:
+            doc.save()
+            return {
+                "success": True,
+                "message": f"تم إزالة {removed_count} عرض مكرر من الفاتورة {invoice_name}",
+                "removed_count": removed_count
+            }
+        else:
+            return {
+                "success": True,
+                "message": "لا توجد عروض مكررة في هذه الفاتورة",
+                "removed_count": 0
+            }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"خطأ في تنظيف العروض المكررة: {str(e)}"
+        }
 
 
-# يمكن استدعاء show_all_debug_logs() عند الحاجة لحفظ جميع التشخيصات
+@frappe.whitelist()
+def debug_offers_for_profile(profile):
+    """
+    دالة تشخيص لجلب العروض - بدون فلاتر معقدة
+    """
+    try:
+        # جلب جميع العروض بدون فلاتر
+        all_offers = frappe.get_all(
+            "POS Offer",
+            fields=["name", "title", "company", "pos_profile", "warehouse", "valid_from", "valid_upto", "disable"]
+        )
+        
+        # جلب العروض النشطة فقط
+        active_offers = frappe.get_all(
+            "POS Offer",
+            filters={"disable": 0},
+            fields=["name", "title", "company", "pos_profile", "warehouse", "valid_from", "valid_upto"]
+        )
+        
+        # جلب ملف POS
+        pos_profile = frappe.get_doc("POS Profile", profile)
+        company = pos_profile.company
+        warehouse = pos_profile.warehouse
+        date = nowdate()
+        
+        # جلب العروض الخاصة بالشركة
+        company_offers = frappe.get_all(
+            "POS Offer",
+            filters={"disable": 0, "company": company},
+            fields=["name", "title", "company", "pos_profile", "warehouse", "valid_from", "valid_upto"]
+        )
+        
+        return {
+            "total_offers": len(all_offers),
+            "active_offers": len(active_offers),
+            "company_offers": len(company_offers),
+            "profile_info": {
+                "name": profile,
+                "company": company,
+                "warehouse": warehouse,
+                "current_date": date
+            },
+            "all_offers": all_offers,
+            "active_offers": active_offers,
+            "company_offers": company_offers
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        # تسجيل مختصر لعمل الدالة
+        frappe.log_error(
+            message=f"debug_offers_for_profile: Profile={profile}, Total={len(all_offers) if 'all_offers' in locals() else 0}, Active={len(active_offers) if 'active_offers' in locals() else 0}, Company={len(company_offers) if 'company_offers' in locals() else 0}",
+            title="POS Offer API - debug_offers_for_profile"
+        )

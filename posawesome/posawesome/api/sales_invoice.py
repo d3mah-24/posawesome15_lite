@@ -132,10 +132,9 @@ def update_invoice(data):
         log_debug("=== بدء تطبيق العروض التلقائية ===")
         log_debug(f"Invoice: {invoice_doc.name}")
         
-        # Get offers by type (auto-detect or specify type)
-        from posawesome.posawesome.api.pos_offer import get_offers
-        offers_result = get_offers(invoice_doc.name)
-        applicable_offers = offers_result.get("offers", []) if offers_result.get("success") else []
+        # Get applicable offers for this invoice
+        from posawesome.posawesome.api.pos_offer import get_applicable_offers
+        applicable_offers = get_applicable_offers(invoice_doc.name)
         
         if applicable_offers:
             log_debug(f"تم العثور على {len(applicable_offers)} عرض مناسب")
@@ -143,6 +142,19 @@ def update_invoice(data):
             # Apply offers directly in sales_invoice.py
             for offer in applicable_offers:
                 log_debug(f"تطبيق العرض: {offer.name}")
+                
+                # فحص إذا كان العرض موجود بالفعل لتجنب التكرار
+                existing_offer = None
+                if hasattr(invoice_doc, 'posa_offers') and invoice_doc.posa_offers:
+                    existing_offer = next(
+                        (row for row in invoice_doc.posa_offers 
+                         if row.offer_name == offer.name), 
+                        None
+                    )
+                
+                if existing_offer:
+                    log_debug(f"العرض موجود بالفعل: {offer.name}")
+                    continue
                 
                 # Add offer to POS Offer Detail child table
                 invoice_doc.append("posa_offers", {
@@ -217,19 +229,88 @@ def submit_invoice(data=None, invoice=None, invoice_data=None, print_invoice=Fal
         doc.update(invoice_data)
         log_debug("Updated invoice doc with additional data")
         
+        # Apply offers before submission
+        try:
+            from posawesome.posawesome.api.pos_offer import get_applicable_offers
+            
+            log_debug("=== بدء تطبيق العروض قبل الإرسال ===")
+            log_debug(f"Invoice: {doc.name}")
+            
+            # Get applicable offers for this invoice
+            applicable_offers = get_applicable_offers(doc.name)
+            
+            if applicable_offers:
+                log_debug(f"تم العثور على {len(applicable_offers)} عرض مناسب")
+                
+                # Apply offers directly
+                for offer in applicable_offers:
+                    log_debug(f"تطبيق العرض: {offer.name}")
+                    
+                    # فحص إذا كان العرض موجود بالفعل لتجنب التكرار
+                    existing_offer = None
+                    if hasattr(doc, 'posa_offers') and doc.posa_offers:
+                        existing_offer = next(
+                            (row for row in doc.posa_offers 
+                             if row.offer_name == offer.name), 
+                            None
+                        )
+                    
+                    if existing_offer:
+                        log_debug(f"العرض موجود بالفعل: {offer.name}")
+                        # تطبيق الخصم حتى لو كان العرض موجود
+                        if offer.discount_type == "Discount Percentage":
+                            doc.additional_discount_percentage = offer.discount_percentage
+                            doc.discount_amount = (doc.grand_total * offer.discount_percentage) / 100
+                            log_debug(f"✅ تم تطبيق خصم {offer.discount_percentage}% على الفاتورة")
+                        continue
+                    
+                    # Add offer to POS Offer Detail child table
+                    doc.append("posa_offers", {
+                        "offer_name": offer.name,
+                        "apply_on": offer.apply_on or "Transaction",
+                        "offer": offer.offer or "Grand Total",
+                        "offer_applied": 1,
+                        "coupon_based": offer.coupon_based or 0
+                    })
+                    
+                    log_debug(f"✅ تم إضافة العرض إلى الجدول الفرعي: {offer.name}")
+                    
+                    if offer.discount_type == "Discount Percentage":
+                        # Apply discount to invoice
+                        doc.additional_discount_percentage = offer.discount_percentage
+                        doc.discount_amount = (doc.grand_total * offer.discount_percentage) / 100
+                        log_debug(f"✅ تم تطبيق خصم {offer.discount_percentage}% على الفاتورة")
+                
+                log_debug("✅ تم تطبيق العروض قبل الإرسال بنجاح")
+            else:
+                log_debug("لا توجد عروض مناسبة")
+                
+        except Exception as e:
+            log_debug(f"❌ خطأ في تطبيق العروض: {str(e)}")
+            # لا نوقف العملية إذا فشل تطبيق العروض
+        
+        # Recalculate totals after applying offers
+        doc.calculate_taxes_and_totals()
+        log_debug(f"Grand total after offers: {doc.grand_total}")
+        
         # Handle payments - let ERPNext handle the calculations
         if invoice_data.get("payments"):
             log_debug(f"Processing payments: {len(invoice_data['payments'])} payment methods")
             doc.payments = []
             for payment in invoice_data["payments"]:
                 if flt(payment.get("amount", 0)) > 0:
+                    # Adjust payment amount to match new grand total
+                    payment_amount = flt(payment.get("amount", 0))
+                    if payment_amount > 0 and payment_amount >= doc.grand_total:
+                        payment_amount = doc.grand_total
+                    
                     doc.append("payments", {
                         "mode_of_payment": payment.get("mode_of_payment"),
-                        "amount": flt(payment.get("amount", 0)),
+                        "amount": payment_amount,
                         "account": payment.get("account", ""),
                         "default": payment.get("default", 0)
                     })
-                    log_debug(f"Added payment: {payment.get('mode_of_payment')} - {payment.get('amount')}")
+                    log_debug(f"Added payment: {payment.get('mode_of_payment')} - {payment_amount}")
                 else:
                     # No payments provided, add default payment from POS Profile
                     log_debug("No payments provided, adding default payment from POS Profile")
