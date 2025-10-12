@@ -99,17 +99,6 @@
           </div>
         </div>
 
-        <div class="search-col-checkbox" v-if="pos_profile.posa_new_line">
-          <v-checkbox
-            v-model="new_line"
-            color="accent"
-            value="true"
-            label="New Line"
-            dense
-            hide-details
-            class="compact-checkbox"
-          ></v-checkbox>
-        </div>
       </div>
 
       <!-- Items display area -->
@@ -236,7 +225,6 @@ export default {
       appliedCouponsCount: 0,
       customer_price_list: null,
       customer: null,
-      new_line: false,
       qty: 1,
       // Store dynamic scroll height for grid/table wrapper
       itemsScrollHeight: null,
@@ -265,9 +253,6 @@ export default {
       if (oldVal !== undefined && newVal !== oldVal) {
         this.get_items();
       }
-    },
-    new_line() {
-      evntBus.emit("set_new_line", this.new_line);
     },
     items_view() {
       // Recompute scroll area when toggling views

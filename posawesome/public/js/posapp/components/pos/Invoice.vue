@@ -317,7 +317,6 @@ export default {
       itemsPerPage: 1000,
       float_precision: 2,
       currency_precision: 2,
-      new_line: false,
       invoice_posting_date: false,
       posting_date: frappe.datetime.nowdate(),
       quick_return_value: false,
@@ -2336,9 +2335,6 @@ export default {
       this.additional_discount_percentage =
         -data.return_doc.additional_discount_percentage;
       this.return_doc = data.return_doc;
-    });
-    evntBus.on("set_new_line", (data) => {
-      this.new_line = data;
     });
 
     // Event-driven approach for items changes
