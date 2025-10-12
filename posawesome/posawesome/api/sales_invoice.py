@@ -237,30 +237,55 @@ def submit_invoice(data=None, invoice=None, invoice_data=None, print_invoice=Fal
         # Handle payments - let ERPNext handle the calculations
         if invoice_data.get("payments"):
             doc.payments = []
+            total_payment_amount = 0
+            
+            # First pass: collect all non-zero payments
+            valid_payments = []
             for payment in invoice_data["payments"]:
-                if flt(payment.get("amount", 0)) > 0:
-                    # Adjust payment amount to match new grand total
-                    payment_amount = flt(payment.get("amount", 0))
-                    if payment_amount > 0 and payment_amount >= doc.grand_total:
-                        payment_amount = doc.grand_total
-                    
-                    doc.append("payments", {
+                payment_amount = flt(payment.get("amount", 0))
+                if payment_amount > 0:
+                    valid_payments.append({
                         "mode_of_payment": payment.get("mode_of_payment"),
                         "amount": payment_amount,
                         "account": payment.get("account", ""),
                         "default": payment.get("default", 0)
                     })
-                else:
-                    # No payments provided, add default payment from POS Profile
-                    default_payment = frappe.call("posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile", 
-                        doc.pos_profile, doc.company)
-                    if default_payment and default_payment.get("message"):
-                        doc.append("payments", {
-                            "mode_of_payment": default_payment["message"]["mode_of_payment"],
-                            "amount": flt(doc.grand_total),
-                            "account": default_payment["message"]["account"],
-                            "default": 1
-                        })
+                    total_payment_amount += payment_amount
+            
+            # Second pass: adjust payments to match rounded total
+            if valid_payments:
+                # Use rounded_total if available, otherwise use grand_total
+                target_amount = flt(doc.rounded_total) if hasattr(doc, 'rounded_total') and doc.rounded_total else flt(doc.grand_total)
+                
+                if total_payment_amount > target_amount:
+                    # Distribute excess proportionally or adjust the largest payment
+                    excess = total_payment_amount - target_amount
+                    
+                    # Find the largest payment to adjust
+                    largest_payment = max(valid_payments, key=lambda p: p["amount"])
+                    largest_payment["amount"] = flt(largest_payment["amount"]) - excess
+                    
+                    # Ensure no negative amounts
+                    if largest_payment["amount"] < 0:
+                        largest_payment["amount"] = 0
+                
+                # Add all valid payments
+                for payment in valid_payments:
+                    if flt(payment["amount"]) > 0:
+                        doc.append("payments", payment)
+            else:
+                # No valid payments provided, add default payment from POS Profile
+                default_payment = frappe.call("posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile", 
+                    doc.pos_profile, doc.company)
+                if default_payment and default_payment.get("message"):
+                    # Use rounded_total if available, otherwise use grand_total
+                    target_amount = flt(doc.rounded_total) if hasattr(doc, 'rounded_total') and doc.rounded_total else flt(doc.grand_total)
+                    doc.append("payments", {
+                        "mode_of_payment": default_payment["message"]["mode_of_payment"],
+                        "amount": target_amount,
+                        "account": default_payment["message"]["account"],
+                        "default": 1
+                    })
         
         # Let ERPNext handle all calculations and submit
         
@@ -615,14 +640,20 @@ def validate_pos_before_submit(doc):
     if not doc.payments:
         frappe.throw(_("At least one payment is required"))
     
-    # Validate payment amounts
+    # Validate payment amounts against rounded total (not grand total)
     total_payments = sum(flt(payment.amount) for payment in doc.payments)
-    grand_total = flt(doc.grand_total)
-    difference = abs(total_payments - grand_total)
     
+    # Use rounded_total if available, otherwise use grand_total
+    target_amount = flt(doc.rounded_total) if hasattr(doc, 'rounded_total') and doc.rounded_total else flt(doc.grand_total)
+    difference = abs(total_payments - target_amount)
     
-    if difference > 0.01:
-        frappe.throw(_("Payment amount must equal grand total"))
+    # Log payment details for debugging (shortened to avoid truncation)
+    frappe.log_error(f"POS validation: Payments {total_payments} vs Target {target_amount}, Diff {difference:.2f}", "POS Submit")
+    
+    # Allow small floating point differences (up to 0.05 for currency precision)
+    if difference > 0.05:
+        frappe.throw(_("Payment amount must equal rounded total. Total payments: {0}, Rounded total: {1}, Difference: {2}").format(
+            total_payments, target_amount, difference))
     
     frappe.log_error(f"sales_invoice.py(validate_pos_before_submit): Validated {doc.name}", "POS Submit")
 
