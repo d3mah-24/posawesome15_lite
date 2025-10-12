@@ -146,7 +146,7 @@
                   >
                     <span
                       :style="{
-                        color: item.actual_qty > 0 ? '#F44336' : '#4CAF50',
+                        color: item.actual_qty > 0 ? '#4CAF50' : '#F44336',
                         fontWeight: 'bold',
                       }"
                     >
