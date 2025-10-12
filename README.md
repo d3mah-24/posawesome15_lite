@@ -197,11 +197,43 @@ bench --site [your.site.name] clear-cache
 
 ## 📚 Documentation
 
-- **Comprehensive Analysis:** [posawesome_comprehensive_analysis.md](./posawesome_comprehensive_analysis.md)
-- **Improvement Plan:** [IMPROVEMENT_PLAN.md](./IMPROVEMENT_PLAN.md)
+### Core Documentation
+- **📖 README** - [README.md](./README.md) - This file
+- **🏗️ Architecture Diagrams** - [app_diagram.md](./app_diagram.md) - Visual system architecture with Mermaid diagrams
+- **📂 File Structure** - [app_tree.md](./app_tree.md) - Complete file tree with detailed descriptions
+- **📊 Comprehensive Analysis** - [posawesome_comprehensive_analysis.md](./posawesome_comprehensive_analysis.md) - Full technical analysis
+- **📋 Improvement Plan** - [IMPROVEMENT_PLAN.md](./IMPROVEMENT_PLAN.md) - 20 numbered improvement tasks
+
+### Architecture & Structure
+The application architecture is documented in detail across these files:
+
+- **[app_diagram.md](./app_diagram.md)** - Contains 13 Mermaid diagrams:
+  - System Architecture Overview
+  - Component Communication Flow
+  - Data Flow Architecture
+  - Database Schema Relationships
+  - Security & Permission Flow
+  - Frontend Component Tree
+  - Event Bus Architecture
+  - And more...
+
+- **[app_tree.md](./app_tree.md)** - Complete file structure:
+  - Every file documented with purpose
+  - Line counts and size statistics
+  - Critical files highlighted
+  - Quick lookup guide
+  - File relationships
+
+### Planned Documentation
 - **Event Bus Documentation:** [docs/EVENT_BUS.md](./docs/EVENT_BUS.md) (planned)
 - **API Documentation:** [docs/api/README.md](./docs/api/README.md) (planned)
 - **Deployment Guide:** [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) (planned)
+
+### How to View Diagrams
+To view the Mermaid diagrams in `app_diagram.md`:
+1. **VS Code**: Install extension `bierner.markdown-mermaid`
+2. **GitHub**: Diagrams render automatically
+3. **Online**: Copy to [mermaid.live](https://mermaid.live)
 
 ---
 
@@ -269,6 +301,24 @@ This project is licensed under the **GNU General Public License v3.0** - see the
 - **Maintainer:** future-support
 - **Repository:** [https://github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 - **Version:** 18.7.2025
+
+---
+
+## 📖 Quick Documentation Reference
+
+**New to the project?** Start here:
+
+1. **[README.md](./README.md)** ← You are here - Overview and features
+2. **[app_diagram.md](./app_diagram.md)** → Visual architecture diagrams
+3. **[app_tree.md](./app_tree.md)** → Complete file structure guide
+4. **[IMPROVEMENT_PLAN.md](./IMPROVEMENT_PLAN.md)** → Step-by-step improvement tasks
+
+**Need detailed information?**
+
+- 🔍 Understanding the codebase? → [posawesome_comprehensive_analysis.md](./posawesome_comprehensive_analysis.md)
+- 🏗️ Understanding architecture? → [app_diagram.md](./app_diagram.md)
+- 📂 Finding specific files? → [app_tree.md](./app_tree.md)
+- 🛠️ Want to improve the app? → [IMPROVEMENT_PLAN.md](./IMPROVEMENT_PLAN.md)
 
 ---
 
