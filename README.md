@@ -98,7 +98,6 @@ bench build --app posawesome && bench restart
 ## 📚 Documentation
 
 - **[api_structure.md](./api_structure.md)** - API endpoints mapping (Vue ↔ Python)
-- **[plan.md](./plan.md)** - Development roadmap
 - **[Task Sheet](https://docs.google.com/spreadsheets/d/1EX9QDOkw0UD-qPh3Ynpcw37q3b_bFtQ4)** - Project tasks & progress tracking (with screenshots)
 
 ---
