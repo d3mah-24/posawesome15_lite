@@ -19,6 +19,14 @@ from erpnext.accounts.doctype.pos_profile.pos_profile import get_item_groups
 def get_items(pos_profile, price_list=None, item_group="", search_value="", customer=None):
     """
     GET - Get items for POS
+    Returns items with prices and stock qty in a single optimized query
+    
+    Frontend expects:
+    - item_code, item_name, stock_uom
+    - rate, price_list_rate, base_rate, currency
+    - actual_qty (stock quantity from warehouse)
+    
+    Uses JOIN to avoid N+1 query problem (1 query instead of 51)
     """
     try:
         pos_profile = json.loads(pos_profile)
@@ -26,53 +34,66 @@ def get_items(pos_profile, price_list=None, item_group="", search_value="", cust
         if not price_list:
             price_list = pos_profile.get("selling_price_list")
         
-        # Simple filters - only enabled sales items (exclude templates)
-        filters = {
-            "disabled": 0,
-            "is_sales_item": 1,
-            "has_variants": 0  # Exclude template items
-        }
+        # Get warehouse from POS Profile
+        warehouse = pos_profile.get("warehouse", "")
         
-        # Search filter - only by item_code or item_name
-        if search_value:
-            filters["name"] = ["like", f"%{search_value}%"]
+        # Build WHERE conditions dynamically
+        where_conditions = [
+            "`tabItem`.disabled = 0",
+            "`tabItem`.is_sales_item = 1",
+            "`tabItem`.has_variants = 0"
+        ]
         
-        # Get items using ORM
-        items = frappe.get_all(
-            "Item",
-            filters=filters,
-            fields=["name as item_code", "item_name", "stock_uom"],
-            limit=50,
-            order_by="item_name asc"
+        # Add item_group filter if provided
+        if item_group and item_group.strip():
+            where_conditions.append(f"`tabItem`.item_group = '{frappe.db.escape(item_group)}'")
+        
+        # Add search filter (item_code OR item_name)
+        search_pattern = f"%{search_value}%" if search_value else "%%"
+        where_conditions.append("(`tabItem`.name LIKE %s OR `tabItem`.item_name LIKE %s)")
+        
+        where_clause = " AND ".join(where_conditions)
+        
+        # Single optimized query with JOINs for price and stock
+        query = f"""
+            SELECT 
+                `tabItem`.name as item_code,
+                `tabItem`.item_name,
+                `tabItem`.stock_uom,
+                COALESCE(`tabItem Price`.price_list_rate, 0.01) as rate,
+                COALESCE(`tabItem Price`.price_list_rate, 0.01) as price_list_rate,
+                COALESCE(`tabItem Price`.price_list_rate, 0.01) as base_rate,
+                COALESCE(`tabItem Price`.currency, %s) as currency,
+                COALESCE(`tabBin`.actual_qty, 0) as actual_qty
+            FROM `tabItem`
+            LEFT JOIN `tabItem Price` 
+                ON `tabItem`.name = `tabItem Price`.item_code 
+                AND `tabItem Price`.selling = 1 
+                AND `tabItem Price`.price_list = %s
+                AND (`tabItem Price`.valid_from IS NULL OR `tabItem Price`.valid_from <= CURDATE())
+                AND (`tabItem Price`.valid_upto IS NULL OR `tabItem Price`.valid_upto >= CURDATE())
+            LEFT JOIN `tabBin`
+                ON `tabItem`.name = `tabBin`.item_code
+                AND `tabBin`.warehouse = %s
+            WHERE {where_clause}
+            ORDER BY `tabItem`.item_name ASC
+            LIMIT 50
+        """
+        
+        # Execute query with parameters
+        items = frappe.db.sql(
+            query,
+            (
+                pos_profile.get("currency", "USD"),
+                price_list,
+                warehouse,
+                search_pattern,
+                search_pattern
+            ),
+            as_dict=True
         )
         
-        result = []
-        for item in items:
-            # Get price for each item
-            price_data = frappe.get_all(
-                "Item Price",
-                filters={
-                    "item_code": item.item_code,
-                    "price_list": price_list,
-                    "selling": 1
-                },
-                fields=["price_list_rate"],
-                limit=1
-            )
-            
-            if price_data and price_data[0]["price_list_rate"]:
-                item["rate"] = price_data[0]["price_list_rate"]
-                item["price_list_rate"] = item["rate"]
-                item["base_rate"] = item["rate"]
-            else:
-                # Set default price to avoid "No price" error
-                item["rate"] = 0.01  # Minimum price to avoid validation error
-                item["price_list_rate"] = 0.01
-                item["base_rate"] = 0.01
-            
-            result.append(item)
-        
-        return result
+        return items
         
     except Exception as e:
         frappe.log_error(f"item.py(get_items): Error {str(e)}", "Item API")
