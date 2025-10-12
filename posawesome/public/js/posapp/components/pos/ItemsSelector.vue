@@ -600,10 +600,6 @@ export default {
         { title: "Unit", key: "stock_uom", align: "center", width: "10%" },
       ];
 
-      if (!this.pos_profile.posa_display_item_code) {
-        items_headers.splice(1, 1);
-      }
-
       return items_headers;
     },
 
