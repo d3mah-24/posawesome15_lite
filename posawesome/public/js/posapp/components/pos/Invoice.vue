@@ -565,7 +565,6 @@ export default {
       this.refreshTotals();
     },
     refreshTotals() {
-      console.log("[Invoice] refreshTotals called");
       this._cachedCalculations.clear();
       this.$forceUpdate();
     },
@@ -645,7 +644,6 @@ export default {
     },
     
     logPriceDisplay(item) {
-      console.log("[Invoice] displaying price for item", item.item_code, "rate", item.rate);
       return ""; // Return empty string so it doesn't show in UI
     },
     
@@ -718,7 +716,6 @@ export default {
     },
 
     async add_item(item) {
-      console.log("[Invoice] received item", item.item_code, "rate", item.rate, "qty", item.qty);
       if (!item || !item.item_code) {
         evntBus.emit("show_mesage", {
           text: "Item data is incorrect or missing",
@@ -741,11 +738,10 @@ export default {
       let reason = "item-added";
 
       if (existing_item) {
-        console.log("[Invoice] updating existing item", existing_item.item_code, "new qty", flt(existing_item.qty) + flt(new_item.qty));
         existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
         reason = "item-updated";
       } else {
-        console.log("[Invoice] adding new item", new_item.item_code);
+        console.log('Invoice.vue(add_item): Added', new_item.item_code);
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
         new_item.posa_offer_applied = 0;
@@ -760,12 +756,11 @@ export default {
 
       // Check if this is the first item and no invoice exists
       if (this.items.length === 1 && !this.invoice_doc?.name) {
-        console.log("[Invoice] creating new invoice");
+        console.log('Invoice.vue(add_item): Creating new invoice');
         // Create draft invoice immediately for first item
         this.create_draft_invoice();
         return;
       } else {
-        console.log("[Invoice] updating existing invoice");
         // Emit event for Event-driven approach
         evntBus.emit("item_added", existing_item || new_item);
       }
@@ -775,12 +770,12 @@ export default {
     },
 
     async create_draft_invoice() {
-      console.log("[Invoice] create_draft_invoice called");
       try {
         const doc = this.get_invoice_doc("draft");
         const result = await this.update_invoice(doc);
         
         if (result) {
+          console.log('Invoice.vue(create_draft_invoice): Created', result.name);
           this.invoice_doc = result;
           evntBus.emit("show_mesage", {
             text: "Draft invoice created",
@@ -788,7 +783,6 @@ export default {
           });
         } else {
           // Handle case when API returns null (no items)
-          console.log("[Invoice] draft invoice creation returned null");
           this.invoice_doc = null;
           this.items = [];
         }
@@ -807,7 +801,6 @@ export default {
 
       // Skip auto-update if no items and no invoice doc
       if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
-        console.log("[Invoice] skipping auto-update - no items");
         return;
       }
 
@@ -816,31 +809,16 @@ export default {
       try {
         const result = await this.update_invoice(payload);
         
-        console.log("[Invoice] API response received", result ? "has items" : "no items");
-        
         // Handle case when API returns null (no items)
         if (!result) {
-          console.log("[Invoice] API returned null - invoice deleted");
           this.invoice_doc = null;
           this.items = [];
           return null;
         }
         
         if (result && Array.isArray(result.items)) {
-          console.log("[Invoice] updating local items from API");
-          
           // Set flag to prevent watcher loop
           this._updatingFromAPI = true;
-          
-          // Log first item for comparison
-          if (result.items.length > 0) {
-            console.log("[Invoice] first API item", result.items[0].item_code, "rate", result.items[0].rate);
-          }
-          
-          // Log current local items before update
-          if (this.items.length > 0) {
-            console.log("[Invoice] first local item before update", this.items[0].item_code, "rate", this.items[0].rate);
-          }
           
           // Merge API items with local items instead of replacing
           this.mergeItemsFromAPI(result.items);
@@ -849,17 +827,12 @@ export default {
           this.$nextTick(() => {
             this._updatingFromAPI = false;
           });
-          
-          // Log after update
-          if (this.items.length > 0) {
-            console.log("[Invoice] first local item after update", this.items[0].item_code, "rate", this.items[0].rate);
-          }
         }
         
         // Always update invoice_doc with API response (totals, taxes, etc.)
         if (result) {
           if (result.name && !this.invoice_doc?.name) {
-            console.log("[Invoice] setting new invoice_doc", result.name);
+            console.log('Invoice.vue(auto_update_invoice): Created', result.name);
             evntBus.emit("show_mesage", {
               text: "Draft invoice created",
               color: "success",
@@ -873,8 +846,6 @@ export default {
             // Preserve local items if they exist and are more recent
             items: this.items.length > (result.items?.length || 0) ? this.items : (result.items || [])
           };
-          
-          console.log("[Invoice] updated invoice_doc totals", this.invoice_doc.total, "grand_total", this.invoice_doc.grand_total);
         }
         
         // Reset flag after invoice_doc is updated
@@ -904,14 +875,12 @@ export default {
     },
 
     queue_auto_save(reason = "auto") {
-      console.log("[Invoice] queue auto save", reason);
       if (this.invoice_doc?.submitted_for_payment) {
         return Promise.resolve();
       }
 
       // Skip auto-save if no items and no invoice doc
       if (this.items.length === 0 && !this.invoice_doc?.name) {
-        console.log("[Invoice] skip save - no items");
         return Promise.resolve();
       }
 
@@ -940,15 +909,13 @@ export default {
       this._pendingAutoSaveDoc = null;
       this._pendingAutoSaveReason = "auto";
       this._autoSaveProcessing = true;
-      
-      console.log("[Invoice] running auto save worker");
 
       return this.auto_update_invoice(doc, reason)
         .then(() => {
-          console.log("[Invoice] auto save success");
+          // Auto save success - no logging needed
         })
         .catch((error) => {
-          console.log("[Invoice] auto save error", error);
+          console.log('Invoice.vue(_run_auto_save_worker): Error', error);
         })
         .finally(() => {
           this._autoSaveProcessing = false;
@@ -1209,7 +1176,6 @@ export default {
         doc.name = this.invoice_doc.name;
       } else if (this.items.length > 0) {
         // Create new invoice when we have items but no existing invoice
-        console.log("[Invoice] creating new invoice - items count", this.items.length);
       }
 
       doc.doctype = "Sales Invoice";
@@ -1301,11 +1267,8 @@ export default {
           async: true,
           callback: function (r) {
             if (r.message !== undefined) {
-              console.log("[Invoice] raw API response received");
-              
               // Handle null response (invoice deleted)
               if (r.message === null) {
-                console.log("[Invoice] invoice was deleted (null response)");
                 vm.invoice_doc = null;
                 vm.items = [];
                 resolve(null);
@@ -1315,12 +1278,10 @@ export default {
                 // Update posa_offers from backend response
                 if (r.message.posa_offers) {
                   vm.posa_offers = r.message.posa_offers;
-                  console.log('[Invoice] updated posa_offers from backend', vm.posa_offers.length);
                   
                   // Send applied offers to PosOffers component
                   const appliedOffers = vm.posa_offers.filter(offer => offer.offer_applied);
                   if (appliedOffers.length > 0) {
-                    console.log('[Invoice] sending applied offers to PosOffers', appliedOffers.length);
                     evntBus.emit('update_pos_offers', appliedOffers);
                   }
                 }
@@ -1328,7 +1289,6 @@ export default {
                 resolve(vm.invoice_doc);
               }
             } else {
-              console.log("[Invoice] no message in API response");
               reject(new Error('Failed to update invoice'));
             }
           },
@@ -1357,16 +1317,14 @@ export default {
     },
 
     async process_invoice() {
-      console.log("[Invoice] process_invoice called");
       const doc = this.get_invoice_doc("payment");
-      console.log("[Invoice] generated invoice doc", doc.name, "items", doc.items?.length || 0);
       
       try {
         const result = await this.update_invoice(doc);
-        console.log("[Invoice] process_invoice result", result ? "success" : "failed");
+        console.log('Invoice.vue(process_invoice): Success', doc.name);
         return result;
       } catch (error) {
-        console.error("[Invoice] process_invoice error:", error);
+        console.log('Invoice.vue(process_invoice): Error', error);
         evntBus.emit('show_mesage', {
           text: 'Error processing invoice',
           color: 'error'

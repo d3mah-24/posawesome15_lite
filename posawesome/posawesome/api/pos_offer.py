@@ -78,16 +78,11 @@ def get_offers_for_profile(profile):
         )
         
         
+        frappe.log_error(f"pos_offer.py(get_offers_for_profile): Found {len(data)} offers", "POS Offer")
         return data
         
     except Exception as e:
         return []
-    finally:
-        # تسجيل مختصر لعمل الدالة
-        frappe.log_error(
-            message=f"get_offers_for_profile: Profile={profile}, Company={company if 'company' in locals() else 'N/A'}, Offers={len(data) if 'data' in locals() else 0}",
-            title="POS Offer API - get_offers_for_profile"
-        )
 
 
 @frappe.whitelist()
@@ -129,16 +124,11 @@ def get_offers(profile):
             or []
         )
         
+        frappe.log_error(f"pos_offer.py(get_offers): Found {len(data)} offers", "POS Offer")
         return data
         
     except Exception as e:
         return []
-    finally:
-        # تسجيل مختصر لعمل الدالة
-        frappe.log_error(
-            message=f"get_offers: Profile={profile}, Company={company if 'company' in locals() else 'N/A'}, Offers={len(data) if 'data' in locals() else 0}",
-            title="POS Offer API - get_offers"
-        )
 
 
 def determine_offer_type(invoice_doc):
@@ -225,11 +215,7 @@ def determine_offer_type(invoice_doc):
     except Exception as e:
         return "unconditional"
     finally:
-        # تسجيل مختصر لعمل الدالة
-        frappe.log_error(
-            message=f"determine_offer_type: Invoice={invoice_name}, Items={len(invoice_doc.items) if 'invoice_doc' in locals() else 0}, Result={offer_type if 'offer_type' in locals() else 'unconditional'}",
-            title="POS Offer API - determine_offer_type"
-        )
+        frappe.log_error(f"pos_offer.py(determine_offer_type): Determined {offer_type if 'offer_type' in locals() else 'unconditional'}", "POS Offer")
 
 
 def get_offers_by_type_handler(offer_type, invoice_name, coupon_code=None):
@@ -280,11 +266,7 @@ def get_offers_by_type_handler(offer_type, invoice_name, coupon_code=None):
             "message": f"خطأ في معالج نوع العرض: {str(e)}"
         }
     finally:
-        # تسجيل مختصر لعمل الدالة
-        frappe.log_error(
-            message=f"get_offers_by_type_handler: Type={offer_type}, Invoice={invoice_name}, Coupon={coupon_code}, Result={len(applicable_offers) if 'applicable_offers' in locals() else 0}",
-            title="POS Offer API - get_offers_by_type_handler"
-        )
+        frappe.log_error(f"pos_offer.py(get_offers_by_type_handler): Found {len(applicable_offers) if 'applicable_offers' in locals() else 0} offers", "POS Offer")
 
 
 def get_offer_fields_mapping():
@@ -304,11 +286,7 @@ def get_offer_fields_mapping():
         "unconditional": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "discount_type", "discount_percentage", "discount_amount", "rate"]
     }
     
-    # تسجيل مختصر لعمل الدالة
-    frappe.log_error(
-        message=f"get_offer_fields_mapping: Returned {len(field_mapping)} field mappings",
-        title="POS Offer API - get_offer_fields_mapping"
-    )
+    frappe.log_error(f"pos_offer.py(get_offer_fields_mapping): Returned {len(field_mapping)} mappings", "POS Offer")
     
     return field_mapping
 
@@ -330,11 +308,7 @@ def get_offer_filters_mapping():
         "unconditional": {"disable": 0, "min_qty": 0, "max_qty": 0, "min_amt": 0, "max_amt": 0}
     }
     
-    # تسجيل مختصر لعمل الدالة
-    frappe.log_error(
-        message=f"get_offer_filters_mapping: Returned {len(filter_mapping)} filter mappings",
-        title="POS Offer API - get_offer_filters_mapping"
-    )
+    frappe.log_error(f"pos_offer.py(get_offer_filters_mapping): Returned {len(filter_mapping)} mappings", "POS Offer")
     
     return filter_mapping
 
@@ -406,12 +380,6 @@ def is_offer_applicable(offer, invoice_doc):
         
     except Exception as e:
         return False
-    finally:
-        # تسجيل مختصر لعمل الدالة
-        frappe.log_error(
-            message=f"is_offer_applicable: Offer={offer.get('name', 'N/A') if 'offer' in locals() else 'N/A'}, Invoice={invoice_doc.name if 'invoice_doc' in locals() else 'N/A'}, Result={'Applicable' if 'applicable' in locals() else 'N/A'}",
-            title="POS Offer API - is_offer_applicable"
-        )
 
 
 @frappe.whitelist()
@@ -437,16 +405,11 @@ def get_applicable_offers(invoice_name):
             if is_offer_applicable(offer, doc):
                 applicable_offers.append(offer)
         
+        frappe.log_error(f"pos_offer.py(get_applicable_offers): Found {len(applicable_offers)} offers", "POS Offer")
         return applicable_offers
         
     except Exception as e:
         return []
-    finally:
-        # تسجيل مختصر لعمل الدالة
-        frappe.log_error(
-            message=f"get_applicable_offers: Invoice={invoice_name}, Total={len(all_offers) if 'all_offers' in locals() else 0}, Applicable={len(applicable_offers) if 'applicable_offers' in locals() else 0}",
-            title="POS Offer API - get_applicable_offers"
-        )
 
 
 @frappe.whitelist()
@@ -478,19 +441,24 @@ def cleanup_duplicate_offers(invoice_name):
         
         if removed_count > 0:
             doc.save()
-            return {
+            result = {
                 "success": True,
                 "message": f"تم إزالة {removed_count} عرض مكرر من الفاتورة {invoice_name}",
                 "removed_count": removed_count
             }
+            frappe.log_error(f"pos_offer.py(cleanup_duplicate_offers): Removed {removed_count} offers", "POS Offer")
+            return result
         else:
-            return {
+            result = {
                 "success": True,
                 "message": "لا توجد عروض مكررة في هذه الفاتورة",
                 "removed_count": 0
             }
+            frappe.log_error(f"pos_offer.py(cleanup_duplicate_offers): No duplicates found", "POS Offer")
+            return result
         
     except Exception as e:
+        frappe.log_error(f"pos_offer.py(cleanup_duplicate_offers): Error {str(e)}", "POS Offer")
         return {
             "success": False,
             "error": str(e),
@@ -548,8 +516,4 @@ def debug_offers_for_profile(profile):
     except Exception as e:
         return {"error": str(e)}
     finally:
-        # تسجيل مختصر لعمل الدالة
-        frappe.log_error(
-            message=f"debug_offers_for_profile: Profile={profile}, Total={len(all_offers) if 'all_offers' in locals() else 0}, Active={len(active_offers) if 'active_offers' in locals() else 0}, Company={len(company_offers) if 'company_offers' in locals() else 0}",
-            title="POS Offer API - debug_offers_for_profile"
-        )
+        frappe.log_error(f"pos_offer.py(debug_offers_for_profile): Total {len(all_offers) if 'all_offers' in locals() else 0}, Active {len(active_offers) if 'active_offers' in locals() else 0}", "POS Offer")

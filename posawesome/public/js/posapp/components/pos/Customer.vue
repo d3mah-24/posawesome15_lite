@@ -61,18 +61,15 @@ export default {
   // ===== SECTION 5: METHODS =====
   methods: {
     get_customer_names() {
-      console.log('[Customer] getting customer names');
       const vm = this;
       try {
         if (this.customers.length > 0) {
-          console.log('[Customer] customers already loaded');
           return;
         }
         // Load only default customer initially
-        console.log('[Customer] loading default customer only');
         this.load_default_customer();
       } catch (error) {
-        console.log('[Customer] unexpected error loading customers', error);
+        console.log('Customer.vue(get_customer_names): Error', error);
         evntBus.emit('show_mesage', {
           message: 'An unexpected error occurred while fetching customers',
           color: 'error',
@@ -80,9 +77,7 @@ export default {
       }
     },
     load_default_customer() {
-      console.log('[Customer] loading default customer');
       if (!this.pos_profile) {
-        console.log('[Customer] no pos_profile available');
         evntBus.emit('show_mesage', {
           message: 'POS Profile not loaded',
           color: 'error',
@@ -93,11 +88,10 @@ export default {
       // Use the already loaded POS Profile data
       const default_customer = this.pos_profile.pos_profile?.customer;
       if (default_customer) {
-        console.log('[Customer] default customer loaded from profile', default_customer);
+        console.log('Customer.vue(load_default_customer): Loaded', default_customer);
         this.customer = default_customer;
         evntBus.emit('update_customer', default_customer);
       } else {
-        console.log('[Customer] no default customer in profile');
         evntBus.emit('show_mesage', {
           message: 'Default customer not defined in POS Profile',
           color: 'error',
@@ -105,7 +99,6 @@ export default {
       }
     },
     load_all_customers() {
-      console.log('[Customer] loading all customers');
       frappe.call({
         method: 'posawesome.posawesome.api.customer.get_customer_names',
         args: {
@@ -113,12 +106,12 @@ export default {
         },
         callback: (r) => {
           if (r.message) {
-            console.log('[Customer] all customers loaded from API', r.message.length);
+            console.log('Customer.vue(load_all_customers): Loaded', r.message.length);
             this.customers = r.message;
           }
         },
         error: (err) => {
-          console.log('[Customer] error loading all customers', err);
+          console.log('Customer.vue(load_all_customers): Error', err);
           evntBus.emit('show_mesage', {
             message: 'Failed to fetch customers',
             color: 'error',
@@ -128,10 +121,9 @@ export default {
     },
     new_customer() {
       try {
-        console.log('[Customer] opening new customer form');
         evntBus.emit('open_update_customer', null);
       } catch (error) {
-        console.log('[Customer] error opening new customer form', error);
+        console.log('Customer.vue(new_customer): Error', error);
         evntBus.emit('show_mesage', {
           message: 'Error opening new customer form',
           color: 'error',
@@ -140,10 +132,9 @@ export default {
     },
     edit_customer() {
       try {
-        console.log('[Customer] opening edit customer form', this.customer_info?.name);
         evntBus.emit('open_update_customer', this.customer_info);
       } catch (error) {
-        console.log('[Customer] error opening edit customer form', error);
+        console.log('Customer.vue(edit_customer): Error', error);
         evntBus.emit('show_mesage', {
           message: 'Error opening customer edit form',
           color: 'error',
@@ -170,7 +161,7 @@ export default {
         );
         return result;
       } catch (error) {
-        console.log('[Customer] error in custom filter', error);
+        console.log('Customer.vue(customFilter): Error', error);
         return false;
       }
     },
@@ -179,60 +170,52 @@ export default {
   computed: {},
 
   created: function () {
-    console.log('[Customer] component created');
     this.$nextTick(function () {
       try {
       
         evntBus.on('toggle_quick_return', (value) => {
-          console.log('[Customer] quick return toggled', value);
           this.quick_return = value;
         });
       
         evntBus.on('register_pos_profile', (pos_profile) => {
-          console.log('[Customer] pos profile registered', pos_profile?.pos_profile?.name);
+          console.log('Customer.vue(register_pos_profile): Registered', pos_profile?.pos_profile?.name);
           this.pos_profile = pos_profile;
           this.get_customer_names();
         });
       
         evntBus.on('payments_register_pos_profile', (pos_profile) => {
-          console.log('[Customer] payments pos profile registered', pos_profile?.pos_profile?.name);
           this.pos_profile = pos_profile;
           this.get_customer_names();
         });
       
         evntBus.on('set_customer', (customer) => {
-          console.log('[Customer] customer set', customer);
+          console.log('Customer.vue(set_customer): Set', customer);
           this.customer = customer;
         });
       
         evntBus.on('add_customer_to_list', (customer) => {
-          console.log('[Customer] adding customer to list', customer?.name);
           this.customers.push(customer);
         });
       
         evntBus.on('set_customer_readonly', (value) => {
-          console.log('[Customer] customer readonly set', value);
           this.readonly = value;
         });
       
         evntBus.on('set_customer_info_to_edit', (data) => {
-          console.log('[Customer] customer info set for edit', data?.name);
           this.customer_info = data;
         });
       
         evntBus.on('fetch_customer_details', () => {
-          console.log('[Customer] fetching customer details');
           this.get_customer_names();
         });
         
         // Load all customers when dropdown is opened
         evntBus.on('customer_dropdown_opened', () => {
-          console.log('[Customer] customer dropdown opened, loading all customers');
           this.load_all_customers();
         });
       
       } catch (error) {
-        console.log('[Customer] error in component initialization', error);
+        console.log('Customer.vue(created): Error', error);
         evntBus.emit('show_mesage', {
           message: 'An error occurred during component initialization',
           color: 'error',
@@ -243,7 +226,7 @@ export default {
   // ===== SECTION 6: WATCH =====
   watch: {
     customer() {
-      console.log('[Customer] customer changed', this.customer);
+      console.log('Customer.vue(customer): Changed', this.customer);
       evntBus.emit('update_customer', this.customer);
     },
   }

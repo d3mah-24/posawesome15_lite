@@ -8,25 +8,7 @@ from __future__ import unicode_literals
 
 import frappe
 
-# متغير عام لتجميع التشخيصات
-debug_log = []
-
-def log_debug(message):
-    """إضافة رسالة للتشخيص العام"""
-    debug_log.append(str(message))
-
-def clear_debug_log():
-    """مسح التشخيص العام"""
-    global debug_log
-    debug_log = []
-
-def save_debug_log():
-    """حفظ التشخيص العام في سجل واحد"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط (بدون مسح)
-        frappe.log_error(message="\n".join(debug_log), title="POS Opening Shift API - تشخيص شامل")
-        # لا نمسح debug_log هنا - نتركه للتجميع
+# POS Opening Shift API - Simplified logging
 
 
 @frappe.whitelist()
@@ -35,9 +17,7 @@ def get_current_shift_name():
     GET - Get current user's open POS Opening Shift basic info
     """
     try:
-        log_debug("=== بدء جلب اسم الوردية الحالية ===")
         user = frappe.session.user
-        log_debug(f"المستخدم: {user}")
 
         # Find latest open shift for this user
         rows = frappe.get_all(
@@ -64,13 +44,14 @@ def get_current_shift_name():
         if row.get("period_start_date"):
             row["period_start_date"] = str(row["period_start_date"])
 
-        return {
+        result = {
             "success": True,
             "data": row,
         }
+        return result
         
     except Exception as e:
-        frappe.log_error(f"Error getting current shift: {str(e)}")
+        frappe.log_error(f"pos_opening_shift.py(get_current_shift_name): Error {str(e)}", "POS Opening Shift")
         return {
             "success": False,
             "message": f"Error getting current shift: {str(e)}",
@@ -107,7 +88,7 @@ def create_opening_voucher(pos_profile, company, balance_details):
         return data
         
     except Exception as e:
-        frappe.log_error(f"Error creating opening voucher: {str(e)}")
+        frappe.log_error(f"pos_opening_shift.py(create_opening_voucher): Error {str(e)}", "POS Opening Shift")
         frappe.throw(f"Error creating opening voucher: {str(e)}")
 
 
@@ -120,6 +101,7 @@ def check_opening_shift(user=None, **kwargs):
         if not user:
             user = kwargs.get('user')
         if not user:
+            frappe.log_error(f"pos_opening_shift.py(check_opening_shift): Missing user argument", "POS Opening Shift")
             return {"error": "Missing required argument: user"}
             
         open_vouchers = frappe.db.get_all(
@@ -145,7 +127,7 @@ def check_opening_shift(user=None, **kwargs):
         return data
         
     except Exception as e:
-        frappe.log_error(f"Error checking opening shift: {str(e)}")
+        frappe.log_error(f"pos_opening_shift.py(check_opening_shift): Error {str(e)}", "POS Opening Shift")
         return {"error": f"Error checking opening shift: {str(e)}"}
 
 
@@ -162,7 +144,7 @@ def get_user_shift_invoice_count(pos_profile, pos_opening_shift):
         return count
         
     except Exception as e:
-        frappe.log_error(f"Error getting shift invoice count: {str(e)}")
+        frappe.log_error(f"pos_opening_shift.py(get_user_shift_invoice_count): Error {str(e)}", "POS Opening Shift")
         return 0
 
 
@@ -186,14 +168,16 @@ def get_user_shift_stats(pos_profile, pos_opening_shift):
             "docstatus": 1
         })
         
-        return {
-            "total_sales": total_sales[0].total or 0,
+        total_amount = total_sales[0].total or 0
+        result = {
+            "total_sales": total_amount,
             "invoice_count": invoice_count,
             "shift_name": pos_opening_shift
         }
+        return result
         
     except Exception as e:
-        frappe.log_error(f"Error getting shift stats: {str(e)}")
+        frappe.log_error(f"pos_opening_shift.py(get_user_shift_stats): Error {str(e)}", "POS Opening Shift")
         return {
             "total_sales": 0,
             "invoice_count": 0,
@@ -213,18 +197,8 @@ def update_opening_shift_data(data, pos_profile):
         )
         data["stock_settings"] = {}
         data["stock_settings"].update({"allow_negative_stock": allow_negative_stock})
-        
     except Exception as e:
-        frappe.log_error(f"Error updating opening shift data: {str(e)}")
+        frappe.log_error(f"pos_opening_shift.py(update_opening_shift_data): Error {str(e)}", "POS Opening Shift")
 
 
-# دالة لحفظ جميع التشخيصات في Error Log
-def show_all_debug_logs():
-    """حفظ جميع التشخيصات المجمعة في Error Log"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط
-        frappe.log_error(message="\n".join(debug_log), title="POS Opening Shift API - جميع التشخيصات المجمعة")
-        
-        # مسح التشخيصات بعد الحفظ
-        debug_log = []
+# POS Opening Shift API - Simplified logging completed

@@ -95,6 +95,7 @@ export default {
   // ===== SECTION 5: METHODS =====
   methods: {
     close_dialog() {
+      console.log('Drafts.vue(close_dialog): Closed');
       this.draftsDialog = false;
     },
 
@@ -103,12 +104,14 @@ export default {
       if (this.selected.length == 1) {
         $.each(this.dialog_data || [], function(i,v){
           if(v.name == me.selected[0]){
+            console.log('Drafts.vue(submit_dialog): Selected', v.name);
             evntBus.emit('load_invoice', v);
             me.draftsDialog = false;
           }
         });
       }
       else{
+        console.log('Drafts.vue(submit_dialog): No selection');
         evntBus.emit("show_mesage", {
           text: "Please select only one invoice",
           color: "error",
@@ -119,6 +122,7 @@ export default {
   // ===== SECTION 6: LIFECYCLE HOOKS =====
   created: function () {
     evntBus.on('open_drafts', (data) => {
+      console.log('Drafts.vue(open_drafts): Opened', data?.length || 0);
       this.draftsDialog = true;
       this.dialog_data = data;
     });

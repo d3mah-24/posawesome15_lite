@@ -422,8 +422,6 @@ export default {
     },
 
     onItemGroupChange() {
-      console.log('[ItemsSelector] group change', this.item_group);
-      
       // Clear search when group changes to avoid confusion
       if (this.debounce_search) {
         this.debounce_search = "";
@@ -563,7 +561,7 @@ export default {
 
     // Improve function to add item
     add_item_table(event, item){
-      console.log("[ItemsSelector] clicked on table item", item.item.item_code, "rate", item.item.rate, "qty", this.qty || 1);
+      console.log('ItemsSelector.vue(add_item_table): Added', item.item.item_code);
       // إضافة الصنف كما هو من API مع الحد الأدنى من التعديلات
       evntBus.emit("add_item", {
         ...item.item,
@@ -573,7 +571,7 @@ export default {
     },
 
     add_item(item) {
-      console.log("[ItemsSelector] clicked on item", item.item_code, "rate", item.rate, "qty", this.qty || 1);
+      console.log('ItemsSelector.vue(add_item): Added', item.item_code);
       // إضافة الصنف كما هو من API مع الحد الأدنى من التعديلات
       evntBus.emit("add_item", {
         ...item,
@@ -695,13 +693,11 @@ export default {
       
       // If search is empty, reload all items
       if (!searchValue || searchValue.trim() === '') {
-        console.log('[ItemsSelector] empty search, calling get_items');
         this.get_items();
         return;
       }
       
       // Perform live search using get_items
-      console.log('[ItemsSelector] calling get_items with search', searchValue);
         frappe.call({
           method: "posawesome.posawesome.api.item.get_items",
           args: {
@@ -715,7 +711,6 @@ export default {
           // Stop search progress bar
           vm.search_loading = false;
           
-          console.log('[ItemsSelector] response', r && r.message ? r.message.length : 0);
           if (r.message) {
             vm.items = (r.message || []).map(it => ({
               ...it,
@@ -747,7 +742,6 @@ export default {
       }
 
       // Search by name/code/batch/serial using get_items
-      console.log('[ItemsSelector] calling get_items with debounce_search', vm.debounce_search);
         frappe.call({
           method: "posawesome.posawesome.api.item.get_items",
           args: {
@@ -759,7 +753,6 @@ export default {
         },
         callback: function (r) {
           
-          console.log('[ItemsSelector] response', r && r.message ? r.message.length : 0);
           if (r.message && r.message.length > 0) {
             // Results found, display for selection
             vm.items = (r.message || []).map(it => ({

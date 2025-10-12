@@ -141,7 +141,7 @@ export default {
               stock_settings: { allow_negative_stock: 0 }
             };
             
-            console.log('[Pos] pos profile loaded', pos_profile.name);
+            console.log('Pos.vue(check_opening_entry): Profile loaded', pos_profile.name);
             this.pos_profile = pos_profile;
             this.pos_opening_shift = shift_r.message.success ? shift_r.message.data : null;
             this.get_offers(pos_profile.name);
@@ -154,7 +154,6 @@ export default {
       });
     },
     create_opening_voucher() {
-      console.log('[Pos] creating opening voucher');
       this.dialog = true;
     },
     get_closing_data() {
@@ -167,10 +166,9 @@ export default {
         )
         .then((r) => {
           if (r.message) {
-            console.log('[Pos] opening closing dialog');
             evntBus.emit('open_ClosingDialog', r.message);
           } else {
-            console.log('[Pos] failed to load closing data');
+            console.log('Pos.vue(get_closing_data): Failed to load');
             evntBus.emit('show_mesage', {
               text: 'Failed to load closing data',
               color: 'error'
@@ -179,7 +177,6 @@ export default {
         });
     },
     submit_closing_pos(data) {
-      console.log('[Pos] submitting closing pos');
       frappe
         .call(
           'posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift',
@@ -189,7 +186,7 @@ export default {
         )
         .then((r) => {
           if (r.message) {
-            console.log('[Pos] cashier shift closed successfully');
+            console.log('Pos.vue(submit_closing_pos): Success');
             evntBus.emit('show_mesage', {
               text: 'Cashier shift closed successfully',
               color: 'success',
@@ -204,14 +201,12 @@ export default {
         });
     },
     get_offers(pos_profile) {
-      console.log('[Pos] getting offers for profile', pos_profile);
       return frappe
         .call('posawesome.posawesome.api.pos_offer.get_offers_for_profile', {
           profile: pos_profile,
         })
         .then((r) => {
           if (r.message) {
-            console.log('[Pos] offers loaded', r.message.length);
             evntBus.emit('set_offers', r.message);
           } else {
             evntBus.emit('show_mesage', {
@@ -222,25 +217,20 @@ export default {
         });
     },
     get_pos_setting() {
-      console.log('[Pos] getting pos settings');
       frappe.db.get_doc('POS Settings', undefined).then((doc) => {
-        console.log('[Pos] pos settings loaded');
         evntBus.emit('set_pos_settings', doc);
       });
     },
     onPrintRequest() {
-      console.log('[Pos] print request received');
       evntBus.emit("request_invoice_print");
     },
   },
   // ===== SECTION 6: LIFECYCLE HOOKS =====
   mounted: function () {
-    console.log('[Pos] component mounted');
     this.$nextTick(function () {
       this.check_opening_entry();
       this.get_pos_setting();
       evntBus.on('close_opening_dialog', () => {
-        console.log('[Pos] opening dialog closed');
         this.dialog = false;
       });
       evntBus.on('register_pos_data', (data) => {

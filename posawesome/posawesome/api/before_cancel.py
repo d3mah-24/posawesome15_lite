@@ -9,25 +9,7 @@ import frappe
 
 from posawesome.posawesome.api.update_coupon import update_coupon
 
-# متغير عام لتجميع التشخيصات
-debug_log = []
-
-def log_debug(message):
-    """إضافة رسالة للتشخيص العام"""
-    debug_log.append(str(message))
-
-def clear_debug_log():
-    """مسح التشخيص العام"""
-    global debug_log
-    debug_log = []
-
-def save_debug_log():
-    """حفظ التشخيص العام في سجل واحد"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط (بدون مسح)
-        frappe.log_error(message="\n".join(debug_log), title="Before Cancel API - تشخيص شامل")
-        # لا نمسح debug_log هنا - نتركه للتجميع
+# Before Cancel API - Simplified logging
 
 
 def before_cancel(doc, method):
@@ -46,15 +28,8 @@ def before_cancel(doc, method):
         # Check if there are any related transactions
         # (This could be extended to check for returns, etc.)
         pass
+    
+    frappe.log_error(f"before_cancel.py(before_cancel): Completed for {doc.name}", "Before Cancel")
 
 
-# دالة لحفظ جميع التشخيصات في Error Log
-def show_all_debug_logs():
-    """حفظ جميع التشخيصات المجمعة في Error Log"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط
-        frappe.log_error(message="\n".join(debug_log), title="Before Cancel API - جميع التشخيصات المجمعة")
-        
-        # مسح التشخيصات بعد الحفظ
-        debug_log = []
+# Before Cancel API - Simplified logging completed

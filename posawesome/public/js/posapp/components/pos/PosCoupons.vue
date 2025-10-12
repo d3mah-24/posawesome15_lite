@@ -114,13 +114,10 @@ export default {
 
   methods: {
     back_to_invoice() {
-      console.log('[PosCoupons] back to invoice');
       evntBus.emit('show_coupons', 'false');
     },
     add_coupon(new_coupon) {
-      console.log('[PosCoupons] adding coupon', new_coupon);
       if (!this.customer || !new_coupon) {
-        console.log('[PosCoupons] customer or coupon code missing');
         evntBus.emit('show_mesage', {
           text: 'Customer or coupon code is missing',
           color: 'error'
@@ -131,7 +128,6 @@ export default {
         (el) => el.coupon_code == new_coupon
       );
       if (exist) {
-        console.log('[PosCoupons] coupon already used', new_coupon);
         evntBus.emit('show_mesage', {
           text: 'This coupon is already used!',
           color: 'error',
@@ -150,13 +146,12 @@ export default {
           if (r.message) {
             const res = r.message;
             if (res.msg != 'Apply' || !res.coupon) {
-              console.log('[PosCoupons] coupon validation failed', res.msg);
               evntBus.emit('show_mesage', {
                 text: res.msg,
                 color: 'error',
               });
             } else {
-              console.log('[PosCoupons] coupon added successfully', new_coupon);
+              console.log('PosCoupons.vue(add_coupon): Added', new_coupon);
               vm.new_coupon = null;
               const coupon = res.coupon;
               vm.posa_coupons.push({
@@ -169,7 +164,6 @@ export default {
               });
             }
           } else {
-            console.log('[PosCoupons] failed to get coupon from server');
             evntBus.emit('show_mesage', {
               text: 'Failed to get coupon from server',
               color: 'error'
@@ -179,9 +173,7 @@ export default {
       });
     },
     setActiveGiftCoupons() {
-      console.log('[PosCoupons] setting active gift coupons');
       if (!this.customer) {
-        console.log('[PosCoupons] no customer for active gift coupons');
         evntBus.emit('show_mesage', {
           text: 'No customer for active gift coupons',
           color: 'error'
@@ -198,12 +190,10 @@ export default {
         callback: function (r) {
           if (r.message) {
             const coupons = r.message;
-            console.log('[PosCoupons] active gift coupons loaded', coupons.length);
             coupons.forEach((coupon_code) => {
               vm.add_coupon(coupon_code);
             });
           } else {
-            console.log('[PosCoupons] failed to get active gift coupons');
             evntBus.emit('show_mesage', {
               text: 'Failed to get active gift coupons',
               color: 'error'
@@ -214,7 +204,6 @@ export default {
     },
 
     updatePosCoupons(offers) {
-      console.log('[PosCoupons] updating pos coupons', offers.length);
       this.posa_coupons.forEach((coupon) => {
         const offer = offers.find(
           (el) => el.offer_applied && el.coupon == coupon.coupon
@@ -228,17 +217,14 @@ export default {
     },
 
     removeCoupon(reomove_list) {
-      console.log('[PosCoupons] removing coupons', reomove_list.length);
       this.posa_coupons = this.posa_coupons.filter(
         (coupon) => !reomove_list.includes(coupon.coupon)
       );
     },
     updateInvoice() {
-      console.log('[PosCoupons] updating invoice coupons', this.posa_coupons.length);
       evntBus.emit('update_invoice_coupons', this.posa_coupons);
     },
     updateCounters() {
-      console.log('[PosCoupons] updating counters');
       evntBus.emit('update_coupons_counters', {
         couponsCount: this.couponsCount,
         appliedCouponsCount: this.appliedCouponsCount,

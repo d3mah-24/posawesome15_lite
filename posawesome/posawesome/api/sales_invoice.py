@@ -11,25 +11,6 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-# متغير عام لتجميع التشخيصات
-debug_log = []
-
-def log_debug(message):
-    """إضافة رسالة للتشخيص العام"""
-    debug_log.append(str(message))
-
-def clear_debug_log():
-    """مسح التشخيص العام"""
-    global debug_log
-    debug_log = []
-
-def save_debug_log():
-    """حفظ التشخيص العام في سجل واحد"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط (بدون مسح)
-        frappe.log_error(message="\n".join(debug_log), title="Sales Invoice API - تشخيص شامل")
-        # لا نمسح debug_log هنا - نتركه للتجميع
 
 
 @frappe.whitelist()
@@ -39,9 +20,10 @@ def get_invoice(invoice_name):
     """
     try:
         doc = frappe.get_doc("Sales Invoice", invoice_name)
-        return doc.as_dict()
+        result = doc.as_dict()
+        return result
     except Exception as e:
-        frappe.log_error(f"Error getting invoice {invoice_name}: {str(e)}")
+        frappe.log_error(f"sales_invoice.py(get_invoice): Error {str(e)}", "POS Submit")
         return None
 
 
@@ -129,20 +111,13 @@ def update_invoice(data):
     try:
         from posawesome.posawesome.api.pos_offer import get_applicable_offers
         
-        log_debug("=== بدء تطبيق العروض التلقائية ===")
-        log_debug(f"Invoice: {invoice_doc.name}")
-        
         # Get applicable offers for this invoice
         from posawesome.posawesome.api.pos_offer import get_applicable_offers
         applicable_offers = get_applicable_offers(invoice_doc.name)
         
         if applicable_offers:
-            log_debug(f"تم العثور على {len(applicable_offers)} عرض مناسب")
-            
             # Apply offers directly in sales_invoice.py
             for offer in applicable_offers:
-                log_debug(f"تطبيق العرض: {offer.name}")
-                
                 # فحص إذا كان العرض موجود بالفعل لتجنب التكرار
                 existing_offer = None
                 if hasattr(invoice_doc, 'posa_offers') and invoice_doc.posa_offers:
@@ -153,7 +128,6 @@ def update_invoice(data):
                     )
                 
                 if existing_offer:
-                    log_debug(f"العرض موجود بالفعل: {offer.name}")
                     continue
                 
                 # Add offer to POS Offer Detail child table
@@ -165,33 +139,26 @@ def update_invoice(data):
                     "coupon_based": offer.coupon_based or 0
                 })
                 
-                log_debug(f"✅ تم إضافة العرض إلى الجدول الفرعي: {offer.name}")
-                
                 if offer.discount_type == "Discount Percentage":
                     # Apply discount to invoice
                     invoice_doc.additional_discount_percentage = offer.discount_percentage
                     invoice_doc.discount_amount = (invoice_doc.grand_total * offer.discount_percentage) / 100
-                    log_debug(f"✅ تم تطبيق خصم {offer.discount_percentage}% على الفاتورة")
             
             # Save the invoice with applied offers
             invoice_doc.flags.ignore_permissions = True
             frappe.flags.ignore_account_permission = True
             invoice_doc.save()
             
-            log_debug("✅ تم تطبيق العروض التلقائية بنجاح")
             # Reload the invoice to get updated totals
             invoice_doc = frappe.get_doc("Sales Invoice", invoice_doc.name)
-        else:
-            log_debug("لا توجد عروض مناسبة للتطبيق")
-            
-        log_debug("=== انتهاء تطبيق العروض التلقائية ===")
         
     except Exception as e:
-        log_debug(f"❌ خطأ في تطبيق العروض التلقائية: {str(e)}")
         # Don't fail the invoice creation if offers fail
+        pass
 
     # Return only essential data needed by POS frontend
-    return get_minimal_invoice_response(invoice_doc)
+    result = get_minimal_invoice_response(invoice_doc)
+    return result
 
 
 @frappe.whitelist()
@@ -199,13 +166,8 @@ def submit_invoice(data=None, invoice=None, invoice_data=None, print_invoice=Fal
     """
     POST - Submit invoice using ERPNext's built-in submit method
     """
-    # مسح التشخيص السابق وبدء جديد
-    clear_debug_log()
     
     try:
-        log_debug("=== بدء إرسال الفاتورة باستخدام ERPNext ===")
-        log_debug(f"submit_invoice called with data={data}, invoice={invoice}, invoice_data={invoice_data}")
-        
         # Handle different parameter formats
         if invoice_data:
             invoice_data = json.loads(invoice_data) if isinstance(invoice_data, str) else invoice_data
@@ -216,36 +178,25 @@ def submit_invoice(data=None, invoice=None, invoice_data=None, print_invoice=Fal
         else:
             frappe.throw("No invoice data provided")
         
-        log_debug(f"Processed invoice_data: {invoice_data}")
-        
         if not invoice_data.get("name"):
             frappe.throw("Invoice name is required")
         
         # Get the invoice document
         doc = frappe.get_doc("Sales Invoice", invoice_data["name"])
-        log_debug(f"Retrieved invoice doc: {doc.name}, status: {doc.docstatus}")
 
         # Update the document with new data
         doc.update(invoice_data)
-        log_debug("Updated invoice doc with additional data")
         
         # Apply offers before submission
         try:
             from posawesome.posawesome.api.pos_offer import get_applicable_offers
             
-            log_debug("=== بدء تطبيق العروض قبل الإرسال ===")
-            log_debug(f"Invoice: {doc.name}")
-            
             # Get applicable offers for this invoice
             applicable_offers = get_applicable_offers(doc.name)
             
             if applicable_offers:
-                log_debug(f"تم العثور على {len(applicable_offers)} عرض مناسب")
-                
                 # Apply offers directly
                 for offer in applicable_offers:
-                    log_debug(f"تطبيق العرض: {offer.name}")
-                    
                     # فحص إذا كان العرض موجود بالفعل لتجنب التكرار
                     existing_offer = None
                     if hasattr(doc, 'posa_offers') and doc.posa_offers:
@@ -256,12 +207,10 @@ def submit_invoice(data=None, invoice=None, invoice_data=None, print_invoice=Fal
                         )
                     
                     if existing_offer:
-                        log_debug(f"العرض موجود بالفعل: {offer.name}")
                         # تطبيق الخصم حتى لو كان العرض موجود
                         if offer.discount_type == "Discount Percentage":
                             doc.additional_discount_percentage = offer.discount_percentage
                             doc.discount_amount = (doc.grand_total * offer.discount_percentage) / 100
-                            log_debug(f"✅ تم تطبيق خصم {offer.discount_percentage}% على الفاتورة")
                         continue
                     
                     # Add offer to POS Offer Detail child table
@@ -273,29 +222,20 @@ def submit_invoice(data=None, invoice=None, invoice_data=None, print_invoice=Fal
                         "coupon_based": offer.coupon_based or 0
                     })
                     
-                    log_debug(f"✅ تم إضافة العرض إلى الجدول الفرعي: {offer.name}")
-                    
                     if offer.discount_type == "Discount Percentage":
                         # Apply discount to invoice
                         doc.additional_discount_percentage = offer.discount_percentage
                         doc.discount_amount = (doc.grand_total * offer.discount_percentage) / 100
-                        log_debug(f"✅ تم تطبيق خصم {offer.discount_percentage}% على الفاتورة")
-                
-                log_debug("✅ تم تطبيق العروض قبل الإرسال بنجاح")
-            else:
-                log_debug("لا توجد عروض مناسبة")
                 
         except Exception as e:
-            log_debug(f"❌ خطأ في تطبيق العروض: {str(e)}")
             # لا نوقف العملية إذا فشل تطبيق العروض
+            pass
         
         # Recalculate totals after applying offers
         doc.calculate_taxes_and_totals()
-        log_debug(f"Grand total after offers: {doc.grand_total}")
         
         # Handle payments - let ERPNext handle the calculations
         if invoice_data.get("payments"):
-            log_debug(f"Processing payments: {len(invoice_data['payments'])} payment methods")
             doc.payments = []
             for payment in invoice_data["payments"]:
                 if flt(payment.get("amount", 0)) > 0:
@@ -310,10 +250,8 @@ def submit_invoice(data=None, invoice=None, invoice_data=None, print_invoice=Fal
                         "account": payment.get("account", ""),
                         "default": payment.get("default", 0)
                     })
-                    log_debug(f"Added payment: {payment.get('mode_of_payment')} - {payment_amount}")
                 else:
                     # No payments provided, add default payment from POS Profile
-                    log_debug("No payments provided, adding default payment from POS Profile")
                     default_payment = frappe.call("posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile", 
                         doc.pos_profile, doc.company)
                     if default_payment and default_payment.get("message"):
@@ -323,48 +261,30 @@ def submit_invoice(data=None, invoice=None, invoice_data=None, print_invoice=Fal
                             "account": default_payment["message"]["account"],
                             "default": 1
                         })
-                        log_debug(f"Added default payment: {default_payment['message']['mode_of_payment']} - {doc.grand_total}")
         
         # Let ERPNext handle all calculations and submit
-        log_debug(f"Grand total: {doc.grand_total}")
-        log_debug(f"Outstanding amount before save: {doc.outstanding_amount}")
         
         # Handle rounding adjustment by adding it to write_off_amount
         if hasattr(doc, 'rounding_adjustment') and doc.rounding_adjustment:
-            log_debug(f"Rounding adjustment detected: {doc.rounding_adjustment}")
             doc.write_off_amount = flt(doc.write_off_amount or 0) + flt(doc.rounding_adjustment)
-            log_debug(f"Write off amount updated to: {doc.write_off_amount}")
         
         # Save the document first to ensure all data is persisted
         doc.flags.ignore_permissions = True
         frappe.flags.ignore_account_permission = True
         doc.save()
-        log_debug(f"Document saved: {doc.name}")
         
         # Now submit using ERPNext's original submit method
-        log_debug(f"Submitting invoice using ERPNext original method: {doc.name}")
         doc.submit()
-        
-        log_debug(f"Invoice submitted successfully: {doc.name}")
-        log_debug(f"Outstanding amount after submit: {doc.outstanding_amount}")
 
-        log_debug("=== انتهاء إرسال الفاتورة بنجاح ===")
-        
-        # حفظ كل التشخيص في سجل واحد
-        save_debug_log()
-
-        return {
+        result = {
             "success": True,
             "invoice": doc.as_dict(),
             "print_invoice": print_invoice
         }
+        return result
         
     except Exception as e:
-        log_debug(f"❌ خطأ في إرسال الفاتورة: {str(e)}")
-        log_debug(f"❌ تفاصيل الخطأ: {frappe.get_traceback()}")
-        # حفظ التشخيص حتى في حالة الخطأ
-        save_debug_log()
-        frappe.log_error(f"Error submitting invoice: {str(e)}")
+        frappe.log_error(f"sales_invoice.py(submit_invoice): Error {str(e)}", "POS Submit")
         return {
             "success": False,
             "error": str(e)
@@ -385,10 +305,11 @@ def delete_invoice(invoice_name):
         doc.flags.ignore_permissions = True
         doc.delete()
         
-        return {"message": "Invoice deleted successfully"}
+        result = {"message": "Invoice deleted successfully"}
+        return result
         
     except Exception as e:
-        frappe.log_error(f"Error deleting invoice {invoice_name}: {str(e)}")
+        frappe.log_error(f"sales_invoice.py(delete_invoice): Error {str(e)}", "POS Submit")
         frappe.throw(_("Error deleting invoice: {0}").format(str(e)))
 
 
@@ -428,7 +349,7 @@ def get_draft_invoices(pos_opening_shift):
         return data
         
     except Exception as e:
-        frappe.log_error(f"Error getting draft invoices: {str(e)}")
+        frappe.log_error(f"sales_invoice.py(get_draft_invoices): Error {str(e)}", "POS Submit")
         return []
 
 
@@ -458,7 +379,7 @@ def search_invoices_for_return(invoice_name, company):
         return invoices
 
     except Exception as e:
-        frappe.log_error(f"Error searching invoices for return: {str(e)}")
+        frappe.log_error(f"sales_invoice.py(search_invoices_for_return): Error {str(e)}", "POS Submit")
         return []
 
 
@@ -496,9 +417,11 @@ def validate_return_items(return_against, invoice_items):
                     "message": f"Return quantity for {item['item_code']} exceeds original quantity"
                 }
         
-        return {"valid": True, "message": "Return items are valid"}
+        result = {"valid": True, "message": "Return items are valid"}
+        return result
         
     except Exception as e:
+        frappe.log_error(f"sales_invoice.py(validate_return_items): Error {str(e)}", "POS Submit")
         return {
             "valid": False,
             "message": f"Error validating return items: {str(e)}"
@@ -602,7 +525,7 @@ def create_payment_request(doc):
             "data": {}
         }
     except Exception as e:
-        frappe.log_error(f"Error creating payment request: {str(e)}")
+        frappe.log_error(f"sales_invoice.py(create_payment_request): Error {str(e)}", "POS Submit")
         return {
             "success": False,
             "message": str(e),
@@ -622,7 +545,7 @@ def validate(doc, method):
             validate_pos_invoice(doc)
             
     except Exception as e:
-        frappe.log_error(f"Error in Sales Invoice validation: {str(e)}")
+        frappe.log_error(f"sales_invoice.py(validate): Error {str(e)}", "POS Submit")
         raise
 
 
@@ -676,7 +599,7 @@ def before_submit(doc, method):
             validate_pos_before_submit(doc)
             
     except Exception as e:
-        frappe.log_error(f"Error in before_submit: {str(e)}")
+        frappe.log_error(f"sales_invoice.py(before_submit): Error {str(e)}", "POS Submit")
         raise
 
 
@@ -694,8 +617,14 @@ def validate_pos_before_submit(doc):
     
     # Validate payment amounts
     total_payments = sum(flt(payment.amount) for payment in doc.payments)
-    if abs(total_payments - flt(doc.grand_total)) > 0.01:
+    grand_total = flt(doc.grand_total)
+    difference = abs(total_payments - grand_total)
+    
+    
+    if difference > 0.01:
         frappe.throw(_("Payment amount must equal grand total"))
+    
+    frappe.log_error(f"sales_invoice.py(validate_pos_before_submit): Validated {doc.name}", "POS Submit")
 
 
 def before_cancel(doc, method):
@@ -707,7 +636,7 @@ def before_cancel(doc, method):
             validate_pos_before_cancel(doc)
             
     except Exception as e:
-        frappe.log_error(f"Error in before_cancel: {str(e)}")
+        frappe.log_error(f"sales_invoice.py(before_cancel): Error {str(e)}", "POS Submit")
         raise
 
 
@@ -728,17 +657,9 @@ def validate_pos_before_cancel(doc):
         )
         if shift_status == "Closed":
             frappe.throw(_("Cannot cancel invoice from closed shift"))
+    
+    frappe.log_error(f"sales_invoice.py(validate_pos_before_cancel): Validated {doc.name}", "POS Submit")
 
 
-# دالة لحفظ جميع التشخيصات في Error Log
-def show_all_debug_logs():
-    """حفظ جميع التشخيصات المجمعة في Error Log"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط
-        frappe.log_error(message="\n".join(debug_log), title="Sales Invoice API - جميع التشخيصات المجمعة")
-        
-        # مسح التشخيصات بعد الحفظ
-        debug_log = []
 
 

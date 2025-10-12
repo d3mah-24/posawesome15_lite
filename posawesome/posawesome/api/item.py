@@ -12,25 +12,7 @@ from frappe import _
 from frappe.utils import nowdate
 from erpnext.accounts.doctype.pos_profile.pos_profile import get_item_groups
 
-# متغير عام لتجميع التشخيصات
-debug_log = []
-
-def log_debug(message):
-    """إضافة رسالة للتشخيص العام"""
-    debug_log.append(str(message))
-
-def clear_debug_log():
-    """مسح التشخيص العام"""
-    global debug_log
-    debug_log = []
-
-def save_debug_log():
-    """حفظ التشخيص العام في سجل واحد"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط (بدون مسح)
-        frappe.log_error(message="\n".join(debug_log), title="Item API - تشخيص شامل")
-        # لا نمسح debug_log هنا - نتركه للتجميع
+# Item API - Simplified logging
 
 
 @frappe.whitelist()
@@ -93,7 +75,7 @@ def get_items(pos_profile, price_list=None, item_group="", search_value="", cust
         return result
         
     except Exception as e:
-        frappe.log_error(f"Error getting items: {str(e)}")
+        frappe.log_error(f"item.py(get_items): Error {str(e)}", "Item API")
         return []
 
 
@@ -103,14 +85,15 @@ def get_items_groups():
     GET - Get item groups
     """
     try:
-        return frappe.get_all(
+        result = frappe.get_all(
             "Item Group",
             filters={"is_group": 0},
             fields=["name", "parent_item_group"],
             order_by="name"
         )
+        return result
     except Exception as e:
-        frappe.log_error(f"Error getting item groups: {str(e)}")
+        frappe.log_error(f"item.py(get_items_groups): Error {str(e)}", "Item API")
         return []
 
 
@@ -155,13 +138,14 @@ def search_items_barcode(pos_profile, barcode_value):
         
         if item_data:
             item = item_data[0]
+            frappe.log_error(f"item.py(search_items_barcode): Found {item.get('item_code', 'N/A')}", "Item API")
             return item
         else:
-            frappe.log_error(f"❌ Barcode not found: {barcode_value}", "Items Barcode")
+            frappe.log_error(f"item.py(search_items_barcode): Not found {barcode_value}", "Item API")
             return {}
             
     except Exception as e:
-        frappe.log_error(f"❌ Error searching barcode: {str(e)}", "Items Barcode")
+        frappe.log_error(f"item.py(search_items_barcode): Error {str(e)}", "Item API")
         return {}
 
 
@@ -207,12 +191,14 @@ def search_scale_barcode(pos_profile, barcode_value):
             # Extract weight from barcode (simplified)
             weight = float(barcode_value[6:]) / 1000  # Convert to kg
             item["qty"] = weight
+            frappe.log_error(f"item.py(search_scale_barcode): Found {item.get('item_code', 'N/A')} weight {weight}", "Item API")
             return item
         else:
+            frappe.log_error(f"item.py(search_scale_barcode): Not found {barcode_value}", "Item API")
             return {}
             
     except Exception as e:
-        frappe.log_error(f"❌ Error searching scale barcode: {str(e)}", "Scale Barcode")
+        frappe.log_error(f"item.py(search_scale_barcode): Error {str(e)}", "Item API")
         return {}
 
 
@@ -254,22 +240,16 @@ def search_private_barcode(pos_profile, barcode_value):
         )
         
         if item_data:
-            return item_data[0]
+            item = item_data[0]
+            frappe.log_error(f"item.py(search_private_barcode): Found {item.get('item_code', 'N/A')}", "Item API")
+            return item
         else:
+            frappe.log_error(f"item.py(search_private_barcode): Not found {barcode_value}", "Item API")
             return {}
             
     except Exception as e:
-        frappe.log_error(f"❌ Error searching private barcode: {str(e)}", "Private Barcode")
+        frappe.log_error(f"item.py(search_private_barcode): Error {str(e)}", "Item API")
         return {}
 
 
-# دالة لحفظ جميع التشخيصات في Error Log
-def show_all_debug_logs():
-    """حفظ جميع التشخيصات المجمعة في Error Log"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط
-        frappe.log_error(message="\n".join(debug_log), title="Item API - جميع التشخيصات المجمعة")
-        
-        # مسح التشخيصات بعد الحفظ
-        debug_log = []
+# Item API - Simplified logging completed

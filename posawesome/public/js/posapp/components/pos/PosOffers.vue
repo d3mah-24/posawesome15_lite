@@ -148,11 +148,9 @@ export default {
   // ===== SECTION 5: METHODS =====
   methods: {
     back_to_invoice() {
-      console.log('[PosOffers] back to invoice');
       evntBus.emit('show_offers', 'false');
     },
     forceUpdateItem() {
-      console.log('[PosOffers] force update item');
       let list_offers = [];
       list_offers = [...this.pos_offers];
       this.pos_offers = list_offers;
@@ -160,18 +158,15 @@ export default {
       this.handleManualOfferChange();
     },
     handleManualOfferChange() {
-      console.log('[PosOffers] handling manual offer change');
       try {
         // Find applied Grand Total offers
         const appliedGrandTotalOffers = this.pos_offers.filter(
           (offer) => offer.offer === 'Grand Total' && offer.offer_applied
         );
         if (appliedGrandTotalOffers.length > 1) {
-          console.log('[PosOffers] multiple grand total offers applied, applying best one');
           // If more than one offer is applied, apply only the best one
           this.applyBestGrandTotalOffer();
         } else if (appliedGrandTotalOffers.length === 1) {
-          console.log('[PosOffers] single grand total offer applied');
           // Update the applied offer name
           this.discount_percentage_offer_name = appliedGrandTotalOffers[0].name;
           // Cancel remaining Grand Total offers
@@ -181,12 +176,10 @@ export default {
             }
           });
         } else {
-          console.log('[PosOffers] no grand total offers applied');
           // No offers applied
           this.discount_percentage_offer_name = null;
         }
       } catch (error) {
-        console.log('[PosOffers] error processing offer change', error);
         evntBus.emit('show_mesage', {
           text: 'Error processing offer change',
           color: 'error'
@@ -213,7 +206,6 @@ export default {
       }
     },
     updatePosOffers(appliedOffers) {
-      console.log('[PosOffers] updating applied offers', appliedOffers.length);
       try {
         // Update application status for existing offers
         this.pos_offers.forEach((pos_offer) => {
@@ -224,7 +216,6 @@ export default {
           );
           if (appliedOffer) {
             pos_offer.offer_applied = true;
-            console.log('[PosOffers] marked offer as applied:', pos_offer.name, 'matched with:', appliedOffer.name || appliedOffer.offer_name);
           } else {
             pos_offer.offer_applied = false;
           }
@@ -272,13 +263,11 @@ export default {
       }
     },
     removeOffers(offers_id_list) {
-      console.log('[PosOffers] removing offers', offers_id_list.length);
       try {
         this.pos_offers = this.pos_offers.filter(
           (offer) => !offers_id_list.includes(offer.row_id)
         );
       } catch (error) {
-        console.log('[PosOffers] error removing offers', error);
         evntBus.emit('show_mesage', {
           text: 'Error removing offers',
           color: 'error'
@@ -286,14 +275,12 @@ export default {
       }
     },
     handelOffers() {
-      console.log('[PosOffers] handling offers');
       try {
         const applyedOffers = this.pos_offers.filter(
           (offer) => offer.offer_applied
         );
         evntBus.emit('update_invoice_offers', applyedOffers);
       } catch (error) {
-        console.log('[PosOffers] error processing offers', error);
         evntBus.emit('show_mesage', {
           text: 'Error processing offers',
           color: 'error'
@@ -398,7 +385,6 @@ export default {
         }
       });
       evntBus.on('set_offers', (data) => {
-        console.log('[PosOffers] received all offers', data.length);
         this.pos_offers = data.map(offer => ({
           ...offer,
           row_id: offer.row_id || this.makeid(20),

@@ -416,14 +416,14 @@ export default {
 
   computed: {
     total_payments() {
-      let total = parseFloat(this.invoice_doc.loyalty_amount);
+      let total = parseFloat(this.invoice_doc.loyalty_amount || 0);
       if (this.invoice_doc && this.invoice_doc.payments) {
         this.invoice_doc.payments.forEach((payment) => {
-          total += this.flt(payment.amount);
+          total += this.flt(payment.amount || 0);
         });
       }
 
-      total += this.flt(this.redeemed_customer_credit);
+      total += this.flt(this.redeemed_customer_credit || 0);
 
       if (!this.is_cashback) total = 0;
 
@@ -436,7 +436,8 @@ export default {
         this.currency_precision
       );
       this.paid_change = -diff_payment;
-      return diff_payment;
+      // Match POS-Awesome-V15 behavior: return 0 if negative (overpaid)
+      return diff_payment >= 0 ? diff_payment : 0;
     },
     credit_change() {
       let change = -this.diff_payment;
@@ -517,7 +518,7 @@ export default {
       return defaultPayment;
     },
     back_to_invoice() {
-      console.log('[Payments] closing payment dialog');
+      console.log('Payments.vue(back_to_invoice): Closed');
       evntBus.emit("show_payment", "false");
       evntBus.emit("set_customer_readonly", false);
     },
@@ -778,28 +779,46 @@ export default {
         payment.amount = isReturn ? -Math.abs(total) : total;
         if (typeof payment.base_amount !== 'undefined') payment.base_amount = payment.amount;
       }
-      console.log('[Payments] selected idx', idx, 'payments count', this.invoice_doc.payments?.length || 0);
       evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
     },
     set_rest_amount(idx) {
-      // Behavior aligned with Payments_new.vue:
-      // Only fill the focused payment with remaining if its amount is zero.
-      // Do NOT reset other payments; preserve user-edited values.
+      // Enhanced behavior: Distribute excess payment amount when focusing on payment field
       const isReturn = !!this.invoice_doc.is_return;
-      const payment = this.invoice_doc.payments.find((p) => p.idx == idx);
-      if (!payment) return;
-
-      // Only auto-fill when the field is empty (zero) and there is a remaining amount
-      const hasRemaining = this.diff_payment > 0;
-      const isZero = !flt(payment.amount);
-      if (isZero && hasRemaining) {
-        let amount = this.diff_payment;
-        if (isReturn) amount = -Math.abs(amount);
-        payment.amount = amount;
-        if (typeof payment.base_amount !== 'undefined') payment.base_amount = amount;
-        console.log('[Payments] filled remaining for idx', idx, 'amount', amount);
-        evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
-      }
+      const invoice_total = this.invoice_doc.grand_total;
+      const total_payments = this.total_payments;
+      const actual_remaining = this.flt(invoice_total - total_payments, this.currency_precision);
+      
+      this.invoice_doc.payments.forEach((payment) => {
+        if (payment.idx === idx && !this.flt(payment.amount)) {
+          // Fill with remaining amount if there's a balance to be paid
+          if (actual_remaining > 0) {
+            let amount = actual_remaining;
+            if (isReturn) {
+              amount = -Math.abs(amount);
+            }
+            payment.amount = amount;
+            if (payment.base_amount !== undefined) {
+              payment.base_amount = isReturn ? -Math.abs(amount) : amount;
+            }
+            console.log('Payments.vue(set_rest_amount): Filled', amount);
+            evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
+          }
+          // Handle excess payment distribution
+          else if (actual_remaining < 0) {
+            // Distribute excess amount to this field
+            let excess_amount = Math.abs(actual_remaining);
+            if (isReturn) {
+              excess_amount = -Math.abs(excess_amount);
+            }
+            payment.amount = excess_amount;
+            if (payment.base_amount !== undefined) {
+              payment.base_amount = isReturn ? -Math.abs(excess_amount) : excess_amount;
+            }
+            console.log('Payments.vue(set_rest_amount): Excess', excess_amount);
+            evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
+          }
+        }
+      });
     },
     clear_all_amounts() {
       this.invoice_doc.payments.forEach((payment) => {

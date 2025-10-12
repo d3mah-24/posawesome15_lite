@@ -13,34 +13,18 @@ from erpnext.accounts.doctype.loyalty_program.loyalty_program import (
     get_loyalty_program_details_with_points,
 )
 
-# متغير عام لتجميع التشخيصات
-debug_log = []
-
-def log_debug(message):
-    """إضافة رسالة للتشخيص العام"""
-    debug_log.append(str(message))
-
-def clear_debug_log():
-    """مسح التشخيص العام"""
-    global debug_log
-    debug_log = []
-
-def save_debug_log():
-    """حفظ التشخيص العام في سجل واحد"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط (بدون مسح)
-        frappe.log_error(message="\n".join(debug_log), title="Customer API - تشخيص شامل")
-        # لا نمسح debug_log هنا - نتركه للتجميع
+# Customer API - Simplified logging
 
 
 def after_insert(doc, method):
     create_customer_referral_code(doc)
     create_gift_coupon(doc)
+    frappe.log_error(f"customer.py(after_insert): Completed for {doc.name}", "Customer API")
 
 
 def validate(doc, method):
     validate_referral_code(doc)
+    frappe.log_error(f"customer.py(validate): Completed for {doc.name}", "Customer API")
 
 
 def create_customer_referral_code(doc):
@@ -55,6 +39,7 @@ def create_customer_referral_code(doc):
             company.posa_primary_offer,
             company.posa_referral_campaign,
         )
+        frappe.log_error(f"customer.py(create_customer_referral_code): Created for {doc.name}", "Customer API")
 
 
 def create_gift_coupon(doc):
@@ -63,6 +48,7 @@ def create_gift_coupon(doc):
         coupon.customer = doc.name
         coupon.referral_code = doc.posa_referral_code
         coupon.create_coupon_from_referral()
+        frappe.log_error(f"customer.py(create_gift_coupon): Created for {doc.name}", "Customer API")
 
 
 def validate_referral_code(doc):
@@ -74,6 +60,7 @@ def validate_referral_code(doc):
             exist = frappe.db.exists("Referral Code", {"referral_code": referral_code})
         if not exist:
             frappe.throw(_("This Referral Code {0} not exists").format(referral_code))
+    frappe.log_error(f"customer.py(validate_referral_code): Completed for {doc.name}", "Customer API")
 
 
 def get_customer_groups(pos_profile):
@@ -90,7 +77,9 @@ def get_customer_groups(pos_profile):
                 ]
             )
 
-    return list(set(customer_groups))
+    result = list(set(customer_groups))
+    frappe.log_error(f"customer.py(get_customer_groups): Found {len(result)} groups", "Customer API")
+    return result
 
 
 def get_customer_group_condition(pos_profile):
@@ -99,12 +88,15 @@ def get_customer_group_condition(pos_profile):
     if customer_groups:
         cond = " customer_group in (%s)" % (", ".join(["%s"] * len(customer_groups)))
 
-    return cond % tuple(customer_groups)
+    result = cond % tuple(customer_groups)
+    frappe.log_error(f"customer.py(get_customer_group_condition): Generated", "Customer API")
+    return result
 
 
 @frappe.whitelist()
 def get_pos_coupon(coupon, customer, company):
     res = check_coupon_code(coupon, customer, company)
+    frappe.log_error(f"customer.py(get_pos_coupon): Retrieved for {customer}", "Customer API")
     return res
 
 @frappe.whitelist()
@@ -122,6 +114,7 @@ def get_active_gift_coupons(customer, company):
     )
     if len(coupons_data):
         coupons = [i.coupon_code for i in coupons_data]
+    frappe.log_error(f"customer.py(get_active_gift_coupons): Found {len(coupons)} coupons", "Customer API")
     return coupons
 
 @frappe.whitelist()
@@ -142,6 +135,7 @@ def get_customer_names(pos_profile):
             ),
             as_dict=1,
         )
+        frappe.log_error(f"customer.py(get_customer_names): Found {len(customers)} customers", "Customer API")
         return customers
 
 
@@ -194,6 +188,7 @@ def get_available_credit(customer, company):
 
         total_credit.append(row)
 
+    frappe.log_error(f"customer.py(get_available_credit): Found {len(total_credit)} credits", "Customer API")
     return total_credit
 
 
@@ -217,6 +212,7 @@ def create_customer(
     pos_profile = json.loads(pos_profile_doc)
     if method == "create":
             if frappe.db.exists("Customer", {"customer_name": customer_name}):
+                frappe.log_error(f"customer.py(create_customer): Already exists {customer_name}", "Customer API")
                 frappe.throw(_("Customer already registered"))
 
             # Convert birthday from various formats to YYYY-MM-DD
@@ -264,6 +260,7 @@ def create_customer(
             customer.customer_group = customer_group or "All Customer Groups"
             customer.territory = territory or "All Territories"
             customer.save()
+            frappe.log_error(f"customer.py(create_customer): Created {customer.name}", "Customer API")
             return customer
 
     elif method == "update":
@@ -317,6 +314,7 @@ def create_customer(
         customer_doc.customer_group = customer_group
         customer_doc.gender = gender
         customer_doc.save()
+        frappe.log_error(f"customer.py(create_customer): Updated {customer_doc.name}", "Customer API")
         
         # Update Contact fields if values provided
         if mobile_no:
@@ -445,7 +443,7 @@ def get_customer_addresses(customer):
         return addresses
         
     except Exception as e:
-        frappe.log_error(f"Error getting customer addresses for {customer}: {str(e)}")
+        frappe.log_error(f"customer.py(get_customer_addresses): Error {str(e)}", "Customer API")
         return []
 
 
@@ -506,16 +504,8 @@ def get_customer_info(customer):
         res["loyalty_points"] = lp_details.get("loyalty_points")
         res["conversion_factor"] = lp_details.get("conversion_factor")
 
+    frappe.log_error(f"customer.py(get_customer_info): Retrieved {customer_doc.name}", "Customer API")
     return res
 
 
-# دالة لحفظ جميع التشخيصات في Error Log
-def show_all_debug_logs():
-    """حفظ جميع التشخيصات المجمعة في Error Log"""
-    global debug_log
-    if debug_log:
-        # حفظ في سجل الأخطاء فقط
-        frappe.log_error(message="\n".join(debug_log), title="Customer API - جميع التشخيصات المجمعة")
-        
-        # مسح التشخيصات بعد الحفظ
-        debug_log = []
+# Customer API - Simplified logging completed
