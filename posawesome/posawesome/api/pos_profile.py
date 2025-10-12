@@ -38,7 +38,7 @@ def get_opening_dialog_data():
             filters={"parent": ["in", pos_profiles_list]},
             fields=["*"],
             limit_page_length=0,
-            order_by="parent",
+            order_by="parent, idx",
             ignore_permissions=True,
         )
         
