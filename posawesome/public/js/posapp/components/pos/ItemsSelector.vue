@@ -469,16 +469,19 @@ export default {
         callback: function (r) {
           if (r.message) {
             // Simple data mapping - only essential fields
+            // Backend returns: item_code, item_name, item_group, stock_uom, 
+            // rate, price_list_rate, base_rate, currency, actual_qty
             vm.items = (r.message || []).map(it => ({
               item_code: it.item_code,
               item_name: it.item_name,
+              item_group: it.item_group,      // ✅ Added for filtred_items
               rate: it.rate,
               price_list_rate: it.price_list_rate,
               base_rate: it.base_rate,
               currency: it.currency,
               actual_qty: it.actual_qty,
               stock_uom: it.stock_uom,
-              // Empty arrays for compatibility
+              // Empty arrays for compatibility with barcode/batch/serial features
               item_barcode: [],
               serial_no_data: [],
               batch_no_data: []
@@ -714,6 +717,7 @@ export default {
           if (r.message) {
             vm.items = (r.message || []).map(it => ({
               ...it,
+              item_group: it.item_group,          // ✅ Added
               price_list_rate: it.price_list_rate || it.rate,
               base_rate: it.base_rate || it.rate,
               item_barcode: Array.isArray(it.item_barcode) ? it.item_barcode : [],
@@ -757,6 +761,7 @@ export default {
             // Results found, display for selection
             vm.items = (r.message || []).map(it => ({
               ...it,
+              item_group: it.item_group,          // ✅ Added
               price_list_rate: it.price_list_rate || it.rate,
               base_rate: it.base_rate || it.rate,
               item_barcode: Array.isArray(it.item_barcode) ? it.item_barcode : [],
@@ -836,6 +841,7 @@ export default {
             (r.message || []).forEach(item => {
               const safeItem = {
                 ...item,
+                item_group: item.item_group,      // ✅ Added
                 item_barcode: Array.isArray(item.item_barcode) ? item.item_barcode : [],
                 serial_no_data: Array.isArray(item.serial_no_data) ? item.serial_no_data : [],
                 batch_no_data: Array.isArray(item.batch_no_data) ? item.batch_no_data : []

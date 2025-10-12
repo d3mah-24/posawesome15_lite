@@ -21,10 +21,17 @@ def get_items(pos_profile, price_list=None, item_group="", search_value="", cust
     GET - Get items for POS
     Returns items with prices and stock qty in a single optimized query
     
-    Frontend expects:
-    - item_code, item_name, stock_uom
+    Frontend expects (ItemsSelector.vue):
+    - item_code, item_name, stock_uom, item_group
     - rate, price_list_rate, base_rate, currency
     - actual_qty (stock quantity from warehouse)
+    
+    Frontend calls:
+    1. get_items() - line 461 (initial load)
+    2. performLiveSearch() - line 702 (live search with 200ms debounce)
+    3. _performItemSearch() - line 746 (manual search)
+    4. update_items_details() - line 824 (refresh item details)
+    5. search_barcode_from_server() - line 898 (barcode search)
     
     Uses JOIN to avoid N+1 query problem (1 query instead of 51)
     """
@@ -44,9 +51,10 @@ def get_items(pos_profile, price_list=None, item_group="", search_value="", cust
             "`tabItem`.has_variants = 0"
         ]
         
-        # Add item_group filter if provided
+        # Add item_group filter if provided (case-insensitive)
+        # Frontend sends lowercase (e.g., "electronics")
         if item_group and item_group.strip():
-            where_conditions.append(f"`tabItem`.item_group = '{frappe.db.escape(item_group)}'")
+            where_conditions.append("`tabItem`.item_group LIKE %s")
         
         # Add search filter (item_code OR item_name)
         search_pattern = f"%{search_value}%" if search_value else "%%"
@@ -59,6 +67,7 @@ def get_items(pos_profile, price_list=None, item_group="", search_value="", cust
             SELECT 
                 `tabItem`.name as item_code,
                 `tabItem`.item_name,
+                `tabItem`.item_group,
                 `tabItem`.stock_uom,
                 COALESCE(`tabItem Price`.price_list_rate, 0.01) as rate,
                 COALESCE(`tabItem Price`.price_list_rate, 0.01) as price_list_rate,
@@ -80,18 +89,22 @@ def get_items(pos_profile, price_list=None, item_group="", search_value="", cust
             LIMIT 50
         """
         
+        # Build parameters list
+        params = [
+            pos_profile.get("currency", "USD"),
+            price_list,
+            warehouse
+        ]
+        
+        # Add item_group parameter if provided
+        if item_group and item_group.strip():
+            params.append(f"%{item_group}%")  # Case-insensitive LIKE
+        
+        # Add search parameters
+        params.extend([search_pattern, search_pattern])
+        
         # Execute query with parameters
-        items = frappe.db.sql(
-            query,
-            (
-                pos_profile.get("currency", "USD"),
-                price_list,
-                warehouse,
-                search_pattern,
-                search_pattern
-            ),
-            as_dict=True
-        )
+        items = frappe.db.sql(query, tuple(params), as_dict=True)
         
         return items
         
