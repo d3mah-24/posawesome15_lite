@@ -262,8 +262,9 @@ export default {
         if (to_remove.length) {
           this.removeCoupon(to_remove);
         }
+        // Only call setActiveGiftCoupons when customer actually changes
+        this.setActiveGiftCoupons();
       }
-      this.setActiveGiftCoupons();
     });
     evntBus.on('update_pos_coupons', (data) => {
       this.updatePosCoupons(data);
