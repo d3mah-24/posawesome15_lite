@@ -10,54 +10,6 @@
         <Customer></Customer>
       </div>
 
-      <v-row
-        align="center"
-        class="items px-2 py-0 mt-0 pt-0"
-        v-if="pos_profile.posa_allow_change_posting_date"
-      >
-        <v-col
-          v-if="pos_profile.posa_allow_change_posting_date"
-          cols="4"
-          class="pb-1"
-        >
-          <v-menu
-            ref="invoice_posting_date"
-            v-model="invoice_posting_date"
-            :close-on-content-click="false"
-            transition="scale-transition"
-            dense
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-text-field
-                v-model="posting_date"
-                label="Posting Date"
-                readonly
-                outlined
-                dense
-                background-color="white"
-                clearable
-                color="primary"
-                hide-details
-                v-bind="attrs"
-                v-on="on"
-              ></v-text-field>
-            </template>
-            <v-date-picker
-              v-model="posting_date"
-              no-title
-              scrollable
-              color="primary"
-              :min="
-                frappe.datetime.add_days(frappe.datetime.now_date(true), -7)
-              "
-              :max="frappe.datetime.add_days(frappe.datetime.now_date(true), 7)"
-              @input="invoice_posting_date = false"
-            >
-            </v-date-picker>
-          </v-menu>
-        </v-col>
-      </v-row>
-
       <div class="my-0 py-0 invoice-items-scrollable">
         <v-data-table
           :headers="dynamicHeaders"
