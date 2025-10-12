@@ -36,7 +36,7 @@ def get_opening_dialog_data():
         data["payments_method"] = frappe.get_list(
             payment_method_table,
             filters={"parent": ["in", pos_profiles_list]},
-            fields=["*"],
+            fields=["default", "mode_of_payment", "allow_in_returns","parent"],
             limit_page_length=0,
             order_by="parent, idx",
             ignore_permissions=True,
@@ -55,39 +55,39 @@ def get_opening_dialog_data():
         return {}
 
 
-@frappe.whitelist()
-def get_profile_details(profile_name):
-    """
-    GET - Get POS Profile details
-    """
-    try:
-        profile = frappe.get_doc("POS Profile", profile_name)
-        result = profile.as_dict()
-        return result
+# @frappe.whitelist()
+# def get_profile_details(profile_name):
+#     """
+#     GET - Get POS Profile details
+#     """
+#     try:
+#         profile = frappe.get_doc("POS Profile", profile_name)
+#         result = profile.as_dict()
+#         return result
         
-    except Exception as e:
-        frappe.log_error(f"pos_profile.py(get_profile_details): Error {str(e)}", "POS Profile")
-        return None
+#     except Exception as e:
+#         frappe.log_error(f"pos_profile.py(get_profile_details): Error {str(e)}", "POS Profile")
+#         return None
 
 
-@frappe.whitelist()
-def get_profile_payment_methods(profile_name):
-    """
-    GET - Get POS Profile payment methods
-    """
-    try:
-        payment_methods = frappe.get_all(
-            "POS Payment Method",
-            filters={"parent": profile_name},
-            fields=["*"],
-            order_by="idx"
-        )
+# @frappe.whitelist()
+# def get_profile_payment_methods(profile_name):
+#     """
+#     GET - Get POS Profile payment methods
+#     """
+#     try:
+#         payment_methods = frappe.get_all(
+#             "POS Payment Method",
+#             filters={"parent": profile_name},
+#             fields=["*"],
+#             order_by="idx"
+#         )
         
-        return payment_methods
+#         return payment_methods
         
-    except Exception as e:
-        frappe.log_error(f"pos_profile.py(get_profile_payment_methods): Error {str(e)}", "POS Profile")
-        return []
+#     except Exception as e:
+#         frappe.log_error(f"pos_profile.py(get_profile_payment_methods): Error {str(e)}", "POS Profile")
+#         return []
 
 
 @frappe.whitelist()

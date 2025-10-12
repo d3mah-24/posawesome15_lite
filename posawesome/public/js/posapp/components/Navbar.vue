@@ -1,115 +1,90 @@
 <template>
-  <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <nav>
-    <v-app-bar app height="40" class="elevation-2 app-navbar">
-      <!-- <v-app-bar-nav-icon
-        @click.stop="drawer = !drawer"
-        class="grey--text"
-      ></v-app-bar-nav-icon> -->
-      <v-toolbar-title
-        @click="go_desk"
-        style="cursor: pointer"
-        class="text-uppercase primary--text"
-      >
-      </v-toolbar-title>
-
-      <div class="company-name-badge">
-        <v-icon size="14" color="primary">mdi-domain</v-icon>
-        <span class="company-name-text">
-          {{ company_name }}
-        </span>
+    <div class="custom-navbar">
+      <!-- Logo/Title -->
+      <div class="nav-brand" @click="go_desk" title="Go to Desk">
+        <v-icon size="16" color="primary">mdi-point-of-sale</v-icon>
       </div>
 
-      <div class="invoice-number-badge" :class="invoiceNumberClass">
-        <v-icon size="14" :color="invoiceIconColor">mdi-receipt</v-icon>
-        <span class="invoice-number-text">
-          {{ invoiceNumberText }}
-        </span>
+      <!-- Info Badges -->
+      <div class="nav-badges">
+        <div class="badge" :class="invoiceNumberClass">
+          <v-icon size="12" :color="invoiceIconColor">mdi-receipt</v-icon>
+          <span>{{ invoiceNumberText }}</span>
+        </div>
+
+        <div class="badge" :class="shiftNumberClass">
+          <v-icon size="12" :color="shiftIconColor">mdi-clock-outline</v-icon>
+          <span>{{ shiftNumberText }}</span>
+        </div>
+
+        <div class="badge user-badge">
+          <v-icon size="12" color="primary">mdi-account</v-icon>
+          <span>{{ currentUserName }}</span>
+        </div>
+
+        <div class="badge" :class="shiftStartClass">
+          <v-icon size="12" :color="shiftStartIconColor">mdi-clock-start</v-icon>
+          <span>{{ shiftStartText }}</span>
+        </div>
+
+        <div class="badge totals-badge">
+          <v-icon size="12" color="primary">mdi-counter</v-icon>
+          <span>QTY: {{ totalInvoicesQty }}</span>
+        </div>
+
+        <div class="badge" :class="pingClass">
+          <v-icon size="12" :color="pingIconColor">mdi-wifi</v-icon>
+          <span>{{ pingTime }}ms</span>
+        </div>
+
+        <div class="badge profile-badge">
+          <v-icon size="12" color="primary">mdi-briefcase</v-icon>
+          <span>{{ pos_profile.name }}</span>
+        </div>
       </div>
 
-      <div class="shift-number-badge" :class="shiftNumberClass">
-        <v-icon size="14" :color="shiftIconColor">mdi-clock-outline</v-icon>
-        <span class="shift-number-text">
-          {{ shiftNumberText }}
-        </span>
-      </div>
+      <!-- Action Buttons -->
+      <div class="nav-actions">
+        <button class="action-btn" :class="{ disabled: !last_invoice }" :disabled="!last_invoice"
+          @click="print_last_invoice" :title="last_invoice ? 'Print Last Receipt' : 'No last receipt'">
+          <v-icon size="14" :color="last_invoice ? 'primary' : 'grey'">mdi-printer</v-icon>
+        </button>
 
-      <div class="user-name-badge">
-        <v-icon size="14" color="primary">mdi-account</v-icon>
-        <span class="user-name-text">
-          {{ currentUserName }}
-        </span>
-      </div>
+        <button class="action-btn cache-btn" @click="clearCache" title="Clear Cache">
+          <v-icon size="14" color="warning">mdi-cached</v-icon>
+        </button>
 
-      <div class="shift-start-badge" :class="shiftStartClass">
-        <v-icon size="14" :color="shiftStartIconColor">mdi-clock-start</v-icon>
-        <span class="shift-start-text">
-          {{ shiftStartText }}
-        </span>
+        <div class="menu-wrapper">
+          <v-menu offset="y">
+            <template v-slot:activator="{ props }">
+              <button class="action-btn menu-btn" v-bind="props">
+                <v-icon size="14">mdi-menu</v-icon>
+                <span>Menu</span>
+              </button>
+            </template>
+            <v-card class="mx-auto" max-width="300" tile>
+              <v-list density="compact" v-model="menu_item">
+                <v-list-item @click="close_shift_dialog" v-if="!pos_profile.posa_hide_closing_shift && menu_item == 0">
+                  <v-icon class="mr-2">mdi-content-save-move-outline</v-icon>
+                  <span>Close Shift</span>
+                </v-list-item>
+                <v-divider class="my-0"></v-divider>
+                <v-list-item @click="logOut">
+                  <v-icon class="mr-2">mdi-logout</v-icon>
+                  <span>Logout</span>
+                </v-list-item>
+                <v-list-item @click="go_about">
+                  <v-icon class="mr-2">mdi-information-outline</v-icon>
+                  <span>About System</span>
+                </v-list-item>
+                <v-divider class="my-0"></v-divider>
+              </v-list>
+            </v-card>
+          </v-menu>
+        </div>
       </div>
-
-      <div class="totals-badge">
-        <v-icon size="14" color="primary">mdi-counter</v-icon>
-        <span class="totals-text">
-          SINV_QTY: {{ totalInvoicesQty }}
-        </span>
-      </div>
-
-      <div class="ping-badge" :class="pingClass">
-        <v-icon size="14" :color="pingIconColor">mdi-wifi</v-icon>
-        <span class="ping-text">
-          Connection: {{ pingTime }}ms
-        </span>
-      </div>
-
-      <v-spacer></v-spacer>
-      <v-btn style="cursor: unset" variant="text" color="primary">
-        <span right>{{ pos_profile.name }}</span>
-      </v-btn>
-      <v-btn icon variant="text"
-             :color="last_invoice ? 'primary' : 'grey'"
-             :disabled="!last_invoice"
-             @click="print_last_invoice"
-             :title="last_invoice ? 'Print Last Receipt' : 'No last receipt'">
-        <v-icon>mdi-printer</v-icon>
-      </v-btn>
-      <v-btn icon variant="text"
-             color="warning"
-             @click="clearCache">
-        <v-icon>mdi-cached</v-icon>
-      </v-btn>
-      <div class="text-center">
-        <v-menu offset="y">
-          <template v-slot:activator="{ props }">
-            <v-btn color="primary" dark variant="text" v-bind="props">
-              Menu
-            </v-btn>
-          </template>
-          <v-card class="mx-auto" max-width="300" tile>
-            <v-list density="compact" v-model="menu_item">
-              <v-list-item
-                @click="close_shift_dialog"
-                v-if="!pos_profile.posa_hide_closing_shift && menu_item == 0"
-              >
-                <v-icon class="mr-2">mdi-content-save-move-outline</v-icon>
-                <span>Close Shift</span>
-              </v-list-item>
-              <!-- Removed Print Last Receipt from menu -->
-              <v-divider class="my-0"></v-divider>
-              <v-list-item @click="logOut">
-                <v-icon class="mr-2">mdi-logout</v-icon>
-                <span>Logout</span>
-              </v-list-item>
-              <v-list-item @click="go_about">
-                <v-icon class="mr-2">mdi-information-outline</v-icon>
-                <span>About System</span>
-              </v-list-item>
-              <v-divider class="my-0"></v-divider>
-            </v-list>
-          </v-card>
-        </v-menu>
-      </div>
-    </v-app-bar>
+    </div>
     <!-- <v-navigation-drawer
       v-model="drawer"
       :mini-variant.sync="mini"
@@ -235,10 +210,10 @@ export default {
     },
     shiftStartText() {
       if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
-        return 'Shift start: Not opened';
+        return 'Not opened';
       }
       if (!this.pos_opening_shift.period_start_date) {
-        return 'Shift start: Unknown';
+        return 'Unknown';
       }
       const startDate = new Date(this.pos_opening_shift.period_start_date);
       const timeString = startDate.toLocaleTimeString('en-US', {
@@ -246,7 +221,7 @@ export default {
         minute: '2-digit',
         hour12: true
       });
-      return `Shift start: ${timeString}`;
+      return `${timeString}`;
     },
     shiftStartClass() {
       if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
@@ -364,17 +339,17 @@ export default {
           color: 'info',
           text: 'Clearing cache...'
         });
-        
+
         // Use the comprehensive cache manager
         if (window.cacheManager) {
           const success = await window.cacheManager.clearAllCaches();
-          
+
           if (success) {
             this.show_mesage({
               color: 'success',
               text: 'Cache cleared successfully. Reloading...'
             });
-            
+
             // Reload page after short delay
             setTimeout(() => {
               location.reload();
@@ -389,17 +364,17 @@ export default {
           // Fallback to basic cache clearing
           localStorage.clear();
           sessionStorage.clear();
-          
+
           this.show_mesage({
             color: 'success',
             text: 'Basic cache cleared. Reloading...'
           });
-          
+
           setTimeout(() => {
             location.reload();
           }, 1000);
         }
-        
+
       } catch (error) {
         this.show_mesage({
           color: 'error',
@@ -411,7 +386,7 @@ export default {
       if (!this.pos_profile || !this.pos_opening_shift) {
         return;
       }
-      
+
       try {
         const response = await frappe.call({
           method: 'posawesome.posawesome.api.pos_opening_shift.get_user_shift_invoice_count',
@@ -420,7 +395,7 @@ export default {
             pos_opening_shift: this.pos_opening_shift.name
           }
         });
-        
+
         if (response.message !== undefined) {
           this.shift_invoice_count = response.message;
         }
@@ -448,7 +423,7 @@ export default {
     startPingMonitoring() {
       // Initial ping
       this.measurePing();
-      
+
       // Set up interval for continuous monitoring (every 5 seconds)
       this.pingInterval = setInterval(() => {
         this.measurePing();
@@ -466,7 +441,7 @@ export default {
       try {
         // Start ping monitoring
         this.startPingMonitoring();
-        
+
         evntBus.on('show_mesage', (data) => {
           this.show_mesage(data);
         });
@@ -527,280 +502,265 @@ export default {
 </script>
 
 <style scoped>
-.margen-top {
-  margin-top: 0px;
-}
-
-.app-navbar {
-  /* Keep navbar pinned while scrolling */
-  width: 100%;
-  height: 40px;
+/* Ultra-compact custom navbar */
+.custom-navbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  height: 32px;
   position: sticky;
   top: 0;
-  left: 0;
-  z-index: 1100 !important;
+  z-index: 1100;
 }
 
-.invoice-number-badge {
+/* Brand/Logo */
+.nav-brand {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
+  justify-content: center;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.nav-brand:hover {
+  background: rgba(25, 118, 210, 0.08);
+}
+
+/* Badges Container */
+.nav-badges {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-badges::-webkit-scrollbar {
+  display: none;
+}
+
+/* Badge Styles - Ultra Compact */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
   border: 1px solid #e0e0e0;
-  background: #f9f9f9;
-  margin-left: 16px;
-  font-size: 0.5rem;
-  line-height: 1;
-}
-
-.invoice-number-text {
+  background: #fff;
+  font-size: 10px;
   font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s;
+  line-height: 1;
+  height: 22px;
 }
 
-.regular-invoice {
+.badge span {
+  white-space: nowrap;
+}
+
+/* Badge Variants */
+.badge.regular-invoice {
+  border-color: #1976d2;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   color: #1976d2;
 }
 
-.regular-invoice .invoice-number-text {
-  color: #1976d2;
-}
-
-.return-invoice {
+.badge.return-invoice {
+  border-color: #d32f2f;
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
   color: #d32f2f;
 }
 
-.return-invoice .invoice-number-text {
-  color: #d32f2f;
-}
-
-.no-invoice {
+.badge.no-invoice {
+  border-color: #bdbdbd;
+  background: #f5f5f5;
   color: #757575;
   font-style: italic;
 }
 
-.no-invoice .invoice-number-text {
-  color: #757575;
-}
-
-/* Company Name Badge Styles */
-.company-name-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
-  margin-left: 8px;
-  font-size: 0.5rem;
-  line-height: 1;
-}
-
-.company-name-text {
-  font-weight: 600;
-  color: #1976d2;
-}
-
-/* Shift Number Badge Styles */
-.shift-number-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
-  margin-left: 8px;
-  font-size: 0.5rem;
-  line-height: 1;
-}
-
-.shift-number-text {
-  font-weight: 600;
-}
-
-.open-shift {
-  color: #2e7d32;
-}
-
-.open-shift .shift-number-text {
-  color: #2e7d32;
-}
-
-.closed-shift {
-  color: #f57c00;
-}
-
-.closed-shift .shift-number-text {
-  color: #f57c00;
-}
-
-.no-shift {
-  color: #757575;
-  font-style: italic;
-}
-
-.no-shift .shift-number-text {
-  color: #757575;
-}
-
-/* User Name Badge Styles */
-.user-name-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
-  margin-left: 8px;
-  font-size: 0.5rem;
-  line-height: 1;
-}
-
-.user-name-text {
-  font-weight: 600;
-  color: #1976d2;
-}
-
-/* Shift Start Badge Styles */
-.shift-start-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
-  margin-left: 8px;
-  font-size: 0.5rem;
-  line-height: 1;
-}
-
-.shift-start-text {
-  font-weight: 600;
-  color: #1976d2;
-}
-
-.open-shift-start {
+.badge.open-shift {
   border-color: #4caf50;
-  background: #e8f5e8;
-}
-
-.open-shift-start .shift-start-text {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
   color: #2e7d32;
 }
 
-.closed-shift-start {
+.badge.closed-shift {
   border-color: #ff9800;
-  background: #fff3e0;
-}
-
-.closed-shift-start .shift-start-text {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
   color: #f57c00;
 }
 
-.no-shift-start {
+.badge.no-shift {
+  border-color: #bdbdbd;
+  background: #f5f5f5;
   color: #757575;
   font-style: italic;
 }
 
-.no-shift-start .shift-start-text {
-  color: #757575;
-}
-
-/* Totals Badge Styles */
-.totals-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
-  margin-left: 8px;
-  font-size: 0.5rem;
-  line-height: 1;
-}
-
-.totals-text {
-  font-weight: 600;
+.badge.user-badge {
+  border-color: #1976d2;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   color: #1976d2;
 }
 
-/* Ping Badge Styles */
-.ping-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
-  margin-left: 8px;
-  font-size: 0.5rem;
-  line-height: 1;
-}
-
-.ping-text {
-  font-weight: 600;
-  color: #1976d2;
-}
-
-/* Ping Status Classes */
-.ping-excellent {
+.badge.shift-active {
   border-color: #4caf50;
-  background: #e8f5e8;
-}
-
-.ping-excellent .ping-text {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
   color: #2e7d32;
 }
 
-.ping-good {
+.badge.no-shift-start {
+  border-color: #bdbdbd;
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.badge.totals-badge {
+  border-color: #1976d2;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1976d2;
+}
+
+.badge.ping-excellent {
+  border-color: #4caf50;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #2e7d32;
+}
+
+.badge.ping-good {
   border-color: #2196f3;
-  background: #e3f2fd;
-}
-
-.ping-good .ping-text {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   color: #1976d2;
 }
 
-.ping-fair {
+.badge.ping-fair {
   border-color: #ff9800;
-  background: #fff3e0;
-}
-
-.ping-fair .ping-text {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
   color: #f57c00;
 }
 
-.ping-poor {
+.badge.ping-poor {
   border-color: #f44336;
-  background: #ffebee;
-}
-
-.ping-poor .ping-text {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
   color: #d32f2f;
 }
 
-/* Clear Cache Button Styles */
-.v-list-item:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+.badge.profile-badge {
+  border-color: #1976d2;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1976d2;
+  font-weight: 700;
 }
 
-.v-list-item:active {
-  background-color: rgba(0, 0, 0, 0.08);
+/* Actions Container */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 
-/* Cache button animation */
-.v-btn[color="warning"]:hover .v-icon {
-  animation: rotate 0.5s ease-in-out;
+/* Action Buttons - Beautiful Custom Design */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px 6px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+  font-weight: 600;
+  height: 24px;
+  min-width: 24px;
 }
 
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(180deg); }
+.action-btn:hover:not(.disabled) {
+  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+  border-color: #bdbdbd;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:active:not(.disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.action-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cache-btn:hover {
+  border-color: #ff9800;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+}
+
+.menu-btn {
+  border-color: #1976d2;
+  background: linear-gradient(135deg, #1976d2 0%, #1e88e5 100%);
+  color: white;
+}
+
+.menu-btn:hover span,
+.menu-btn:hover .v-icon {
+  color: #1976d2;
+}
+
+.menu-btn span {
+  color: white;
+}
+
+.menu-wrapper {
+  display: flex;
+}
+
+/* Cache button rotation animation */
+.cache-btn:active .v-icon {
+  animation: spin 0.4s ease-in-out;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+/* Responsive - tighter at small screens */
+@media (max-width: 1024px) {
+  .custom-navbar {
+    gap: 2px;
+    padding: 2px 4px;
+  }
+
+  .nav-badges {
+    gap: 2px;
+  }
+
+  .badge {
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+}
+
+/* Legacy styles cleanup */
+.margen-top {
+  margin-top: 0px;
 }
 </style>
