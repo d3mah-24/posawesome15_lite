@@ -541,6 +541,7 @@ export default {
   z-index: 1100 !important;
 }
 
+/* Invoice Number Badge Styles */
 .invoice-number-badge {
   display: flex;
   align-items: center;
@@ -552,6 +553,12 @@ export default {
   margin-left: 16px;
   font-size: 0.5rem;
   line-height: 1;
+  /* ✅ Prevent Layout Shift */
+  min-width: 150px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .invoice-number-text {
@@ -595,6 +602,12 @@ export default {
   margin-left: 8px;
   font-size: 0.5rem;
   line-height: 1;
+  /* ✅ Prevent Layout Shift */
+  min-width: 180px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .company-name-text {
@@ -614,6 +627,12 @@ export default {
   margin-left: 8px;
   font-size: 0.5rem;
   line-height: 1;
+  /* ✅ Prevent Layout Shift */
+  min-width: 120px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .shift-number-text {
@@ -657,6 +676,12 @@ export default {
   margin-left: 8px;
   font-size: 0.5rem;
   line-height: 1;
+  /* ✅ Prevent Layout Shift */
+  min-width: 150px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-name-text {
@@ -676,6 +701,12 @@ export default {
   margin-left: 8px;
   font-size: 0.5rem;
   line-height: 1;
+  /* ✅ Prevent Layout Shift */
+  min-width: 200px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .shift-start-text {
@@ -722,6 +753,12 @@ export default {
   margin-left: 8px;
   font-size: 0.5rem;
   line-height: 1;
+  /* ✅ Prevent Layout Shift */
+  min-width: 140px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .totals-text {
@@ -741,6 +778,12 @@ export default {
   margin-left: 8px;
   font-size: 0.5rem;
   line-height: 1;
+  /* ✅ Prevent Layout Shift */
+  min-width: 180px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ping-text {
