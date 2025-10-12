@@ -684,7 +684,7 @@ export default {
       this._performItemSearch();
     },
 
-    // Live search function with 100ms debounce
+    // Live search function with 200ms debounce
     performLiveSearch(searchValue) {
       const vm = this;
       
@@ -996,9 +996,9 @@ export default {
       },
       set: _.debounce(function (newValue) {
         this.first_search = newValue;
-        // Trigger live search after 100ms
+        // Trigger live search after 200ms
         this.performLiveSearch(newValue);
-      }, 100),
+      }, 200),
     },
   },
 
