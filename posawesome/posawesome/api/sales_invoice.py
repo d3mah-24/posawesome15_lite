@@ -609,18 +609,6 @@ def validate_pos_invoice(doc):
     if not doc.items:
         frappe.throw(_("At least one item is required"))
     
-    # Validate Items have valid rates
-    for item in doc.items:
-        if not item.rate or item.rate <= 0:
-            # Allow zero-rated items if configured
-            allow_zero_rated = frappe.get_cached_value(
-                "POS Profile", 
-                doc.pos_profile, 
-                "posa_allow_zero_rated_items"
-            )
-            if not allow_zero_rated:
-                frappe.throw(_("Item {0} has invalid rate").format(item.item_code))
-    
     # Validate Opening Shift
     if not doc.posa_pos_opening_shift:
         frappe.throw(_("POS Opening Shift is required"))
