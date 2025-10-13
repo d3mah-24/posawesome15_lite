@@ -191,6 +191,7 @@
             step="0.01"
             min="0"
             :max="pos_profile.posa_invoice_max_discount_allowed || 100"
+            :disabled="!pos_profile || !pos_profile.posa_allow_user_to_edit_additional_discount || !!invoice_doc.is_return"
             class="field-input discount-input"
             placeholder="0.00"
           />
@@ -1541,6 +1542,11 @@ export default {
     },
 
     update_discount_umount() {
+      // Guard: if profile disallows editing invoice-level discount, ignore
+      if (!this.pos_profile?.posa_allow_user_to_edit_additional_discount) {
+        this.additional_discount_percentage = this.invoice_doc?.additional_discount_percentage || 0;
+        return;
+      }
       const value = flt(this.additional_discount_percentage) || 0;
       const maxDiscount =
         this.pos_profile.posa_invoice_max_discount_allowed || 100;
