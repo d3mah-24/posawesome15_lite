@@ -113,53 +113,61 @@ def update_invoice(data):
     # Commit immediately to release locks
     frappe.db.commit()
 
-    # Apply automatic offers after saving the invoice
+    # Apply automatic offers ONLY if posa_auto_fetch_offers is enabled
     try:
-        from posawesome.posawesome.api.pos_offer import get_applicable_offers
+        # Check POS Profile setting for auto-fetch offers
+        posa_auto_fetch_offers = frappe.get_cached_value(
+            "POS Profile",
+            invoice_doc.pos_profile,
+            "posa_auto_fetch_offers"
+        )
         
-        # Get applicable offers for this invoice
-        from posawesome.posawesome.api.pos_offer import get_applicable_offers
-        applicable_offers = get_applicable_offers(invoice_doc.name)
-        
-        if applicable_offers:
-            # Apply offers directly in sales_invoice.py
-            for offer in applicable_offers:
-                # فحص إذا كان العرض موجود بالفعل لتجنب التكرار
-                existing_offer = None
-                if hasattr(invoice_doc, 'posa_offers') and invoice_doc.posa_offers:
-                    existing_offer = next(
-                        (row for row in invoice_doc.posa_offers 
-                         if row.offer_name == offer.name), 
-                        None
-                    )
-                
-                if existing_offer:
-                    continue
-                
-                # Add offer to POS Offer Detail child table
-                invoice_doc.append("posa_offers", {
-                    "offer_name": offer.name,
-                    "apply_on": offer.apply_on or "Transaction",
-                    "offer": offer.offer or "Grand Total",
-                    "offer_applied": 1,
-                    "coupon_based": offer.coupon_based or 0
-                })
-                
-                if offer.discount_type == "Discount Percentage":
-                    # Apply discount to invoice
-                    invoice_doc.additional_discount_percentage = offer.discount_percentage
-                    invoice_doc.discount_amount = (invoice_doc.grand_total * offer.discount_percentage) / 100
+        # Only apply offers automatically if enabled in POS Profile
+        if posa_auto_fetch_offers:
+            from posawesome.posawesome.api.pos_offer import get_applicable_offers
             
-            # Save the invoice with applied offers
-            invoice_doc.flags.ignore_permissions = True
-            frappe.flags.ignore_account_permission = True
-            invoice_doc.save(ignore_version=True)
+            # Get applicable offers for this invoice
+            applicable_offers = get_applicable_offers(invoice_doc.name)
             
-            # Commit immediately to release locks
-            frappe.db.commit()
-            
-            # Reload the invoice to get updated totals
-            invoice_doc = frappe.get_doc("Sales Invoice", invoice_doc.name)
+            if applicable_offers:
+                # Apply offers directly in sales_invoice.py
+                for offer in applicable_offers:
+                    # فحص إذا كان العرض موجود بالفعل لتجنب التكرار
+                    existing_offer = None
+                    if hasattr(invoice_doc, 'posa_offers') and invoice_doc.posa_offers:
+                        existing_offer = next(
+                            (row for row in invoice_doc.posa_offers 
+                             if row.offer_name == offer.name), 
+                            None
+                        )
+                    
+                    if existing_offer:
+                        continue
+                    
+                    # Add offer to POS Offer Detail child table
+                    invoice_doc.append("posa_offers", {
+                        "offer_name": offer.name,
+                        "apply_on": offer.apply_on or "Transaction",
+                        "offer": offer.offer or "Grand Total",
+                        "offer_applied": 1,
+                        "coupon_based": offer.coupon_based or 0
+                    })
+                    
+                    if offer.discount_type == "Discount Percentage":
+                        # Apply discount to invoice
+                        invoice_doc.additional_discount_percentage = offer.discount_percentage
+                        invoice_doc.discount_amount = (invoice_doc.grand_total * offer.discount_percentage) / 100
+                
+                # Save the invoice with applied offers
+                invoice_doc.flags.ignore_permissions = True
+                frappe.flags.ignore_account_permission = True
+                invoice_doc.save(ignore_version=True)
+                
+                # Commit immediately to release locks
+                frappe.db.commit()
+                
+                # Reload the invoice to get updated totals
+                invoice_doc = frappe.get_doc("Sales Invoice", invoice_doc.name)
         
     except Exception as e:
         # Don't fail the invoice creation if offers fail

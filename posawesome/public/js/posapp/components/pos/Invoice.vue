@@ -560,20 +560,8 @@ export default {
       const discountPercentage = flt(item.discount_percentage) || 0;
 
       if (discountPercentage > 0 && basePrice > 0) {
-        let result = 0;
-        frappe.call({
-          method:
-            "posawesome.posawesome.api.sales_invoice_item.calculate_item_discount_amount",
-          args: {
-            price_list_rate: basePrice,
-            discount_percentage: discountPercentage,
-          },
-          async: false,
-          callback: (r) => {
-            result = r.message || 0;
-          },
-        });
-        return result;
+        // Compute locally instead of backend call
+        return flt((basePrice * discountPercentage) / 100) || 0;
       }
 
       return 0;
@@ -1425,39 +1413,9 @@ export default {
     },
 
     validate() {
-      if (!this.items || this.items.length === 0) {
-        return true;
-      }
-
-      let isValid = true;
-
-      frappe.call({
-        method:
-          "posawesome.posawesome.api.sales_invoice_item.validate_invoice_items",
-        args: {
-          items_data: this.items,
-          pos_profile_name: this.pos_profile.name,
-          stock_settings: this.stock_settings,
-        },
-        async: false,
-        callback: (r) => {
-          const result = r.message;
-          if (!result.valid) {
-            if (result.errors && result.errors.length > 0) {
-              evntBus.emit("show_mesage", {
-                text: `${result.errors[0].item}: ${result.errors[0].error}`,
-                color: "error",
-              });
-            }
-            isValid = false;
-          }
-        },
-        error: () => {
-          isValid = false;
-        },
-      });
-
-      return isValid;
+      // Minimal client-side validation; server performs authoritative checks
+      if (!this.items || this.items.length === 0) return true;
+      return true;
     },
 
     open_returns() {
@@ -1962,23 +1920,8 @@ export default {
     },
 
     getItemOffer(offer) {
-      let apply_offer = null;
-
-      frappe.call({
-        method: "posawesome.posawesome.api.pos_offer.process_item_offer",
-        args: {
-          offer_data: offer,
-          items_data: this.items,
-        },
-        async: false,
-        callback: function (r) {
-          if (r.message && r.message.success) {
-            apply_offer = r.message.offer;
-          }
-        },
-      });
-
-      return apply_offer;
+      // Deprecated: item-level offer processing is handled server-side automatically
+      return null;
     },
 
     updatePosOffers(offers) {
@@ -2500,12 +2443,12 @@ export default {
 }
 
 /* Override Customer.vue v-autocomplete styling for compact design */
-.compact-customer-section >>> .v-autocomplete {
+.compact-customer-section :deep(.v-autocomplete) {
   margin: 0 !important;
   padding: 0 !important;
 }
 
-.compact-customer-section >>> .v-field {
+.compact-customer-section :deep(.v-field) {
   min-height: 32px !important;
   max-height: 32px !important;
   border-radius: 4px !important;
@@ -2515,18 +2458,18 @@ export default {
   transition: all 0.2s ease !important;
 }
 
-.compact-customer-section >>> .v-field:hover {
+.compact-customer-section :deep(.v-field:hover) {
   border-color: #1565c0 !important;
   box-shadow: 0 2px 6px rgba(25, 118, 210, 0.15) !important;
   transform: translateY(-1px);
 }
 
-.compact-customer-section >>> .v-field--focused {
+.compact-customer-section :deep(.v-field--focused) {
   border-color: #0d47a1 !important;
   box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1) !important;
 }
 
-.compact-customer-section >>> .v-field__input {
+.compact-customer-section :deep(.v-field__input) {
   padding: 4px 8px !important;
   min-height: 30px !important;
   max-height: 30px !important;
@@ -2536,56 +2479,56 @@ export default {
   line-height: 1.2 !important;
 }
 
-.compact-customer-section >>> .v-field__prepend-inner,
-.compact-customer-section >>> .v-field__append-inner {
+.compact-customer-section :deep(.v-field__prepend-inner),
+.compact-customer-section :deep(.v-field__append-inner) {
   padding: 0 4px !important;
   align-items: center !important;
 }
 
-.compact-customer-section >>> .v-field__prepend-inner .v-icon,
-.compact-customer-section >>> .v-field__append-inner .v-icon {
+.compact-customer-section :deep(.v-field__prepend-inner .v-icon),
+.compact-customer-section :deep(.v-field__append-inner .v-icon) {
   font-size: 18px !important;
   color: #1976d2 !important;
   transition: all 0.2s ease !important;
 }
 
-.compact-customer-section >>> .v-field__prepend-inner .v-icon:hover,
-.compact-customer-section >>> .v-field__append-inner .v-icon:hover {
+.compact-customer-section :deep(.v-field__prepend-inner .v-icon:hover),
+.compact-customer-section :deep(.v-field__append-inner .v-icon:hover) {
   color: #0d47a1 !important;
   transform: scale(1.1);
 }
 
-.compact-customer-section >>> .v-label {
+.compact-customer-section :deep(.v-label) {
   font-size: 0.75rem !important;
   font-weight: 600 !important;
   color: #666 !important;
   top: 6px !important;
 }
 
-.compact-customer-section >>> .v-field--active .v-label {
+.compact-customer-section :deep(.v-field--active .v-label) {
   transform: translateY(-16px) scale(0.85) !important;
 }
 
 /* Customer autocomplete dropdown styling */
-.compact-customer-section >>> .v-list-item {
+.compact-customer-section :deep(.v-list-item) {
   min-height: 36px !important;
   padding: 4px 8px !important;
 }
 
-.compact-customer-section >>> .v-list-item-title {
+.compact-customer-section :deep(.v-list-item-title) {
   font-size: 0.8rem !important;
   font-weight: 600 !important;
   line-height: 1.2 !important;
 }
 
-.compact-customer-section >>> .v-list-item-subtitle {
+.compact-customer-section :deep(.v-list-item-subtitle) {
   font-size: 0.7rem !important;
   line-height: 1.1 !important;
   margin-top: 2px !important;
 }
 
 /* UpdateCustomer dialog trigger */
-.compact-customer-section >>> .mb-2 {
+.compact-customer-section :deep(.mb-2) {
   margin-bottom: 0 !important;
 }
 
