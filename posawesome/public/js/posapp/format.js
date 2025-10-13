@@ -1,12 +1,8 @@
 export default {
     data () {
         return {
-            float_precision: 2,
-            currency_precision: 2,
-            // Add cache for optimization
-            _formatCache: new Map(),
-            _currencySymbolCache: new Map(),
-            _lastCacheCleanup: Date.now()
+            float_precision: 3,        // From your System Settings
+            currency_precision: 2      // From your System Settings
         };
     },
     methods: {
@@ -15,66 +11,46 @@ export default {
                 if (!precision && precision != 0) {
                     precision = this.currency_precision || 2;
                 }
-                if (!rounding_method) {
-                    rounding_method = "Banker's Rounding (legacy)";
-                }
+                // Use your fixed Banker's Rounding setting
+                rounding_method = "Banker's Rounding";
                 return flt(value, precision, number_format, rounding_method);
             } catch (error) {
-                console.error('[format.js] Error in flt:', error);
-                return value;
+                console.error('format: flt error', error);
+                return parseFloat(value || 0).toFixed(precision || 2);
             }
         },
         
         formatCurrency (value, precision) {
             try {
-                const cacheKey = `currency_${value}_${precision}_${this.pos_profile?.currency}`;
-                
-                if (this._formatCache.has(cacheKey)) {
-                    return this._formatCache.get(cacheKey);
-                }
-                
-                const format = get_number_format(this.pos_profile?.currency);
-                const formattedValue = format_number(
+                // Simplified for single currency - no cache needed
+                return format_number(
                     value,
-                    format,
+                    null, // Use default number format
                     precision || this.currency_precision || 2
                 );
-                
-                this._formatCache.set(cacheKey, formattedValue);
-                this._cleanupCache();
-                
-                return formattedValue;
             } catch (error) {
-                console.error('[format.js] Error in formatCurrency:', error);
-                return value;
+                console.error('format: currency error', error);
+                return parseFloat(value || 0).toFixed(precision || 2);
             }
         },
         
         formatFloat (value, precision) {
             try {
-                const cacheKey = `float_${value}_${precision}_${this.pos_profile?.currency}`;
-                
-                if (this._formatCache.has(cacheKey)) {
-                    return this._formatCache.get(cacheKey);
-                }
-                
-                const format = get_number_format(this.pos_profile?.currency);
-                const formattedValue = format_number(value, format, precision || this.float_precision || 2);
-                
-                this._formatCache.set(cacheKey, formattedValue);
-                this._cleanupCache();
-                
-                return formattedValue;
+                // Simplified for single currency - use your float_precision=3
+                return format_number(
+                    value, 
+                    null, 
+                    precision || this.float_precision || 3
+                );
             } catch (error) {
-                console.error('[format.js] Error in formatFloat:', error);
-                return value;
+                console.error('format: float error', error);
+                return parseFloat(value || 0).toFixed(precision || 3);
             }
         },
         
         setFormatedCurrency (el, field_name, precision, no_negative = false, $event) {
             let value = 0;
             try {
-                // make sure it is a number and positive
                 let _value = parseFloat($event.target.value);
                 if (!isNaN(_value)) {
                     value = _value;
@@ -84,14 +60,13 @@ export default {
                 }
                 value = this.formatCurrency($event.target.value, precision);
             } catch (e) {
-                console.error('[format.js] Error in setFormatedCurrency:', e);
-                value = 0;
+                console.error('format: setCurrency error', e);
+                value = parseFloat($event.target.value || 0).toFixed(precision || 2);
             }
-            // check if el is an object
+            
             if (typeof el === "object") {
                 el[field_name] = value;
-            }
-            else {
+            } else {
                 this[field_name] = value;
             }
             return value;
@@ -100,7 +75,6 @@ export default {
         setFormatedFloat (el, field_name, precision, no_negative = false, $event) {
             let value = 0;
             try {
-                // make sure it is a number and positive
                 value = parseFloat($event.target.value);
                 if (isNaN(value)) {
                     value = 0;
@@ -109,14 +83,13 @@ export default {
                 }
                 value = this.formatFloat($event.target.value, precision);
             } catch (e) {
-                console.error('[format.js] Error in setFormatedFloat:', e);
-                value = 0;
+                console.error('format: setFloat error', e);
+                value = parseFloat($event.target.value || 0).toFixed(precision || 3);
             }
-            // check if el is an object
+            
             if (typeof el === "object") {
                 el[field_name] = value;
-            }
-            else {
+            } else {
                 this[field_name] = value;
             }
             return value;
@@ -131,30 +104,15 @@ export default {
                 const pattern = /^-?(\d+|\d{1,3}(\.\d{3})*)(,\d+)?$/;
                 return pattern.test(value) || "invalid number";
             } catch (error) {
-                console.error('[format.js] Error in isNumber:', error);
+                console.error('format: isNumber error', error);
                 return false;
-            }
-        },
-        
-        // Helper function to cleanup cache
-        _cleanupCache() {
-            // Cleanup cache every 5 minutes
-            if (Date.now() - this._lastCacheCleanup > 300000) {
-                this._formatCache.clear();
-                this._currencySymbolCache.clear();
-                this._lastCacheCleanup = Date.now();
             }
         }
     },
     
     mounted () {
-        this.float_precision = frappe.defaults.get_default('float_precision') || 2;
+        // Use your fixed System Settings values
+        this.float_precision = frappe.defaults.get_default('float_precision') || 3;
         this.currency_precision = frappe.defaults.get_default('currency_precision') || 2;
-    },
-    
-    // Cleanup memory when component is destroyed
-    beforeDestroy() {
-        this._formatCache.clear();
-        this._currencySymbolCache.clear();
     }
 };
