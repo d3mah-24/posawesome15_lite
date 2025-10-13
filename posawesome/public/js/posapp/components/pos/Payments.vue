@@ -1,10 +1,7 @@
 <template>
-  <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
-  <div>
-    <v-card
-      class="selection mx-auto grey lighten-5 pa-1"
-      style="max-height: 76vh; height: 76vh"
-    >
+  <!-- ===== COMPACT PAYMENTS COMPONENT ===== -->
+  <div class="payments-container">
+    <v-card class="payments-card" style="max-height: 76vh; height: 76vh">
       <v-progress-linear
         :active="loading"
         :indeterminate="loading"
@@ -12,277 +9,206 @@
         top
         color="info"
       ></v-progress-linear>
-      <div class="overflow-y-auto px-2 pt-2" style="max-height: 75vh">
-        <v-row v-if="invoice_doc" class="px-1 py-0">
-          <v-col cols="7">
-            <v-text-field
-              variant="outlined"
-              color="primary"
-              label="Total Paid"
-              background-color="white"
-              hide-details
-              :model-value="formatCurrency(total_payments)"
-              readonly
-              :prefix="currencySymbol(invoice_doc.currency)"
-              dense
-            ></v-text-field>
-          </v-col>
-          <v-col cols="5">
-            <v-text-field
-              variant="outlined"
-              color="primary"
-              label="Remaining"
-              background-color="white"
-              hide-details
-              :model-value="formatCurrency(diff_payment)"
-              readonly
-              :prefix="currencySymbol(invoice_doc.currency)"
-              dense
-            ></v-text-field>
-          </v-col>
+      
+      <div class="payments-scroll" style="max-height: 75vh">
+        <!-- Payment Summary Section -->
+        <div v-if="invoice_doc" class="payment-summary">
+          <div class="summary-row">
+            <div class="summary-field-large">
+              <label>Total Paid</label>
+              <div class="field-display success-display">
+                <span class="currency">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <span class="value">{{ formatCurrency(total_payments) }}</span>
+              </div>
+            </div>
+            <div class="summary-field-small">
+              <label>Remaining</label>
+              <div class="field-display warning-display">
+                <span class="currency">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <span class="value">{{ formatCurrency(diff_payment) }}</span>
+              </div>
+            </div>
+          </div>
 
-          <v-col cols="7" v-if="diff_payment < 0 && !invoice_doc.is_return">
-            <v-text-field
-              variant="outlined"
-              color="primary"
-              label="Remaining Amount"
-              background-color="white"
-              v-model="paid_change"
-              @input="set_paid_change()"
-              :prefix="currencySymbol(invoice_doc.currency)"
-              :rules="paid_change_rules"
-              dense
-              readonly
-              type="number"
-            ></v-text-field>
-          </v-col>
+          <div class="summary-row" v-if="diff_payment < 0 && !invoice_doc.is_return">
+            <div class="summary-field-large">
+              <label>Remaining Amount</label>
+              <div class="field-input-wrapper">
+                <span class="currency-prefix">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <input
+                  type="number"
+                  class="compact-input readonly-input"
+                  v-model="paid_change"
+                  @input="set_paid_change()"
+                  readonly
+                />
+              </div>
+            </div>
+            <div class="summary-field-small">
+              <label>Change Amount</label>
+              <div class="field-display info-display">
+                <span class="currency">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <span class="value">{{ formatCurrency(credit_change) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="section-divider"></div>
 
-          <v-col cols="5" v-if="diff_payment < 0 && !invoice_doc.is_return">
-            <v-text-field
-              variant="outlined"
-              color="primary"
-              label="Change Amount"
-              background-color="white"
-              hide-details
-              :model-value="formatCurrency(credit_change)"
-              readonly
-              :prefix="currencySymbol(invoice_doc.currency)"
-              dense
-            ></v-text-field>
-          </v-col>
-        </v-row>
-        <v-divider></v-divider>
-
-        <div v-if="is_cashback">
-          <v-row
-            class="pyments px-1 py-0"
+        <!-- Payment Methods Section -->
+        <div v-if="is_cashback" class="payment-methods">
+          <div
+            class="payment-method-row"
             v-for="payment in invoice_doc.payments"
             :key="payment.name"
           >
-            <v-col cols="6">
-              <v-text-field
-                dense
-                variant="outlined"
-                color="primary"
-                label="Amount"
-                background-color="white"
-                hide-details
-                :model-value="formatCurrency(payment.amount)"
-                @change="
-                  setFormatedCurrency(payment, 'amount', null, true, $event)
-                "
-                :rules="[isNumber]"
-                :prefix="currencySymbol(invoice_doc.currency)"
-                @focus="set_rest_amount(payment.idx)"
-                :readonly="invoice_doc.is_return ? true : false"
-              ></v-text-field>
-            </v-col>
-            <v-col
-              :cols="
-                6
-                  ? (payment.type != 'Phone' ||
-                      payment.amount == 0 ||
-                      !request_payment_field)
-                  : 3
-              "
+            <div class="payment-amount">
+              <label>Amount</label>
+              <div class="field-input-wrapper">
+                <span class="currency-prefix">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <input
+                  type="text"
+                  class="compact-input"
+                  :value="formatCurrency(payment.amount)"
+                  @change="setFormatedCurrency(payment, 'amount', null, true, $event)"
+                  @focus="set_rest_amount(payment.idx)"
+                  :readonly="invoice_doc.is_return ? true : false"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <button
+              class="payment-method-btn"
+              :class="{ 'has-request': payment.type == 'Phone' && payment.amount > 0 && request_payment_field }"
+              @click="set_full_amount(payment.idx)"
             >
-              <v-btn
-                block
-                class=""
-                color="primary"
-                dark
-                @click="set_full_amount(payment.idx)"
-                >{{ payment.mode_of_payment }}</v-btn
-              >
-            </v-col>
-            <v-col
-              v-if="
-                payment.type == 'Phone' &&
-                payment.amount > 0 &&
-                request_payment_field
-              "
-              :cols="3"
-              class="pl-1"
+              {{ payment.mode_of_payment }}
+            </button>
+            <button
+              v-if="payment.type == 'Phone' && payment.amount > 0 && request_payment_field"
+              class="request-btn"
+              :disabled="payment.amount == 0"
+              @click="(phone_dialog = true), (payment.amount = flt(payment.amount, 0))"
             >
-              <v-btn
-                block
-                class=""
-                color="success"
-                dark
-                :disabled="payment.amount == 0"
-                @click="
-                  (phone_dialog = true),
-                    (payment.amount = flt(payment.amount, 0))
-                "
-              >
-                Request
-              </v-btn>
-            </v-col>
-          </v-row>
+              Request
+            </button>
+          </div>
         </div>
 
-        <v-row
-          class="pyments px-1 py-0"
-          v-if="
-            invoice_doc &&
-            available_pioints_amount > 0 &&
-            !invoice_doc.is_return
-          "
+        <!-- Loyalty Points Section -->
+        <div
+          class="payment-loyalty"
+          v-if="invoice_doc && available_pioints_amount > 0 && !invoice_doc.is_return"
         >
-          <v-col cols="7">
-            <v-text-field
-              dense
-              variant="outlined"
-              color="primary"
-              label="Pay from Customer Points"
-              background-color="white"
-              hide-details
-              v-model="loyalty_amount"
-              type="number"
-              :prefix="currencySymbol(invoice_doc.currency)"
-            ></v-text-field>
-          </v-col>
-          <v-col cols="5">
-            <v-text-field
-              dense
-              outlined
-              color="primary"
-              label="Customer Points Balance"
-              background-color="white"
-              hide-details
-              :model-value="formatFloat(available_pioints_amount)"
-              :prefix="currencySymbol(invoice_doc.currency)"
-              disabled
-            ></v-text-field>
-          </v-col>
-        </v-row>
+          <div class="loyalty-row">
+            <div class="loyalty-field-large">
+              <label>Pay from Customer Points</label>
+              <div class="field-input-wrapper">
+                <span class="currency-prefix">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <input
+                  type="number"
+                  class="compact-input"
+                  v-model="loyalty_amount"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div class="loyalty-field-small">
+              <label>Points Balance</label>
+              <div class="field-display disabled-display">
+                <span class="currency">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <span class="value">{{ formatFloat(available_pioints_amount) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <v-row
-          class="pyments px-1 py-0"
-          v-if="
-            invoice_doc &&
-            available_customer_credit > 0 &&
-            !invoice_doc.is_return &&
-            redeem_customer_credit
-          "
+        <!-- Customer Credit Section -->
+        <div
+          class="payment-credit"
+          v-if="invoice_doc && available_customer_credit > 0 && !invoice_doc.is_return && redeem_customer_credit"
         >
-          <v-col cols="7">
-            <v-text-field
-              dense
-              variant="outlined"
-              disabled
-              color="primary"
-              label="Redeemed Customer Credit"
-              background-color="white"
-              hide-details
-              v-model="redeemed_customer_credit"
-              type="number"
-              :prefix="currencySymbol(invoice_doc.currency)"
-            ></v-text-field>
-          </v-col>
-          <v-col cols="5">
-            <v-text-field
-              dense
-              variant="outlined"
-              color="primary"
-              label="Cash Credit Balance"
-              background-color="white"
-              hide-details
-              :model-value="formatCurrency(available_customer_credit)"
-              :prefix="currencySymbol(invoice_doc.currency)"
-              disabled
-            ></v-text-field>
-          </v-col>
-        </v-row>
-        <v-divider></v-divider>
+          <div class="credit-row">
+            <div class="credit-field-large">
+              <label>Redeemed Customer Credit</label>
+              <div class="field-display disabled-display">
+                <span class="currency">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <span class="value">{{ formatCurrency(redeemed_customer_credit) }}</span>
+              </div>
+            </div>
+            <div class="credit-field-small">
+              <label>Cash Credit Balance</label>
+              <div class="field-display disabled-display">
+                <span class="currency">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <span class="value">{{ formatCurrency(available_customer_credit) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        <div class="section-divider"></div>
 
-        <v-divider></v-divider>
-        <v-row class="px-1 py-0" align="start" no-gutters>
-          <v-col
-            cols="6"
-            v-if="
-              pos_profile.posa_allow_write_off_change &&
-              diff_payment > 0 &&
-              !invoice_doc.is_return
-            "
+        <!-- Options Section (Switches) -->
+        <div class="payment-options">
+          <div
+            class="option-switch"
+            v-if="pos_profile.posa_allow_write_off_change && diff_payment > 0 && !invoice_doc.is_return"
           >
             <v-switch
-              class="my-0 py-0"
+              class="compact-switch"
               v-model="is_write_off_change"
               flat
               label="Is it a write-off amount?"
+              hide-details
+              density="compact"
             ></v-switch>
-          </v-col>
-          <v-col
-            cols="4"
+          </div>
+          <div
+            class="option-switch"
             v-if="pos_profile.posa_allow_credit_sale && !invoice_doc.is_return"
           >
             <v-switch
+            class="compact-switch"
               v-model="is_credit_sale"
               variant="flat"
               label="Is it a credit sale?"
-              class="my-0 py-0"
+              hide-details
+              density="compact"
             ></v-switch>
-          </v-col>
-          <v-col
-            cols="4"
+          </div>
+          <div
+            class="option-switch"
             v-if="!invoice_doc.is_return && pos_profile.posa_use_customer_credit"
           >
             <v-switch
+            class="compact-switch"
               v-model="redeem_customer_credit"
               flat
               label="Use Customer Credit"
-              class="my-0 py-0"
+              hide-details
+              density="compact"
               @change="get_available_credit($event.target.value)"
             ></v-switch>
-          </v-col>
-          <v-col cols="4">
-            <v-btn
-              block
-              large
-              color="secondary"
-              dark
-              @click="back_to_invoice"
-            >Back</v-btn>
-          </v-col>
-          <v-col
-            cols="6"
+          </div>
+          <div
+            class="option-switch"
             v-if="invoice_doc.is_return && pos_profile.posa_use_cashback"
           >
             <v-switch
               v-model="is_cashback"
               flat
               label="Is it a cash refund?"
-              class="my-0 py-0"
+              hide-details
+              density="compact"
             ></v-switch>
-          </v-col>
-          <v-col cols="6" v-if="is_credit_sale">
+          </div>
+          <div class="option-date" v-if="is_credit_sale">
+            <label>Due Date</label>
             <v-menu ref="date_menu" v-model="date_menu" :close-on-content-click="false" transition="scale-transition">
               <template v-slot:activator="{ props: { on, attrs } }">
                 <v-text-field
                   v-model="invoice_doc.due_date"
-                  label="Due Date"
                   readonly
                   variant="outlined"
                   density="compact"
@@ -290,6 +216,7 @@
                   v-bind="attrs"
                   v-on="on"
                   color="primary"
+                  class="compact-date-field"
                 ></v-text-field>
               </template>
               <v-date-picker
@@ -301,54 +228,45 @@
                 @update:model-value="date_menu = false"
               ></v-date-picker>
             </v-menu>
-          </v-col>
-        </v-row>
-        <div
-          v-if="
-            invoice_doc &&
-            available_customer_credit > 0 &&
-            !invoice_doc.is_return &&
-            redeem_customer_credit
-          "
-        >
-          <v-row v-for="(row, idx) in customer_credit_dict" :key="idx">
-            <v-col cols="4">
-              <div class="pa-2 py-3">{{ row.credit_origin }}</div>
-            </v-col>
-            <v-col cols="4">
-              <v-text-field
-                dense
-                variant="outlined"
-                color="primary"
-                label="Available Credit"
-                background-color="white"
-                hide-details
-                :model-value="formatCurrency(row.total_credit)"
-                disabled
-                :prefix="currencySymbol(invoice_doc.currency)"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="4">
-              <v-text-field
-                dense
-                variant="outlined"
-                color="primary"
-                label="Credit to Redeem"
-                background-color="white"
-                hide-details
-                type="number"
-                v-model="row.credit_to_redeem"
-                :prefix="currencySymbol(invoice_doc.currency)"
-              ></v-text-field>
-            </v-col>
-          </v-row>
+          </div>
         </div>
-        <v-divider></v-divider>
-        <v-row class="pb-0 mb-2" align="start">
-        </v-row>
+
+        <!-- Credit Details Section -->
+        <div
+          class="credit-details"
+          v-if="invoice_doc && available_customer_credit > 0 && !invoice_doc.is_return && redeem_customer_credit"
+        >
+          <div class="credit-detail-row" v-for="(row, idx) in customer_credit_dict" :key="idx">
+            <div class="credit-origin">
+              {{ row.credit_origin }}
+            </div>
+            <div class="credit-available">
+              <label>Available Credit</label>
+              <div class="field-display disabled-display">
+                <span class="currency">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <span class="value">{{ formatCurrency(row.total_credit) }}</span>
+              </div>
+            </div>
+            <div class="credit-redeem">
+              <label>Credit to Redeem</label>
+              <div class="field-input-wrapper">
+                <span class="currency-prefix">{{ currencySymbol(invoice_doc.currency) }}</span>
+                <input
+                  type="number"
+                  class="compact-input"
+                  v-model="row.credit_to_redeem"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
       </div>
     </v-card>
 
+    <!-- Phone Dialog -->
     <div>
       <v-dialog v-model="phone_dialog" max-width="400px">
         <v-card>
@@ -1186,3 +1104,536 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+/* ===== ULTRA-COMPACT PAYMENTS COMPONENT STYLING ===== */
+
+.payments-container {
+  width: 100%;
+  height: 100%;
+}
+
+.payments-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.payments-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px;
+}
+
+/* Professional Scrollbar */
+.payments-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.payments-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.payments-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border-radius: 3px;
+}
+
+.payments-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+}
+
+/* Section Divider */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #e0e0e0 50%, transparent 100%);
+  margin: 4px 0;
+}
+
+/* Payment Summary Section */
+.payment-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 2px;
+}
+
+.summary-row {
+  display: flex;
+  gap: 3px;
+  align-items: flex-start;
+}
+
+.summary-field-large {
+  flex: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-field-small {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-field-large label,
+.summary-field-small label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+/* Field Display Styles */
+.field-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 6px;
+  border-radius: 3px;
+  border: 1px solid #e0e0e0;
+  background: white;
+  min-height: 22px;
+  transition: all 0.2s ease;
+}
+
+.field-display .currency {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #666;
+  margin-right: 3px;
+}
+
+.field-display .value {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #333;
+  flex: 1;
+  text-align: right;
+}
+
+.success-display {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-color: #4caf50;
+}
+
+.success-display .value {
+  color: #2e7d32;
+}
+
+.warning-display {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-color: #ff9800;
+}
+
+.warning-display .value {
+  color: #e65100;
+}
+
+.info-display {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #2196f3;
+}
+
+.info-display .value {
+  color: #0d47a1;
+}
+
+.disabled-display {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  border-color: #bdbdbd;
+  opacity: 0.8;
+}
+
+.disabled-display .value {
+  color: #757575;
+}
+
+/* Field Input Wrapper */
+.field-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #1976d2;
+  border-radius: 3px;
+  padding: 1px 4px;
+  min-height: 22px;
+  transition: all 0.2s ease;
+}
+
+.field-input-wrapper:hover {
+  border-color: #1565c0;
+  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.15);
+}
+
+.field-input-wrapper:focus-within {
+  border-color: #0d47a1;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.12);
+  background: #e3f2fd;
+}
+
+.currency-prefix {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #1976d2;
+  margin-right: 3px;
+  flex-shrink: 0;
+}
+
+.compact-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1976d2;
+  text-align: right;
+  padding: 1px;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.compact-input::placeholder {
+  color: #90caf9;
+  opacity: 0.6;
+}
+
+.compact-input::-webkit-inner-spin-button,
+.compact-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.compact-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.readonly-input {
+  color: #757575;
+  cursor: not-allowed;
+}
+
+/* Payment Methods Section */
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 2px 0;
+}
+
+.payment-method-row {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+}
+
+.payment-amount {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.payment-amount label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.payment-method-btn {
+  flex: 1;
+  height: 22px;
+  border: none;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(25, 118, 210, 0.25);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+}
+
+.payment-method-btn:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.35);
+}
+
+.payment-method-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(25, 118, 210, 0.25);
+}
+
+.payment-method-btn.has-request {
+  flex: 0.7;
+}
+
+.request-btn {
+  flex: 0.4;
+  height: 22px;
+  border: none;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(76, 175, 80, 0.25);
+  transition: all 0.2s ease;
+}
+
+.request-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.35);
+}
+
+.request-btn:disabled {
+  background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
+  color: #9e9e9e;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Loyalty Points Section */
+.payment-loyalty {
+  margin: 3px 0;
+}
+
+.loyalty-row {
+  display: flex;
+  gap: 3px;
+  align-items: flex-start;
+}
+
+.loyalty-field-large {
+  flex: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.loyalty-field-small {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.loyalty-field-large label,
+.loyalty-field-small label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+/* Customer Credit Section */
+.payment-credit {
+  margin: 3px 0;
+}
+
+.credit-row {
+  display: flex;
+  gap: 3px;
+  align-items: flex-start;
+}
+
+.credit-field-large {
+  flex: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.credit-field-small {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.credit-field-large label,
+.credit-field-small label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+/* Payment Options (Switches) Section */
+.payment-options {
+  display: flex;
+  gap: 4px;
+  margin: 3px 0;
+  padding: 4px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+  border-radius: 4px;
+}
+
+.option-switch {
+  flex: 1 1 calc(50% - 2px);
+  min-width: 130px;
+}
+
+.option-date {
+  flex: 1 1 calc(50% - 2px);
+  min-width: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.option-date label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+/* Compact Switch Styling */
+.compact-switch >>> .v-label {
+  font-size: 0.65rem !important;
+  color: #666 !important;
+  line-height: 1.2 !important;
+}
+
+.compact-switch >>> .v-input__control {
+  min-height: 20px !important;
+}
+
+.compact-switch >>> .v-selection-control {
+  min-height: 20px !important;
+}
+
+.compact-date-field >>> .v-field__input {
+  min-height: 22px !important;
+  padding: 1px 6px !important;
+  font-size: 0.7rem !important;
+}
+
+.compact-date-field >>> .v-field {
+  min-height: 22px !important;
+}
+
+/* Credit Details Section */
+.credit-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 3px 0;
+  padding: 4px;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-radius: 4px;
+  border: 1px solid #ff9800;
+}
+
+.credit-detail-row {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.credit-origin {
+  flex: 0.8;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #e65100;
+  padding: 3px 6px;
+  background: white;
+  border-radius: 3px;
+  border: 1px solid #ffcc80;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.credit-available {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.credit-redeem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.credit-available label,
+.credit-redeem label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #e65100;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .summary-row,
+  .loyalty-row,
+  .credit-row {
+    flex-direction: column;
+  }
+  
+  .summary-field-large,
+  .summary-field-small,
+  .loyalty-field-large,
+  .loyalty-field-small,
+  .credit-field-large,
+  .credit-field-small {
+    flex: 1;
+  }
+  
+  .payment-method-row {
+    flex-wrap: wrap;
+  }
+  
+  .payment-amount {
+    flex: 1 1 100%;
+  }
+  
+  .payment-method-btn,
+  .request-btn {
+    flex: 1 1 calc(50% - 2px);
+  }
+  
+  .option-switch,
+  .option-date {
+    flex: 1 1 100%;
+  }
+}
+</style>

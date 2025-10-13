@@ -22,118 +22,103 @@
           density="compact"
         >
           <template v-slot:item.qty="{ item }">
-            <div class="quantity-controls">
-              <v-btn
-                size="small"
-                variant="flat"
-                color="warning"
-                class="quantity-btn quantity-minus-btn"
+            <div class="compact-qty-controls">
+              <button
+                class="qty-btn minus-btn"
                 @click="decreaseQuantity(item)"
                 :disabled="item.qty <= 0"
+                type="button"
               >
-                −
-              </v-btn>
+                <span class="btn-icon">−</span>
+              </button>
               <input
                 type="number"
                 v-model.number="item.qty"
                 @input="onQtyInput(item)"
                 @change="onQtyChange(item)"
                 @blur="onQtyChange(item)"
-                class="quantity-input text-center"
+                class="compact-qty-input"
                 placeholder="0"
               />
-              <v-btn
-                size="small"
-                variant="flat"
-                color="success"
-                class="quantity-btn quantity-plus-btn"
+              <button
+                class="qty-btn plus-btn"
                 @click="increaseQuantity(item)"
+                type="button"
               >
-                +
-              </v-btn>
+                <span class="btn-icon">+</span>
+              </button>
             </div>
           </template>
           <template v-slot:item.rate="{ item }">
-            <!-- Price input field -->
-            <v-text-field
-              dense
-              variant="outlined"
-              color="primary"
-              background-color="white"
-              hide-details
-              :prefix="currencySymbol(pos_profile.currency)"
-              :model-value="formatCurrency(item.rate)"
-              @change="[setFormatedCurrency(item, 'rate', null, false, $event)]"
-              @blur="[setFormatedCurrency(item, 'rate', null, false, $event)]"
-              @keyup.enter="
-                [setFormatedCurrency(item, 'rate', null, false, $event)]
-              "
-              :rules="[isNumber]"
-              id="rate"
-              :disabled="
-                !!item.posa_is_offer ||
-                !!item.posa_is_replace ||
-                !!item.posa_offer_applied ||
-                !!invoice_doc.is_return
-              "
-              style="min-width: 80px; max-width: 110px"
-              class="rate-input"
-              placeholder="0.00"
-            ></v-text-field>
-          </template>
-          <template v-slot:item.discount_percentage="{ item }">
-            <v-text-field
-              dense
-              variant="outlined"
-              :color="item.discount_percentage > 0 ? 'orange' : 'primary'"
-              :background-color="
-                item.discount_percentage > 0 ? '#FFF3E0' : 'white'
-              "
-              hide-details
-              :model-value="formatFloat(item.discount_percentage || 0)"
-              @change="setDiscountPercentage(item, $event)"
-              @blur="setDiscountPercentage(item, $event)"
-              @keyup.enter="setDiscountPercentage(item, $event)"
-              :rules="[isNumber]"
-              :disabled="
-                !!item.posa_is_offer ||
-                !!item.posa_is_replace ||
-                !!item.posa_offer_applied ||
-                !pos_profile.posa_allow_user_to_edit_item_discount ||
-                !!invoice_doc.is_return
-              "
-              style="min-width: 60px; max-width: 90px"
-              class="discount-input"
-              placeholder="0.00"
-              suffix="%"
-              type="number"
-              min="0"
-              :max="pos_profile.posa_item_max_discount_allowed || 100"
-              step="0.01"
-              id="discount_percentage"
-            ></v-text-field>
-          </template>
-          <template v-slot:item.discount_amount="{ item }">
-            <div
-              class="discount-amount-display"
-              :class="{
-                'discount-zero':
-                  !getDiscountAmount(item) || getDiscountAmount(item) <= 0,
-              }"
-            >
-              <span>{{ currencySymbol(pos_profile.currency) }}</span>
-              {{ formatCurrency(getDiscountAmount(item)) }}
+            <!-- Compact Price Input -->
+            <div class="compact-rate-wrapper">
+              <input
+                type="text"
+                :value="formatCurrency(item.rate)"
+                @change="setItemRate(item, $event)"
+                @blur="setItemRate(item, $event)"
+                @keyup.enter="setItemRate(item, $event)"
+                :disabled="
+                  !!item.posa_is_offer ||
+                  !!item.posa_is_replace ||
+                  !!item.posa_offer_applied ||
+                  !!invoice_doc.is_return
+                "
+                class="compact-rate-input"
+                placeholder="0.00"
+              />
             </div>
           </template>
-          <template v-slot:item.amount="{ item }"
-            >{{ currencySymbol(pos_profile.currency) }}
-            {{
-              formatCurrency(
-                flt(item.qty, float_precision) *
-                  flt(item.rate, currency_precision)
-              )
-            }}</template
-          >
+          <template v-slot:item.discount_percentage="{ item }">
+            <!-- Compact Discount Input -->
+            <div 
+              class="compact-discount-wrapper"
+              :class="{ 'has-discount': item.discount_percentage > 0 }"
+            >
+              <input
+                type="number"
+                :value="formatFloat(item.discount_percentage || 0)"
+                @change="setDiscountPercentage(item, $event)"
+                @blur="setDiscountPercentage(item, $event)"
+                @keyup.enter="setDiscountPercentage(item, $event)"
+                :disabled="
+                  !!item.posa_is_offer ||
+                  !!item.posa_is_replace ||
+                  !!item.posa_offer_applied ||
+                  !pos_profile.posa_allow_user_to_edit_item_discount ||
+                  !!invoice_doc.is_return
+                "
+                class="compact-discount-input"
+                placeholder="0"
+                min="0"
+                :max="pos_profile.posa_item_max_discount_allowed || 100"
+                step="0.01"
+              />
+              <span class="discount-suffix">%</span>
+            </div>
+          </template>
+          <template v-slot:item.discount_amount="{ item }">
+            <div class="compact-discount-amount">
+              <span 
+                class="amount-value"
+                :class="{ 'has-value': getDiscountAmount(item) > 0 }"
+              >
+                {{ formatCurrency(getDiscountAmount(item)) }}
+              </span>
+            </div>
+          </template>
+          <template v-slot:item.amount="{ item }">
+            <div class="compact-total-amount">
+              <span class="amount-value">
+                {{
+                  formatCurrency(
+                    flt(item.qty, float_precision) *
+                      flt(item.rate, currency_precision)
+                  )
+                }}
+              </span>
+            </div>
+          </template>
           <template v-slot:item.posa_is_offer="{ item }">
             <v-checkbox
               :model-value="!!item.posa_is_offer || !!item.posa_is_replace"
@@ -157,15 +142,17 @@
             </div>
           </template>
           <template v-slot:item.price_list_rate="{ item }">
-            <div
-              :class="{
-                'discounted-price':
-                  flt(item.rate, currency_precision) <
-                  flt(item.base_rate, currency_precision),
-              }"
-            >
-              {{ logPriceDisplay(item)
-              }}{{ formatCurrency(item.price_list_rate) }}
+            <div class="compact-price-display">
+                <!-- :class="{
+                  'discounted-price':
+                    flt(item.rate, currency_precision) <
+                    flt(item.base_rate, currency_precision),
+                }" -->
+              <span 
+                class="amount-value"
+              >
+                {{ formatCurrency(item.price_list_rate) }}
+              </span>
             </div>
           </template>
         </v-data-table>
@@ -209,7 +196,7 @@
           <label>Before Disc</label>
           <div class="field-value">
             {{ currencySymbol(pos_profile.currency)
-            }}{{ formatCurrency(invoice_doc.total) }}
+            }}{{ formatCurrency(total_before_discount) }}
           </div>
         </div>
 
@@ -345,28 +332,25 @@ export default {
           key: "item_name",
           width: "25%",
         },
-        { title: "Qty", key: "qty", align: "center", width: "15%" },
-        { title: "Unit", key: "uom", align: "center", width: "10%" },
+        { title: "Qty", key: "qty", align: "center" },
+        { title: "Unit", key: "uom", align: "center"},
         {
           title: "Price",
           key: "price_list_rate",
           align: "center",
-          width: "15%",
         },
-        { title: "After Disc.", key: "rate", align: "center", width: "15%" },
+        { title: "After Disc.", key: "rate", align: "center" },
         {
           title: "Disc. %",
           key: "discount_percentage",
-          align: "center",
-          width: "10%",
+          align: "center"
         },
         {
           title: "Disc. Amount",
           key: "discount_amount",
-          align: "center",
-          width: "10%",
+          align: "center"
         },
-        { title: "Total", key: "amount", align: "center", width: "10%" },
+        { title: "Total", key: "amount", align: "center" },
         {
           title: "Delete",
           key: "actions",
@@ -418,6 +402,16 @@ export default {
     subtotal() {
       this.close_payments();
       return this.invoice_doc?.net_total || 0;
+    },
+    total_before_discount() {
+      // Calculate total using price_list_rate (before any item discounts)
+      if (!this.items || this.items.length === 0) return 0;
+      
+      return this.items.reduce((sum, item) => {
+        const qty = flt(item.qty, this.float_precision) || 0;
+        const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || flt(item.rate) || 0;
+        return sum + (qty * basePrice);
+      }, 0);
     },
     total_items_discount_amount() {
       return this.invoice_doc?.total_items_discount || 0;
@@ -671,7 +665,7 @@ export default {
         existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
         reason = "item-updated";
       } else {
-        console.log("Invoice.vue(add_item): Added", new_item.item_code);
+        console.log("Invoice(add_item): added", new_item.item_code);
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
         new_item.posa_offer_applied = 0;
@@ -686,7 +680,7 @@ export default {
 
       // Check if this is the first item and no invoice exists
       if (this.items.length === 1 && !this.invoice_doc?.name) {
-        console.log("Invoice.vue(add_item): Creating new invoice");
+        console.log("Invoice(add_item): creating new draft");
         // Create draft invoice immediately for first item
         this.create_draft_invoice();
         return;
@@ -705,10 +699,7 @@ export default {
         const result = await this.update_invoice(doc);
 
         if (result) {
-          console.log(
-            "Invoice.vue(create_draft_invoice): Created",
-            result.name
-          );
+          console.log("Invoice(create_draft): created", result.name);
           this.invoice_doc = result;
           evntBus.emit("show_mesage", {
             text: "Draft invoice created",
@@ -765,10 +756,7 @@ export default {
         // Always update invoice_doc with API response (totals, taxes, etc.)
         if (result) {
           if (result.name && !this.invoice_doc?.name) {
-            console.log(
-              "Invoice.vue(auto_update_invoice): Created",
-              result.name
-            );
+            console.log("Invoice(auto_update): created", result.name);
             evntBus.emit("show_mesage", {
               text: "Draft invoice created",
               color: "success",
@@ -860,7 +848,7 @@ export default {
           // Auto save success - no logging needed
         })
         .catch((error) => {
-          console.log("Invoice.vue(_run_auto_save_worker): Error", error);
+          console.log("Invoice(auto_save): error", error.message);
         })
         .finally(() => {
           this._autoSaveProcessing = false;
@@ -1302,10 +1290,10 @@ export default {
 
       try {
         const result = await this.update_invoice(doc);
-        console.log("Invoice.vue(process_invoice): Success", doc.name);
+        console.log("Invoice(process): success", doc.name);
         return result;
       } catch (error) {
-        console.log("Invoice.vue(process_invoice): Error", error);
+        console.log("Invoice(process): error", error.message);
         evntBus.emit("show_mesage", {
           text: "Error processing invoice",
           color: "error",
@@ -1341,7 +1329,7 @@ export default {
 
         // Add default payment method if no payments exist
         if (!invoice_doc.payments || invoice_doc.payments.length === 0) {
-          console.log("[Invoice] adding default payment method");
+          console.log("Invoice(payment): adding default");
           try {
             const defaultPayment = await frappe.call({
               method:
@@ -1363,10 +1351,7 @@ export default {
                   default: 1,
                 },
               ];
-              console.log(
-                "[Invoice] default payment added",
-                defaultPayment.message.mode_of_payment
-              );
+              console.log("Invoice(payment): added default", defaultPayment.message.mode_of_payment);
 
               // Save default payment to server
               try {
@@ -1377,16 +1362,13 @@ export default {
                     invoice_data: invoice_doc,
                   },
                 });
-                console.log("[Invoice] default payment saved to server");
+                console.log("Invoice(payment): default saved");
               } catch (error) {
-                console.log(
-                  "[Invoice] failed to save default payment to server",
-                  error
-                );
+                console.log("Invoice(payment): save failed", error);
               }
             }
           } catch (error) {
-            console.log("[Invoice] failed to get default payment", error);
+            console.log("Invoice(payment): get failed", error);
           }
         }
 
@@ -1524,11 +1506,56 @@ export default {
 
       item.discount_percentage = value;
 
+      // Recalculate rate based on discount percentage
+      const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || 0;
+      if (basePrice > 0 && value > 0) {
+        const discountAmount = (basePrice * value) / 100;
+        item.rate = flt(basePrice - discountAmount, this.currency_precision);
+      } else if (value === 0) {
+        // Reset to original price when discount is 0
+        item.rate = flt(item.price_list_rate) || flt(item.base_rate) || 0;
+      }
+
       // Recalculate item with new discount for immediate visual feedback
       this.refreshTotals();
 
       // Use unified debounce for all item operations
       this.debouncedItemOperation("discount-change");
+
+      this.$forceUpdate();
+    },
+
+    setItemRate(item, event) {
+      let value = 0;
+      try {
+        // Parse and format the input value
+        let _value = parseFloat(event.target.value);
+        if (!isNaN(_value) && _value >= 0) {
+          value = _value;
+        }
+      } catch (e) {
+        console.error('Invoice(rate): parse error', e);
+        value = 0;
+      }
+
+      // Set the new rate
+      item.rate = flt(value, this.currency_precision);
+
+      // Recalculate discount percentage based on new rate
+      const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || 0;
+      if (basePrice > 0 && item.rate < basePrice) {
+        const discountAmount = basePrice - item.rate;
+        item.discount_percentage = flt((discountAmount / basePrice) * 100, this.float_precision);
+      } else if (item.rate >= basePrice) {
+        // No discount if rate equals or exceeds base price
+        item.discount_percentage = 0;
+      }
+
+      // Recalculate totals for immediate visual feedback
+      this.refreshTotals();
+
+      // Use unified debounce for all item operations
+      this.debouncedItemOperation("rate-change");
 
       this.$forceUpdate();
     },
@@ -1705,7 +1732,7 @@ export default {
           }
         }
       } catch (error) {
-        console.error("[Invoice] error parsing posa_offers:", error);
+        console.error("Invoice(offers): parse error", error);
         return false;
       }
 
@@ -1713,17 +1740,13 @@ export default {
     },
 
     mergeItemsFromAPI(apiItems) {
-      console.log("[Invoice] merging items from API");
-      console.log("[Invoice] local items count", this.items.length);
-      console.log("[Invoice] API items count", apiItems.length);
+      console.log("Invoice(merge): merging items", this.items.length, "local", apiItems.length, "api");
 
       // Handle null or undefined apiItems
       if (!apiItems || !Array.isArray(apiItems)) {
-        console.log("[Invoice] API items is null - keeping local items");
+        console.log("Invoice(merge): api null, keeping local");
         return;
       }
-
-      console.log("[Invoice] API items count", apiItems.length);
 
       // Always update invoice_doc with API totals, regardless of items merge strategy
       // This ensures totals are always updated from server
@@ -1731,19 +1754,19 @@ export default {
       // If local items are more than API items, keep local items
       // This happens when user adds items quickly before API responds
       if (this.items.length > (apiItems?.length || 0)) {
-        console.log("[Invoice] keeping local items (more than API)");
+        console.log("Invoice(merge): keeping local", this.items.length, ">", apiItems.length);
         return;
       }
 
       // If API has more items, use API items
       if ((apiItems?.length || 0) > this.items.length) {
-        console.log("[Invoice] using API items (more than local)");
+        console.log("Invoice(merge): using api", apiItems.length, ">", this.items.length);
         this.items = apiItems;
         return;
       }
 
       // If counts are equal, merge by updating existing items
-      console.log("[Invoice] merging equal counts");
+      console.log("Invoice(merge): equal counts", this.items.length);
       if (Array.isArray(apiItems)) {
         apiItems.forEach((apiItem) => {
           const localIndex = this.items.findIndex(
@@ -1754,7 +1777,7 @@ export default {
 
           if (localIndex >= 0) {
             // Update existing item with API data
-            console.log("[Invoice] updating existing item", apiItem.item_code);
+            console.log("Invoice(merge): updating", apiItem.item_code);
             this.items[localIndex] = { ...this.items[localIndex], ...apiItem };
           } else {
             // Check if item exists with different criteria (same item_code and uom)
@@ -1765,19 +1788,13 @@ export default {
             );
 
             if (existingItemIndex >= 0) {
-              console.log(
-                "[Invoice] updating existing item by item_code and uom",
-                apiItem.item_code
-              );
+              console.log("Invoice(merge): updating by uom", apiItem.item_code);
               this.items[existingItemIndex] = {
                 ...this.items[existingItemIndex],
                 ...apiItem,
               };
             } else {
-              console.log(
-                "[Invoice] adding new item from API",
-                apiItem.item_code
-              );
+              console.log("Invoice(merge): adding new", apiItem.item_code);
               this.items.push(apiItem);
             }
           }
@@ -1786,7 +1803,7 @@ export default {
     },
 
     debouncedItemOperation(operation = "item-operation") {
-      console.log("[Invoice] debounced operation", operation);
+      console.log("Invoice(debounce):", operation);
       // Add operation to queue
       if (!this._itemOperationsQueue.includes(operation)) {
         this._itemOperationsQueue.push(operation);
@@ -1810,7 +1827,7 @@ export default {
 
       this._processingOperations = true;
 
-      console.log("[Invoice] processing operations");
+      console.log("Invoice(process): operations started");
 
       // Process offers after all item operations are complete
       this.handelOffers();
@@ -1818,7 +1835,7 @@ export default {
       // Use queue_auto_save for better batching with combined operations
       const combinedReason =
         this._itemOperationsQueue.join("-") || "item-operation";
-      console.log("[Invoice] auto save", combinedReason);
+      console.log("Invoice(auto_save):", combinedReason);
 
       // Clear queue immediately
       this._itemOperationsQueue = [];
@@ -1826,7 +1843,7 @@ export default {
       // Call queue_auto_save and reset processing flag after completion
       this.queue_auto_save(combinedReason).finally(() => {
         this._processingOperations = false;
-        console.log("[Invoice] processing operations completed");
+        console.log("Invoice(process): operations completed");
       });
     },
 
@@ -1859,14 +1876,14 @@ export default {
         this._offersCache.key === cacheKey &&
         now - this._offersCache.timestamp < 30000
       ) {
-        console.log("[Invoice] using cached offers");
+        console.log("Invoice(offers): using cached");
         this.updatePosOffers(this._offersCache.data);
         return;
       }
 
       // Prevent multiple simultaneous calls
       if (this._offersProcessing) {
-        console.log("[Invoice] offers processing already in progress");
+        console.log("Invoice(offers): already processing");
         return;
       }
 
@@ -1893,7 +1910,7 @@ export default {
         },
         error: (r) => {
           this._offersProcessing = false;
-          console.error("[Invoice] error fetching offers:", r);
+          console.error("Invoice(offers): fetch error", r);
         },
       });
     },
@@ -1982,19 +1999,13 @@ export default {
     applyOffersToInvoice(offer_names) {
       // Offers are now applied automatically in sales_invoice.py
       // No need to call backend API here
-      console.log(
-        "[Invoice] offers applied automatically by backend",
-        offer_names
-      );
+      console.log("Invoice(offers): auto applied", offer_names);
     },
 
     removeOffersFromInvoice(offer_names) {
       // Offers removal is now handled automatically in sales_invoice.py
       // No need to call backend API here
-      console.log(
-        "[Invoice] offers removal handled automatically by backend",
-        offer_names
-      );
+      console.log("Invoice(offers): auto removed", offer_names);
     },
 
     load_print_page(invoice_name) {
@@ -2061,19 +2072,14 @@ export default {
         color: "info",
       });
 
-      console.log("[Invoice] starting invoice submission process");
+      console.log("Invoice(submit): starting process");
       this.process_invoice()
         .then((invoice_doc) => {
-          console.log("[Invoice] process_invoice completed", invoice_doc.name);
+          console.log("Invoice(submit): process completed", invoice_doc.name);
           const hasChosen = (invoice_doc.payments || []).some(
             (p) => this.flt(p.amount) > 0
           );
-          console.log(
-            "[Invoice] payment check - hasChosen",
-            hasChosen,
-            "payments",
-            invoice_doc.payments?.length || 0
-          );
+          console.log("Invoice(submit): payment check", hasChosen, "payments", invoice_doc.payments?.length || 0);
 
           if (!hasChosen) {
             evntBus.emit("show_mesage", {
@@ -2084,8 +2090,7 @@ export default {
             throw new Error("No payment chosen");
           }
 
-          console.log("[Invoice] calling submit_invoice API");
-          console.log("[Invoice] invoice doc being sent", invoice_doc.name);
+          console.log("Invoice(submit): calling API", invoice_doc.name);
 
           // Submit and print the invoice
           frappe.call({
@@ -2103,36 +2108,25 @@ export default {
             },
             async: true,
             callback: (r) => {
-              console.log("[Invoice] submit_invoice callback received");
-              console.log("[Invoice] full response:", r);
-              console.log("[Invoice] r.message:", r.message);
+              console.log("Invoice(submit): callback received", r.message ? "success" : "error");
               evntBus.emit("unfreeze");
 
               if (r.message) {
-                console.log("[Invoice] invoice submitted successfully");
+                console.log("Invoice(submit): successful");
 
                 // Handle different response formats
                 let invoice_data = null;
                 if (r.message.success && r.message.invoice) {
                   // New format: { success: true, invoice: {...} }
                   invoice_data = r.message.invoice;
-                  console.log(
-                    "[Invoice] using invoice from success response",
-                    invoice_data.name
-                  );
+                  console.log("Invoice(submit): using success response", invoice_data.name);
                 } else if (r.message.name) {
                   // Old format: direct invoice object
                   invoice_data = r.message;
-                  console.log(
-                    "[Invoice] using direct invoice object",
-                    invoice_data.name
-                  );
+                  console.log("Invoice(submit): using direct object", invoice_data.name);
                 } else {
-                  console.log("[Invoice] unexpected response format");
-                  console.log(
-                    "[Invoice] r.message keys:",
-                    Object.keys(r.message)
-                  );
+                  console.log("Invoice(submit): unexpected format");
+                  console.log("Invoice(submit): message keys", Object.keys(r.message));
                   evntBus.emit("show_mesage", {
                     text: "Unexpected response format from server",
                     color: "error",
@@ -2141,10 +2135,7 @@ export default {
                 }
 
                 if (invoice_data && invoice_data.name) {
-                  console.log(
-                    "[Invoice] invoice submitted successfully",
-                    invoice_data.name
-                  );
+                  console.log("Invoice(submit): successful", invoice_data.name);
 
                   this.load_print_page(invoice_data.name);
                   evntBus.emit("set_last_invoice", invoice_data.name);
@@ -2155,23 +2146,21 @@ export default {
                   frappe.utils.play_sound("submit");
 
                   // Clear local data after successful submission to prevent auto-save errors
-                  console.log(
-                    "[Invoice] clearing local data after successful submission"
-                  );
+                  console.log("Invoice(submit): clearing local data");
                   this.items = [];
                   this.invoice_doc = null;
 
                   evntBus.emit("new_invoice", "false");
                   evntBus.emit("invoice_submitted");
                 } else {
-                  console.log("[Invoice] no invoice name in response");
+                  console.log("Invoice(submit): no name in response");
                   evntBus.emit("show_mesage", {
                     text: "Invoice submitted but no name received",
                     color: "warning",
                   });
                 }
               } else {
-                console.log("[Invoice] no message in submit_invoice response");
+                console.log("Invoice(submit): no message in response");
                 evntBus.emit("show_mesage", {
                   text: "Failed to submit invoice",
                   color: "error",
@@ -2179,7 +2168,7 @@ export default {
               }
             },
             error: (err) => {
-              console.error("[Invoice] submit_invoice error:", err);
+              console.error("Invoice(submit): error", err);
               evntBus.emit("unfreeze");
               evntBus.emit("show_mesage", {
                 text: err?.message || "Failed to submit invoice",
@@ -2189,7 +2178,7 @@ export default {
           });
         })
         .catch((error) => {
-          console.error("[Invoice] process_invoice catch error:", error);
+          console.error("Invoice(submit): process error", error);
           evntBus.emit("unfreeze");
           evntBus.emit("show_mesage", {
             text: "Failed to prepare invoice for printing: " + error.message,
@@ -2288,17 +2277,17 @@ export default {
 
     // Event-driven approach for items changes
     evntBus.on("item_added", (item) => {
-      console.log("[Invoice] item_added event received", item.item_code);
+      console.log("Invoice(events): item_added", item.item_code);
       this.debouncedItemOperation("item-added");
     });
 
     evntBus.on("item_removed", (item) => {
-      console.log("[Invoice] item_removed event received", item.item_code);
+      console.log("Invoice(events): item_removed", item.item_code);
       this.debouncedItemOperation("item-removed");
     });
 
     evntBus.on("item_updated", (item) => {
-      console.log("[Invoice] item_updated event received", item.item_code);
+      console.log("Invoice(events): item_updated", item.item_code);
       this.debouncedItemOperation("item-updated");
     });
 
@@ -2838,62 +2827,137 @@ export default {
   flex: 1 !important;
 }
 
-/* Ultra-compact input fields */
-.quantity-input,
-.rate-input,
-.discount-input {
-  font-size: 0.7rem !important;
-  min-height: 20px !important;
-  max-height: 20px !important;
-  font-weight: 500 !important;
-  padding: 0px 2px !important;
-  margin: 0 auto !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
+/* ===== COMPACT QUANTITY CONTROLS - BEAUTIFUL & OPTIMIZED ===== */
+
+/* Compact Quantity Controls Container */
+.compact-qty-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 2px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 4px;
+  width: 100%;
+  max-width: 85px;
+  min-width: 75px;
+  transition: all 0.2s ease;
 }
 
-.quantity-input {
-  width: 100% !important;
-  margin: auto !important;
+.compact-qty-controls:hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  box-shadow: 0 1px 4px rgba(25, 118, 210, 0.2);
 }
 
-/* Additional border removal for quantity input */
-.quantity-input .v-field__outline__start,
-.quantity-input .v-field__outline__end,
-.quantity-input .v-field__outline__notch {
-  display: none !important;
+/* Compact Quantity Input */
+.compact-qty-input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #1976d2;
+  background: white;
+  outline: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1976d2;
+  text-align: center;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1.2;
+  height: 20px;
+  appearance: textfield;
+  -moz-appearance: textfield;
+  transition: all 0.2s ease;
 }
 
-.quantity-input .v-field__outline__notch::before,
-.quantity-input .v-field__outline__notch::after {
-  display: none !important;
+.compact-qty-input::-webkit-inner-spin-button,
+.compact-qty-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-/* Remove focus states */
-.quantity-input .v-field--focused .v-field__outline {
-  display: none !important;
+.compact-qty-input:focus {
+  border-color: #0d47a1;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+  background: #e3f2fd;
 }
 
-.quantity-input .v-field--focused .v-field__outline__start,
-.quantity-input .v-field--focused .v-field__outline__end,
-.quantity-input .v-field--focused .v-field__outline__notch {
-  display: none !important;
+.compact-qty-input:hover {
+  border-color: #1565c0;
+  background: #f5f5f5;
 }
 
-/* Remove hover states */
-.quantity-input .v-field:hover .v-field__outline {
-  display: none !important;
+.compact-qty-input::placeholder {
+  color: #bbb;
+  font-weight: 400;
 }
 
-/* Quantity control buttons - Elegant */
-/* Ultra-compact quantity controls */
-.quantity-controls {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  height: 22px !important;
-  width: 100% !important;
-  gap: 2px !important;
+/* Compact Quantity Buttons */
+.qty-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 0;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.qty-btn .btn-icon {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
+}
+
+/* Minus Button - Orange/Warning */
+.qty-btn.minus-btn {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+}
+
+.qty-btn.minus-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(245, 124, 0, 0.4);
+}
+
+.qty-btn.minus-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 1px 2px rgba(245, 124, 0, 0.3);
+}
+
+.qty-btn.minus-btn:disabled {
+  background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
+  color: #9e9e9e;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+/* Plus Button - Green/Success */
+.qty-btn.plus-btn {
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+  color: white;
+}
+
+.qty-btn.plus-btn:hover {
+  background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(56, 142, 60, 0.4);
+}
+
+.qty-btn.plus-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 1px 2px rgba(56, 142, 60, 0.3);
 }
 
 /* Ultra-compact delete button */
@@ -2915,57 +2979,258 @@ export default {
   font-size: 12px !important;
 }
 
-/* Ultra-compact quantity buttons */
-.quantity-btn {
-  min-width: 16px !important;
-  width: 16px !important;
-  height: 16px !important;
-  padding: 0 !important;
-  font-size: 0.6rem !important;
-  font-weight: bold !important;
-  border-radius: 2px !important;
-  box-shadow: none !important;
-  margin: 0 !important;
-  box-sizing: border-box !important;
+/* ===== COMPACT TABLE COLUMN INPUTS - BEAUTIFUL & OPTIMIZED ===== */
+
+/* Compact Rate Input Field */
+.compact-rate-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  min-width: 70px;
+  max-width: 90px;
 }
 
-/* Increase button - green with plus shape */
-.quantity-plus-btn {
-  background-color: #4caf50 !important;
-  color: white !important;
-  border: 2px solid #2e7d32 !important;
+.compact-rate-wrapper:hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #1565c0;
+  box-shadow: 0 1px 4px rgba(25, 118, 210, 0.2);
+  transform: translateY(-1px);
 }
 
-.quantity-plus-btn:hover {
-  background-color: #45a049 !important;
-  transform: scale(1.05) !important;
+.compact-rate-wrapper:focus-within {
+  border-color: #0d47a1;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+  background: white;
 }
 
-.quantity-plus-btn:active {
-  transform: scale(0.95) !important;
+.currency-prefix {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #1976d2;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* Decrease button - yellow with minus shape */
-.quantity-minus-btn {
-  background-color: #ff9800 !important;
-  color: white !important;
-  border: 2px solid #f57c00 !important;
+.compact-rate-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1976d2;
+  text-align: right;
+  padding: 2px 4px;
+  line-height: 1.2;
 }
 
-.quantity-minus-btn:hover {
-  background-color: #f57c00 !important;
-  transform: scale(1.05) !important;
+.compact-rate-input:disabled {
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.quantity-minus-btn:active {
-  transform: scale(0.95) !important;
+.compact-rate-input::placeholder {
+  color: #bbb;
+  font-weight: 400;
 }
 
-.quantity-minus-btn:disabled {
-  background-color: #ccc !important;
-  color: #666 !important;
-  border-color: #999 !important;
-  transform: none !important;
+/* Compact Discount Input Field */
+.compact-discount-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  min-width: 55px;
+  max-width: 75px;
+}
+
+.compact-discount-wrapper.has-discount {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-color: #ff9800;
+}
+
+.compact-discount-wrapper:hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #1565c0;
+  box-shadow: 0 1px 4px rgba(25, 118, 210, 0.2);
+  transform: translateY(-1px);
+}
+
+.compact-discount-wrapper.has-discount:hover {
+  background: linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%);
+  border-color: #f57c00;
+  box-shadow: 0 1px 4px rgba(255, 152, 0, 0.3);
+}
+
+.compact-discount-wrapper:focus-within {
+  border-color: #0d47a1;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+  background: white;
+}
+
+.compact-discount-wrapper.has-discount:focus-within {
+  border-color: #e65100;
+  box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.15);
+}
+
+.compact-discount-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1976d2;
+  text-align: right;
+  padding: 2px 2px;
+  line-height: 1.2;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.compact-discount-wrapper.has-discount .compact-discount-input {
+  color: #f57c00;
+  font-weight: 700;
+}
+
+.compact-discount-input::-webkit-inner-spin-button,
+.compact-discount-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.compact-discount-input:disabled {
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.compact-discount-input::placeholder {
+  color: #bbb;
+  font-weight: 400;
+}
+
+.discount-suffix {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #1976d2;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.compact-discount-wrapper.has-discount .discount-suffix {
+  color: #f57c00;
+}
+
+/* Compact Discount Amount Display */
+.compact-discount-amount {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+  border-radius: 4px;
+  min-width: 60px;
+  transition: all 0.2s ease;
+}
+
+.compact-discount-amount .amount-currency {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.compact-discount-amount .amount-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #757575;
+}
+
+.compact-discount-amount .amount-value.has-value {
+  color: #ff9800;
+  font-weight: 700;
+}
+
+.compact-discount-amount:hover .amount-value.has-value {
+  color: #f57c00;
+}
+
+/* Compact Total Amount Display */
+.compact-total-amount {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-radius: 4px;
+  border: 1px solid #4caf50;
+  min-width: 70px;
+  transition: all 0.2s ease;
+}
+
+.compact-total-amount:hover {
+  background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+  border-color: #388e3c;
+  box-shadow: 0 1px 4px rgba(76, 175, 80, 0.3);
+}
+
+.compact-total-amount .amount-currency {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.compact-total-amount .amount-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1b5e20;
+}
+
+/* Compact Price Display */
+.compact-price-display {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+  border-radius: 4px;
+  min-width: 65px;
+  transition: all 0.2s ease;
+}
+
+.compact-price-display:hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.2);
+}
+
+.compact-price-display .amount-currency {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.compact-price-display .amount-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.compact-price-display .amount-value.discounted-price {
+  color: #f44336;
+  font-weight: 700;
+  text-decoration: line-through;
+  text-decoration-color: #f44336;
+  text-decoration-thickness: 2px;
 }
 
 /* Optimized buttons in payment section for cashier screens */
