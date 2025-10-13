@@ -223,10 +223,6 @@ frappe.PosApp.posapp = class {
 
         const app = createApp(Home);
 
-        // Only enable devtools in development mode
-        if (process.env.NODE_ENV === 'development') {
-            app.config.devtools = true
-        }
 
         app.use(vuetify);
         SetVueGlobals(app);
