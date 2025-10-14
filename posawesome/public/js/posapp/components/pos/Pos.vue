@@ -23,7 +23,7 @@
 
       <div class="pos-right-panel">
         <div class="panel-content">
-          <Invoice></Invoice>
+          <Invoice :is_payment="payment"></Invoice>
         </div>
       </div>
     </div>
