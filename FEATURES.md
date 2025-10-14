@@ -1,7 +1,6 @@
 # ✨ Features - POS Awesome Lite
 
-> Complete feature list for POS Awesome  
-> Version: 18.7.2025
+> Complete feature list for POS Awesome
 
 ---
 

@@ -1,7 +1,6 @@
 # 🔌 API Structure - POS Awesome
 
-> Frontend ↔ Backend API Mapping  
-> Version: 18.7.2025
+> Frontend ↔ Backend API Mapping
 
 ---
 

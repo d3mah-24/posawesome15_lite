@@ -1,46 +1,19 @@
 #!/bin/bash
-# Repository Configuration Checker
+# Repository Protection - Direct Enforcement
 
-echo "🔍 Checking Repository Configuration..."
-echo "========================================"
+set -e
 
-# Check current branch
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-echo "📍 Current Branch: $current_branch"
+# Set Git identity
+git config user.name "abdopcnet"
+git config user.email "abdopcnet@gmail.com"
 
-# Check remotes
-echo ""
-echo "🌐 Remote Configuration:"
-git remote -v
+# Force main branch
+git branch -M main
 
-# Check if both origin and upstream point to correct URL
-origin_url=$(git remote get-url origin)
-upstream_url=$(git remote get-url upstream)
-expected_url="https://github.com/abdopcnet/posawesome15_lite.git"
+# Set remotes (force update if exists)
+git remote remove origin 2>/dev/null || true
+git remote remove upstream 2>/dev/null || true
+git remote add origin https://github.com/abdopcnet/posawesome15_lite.git
+git remote add upstream https://github.com/abdopcnet/posawesome15_lite.git
 
-echo ""
-echo "✅ Configuration Status:"
-if [ "$origin_url" = "$expected_url" ]; then
-    echo "   ✅ Origin: CORRECT"
-else
-    echo "   ❌ Origin: INCORRECT ($origin_url)"
-fi
-
-if [ "$upstream_url" = "$expected_url" ]; then
-    echo "   ✅ Upstream: CORRECT"
-else
-    echo "   ❌ Upstream: INCORRECT ($upstream_url)"
-fi
-
-if [ "$current_branch" = "main" ]; then
-    echo "   ✅ Branch: CORRECT (main)"
-else
-    echo "   ⚠️  Branch: $current_branch (not main)"
-fi
-
-echo ""
-echo "🛡️  Repository Protection: ACTIVE"
-echo "📋 To maintain this configuration:"
-echo "   1. Always pull from upstream before changes"
-echo "   2. Never change remote URLs"
-echo "   3. Keep main branch as primary"
+echo "✅ Repository locked: abdopcnet | main branch | posawesome15_lite"
