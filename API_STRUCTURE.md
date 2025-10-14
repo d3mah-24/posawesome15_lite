@@ -249,7 +249,3 @@ frappe.call({
 **Frontend → Backend Mapping:** 100% complete
 
 All Vue components have corresponding backend API implementations. No dead code or missing API endpoints.
-
----
-
-*Last updated: October 14, 2025*

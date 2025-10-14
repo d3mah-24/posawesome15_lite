@@ -1,19 +1,17 @@
 #!/bin/bash
 # Repository Protection - Direct Enforcement
 
-set -e
+REPO_URL="https://github.com/abdopcnet/posawesome15_lite.git"
 
 # Set Git identity
-git config user.name "abdopcnet"
-git config user.email "abdopcnet@gmail.com"
+git config user.name "abdopcnet" >/dev/null 2>&1
+git config user.email "abdopcnet@gmail.com" >/dev/null 2>&1
 
 # Force main branch
-git branch -M main
+git branch -M main >/dev/null 2>&1
 
-# Set remotes (force update if exists)
-git remote remove origin 2>/dev/null || true
-git remote remove upstream 2>/dev/null || true
-git remote add origin https://github.com/abdopcnet/posawesome15_lite.git
-git remote add upstream https://github.com/abdopcnet/posawesome15_lite.git
+# Set remotes (update or add)
+git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL" >/dev/null 2>&1
+git remote set-url upstream "$REPO_URL" 2>/dev/null || git remote add upstream "$REPO_URL" >/dev/null 2>&1
 
-echo "✅ Repository locked: abdopcnet | main branch | posawesome15_lite"
+echo "✅ Locked: abdopcnet | main | posawesome15_lite"
