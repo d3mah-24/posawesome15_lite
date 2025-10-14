@@ -17,6 +17,7 @@
           item-key="posa_row_id"
           item-value="posa_row_id"
           class="elevation-0 invoice-table"
+          style="width: 700px"
           hide-default-footer
           :items-per-page="-1"
           density="compact"
@@ -71,7 +72,7 @@
           </template>
           <template v-slot:item.discount_percentage="{ item }">
             <!-- Compact Discount Input -->
-            <div 
+            <div
               class="compact-discount-wrapper"
               :class="{ 'has-discount': item.discount_percentage > 0 }"
             >
@@ -99,7 +100,7 @@
           </template>
           <template v-slot:item.discount_amount="{ item }">
             <div class="compact-discount-amount">
-              <span 
+              <span
                 class="amount-value"
                 :class="{ 'has-value': getDiscountAmount(item) > 0 }"
               >
@@ -143,14 +144,12 @@
           </template>
           <template v-slot:item.price_list_rate="{ item }">
             <div class="compact-price-display">
-                <!-- :class="{
+              <!-- :class="{
                   'discounted-price':
                     flt(item.rate, currency_precision) <
                     flt(item.base_rate, currency_precision),
                 }" -->
-              <span 
-                class="amount-value"
-              >
+              <span class="amount-value">
                 {{ formatCurrency(item.price_list_rate) }}
               </span>
             </div>
@@ -178,7 +177,11 @@
             step="0.01"
             min="0"
             :max="pos_profile.posa_invoice_max_discount_allowed || 100"
-            :disabled="!pos_profile || !pos_profile.posa_allow_user_to_edit_additional_discount || !!invoice_doc.is_return"
+            :disabled="
+              !pos_profile ||
+              !pos_profile.posa_allow_user_to_edit_additional_discount ||
+              !!invoice_doc.is_return
+            "
             class="field-input discount-input"
             placeholder="0.00"
           />
@@ -239,7 +242,7 @@
 
         <button
           class="action-btn success-btn"
-          :disabled="!hasItems"
+          :disabled="!hasItems || is_payment"
           @click="show_payment"
         >
           <v-icon size="16">mdi-cash-multiple</v-icon>
@@ -283,6 +286,7 @@ import Customer from "./Customer.vue";
 export default {
   mixins: [format],
   components: { Customer },
+  props: ["is_payment"],
   // ===== SECTION 3: DATA =====
   data() {
     return {
@@ -326,31 +330,34 @@ export default {
       _processingOperations: false,
       items_headers: [
         {
-          title: "Item Name",
+          title: "I-Name",
           align: "start",
           sortable: true,
           key: "item_name",
           width: "25%",
         },
-        { title: "Qty", key: "qty", align: "center" },
-        { title: "Unit", key: "uom", align: "center"},
+        { title: "Qty", key: "qty", align: "center", width: "10%" },
+        { title: "Uom", key: "uom", align: "center", width: "10%" },
         {
           title: "Price",
           key: "price_list_rate",
           align: "center",
+          width: "10%",
         },
-        { title: "After Disc.", key: "rate", align: "center" },
+        { title: "D-Price", key: "rate", align: "center", width: "10%" },
         {
-          title: "Disc. %",
+          title: "Dis %",
           key: "discount_percentage",
-          align: "center"
+          align: "center",
+          width: "10%",
         },
         {
-          title: "Disc. Amount",
+          title: "Dis Amount",
           key: "discount_amount",
-          align: "center"
+          align: "center",
+          width: "10%",
         },
-        { title: "Total", key: "amount", align: "center" },
+        { title: "Total", key: "amount", align: "center", width: "10%" },
         {
           title: "Delete",
           key: "actions",
@@ -406,11 +413,15 @@ export default {
     total_before_discount() {
       // Calculate total using price_list_rate (before any item discounts)
       if (!this.items || this.items.length === 0) return 0;
-      
+
       return this.items.reduce((sum, item) => {
         const qty = flt(item.qty, this.float_precision) || 0;
-        const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || flt(item.rate) || 0;
-        return sum + (qty * basePrice);
+        const basePrice =
+          flt(item.price_list_rate) ||
+          flt(item.base_rate) ||
+          flt(item.rate) ||
+          0;
+        return sum + qty * basePrice;
       }, 0);
     },
     total_items_discount_amount() {
@@ -1351,7 +1362,10 @@ export default {
                   default: 1,
                 },
               ];
-              console.log("Invoice(payment): added default", defaultPayment.message.mode_of_payment);
+              console.log(
+                "Invoice(payment): added default",
+                defaultPayment.message.mode_of_payment
+              );
 
               // Save default payment to server
               try {
@@ -1534,7 +1548,7 @@ export default {
           value = _value;
         }
       } catch (e) {
-        console.error('Invoice(rate): parse error', e);
+        console.error("Invoice(rate): parse error", e);
         value = 0;
       }
 
@@ -1545,7 +1559,10 @@ export default {
       const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || 0;
       if (basePrice > 0 && item.rate < basePrice) {
         const discountAmount = basePrice - item.rate;
-        item.discount_percentage = flt((discountAmount / basePrice) * 100, this.float_precision);
+        item.discount_percentage = flt(
+          (discountAmount / basePrice) * 100,
+          this.float_precision
+        );
       } else if (item.rate >= basePrice) {
         // No discount if rate equals or exceeds base price
         item.discount_percentage = 0;
@@ -1571,7 +1588,8 @@ export default {
     update_discount_umount() {
       // Guard: if profile disallows editing invoice-level discount, ignore
       if (!this.pos_profile?.posa_allow_user_to_edit_additional_discount) {
-        this.additional_discount_percentage = this.invoice_doc?.additional_discount_percentage || 0;
+        this.additional_discount_percentage =
+          this.invoice_doc?.additional_discount_percentage || 0;
         return;
       }
       const value = flt(this.additional_discount_percentage) || 0;
@@ -1740,7 +1758,13 @@ export default {
     },
 
     mergeItemsFromAPI(apiItems) {
-      console.log("Invoice(merge): merging items", this.items.length, "local", apiItems.length, "api");
+      console.log(
+        "Invoice(merge): merging items",
+        this.items.length,
+        "local",
+        apiItems.length,
+        "api"
+      );
 
       // Handle null or undefined apiItems
       if (!apiItems || !Array.isArray(apiItems)) {
@@ -1754,13 +1778,23 @@ export default {
       // If local items are more than API items, keep local items
       // This happens when user adds items quickly before API responds
       if (this.items.length > (apiItems?.length || 0)) {
-        console.log("Invoice(merge): keeping local", this.items.length, ">", apiItems.length);
+        console.log(
+          "Invoice(merge): keeping local",
+          this.items.length,
+          ">",
+          apiItems.length
+        );
         return;
       }
 
       // If API has more items, use API items
       if ((apiItems?.length || 0) > this.items.length) {
-        console.log("Invoice(merge): using api", apiItems.length, ">", this.items.length);
+        console.log(
+          "Invoice(merge): using api",
+          apiItems.length,
+          ">",
+          this.items.length
+        );
         this.items = apiItems;
         return;
       }
@@ -2079,7 +2113,12 @@ export default {
           const hasChosen = (invoice_doc.payments || []).some(
             (p) => this.flt(p.amount) > 0
           );
-          console.log("Invoice(submit): payment check", hasChosen, "payments", invoice_doc.payments?.length || 0);
+          console.log(
+            "Invoice(submit): payment check",
+            hasChosen,
+            "payments",
+            invoice_doc.payments?.length || 0
+          );
 
           if (!hasChosen) {
             evntBus.emit("show_mesage", {
@@ -2108,7 +2147,10 @@ export default {
             },
             async: true,
             callback: (r) => {
-              console.log("Invoice(submit): callback received", r.message ? "success" : "error");
+              console.log(
+                "Invoice(submit): callback received",
+                r.message ? "success" : "error"
+              );
               evntBus.emit("unfreeze");
 
               if (r.message) {
@@ -2119,14 +2161,23 @@ export default {
                 if (r.message.success && r.message.invoice) {
                   // New format: { success: true, invoice: {...} }
                   invoice_data = r.message.invoice;
-                  console.log("Invoice(submit): using success response", invoice_data.name);
+                  console.log(
+                    "Invoice(submit): using success response",
+                    invoice_data.name
+                  );
                 } else if (r.message.name) {
                   // Old format: direct invoice object
                   invoice_data = r.message;
-                  console.log("Invoice(submit): using direct object", invoice_data.name);
+                  console.log(
+                    "Invoice(submit): using direct object",
+                    invoice_data.name
+                  );
                 } else {
                   console.log("Invoice(submit): unexpected format");
-                  console.log("Invoice(submit): message keys", Object.keys(r.message));
+                  console.log(
+                    "Invoice(submit): message keys",
+                    Object.keys(r.message)
+                  );
                   evntBus.emit("show_mesage", {
                     text: "Unexpected response format from server",
                     color: "error",
@@ -2655,8 +2706,7 @@ export default {
 .invoice-items-scrollable {
   margin: 0 !important;
   padding: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  width: 700px !important;
   flex: 1 1 auto !important;
   max-height: calc(100vh - 170px) !important;
   box-sizing: border-box !important;
@@ -2806,8 +2856,7 @@ export default {
 }
 
 .invoice-items-scrollable .v-data-table .v-data-table__wrapper {
-  width: 100% !important;
-  max-width: 100% !important;
+  max-width: 100%px !important;
   margin: 0 !important;
   padding: 0 !important;
   box-sizing: border-box !important;
