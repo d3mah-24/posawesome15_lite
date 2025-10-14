@@ -1,19 +1,12 @@
 #!/bin/bash
-# Repository Protection - Direct Enforcement
+source .git-protection
 
-REPO_URL="https://github.com/abdopcnet/posawesome15_lite.git"
+git config user.name "$USER" 2>&1
+git config user.email "$EMAIL" 2>&1
+git branch -M "$BRANCH" 2>&1
+git remote set-url origin "$REPO" 2>&1 || git remote add origin "$REPO" 2>&1
+git remote set-url upstream "$REPO" 2>&1 || git remote add upstream "$REPO" 2>&1
+git config branch.main.remote origin 2>&1
+git config branch.main.merge refs/heads/main 2>&1
 
-# Set Git identity
-git config user.name "abdopcnet" >/dev/null 2>&1
-git config user.email "abdopcnet@gmail.com" >/dev/null 2>&1
-
-# Force main branch
-git branch -M main >/dev/null 2>&1
-
-# Set remotes with push configuration
-git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL" >/dev/null 2>&1
-git remote set-url upstream "$REPO_URL" 2>/dev/null || git remote add upstream "$REPO_URL" >/dev/null 2>&1
-git config branch.main.remote origin >/dev/null 2>&1
-git config branch.main.merge refs/heads/main >/dev/null 2>&1
-
-echo "✅ Locked: abdopcnet | main | posawesome15_lite"
+echo "✅ $USER | $BRANCH | posawesome15_lite"

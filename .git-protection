@@ -1,16 +1,4 @@
-# Git Repository Protection
-# This file prevents accidental changes to the repository configuration
-
-# Repository Configuration (DO NOT MODIFY)
-ORIGIN_URL=https://github.com/abdopcnet/posawesome15_lite.git
-UPSTREAM_URL=https://github.com/abdopcnet/posawesome15_lite.git
-MAIN_BRANCH=main
-
-# Protection Rules:
-# 1. Always keep both origin and upstream pointing to abdopcnet/posawesome15_lite
-# 2. Never change the main branch
-# 3. Always pull from upstream before making changes
-# 4. Never force push to main branch
-
-# Last Updated: $(date)
-# Status: PROTECTED - DO NOT MODIFY
+REPO=https://github.com/abdopcnet/posawesome15_lite.git
+USER=abdopcnet
+EMAIL=abdopcnet@gmail.com
+BRANCH=main
