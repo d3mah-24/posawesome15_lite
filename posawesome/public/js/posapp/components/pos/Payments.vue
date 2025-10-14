@@ -1,6 +1,12 @@
 <template>
   <!-- ===== COMPACT PAYMENTS COMPONENT ===== -->
   <div class="payments-container">
+    <!-- Fixed Back Button -->
+    <button class="back-button-fixed" @click="back_to_invoice" title="Back to Invoice">
+      <v-icon size="18">mdi-arrow-left</v-icon>
+      <span class="back-text">Back</span>
+    </button>
+
     <v-card class="payments-card" style="max-height: 76vh; height: 76vh">
       <v-progress-linear
         :active="loading"
@@ -229,6 +235,7 @@
               ></v-date-picker>
             </v-menu>
           </div>
+
         </div>
 
         <!-- Credit Details Section -->
@@ -1111,6 +1118,55 @@ export default {
 .payments-container {
   width: 100%;
   height: 100%;
+  position: relative;
+}
+
+/* Fixed Back Button - Beautiful Design */
+.back-button-fixed {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.back-button-fixed:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(25, 118, 210, 0.4);
+}
+
+.back-button-fixed:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.3);
+}
+
+.back-button-fixed .v-icon {
+  transition: transform 0.2s ease;
+}
+
+.back-button-fixed:hover .v-icon {
+  transform: translateX(-2px);
+}
+
+.back-text {
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .payments-card {
@@ -1414,7 +1470,6 @@ export default {
   opacity: 0.6;
 }
 
-/* Loyalty Points Section */
 .payment-loyalty {
   margin: 3px 0;
 }
