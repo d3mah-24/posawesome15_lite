@@ -132,7 +132,7 @@ Payments • Returns • Shifts
 ## 👨‍💻 Contact
 
 <div align="center">
-    <img src="https://lh3.googleusercontent.com/sitesv/AICyYdbsJ55gx4ke9wg_VaOE1cd78HKJwUqFRDqb0HzfrvqI2mkpJzdp9dTj67K9xg5EHi823k6-4l5GhmFATeTLleKJxPNEvwOIlfIvYv7WBqxMPOx3Hec8nOAcn7l59R5Gm93RBwgkpoBP8SZycN_gTkbbbaW9_xzaVg8MjfQE7jEraxQUJE_QPSfhbrw=w16383" height="80" alt="Future Support">
+    <img src="./ERPNext-support.png" height="80" alt="Future Support">
 </div>
 
 **Developer:** abdopcnet  
