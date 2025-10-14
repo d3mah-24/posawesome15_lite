@@ -98,7 +98,6 @@
             </button>
           </div>
         </div>
-
       </div>
 
       <!-- Items display area -->
@@ -563,14 +562,14 @@ export default {
     getItemsHeaders() {
       const items_headers = [
         {
-          title: "Item Name",
+          title: "I-Name",
           align: "start",
           sortable: true,
           key: "item_name",
           width: "30%",
         },
         {
-          title: "Code",
+          title: "I-Code",
           align: "start",
           sortable: true,
           key: "item_code",
@@ -578,12 +577,12 @@ export default {
         },
         { title: "Price", key: "rate", align: "start", width: "10%" },
         {
-          title: "Available Quantity",
+          title: "Qty",
           value: "actual_qty",
           align: "center",
           width: "25%",
         },
-        { title: "Unit", key: "stock_uom", align: "center", width: "10%" },
+        { title: "Uom", key: "stock_uom", align: "center", width: "10%" },
       ];
 
       return items_headers;
@@ -591,7 +590,10 @@ export default {
 
     // Check if item has zero price and POS Profile doesn't allow it
     checkZeroPriceItem(item) {
-      if (item.has_zero_price && !this.pos_profile.posa_allow_zero_rated_items) {
+      if (
+        item.has_zero_price &&
+        !this.pos_profile.posa_allow_zero_rated_items
+      ) {
         evntBus.emit("show_mesage", {
           text: `Item ${item.item_name} has zero price but Your Profile Not Allowed.`,
           color: "error",
@@ -607,12 +609,12 @@ export default {
         "ItemsSelector.vue(add_item_table): Added",
         item.item.item_code
       );
-      
+
       // Check zero price using shared function
       if (this.checkZeroPriceItem(item.item)) {
         return;
       }
-      
+
       // إضافة الصنف كما هو من API مع الحد الأدنى من التعديلات
       evntBus.emit("add_item", {
         ...item.item,
@@ -623,12 +625,12 @@ export default {
 
     add_item(item) {
       console.log("ItemsSelector.vue(add_item): Added", item.item_code);
-      
+
       // Check zero price using shared function
       if (this.checkZeroPriceItem(item)) {
         return;
       }
-      
+
       // إضافة الصنف كما هو من API مع الحد الأدنى من التعديلات
       evntBus.emit("add_item", {
         ...item,
