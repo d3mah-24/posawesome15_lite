@@ -1520,27 +1520,27 @@ export default {
 }
 
 /* Compact Switch Styling */
-.compact-switch >>> .v-label {
+.compact-switch :deep(.v-label) {
   font-size: 0.65rem !important;
   color: #666 !important;
   line-height: 1.2 !important;
 }
 
-.compact-switch >>> .v-input__control {
+.compact-switch :deep(.v-input__control) {
   min-height: 20px !important;
 }
 
-.compact-switch >>> .v-selection-control {
+.compact-switch :deep(.v-selection-control) {
   min-height: 20px !important;
 }
 
-.compact-date-field >>> .v-field__input {
+.compact-date-field :deep(.v-field__input) {
   min-height: 22px !important;
   padding: 1px 6px !important;
   font-size: 0.7rem !important;
 }
 
-.compact-date-field >>> .v-field {
+.compact-date-field :deep(.v-field) {
   min-height: 22px !important;
 }
 
