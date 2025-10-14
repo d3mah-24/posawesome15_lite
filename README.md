@@ -29,6 +29,19 @@ Point of Sale application for ERPNext v15 built with Vue 3 and Vuetify 3.
 
 ---
 
+## 🖥️ Try It Live
+
+**Remote Desktop Access** - Test the POS system remotely
+
+- 💻 **Server:** `remote_hoptodesk_pos_pc`
+- 🌐 **Platform:** [HopToDesk](https://hoptodesk.com)
+- 🔑 **ID:** `378901992`
+- 🔒 **Password:** `2w22j4`
+
+*Connect via HopToDesk to access a live demo environment.*
+
+---
+
 ## ✨ Features
 
 - **💰 Sales & Invoices**
