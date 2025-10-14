@@ -117,6 +117,17 @@ Payments • Returns • Shifts
   - Upwork
   - Western Union
 
+**Development Server:**
+- 🔗 Direct work via **SSH on single server**
+- 📦 Repository: [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
+- 🌿 Branch: **main only**
+
+⚠️ **STRICT POLICY:**  
+**Any work done outside this process or not following the Development Server Policy:**
+- ❌ Will NOT be reviewed
+- ❌ Will NOT be accepted
+- ❌ Will NOT be paid
+
 ---
 
 ## 👨‍💻 Contact
