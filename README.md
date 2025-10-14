@@ -81,35 +81,7 @@ Payments • Returns • Shifts
 
 ---
 
-## 📦 Installation
-
-```bash
-# Get app
-bench get-app posawesome https://github.com/abdopcnet/posawesome15_lite.git
-
-# Install
-bench --site [site-name] install-app posawesome
-
-# Build & restart
-bench build --app posawesome && bench restart
-```
-
-**Setup:** Create POS Profile → Assign roles (POS User/Manager) → Open `/app/posapp`
-
----
-
-## ⌨️ Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `Ctrl/Cmd + S` | Open payment |
-| `Ctrl/Cmd + X` | Submit payment |
-| `Ctrl/Cmd + D` | Remove item |
-| `ESC` | Clear/Close |
-
----
-
-## 📚 Documentation
+##  Documentation
 
 - **[FEATURES.md](./FEATURES.md)** - Complete feature list with details
 - **[API_STRUCTURE.md](./API_STRUCTURE.md)** - Frontend ↔ Backend API mapping
@@ -117,17 +89,36 @@ bench build --app posawesome && bench restart
 
 ---
 
-## � License
+## 🤝 Collaboration & Development
 
-**GNU General Public License v3.0** - See [license.txt](./license.txt)
+**Open for Development Partnership**
+
+- 💵 **Daily Rate:** $35 USD per day
+- 📊 **Payment:** Paid based on progress
+- 🌐 **Payment Methods:**
+  - Fiverr
+  - Upwork
+  - Western Union
 
 ---
 
 ## 👨‍💻 Contact
 
+<div align="center">
+    <img src="https://lh3.googleusercontent.com/sitesv/AICyYdbsJ55gx4ke9wg_VaOE1cd78HKJwUqFRDqb0HzfrvqI2mkpJzdp9dTj67K9xg5EHi823k6-4l5GhmFATeTLleKJxPNEvwOIlfIvYv7WBqxMPOx3Hec8nOAcn7l59R5Gm93RBwgkpoBP8SZycN_gTkbbbaW9_xzaVg8MjfQE7jEraxQUJE_QPSfhbrw=w16383" height="80" alt="Future Support">
+</div>
+
 **Developer:** abdopcnet  
+**Company:** [Future Support](https://www.future-support.online/)  
 **Email:** abdopcnet@gmail.com  
 **GitHub:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
+
+**Contact via:**
+- 🌐 Website: [future-support.online](https://www.future-support.online/)
+- 📱 WhatsApp (EG): [+20 115 648 3669](https://wa.me/201156483669)
+- 💬 Telegram (EG): [@abdo_01156483669](https://t.me/abdo_01156483669)
+- 📱 WhatsApp (SA): [+966 57 891 9729](https://wa.me/966578919729)
+- 💬 Telegram (SA): [@abdo_0578919729](https://t.me/abdo_0578919729)
 
 ---
 
@@ -135,7 +126,6 @@ bench build --app posawesome && bench restart
     <p>Made with ❤️ for ERPNext community</p>
     <p>
         <a href="https://github.com/abdopcnet/posawesome15_lite">⭐ Star</a> •
-        <a href="https://github.com/abdopcnet/posawesome15_lite/issues">🐛 Report Bug</a> •
-        <a href="https://github.com/abdopcnet/posawesome15_lite/issues">💡 Request Feature</a>
+        <a href="https://github.com/abdopcnet/posawesome15_lite/issues">🐛 Report Bug</a>
     </p>
 </div>
