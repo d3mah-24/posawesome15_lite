@@ -6,6 +6,16 @@
 
 ---
 
+## 🎯 Goal
+
+**Smoother Web POS** - Fast, responsive interface that collects all operations in a sequence, then sends them to the backend in optimized batches. This architecture ensures:
+- ⚡ Instant UI response (no waiting for backend on every action)
+- 📦 Operations queued and sent as batch transactions
+- 🚀 Minimal network calls for maximum performance
+- 💪 Smooth user experience even with slow connections
+
+---
+
 ## 📋 Overview
 
 Point of Sale application for ERPNext v15 built with Vue 3 and Vuetify 3.
