@@ -1,0 +1,148 @@
+# ✨ Features - POS Awesome Lite
+
+> Complete feature list for POS Awesome  
+> Version: 18.7.2025
+
+---
+
+## 💰 Sales & Invoices
+
+- Create, update, and submit sales invoices
+- Multiple payment modes (Cash, Card, Bank Transfer, Phone/M-PESA)
+- Split payments across multiple payment methods
+- Payment request creation (M-PESA/Phone payments)
+- Invoice returns with item selection
+- Draft invoices (save and resume later)
+- Item-level discount (percentage/amount)
+- Write-off change amount
+- Credit sales with customer credit tracking
+- Change amount calculation (cashback)
+
+---
+
+## 🎯 Offers & Coupons
+
+- **POS Offers** - Apply on: Item, Item Group, Brand, Transaction
+- **Offer Types:** Product/Give Product, Discount (%), Discount (Amount)
+- Min/Max quantity and amount triggers
+- Date-based offer validity (from/to)
+- Auto-apply offers or manual selection
+- Coupon-based offers
+- Gift coupons from referral codes
+- Replace item or replace cheapest item options
+
+---
+
+## 👥 Customer Management
+
+- Customer search and quick selection
+- Create new customers with full details
+- Customer addresses (shipping/billing)
+- Manage multiple addresses
+- Customer referral codes and campaigns
+- Customer credit balance tracking
+- Loyalty program integration
+- Loyalty points redemption
+- Tax ID support
+- Mobile number tracking
+
+---
+
+## 📦 Inventory
+
+- Real-time stock availability display
+- Batch number selection and tracking
+- Serial number support
+- Multi-barcode support:
+  - Standard EAN/UPC barcodes
+  - Weight scale barcodes (prefix-based)
+  - Private/custom barcodes
+- Item search (name/code/barcode)
+- Item group filtering
+- Price list integration
+- Item images display
+
+---
+
+## 🔐 Shift Management
+
+- **POS Opening Shift** - Opening balance entry
+- **POS Closing Shift** - End-of-day reconciliation
+- Cash denomination counting
+- Payment mode-wise summary
+- Shift-wise invoice tracking
+- Invoice count per shift
+- Shift reports and statistics
+
+---
+
+## 💳 Payment Features
+
+- Payment mode configuration
+- Phone payment request (M-PESA/Mobile Money)
+- Loyalty points payment
+- Customer credit redemption
+- Change amount handling
+- Write-off excess/shortage
+- Payment reference tracking
+
+---
+
+## 🎨 User Interface
+
+- **Frontend:** Vue 3.4.21 + Vuetify 3.6.9
+- Responsive and modern design
+- Split view (items selector + invoice)
+- Compact table layouts
+- Real-time calculations
+- Hardware barcode scanner support (onScan.js)
+- Keyboard shortcuts (Ctrl+S, Ctrl+X, Ctrl+D, ESC)
+- Touch-friendly controls
+- Dark/Light theme support
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Ctrl/Cmd + S` | Open payment |
+| `Ctrl/Cmd + X` | Submit payment |
+| `Ctrl/Cmd + D` | Remove item |
+| `ESC` | Clear/Close |
+
+---
+
+## 🛠️ Tech Stack
+
+**Backend:** Frappe v15, ERPNext v15, Python 3.10+, MariaDB, Redis  
+**Frontend:** Vue 3.4.21, Vuetify 3.6.9, mitt, lodash  
+**Barcode Scanner:** [onScan.js](https://github.com/axenox/onscan.js) - Hardware barcode scanner detection library
+
+---
+
+## 📋 Configuration Options
+
+### POS Profile Settings
+- Allow user to edit item discount
+- Maximum item discount allowed
+- Allow write-off change
+- Allow credit sales
+- Use customer credit
+- Use cashback on returns
+
+### Payment Settings
+- Multiple payment modes configuration
+- Default payment method
+- Payment request integration
+- Phone payment support
+
+### Offer Settings
+- Auto-apply offers
+- Coupon-based offers
+- Date-based validity
+- Multi-level offer application
+
+---
+
+*Last updated: October 14, 2025*

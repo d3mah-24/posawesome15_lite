@@ -17,45 +17,30 @@ Point of Sale application for ERPNext v15 built with Vue 3 and Vuetify 3.
 
 ## ✨ Features
 
-### 💰 Sales & Invoices
-- Create and submit sales invoices
-- Multiple payment modes
-- Split payments
-- Invoice returns
-- Draft invoices
-- Barcode scanning (normal/weight/private)
+**💰 Sales & Invoices** • **🎯 Offers & Coupons** • **👥 Customer Management**  
+**📦 Inventory** • **🔐 Shift Management** • **💳 Payment Features** • **🎨 Modern UI**
 
-### 🎯 Offers & Coupons
-- POS Offers (item/group/brand/transaction)
-- Quantity and amount triggers
-- Discount types (percentage/amount)
-- POS Coupons
-- Auto-apply offers
+### Key Highlights
+- Multiple payment modes with split payments
+- M-PESA/Phone payment integration
+- Auto-apply offers and coupons
+- Multi-barcode support (standard/weight/private)
+- Loyalty points and customer credit
+- Real-time inventory tracking
+- Draft and return invoices
+- Shift-based reconciliation
 
-### 👥 Customer Management
-- Customer search and selection
-- Create new customers
-- Manage addresses
-- Referral codes
+📄 **[View Complete Features List →](./FEATURES.md)**
 
-### 📦 Inventory
-- Real-time stock display
-- Batch number support
-- Serial number support
-- Item search (name/code/barcode)
-- Item group filtering
+---
 
-### 🔐 Shift Management
-- POS Opening Shift
-- POS Closing Shift
-- Cash reconciliation
-- Shift reports
+## � API Structure
 
-### 🎨 User Interface
-- Vue 3 + Vuetify 3
-- Responsive layout
-- Split view (items + invoice)
-- Keyboard shortcuts
+Frontend (Vue 3) ↔ Backend (Python) API mapping with **37 endpoints** across **9 API files**.
+
+**Components:** Customer • Invoice • Items • Payments • Returns • Shifts
+
+🔗 **[View Complete API Documentation →](./API_STRUCTURE.md)**
 
 ---
 
@@ -84,7 +69,7 @@ bench build --app posawesome && bench restart
 
 ---
 
-## � Keyboard Shortcuts
+## ⌨️ Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
@@ -97,14 +82,35 @@ bench build --app posawesome && bench restart
 
 ## 📚 Documentation
 
-- **[api_structure.md](./api_structure.md)** - API endpoints mapping (Vue ↔ Python)
-- **[Task Sheet](https://docs.google.com/spreadsheets/d/1EX9QDOkw0UD-qPh3Ynpcw37q3b_bFtQ4)** - Project tasks & progress tracking (with screenshots)
+- **[FEATURES.md](./FEATURES.md)** - Complete feature list with details
+- **[API_STRUCTURE.md](./API_STRUCTURE.md)** - Frontend ↔ Backend API mapping
+- **[Task Sheet](https://docs.google.com/spreadsheets/d/1EX9QDOkw0UD-qPh3Ynpcw37q3b_bFtQ4)** - Project tasks & progress tracking
 
 ---
 
-## 📄 License
+## � License
 
 **GNU General Public License v3.0** - See [license.txt](./license.txt)
+
+---
+
+## 👨‍💻 Contact
+
+**Developer:** abdopcnet  
+**Email:** abdopcnet@gmail.com  
+**GitHub:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
+
+---
+
+<div align="center">
+    <p>Made with ❤️ for ERPNext community</p>
+    <p>
+        <a href="https://github.com/abdopcnet/posawesome15_lite">⭐ Star</a> •
+        <a href="https://github.com/abdopcnet/posawesome15_lite/issues">🐛 Report Bug</a> •
+        <a href="https://github.com/abdopcnet/posawesome15_lite/issues">💡 Request Feature</a>
+    </p>
+</div>
+
 
 ---
 
