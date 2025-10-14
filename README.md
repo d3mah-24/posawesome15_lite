@@ -2,6 +2,11 @@
     <img src="https://frappecloud.com/files/pos.png" height="128">
     <h2>POS Awesome Lite</h2>
     <p><em>Point of Sale for ERPNext v15</em></p>
+    
+![Version](https://img.shields.io/badge/version-14.10.2025-blue)
+![License](https://img.shields.io/badge/license-GPLv3-green)
+![ERPNext](https://img.shields.io/badge/ERPNext-v15-orange)
+![Frappe](https://img.shields.io/badge/Frappe-v15-red)
 </div>
 
 ---
@@ -20,7 +25,6 @@
 
 Point of Sale application for ERPNext v15 built with Vue 3 and Vuetify 3.
 
-**Version:** 18.7.2025 | **License:** GPLv3  
 **Repository:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 
 ---
