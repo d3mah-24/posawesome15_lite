@@ -6,18 +6,27 @@ tr.v-data-table__tr td {
     padding: 20px 0px !important;
 }
 
-.v-table>.v-table__wrapper>table>tbody>tr>td, .v-table>.v-table__wrapper>table>tbody>tr>th, .v-table>.v-table__wrapper>table>tfoot>tr>td, .v-table>.v-table__wrapper>table>tfoot>tr>th, .v-table>.v-table__wrapper>table>thead>tr>td, .v-table>.v-table__wrapper>table>thead>tr>th {
+.v-table>.v-table__wrapper>table>tbody>tr>td,
+.v-table>.v-table__wrapper>table>tbody>tr>th,
+.v-table>.v-table__wrapper>table>tfoot>tr>td,
+.v-table>.v-table__wrapper>table>tfoot>tr>th,
+.v-table>.v-table__wrapper>table>thead>tr>td,
+.v-table>.v-table__wrapper>table>thead>tr>th {
     padding: 4px 6px !important;
     transition-duration: .28s;
     transition-property: box-shadow, opacity, background, height;
-    transition-timing-function: 
-cubic-bezier(.4, 0, .2, 1);
+    transition-timing-function:
+        cubic-bezier(.4, 0, .2, 1);
 }
 
-.v-table>.v-table__wrapper>table>tbody>tr>td, .v-table>.v-table__wrapper>table>tfoot>tr>td, .v-table>.v-table__wrapper>table>thead>tr>td{
-    height: 0!important;
+.v-table>.v-table__wrapper>table>tbody>tr>td,
+.v-table>.v-table__wrapper>table>tfoot>tr>td,
+.v-table>.v-table__wrapper>table>thead>tr>td {
+    height: 0 !important;
 }
 
-.v-table>.v-table__wrapper>table>tbody>tr>th, .v-table>.v-table__wrapper>table>tfoot>tr>th, .v-table>.v-table__wrapper>table>thead>tr>th{
+.v-table>.v-table__wrapper>table>tbody>tr>th,
+.v-table>.v-table__wrapper>table>tfoot>tr>th,
+.v-table>.v-table__wrapper>table>thead>tr>th {
     height: 0 !important;
 }
