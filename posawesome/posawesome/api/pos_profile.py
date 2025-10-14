@@ -54,42 +54,6 @@ def get_opening_dialog_data():
         frappe.log_error(f"pos_profile.py(get_opening_dialog_data): Error {str(e)}", "POS Profile")
         return {}
 
-
-# @frappe.whitelist()
-# def get_profile_details(profile_name):
-#     """
-#     GET - Get POS Profile details
-#     """
-#     try:
-#         profile = frappe.get_doc("POS Profile", profile_name)
-#         result = profile.as_dict()
-#         return result
-        
-#     except Exception as e:
-#         frappe.log_error(f"pos_profile.py(get_profile_details): Error {str(e)}", "POS Profile")
-#         return None
-
-
-# @frappe.whitelist()
-# def get_profile_payment_methods(profile_name):
-#     """
-#     GET - Get POS Profile payment methods
-#     """
-#     try:
-#         payment_methods = frappe.get_all(
-#             "POS Payment Method",
-#             filters={"parent": profile_name},
-#             fields=["*"],
-#             order_by="idx"
-#         )
-        
-#         return payment_methods
-        
-#     except Exception as e:
-#         frappe.log_error(f"pos_profile.py(get_profile_payment_methods): Error {str(e)}", "POS Profile")
-#         return []
-
-
 @frappe.whitelist()
 def get_profile_warehouses(profile_name):
     """
