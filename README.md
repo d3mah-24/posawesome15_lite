@@ -17,8 +17,13 @@ Point of Sale application for ERPNext v15 built with Vue 3 and Vuetify 3.
 
 ## ✨ Features
 
-**💰 Sales & Invoices** • **🎯 Offers & Coupons** • **👥 Customer Management**  
-**📦 Inventory** • **🔐 Shift Management** • **💳 Payment Features** • **🎨 Modern UI**
+- **💰 Sales & Invoices**
+- **🎯 Offers & Coupons**
+- **👥 Customer Management**
+- **📦 Inventory**
+- **🔐 Shift Management**
+- **💳 Payment Features**
+- **🎨 Modern UI**
 
 ### Key Highlights
 - Multiple payment modes with split payments
@@ -36,9 +41,11 @@ Point of Sale application for ERPNext v15 built with Vue 3 and Vuetify 3.
 
 ## � API Structure
 
-Frontend (Vue 3) ↔ Backend (Python) API mapping with **37 endpoints** across **9 API files**.
+Frontend (Vue 3) ↔ Backend (Python) API mapping  
+**37 endpoints** across **9 API files**
 
-**Components:** Customer • Invoice • Items • Payments • Returns • Shifts
+**Components:** Customer • Invoice • Items  
+Payments • Returns • Shifts
 
 🔗 **[View Complete API Documentation →](./API_STRUCTURE.md)**
 
@@ -46,9 +53,21 @@ Frontend (Vue 3) ↔ Backend (Python) API mapping with **37 endpoints** across *
 
 ## 🛠️ Tech Stack
 
-**Backend:** Frappe v15, ERPNext v15, Python 3.10+, MariaDB, Redis  
-**Frontend:** Vue 3.4.21, Vuetify 3.6.9, mitt, lodash  
-**Barcode Scanner:** [onScan.js](https://github.com/axenox/onscan.js) - Hardware barcode scanner detection library
+### Backend
+- Frappe v15
+- ERPNext v15
+- Python 3.10+
+- MariaDB
+- Redis
+
+### Frontend
+- Vue 3.4.21
+- Vuetify 3.6.9
+- mitt
+- lodash
+
+### Tools
+- **Barcode Scanner:** [onScan.js](https://github.com/axenox/onscan.js) - Hardware barcode scanner detection
 
 ---
 
@@ -84,33 +103,13 @@ bench build --app posawesome && bench restart
 
 - **[FEATURES.md](./FEATURES.md)** - Complete feature list with details
 - **[API_STRUCTURE.md](./API_STRUCTURE.md)** - Frontend ↔ Backend API mapping
-- **[Task Sheet](https://docs.google.com/spreadsheets/d/1EX9QDOkw0UD-qPh3Ynpcw37q3b_bFtQ4)** - Project tasks & progress tracking
+- **[Task Sheet](https://docs.google.com/spreadsheets/d/1EX9QDOkw0UD-qPh3Ynpcw37q3b_bFtQ4)** - Project tasks & progress
 
 ---
 
 ## � License
 
 **GNU General Public License v3.0** - See [license.txt](./license.txt)
-
----
-
-## 👨‍💻 Contact
-
-**Developer:** abdopcnet  
-**Email:** abdopcnet@gmail.com  
-**GitHub:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
-
----
-
-<div align="center">
-    <p>Made with ❤️ for ERPNext community</p>
-    <p>
-        <a href="https://github.com/abdopcnet/posawesome15_lite">⭐ Star</a> •
-        <a href="https://github.com/abdopcnet/posawesome15_lite/issues">🐛 Report Bug</a> •
-        <a href="https://github.com/abdopcnet/posawesome15_lite/issues">💡 Request Feature</a>
-    </p>
-</div>
-
 
 ---
 
