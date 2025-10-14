@@ -141,7 +141,3 @@
 - Coupon-based offers
 - Date-based validity
 - Multi-level offer application
-
----
-
-*Last updated: October 14, 2025*
