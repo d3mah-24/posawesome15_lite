@@ -1,6 +1,6 @@
-/* .v-table__wrapper{
-overflow: hidden !important;
-} */
+.v-table__wrapper {
+    overflow: auto !important;
+}
 
 tr.v-data-table__tr td {
     padding: 20px 0px !important;
@@ -30,3 +30,8 @@ tr.v-data-table__tr td {
 .v-table>.v-table__wrapper>table>thead>tr>th {
     height: 0 !important;
 }
+
+
+/* .invoice-items-scrollable>.v-table>.v-table__wrapper>table {
+    width: 700px !important;
+} */

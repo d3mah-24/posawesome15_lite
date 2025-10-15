@@ -10,7 +10,7 @@
         <Customer></Customer>
       </div>
 
-      <div class="my-0 py-0 invoice-items-scrollable">
+        <div class="my-0 py-0 invoice-items-scrollable">
         <v-data-table
           :headers="dynamicHeaders"
           :items="items"
@@ -334,7 +334,8 @@ export default {
           align: "start",
           sortable: true,
           key: "item_name",
-          width: "25%",
+          style: "min-width: 200px; max-width: 300px; white-space: normal;",
+          width: "25%"
         },
         { title: "Qty", key: "qty", align: "center", width: "10%" },
         { title: "Uom", key: "uom", align: "center", width: "10%" },
@@ -342,20 +343,20 @@ export default {
           title: "Price",
           key: "price_list_rate",
           align: "center",
-          width: "10%",
+          width: "10%"
         },
         { title: "D-Price", key: "rate", align: "center", width: "10%" },
         {
           title: "Dis %",
           key: "discount_percentage",
           align: "center",
-          width: "10%",
+          width: "10%"
         },
         {
           title: "Dis Amount",
           key: "discount_amount",
           align: "center",
-          width: "10%",
+          width: "10%"
         },
         { title: "Total", key: "amount", align: "center", width: "10%" },
         {
@@ -363,7 +364,7 @@ export default {
           key: "actions",
           align: "end",
           sortable: false,
-          width: "5%",
+          width: "5%"
         },
       ],
       _cachedCalculations: new Map(),
@@ -2705,15 +2706,9 @@ export default {
 
 /* ===== PROFESSIONAL COMPACT TABLE DESIGN ===== */
 .invoice-items-scrollable {
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 700px !important;
+  border-collapse: collapse;
   flex: 1 1 auto !important;
   max-height: calc(100vh - 170px) !important;
-  box-sizing: border-box !important;
-  overflow: auto !important;
-  display: flex !important;
-  flex-direction: column !important;
 }
 
 /* Ultra-compact table layout */
@@ -2726,7 +2721,7 @@ export default {
   padding: 0 !important;
   border-spacing: 0 !important;
   border-collapse: collapse !important;
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* Zero spacing table cells */
