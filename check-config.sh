@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Git Configuration Script
-source .git-protection
+REPO=https://github.com/abdopcnet/posawesome15_lite.git
+USER=abdopcnet
+EMAIL=abdopcnet@gmail.com
+BRANCH=main
 
 git config user.name "$USER" 2>&1
 git config user.email "$EMAIL" 2>&1
