@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://frappecloud.com/files/pos.png" height="128">
+    <img src="./pos_lite.png" height="128">
     <h2>POS Awesome Lite</h2>
     <p><em>Point of Sale for ERPNext v15</em></p>
     
