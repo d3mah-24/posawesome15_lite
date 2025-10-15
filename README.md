@@ -2,7 +2,7 @@
     <img src="./imgs/pos_lite.png" height="128">
     <h2>POS Awesome Lite</h2>
     <p><em>Point of Sale for ERPNext v15</em></p>
-# 
+
 ![Version](https://img.shields.io/badge/version-14.10.2025-blue)
 ![License](https://img.shields.io/badge/license-GPLv3-green)
 ![ERPNext](https://img.shields.io/badge/ERPNext-v15-orange)
