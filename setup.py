@@ -4,15 +4,15 @@ from setuptools import setup, find_packages
 # No external dependencies required - frappe and erpnext are managed by bench
 install_requires = []
 
-# get version from __version__ variable in posawesome/__init__.py
-from posawesome import __version__ as version
+# get all values from hooks.py
+from posawesome.hooks import app_publisher, app_email, app_name, version
 
 setup(
-    name="posawesome",
+    name=app_name,
     version=version,
-    description="posawesome",
-    author="future-support",
-    author_email="abdopcnet@gmail.com",
+    description=app_name,
+    author=app_publisher,
+    author_email=app_email,
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
