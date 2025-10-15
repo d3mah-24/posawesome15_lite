@@ -196,54 +196,131 @@
   </div>
 </template>
 <script>
-// ===== SECTION 1: IMPORTS =====
+// ===== IMPORTS =====
 import { evntBus } from "../../bus";
 import format from "../../format";
 import _ from "lodash";
-// ===== SECTION 2: EXPORT DEFAULT =====
+
+// ===== CONSTANTS =====
+const API_METHODS = {
+  GET_ITEMS: "posawesome.posawesome.api.item.get_items",
+  GET_ITEMS_GROUPS: "posawesome.posawesome.api.item.get_items_groups",
+  SEARCH_ITEMS_BARCODE: "posawesome.posawesome.api.item.search_items_barcode",
+  SEARCH_SCALE_BARCODE: "posawesome.posawesome.api.item.search_scale_barcode",
+  SEARCH_PRIVATE_BARCODE: "posawesome.posawesome.api.item.search_private_barcode",
+};
+
+const EVENT_NAMES = {
+  // Item Events
+  ADD_ITEM: "add_item",
+  SET_ALL_ITEMS: "set_all_items",
+  UPDATE_CUR_ITEMS_DETAILS: "update_cur_items_details",
+  
+  // UI Events
+  SHOW_OFFERS: "show_offers",
+  SHOW_COUPONS: "show_coupons",
+  SHOW_MESSAGE: "show_mesage",
+  
+  // Configuration Events
+  REGISTER_POS_PROFILE: "register_pos_profile",
+  UPDATE_CUSTOMER: "update_customer",
+  UPDATE_CUSTOMER_PRICE_LIST: "update_customer_price_list",
+  
+  // Counter Events
+  UPDATE_OFFERS_COUNTERS: "update_offers_counters",
+  UPDATE_COUPONS_COUNTERS: "update_coupons_counters",
+};
+
+const UI_CONFIG = {
+  SEARCH_MIN_LENGTH: 3,
+  MAX_DISPLAYED_ITEMS: 50,
+  MIN_PANEL_HEIGHT: 180,
+  BOTTOM_PADDING: 16,
+  DEBOUNCE_DELAY: 200,
+};
+
+const VIEW_MODES = {
+  CARD: "card",
+  LIST: "list",
+};
+
+const BARCODE_TYPES = {
+  SCALE: "scale",
+  PRIVATE: "private",
+  NORMAL: "normal",
+};
+
+// ===== COMPONENT =====
 export default {
+  name: "ItemsSelector",
+  
   mixins: [format],
-  // ===== SECTION 3: DATA =====
-  data: () => {
+
+  // ===== DATA =====
+  data() {
     return {
-      pos_profile: "",
+      // POS Configuration
+      pos_profile: null,
       flags: {},
-      items_view: "list",
+      
+      // View State
+      items_view: VIEW_MODES.LIST,
       item_group: "ALL",
       loading: false,
       search_loading: false,
+      
+      // Items Data
       items_group: ["ALL"],
       items: [],
+      
+      // Search State
       search: "",
       first_search: "",
       barcode_search: "",
+      
+      // Pagination
       itemsPerPage: 1000,
+      
+      // Counters
       offersCount: 0,
       appliedOffersCount: 0,
       couponsCount: 0,
       appliedCouponsCount: 0,
+      
+      // Customer Data
       customer_price_list: null,
       customer: null,
+      
+      // Item Operations
       qty: 1,
-      // Store dynamic scroll height for grid/table wrapper
+      
+      // UI State
       itemsScrollHeight: null,
+      
+      // Internal Flags
       _suppressCustomerWatcher: false,
       _detailsReady: false,
-
-      // Remove all types of cache for direct speed
-      _itemsMap: new Map(), // For quick search in items only
+      
+      // Caching & Performance
+      _itemsMap: new Map(),
     };
   },
 
-  // ===== SECTION 4: WATCH =====
+  // ===== WATCH =====
   watch: {
-    filtred_items(new_value, old_value) {
-      if (new_value.length != old_value.length) {
-        this.update_items_details(new_value);
+    /**
+     * Watch filtered items changes to update details and scroll height
+     */
+    filtred_items(newValue, oldValue) {
+      if (newValue.length !== oldValue.length) {
+        this.update_items_details(newValue);
       }
-      // Refresh scroll height whenever the dataset changes size
       this.scheduleScrollHeightUpdate();
     },
+
+    /**
+     * Watch customer changes to reload items
+     */
     customer(newVal, oldVal) {
       if (this._suppressCustomerWatcher) {
         this._suppressCustomerWatcher = false;
@@ -253,91 +330,196 @@ export default {
         this.get_items();
       }
     },
+
+    /**
+     * Watch view mode changes to recalculate scroll area
+     */
     items_view() {
-      // Recompute scroll area when toggling views
       this.scheduleScrollHeightUpdate();
     },
   },
 
-  // ===== SECTION 5: METHODS =====
+  // ===== COMPUTED =====
+  computed: {
+    /**
+     * Filter items based on search and group selection
+     * Direct filtering without cache for maximum performance
+     */
+    filtred_items() {
+      this.search = this.get_search(this.first_search);
+
+      let filtred_list = [];
+      let filtred_group_list = [];
+
+      // Filter by group
+      if (this.item_group !== "ALL") {
+        filtred_group_list = this.items.filter((item) =>
+          item.item_group.toLowerCase().includes(this.item_group.toLowerCase())
+        );
+      } else {
+        filtred_group_list = this.items;
+      }
+
+      // Filter by search term
+      if (!this.search || this.search.length < UI_CONFIG.SEARCH_MIN_LENGTH) {
+        filtred_list = filtred_group_list.slice(0, UI_CONFIG.MAX_DISPLAYED_ITEMS);
+      } else {
+        // Search in item_code
+        filtred_list = filtred_group_list.filter((item) =>
+          item.item_code.toLowerCase().includes(this.search.toLowerCase())
+        );
+
+        // Search in item_name if no results
+        if (filtred_list.length === 0) {
+          filtred_list = filtred_group_list.filter((item) =>
+            item.item_name.toLowerCase().includes(this.search.toLowerCase())
+          );
+        }
+      }
+
+      return filtred_list.slice(0, UI_CONFIG.MAX_DISPLAYED_ITEMS);
+    },
+
+    /**
+     * Generate inline style for scrollable area
+     */
+    itemsScrollStyle() {
+      if (!this.itemsScrollHeight) {
+        return {};
+      }
+      return {
+        maxHeight: `${this.itemsScrollHeight}px`,
+      };
+    },
+
+    /**
+     * Debounced search with live updates
+     */
+    debounce_search: {
+      get() {
+        return this.first_search;
+      },
+      set: _.debounce(function (newValue) {
+        this.first_search = newValue;
+        this.performLiveSearch(newValue);
+      }, UI_CONFIG.DEBOUNCE_DELAY),
+    },
+  },
+
+  // ===== METHODS =====
+  /**
+   * METHODS ORGANIZATION:
+   * 
+   * 1. LAYOUT & SCROLL MANAGEMENT
+   *    - scheduleScrollHeightUpdate, updateScrollableHeight
+   * 
+   * 2. BARCODE PROCESSING
+   *    - handle_barcode_input, analyze_barcode_type
+   *    - process_scale_barcode, process_private_barcode, process_normal_barcode
+   * 
+   * 3. ITEMS FETCHING & MANAGEMENT
+   *    - get_items, get_items_groups
+   *    - update_items_details, update_cur_items_details
+   * 
+   * 4. SEARCH FUNCTIONALITY
+   *    - performLiveSearch, search_onchange
+   *    - search_barcode_from_server, enter_event
+   * 
+   * 5. ITEM ADDITION
+   *    - add_item, add_item_table, add_item_to_cart
+   *    - checkZeroPriceItem
+   * 
+   * 6. UI HELPERS
+   *    - show_offers, show_coupons
+   *    - onItemGroupChange, esc_event
+   * 
+   * 7. UTILITY METHODS
+   *    - getItemsHeaders, get_item_qty, get_search
+   *    - _buildItemsMap, _resetSearch
+   */
   methods: {
-    // ===============================
-    // Layout helpers for scroll panel
-    // ===============================
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // LAYOUT & SCROLL MANAGEMENT
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Schedule scroll height update on next tick
+     * Defers measurement until DOM updates settle
+     */
     scheduleScrollHeightUpdate() {
-      // Defer measurement until DOM updates settle
       this.$nextTick(() => {
         this.updateScrollableHeight();
       });
     },
+
+    /**
+     * Calculate and set scrollable area height
+     * Ensures optimal use of viewport space
+     */
     updateScrollableHeight() {
       const scrollRef = this.$refs.itemsScrollArea;
       const scrollEl = scrollRef ? scrollRef.$el || scrollRef : null;
+      
       if (!scrollEl || typeof scrollEl.getBoundingClientRect !== "function") {
         return;
       }
 
       const viewportHeight =
         window.innerHeight || document.documentElement?.clientHeight || 0;
+      
       if (!viewportHeight) {
         return;
       }
 
       const rect = scrollEl.getBoundingClientRect();
-      const bottomPadding = 16; // Keep a tiny gap above footer
-      const available = viewportHeight - rect.top - bottomPadding;
-      const minPanelHeight = 180; // Enough space to show multiple items
+      const available = viewportHeight - rect.top - UI_CONFIG.BOTTOM_PADDING;
 
       if (Number.isFinite(available)) {
         this.itemsScrollHeight = Math.max(
-          minPanelHeight,
+          UI_CONFIG.MIN_PANEL_HEIGHT,
           Math.floor(available)
         );
       }
     },
 
-    // ========================================
-    // Barcode search functions (normal/private/weight)
-    // ========================================
-    // Automatic processing when placing barcode
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // BARCODE PROCESSING
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Handle barcode input - auto-process and clear
+     */
     handle_barcode_input() {
       if (!this.barcode_search.trim()) return;
 
-      // Send to backend and immediate clearing
       this.analyze_barcode_type(this.barcode_search.trim());
       this.barcode_search = "";
-      const barcodeInput = document.querySelector(
-        'input[placeholder*="Barcode"]'
-      );
+      
+      const barcodeInput = document.querySelector('input[placeholder*="Barcode"]');
       if (barcodeInput) barcodeInput.value = "";
     },
 
-    // Central function to distribute barcode according to POS Profile settings
+    /**
+     * Analyze and route barcode to appropriate processor
+     * Priority: Scale → Private → Normal
+     */
     analyze_barcode_type(barcode_value) {
-      // 1. Check weight barcode first
-      if (this.process_scale_barcode(barcode_value)) {
-        return;
-      }
-
-      // 2. Check private barcode second
-      if (this.process_private_barcode(barcode_value)) {
-        return;
-      }
-
-      // 3. Normal barcode as last option
+      if (this.process_scale_barcode(barcode_value)) return;
+      if (this.process_private_barcode(barcode_value)) return;
       this.process_normal_barcode(barcode_value);
     },
 
-    // Weight barcode processing (check + search)
+    /**
+     * Process weight/scale barcode
+     * @returns {boolean} True if barcode matches scale pattern
+     */
     process_scale_barcode(barcode_value) {
-      const posa_enable_scale_barcode =
-        this.pos_profile?.posa_enable_scale_barcode;
-      const posa_scale_barcode_start =
-        this.pos_profile?.posa_scale_barcode_start;
-      const posa_scale_barcode_lenth =
-        this.pos_profile?.posa_scale_barcode_lenth;
+      const {
+        posa_enable_scale_barcode,
+        posa_scale_barcode_start,
+        posa_scale_barcode_lenth,
+      } = this.pos_profile || {};
 
-      // Check conditions
       if (
         posa_enable_scale_barcode === 1 &&
         posa_scale_barcode_start &&
@@ -345,22 +527,18 @@ export default {
         barcode_value.startsWith(posa_scale_barcode_start) &&
         barcode_value.length === posa_scale_barcode_lenth
       ) {
-        // Search for barcode
         frappe.call({
-          method: "posawesome.posawesome.api.item.search_scale_barcode",
-          args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
+          method: API_METHODS.SEARCH_SCALE_BARCODE,
+          args: { 
+            pos_profile: this.pos_profile, 
+            barcode_value: barcode_value 
+          },
           callback: (response) => {
             if (response?.message?.item_code) {
               this.add_item_to_cart(response.message);
-              evntBus.emit("show_mesage", {
-                text: `Added ${response.message.item_name} to cart (weight)`,
-                color: "success",
-              });
+              this.showMessage(`Added ${response.message.item_name} to cart (weight)`, "success");
             } else {
-              evntBus.emit("show_mesage", {
-                text: "Item not found with weight barcode",
-                color: "error",
-              });
+              this.showMessage("Item not found with weight barcode", "error");
             }
           },
         });
@@ -369,38 +547,35 @@ export default {
       return false;
     },
 
-    // Private barcode processing (check + search)
+    /**
+     * Process private barcode
+     * @returns {boolean} True if barcode matches private pattern
+     */
     process_private_barcode(barcode_value) {
-      const posa_enable_private_barcode =
-        this.pos_profile?.posa_enable_private_barcode;
-      const posa_private_barcode_lenth =
-        this.pos_profile?.posa_private_barcode_lenth;
-      const posa_private_item_code_length =
-        this.pos_profile?.posa_private_item_code_length;
+      const {
+        posa_enable_private_barcode,
+        posa_private_barcode_lenth,
+        posa_private_item_code_length,
+      } = this.pos_profile || {};
 
-      // Check conditions
       if (
         posa_enable_private_barcode === 1 &&
         posa_private_barcode_lenth &&
         posa_private_item_code_length &&
         barcode_value.length === posa_private_barcode_lenth
       ) {
-        // Search for barcode
         frappe.call({
-          method: "posawesome.posawesome.api.item.search_private_barcode",
-          args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
+          method: API_METHODS.SEARCH_PRIVATE_BARCODE,
+          args: { 
+            pos_profile: this.pos_profile, 
+            barcode_value: barcode_value 
+          },
           callback: (response) => {
             if (response?.message?.item_code) {
               this.add_item_to_cart(response.message);
-              evntBus.emit("show_mesage", {
-                text: `Added ${response.message.item_name} to cart (private)`,
-                color: "success",
-              });
+              this.showMessage(`Added ${response.message.item_name} to cart (private)`, "success");
             } else {
-              evntBus.emit("show_mesage", {
-                text: "Item not found with private barcode",
-                color: "error",
-              });
+              this.showMessage("Item not found with private barcode", "error");
             }
           },
         });
@@ -409,54 +584,71 @@ export default {
       return false;
     },
 
-    // Normal barcode processing (direct search)
+    /**
+     * Process normal standard barcode
+     */
     process_normal_barcode(barcode_value) {
       frappe.call({
-        method: "posawesome.posawesome.api.item.search_items_barcode",
-        args: { pos_profile: this.pos_profile, barcode_value: barcode_value },
+        method: API_METHODS.SEARCH_ITEMS_BARCODE,
+        args: { 
+          pos_profile: this.pos_profile, 
+          barcode_value: barcode_value 
+        },
         callback: (response) => {
           if (response?.message?.item_code) {
             this.add_item_to_cart(response.message);
-            evntBus.emit("show_mesage", {
-              text: `Added ${response.message.item_name} to cart (normal)`,
-              color: "success",
-            });
+            this.showMessage(`Added ${response.message.item_name} to cart (normal)`, "success");
           } else {
-            evntBus.emit("show_mesage", {
-              text: "Item not found with barcode",
-              color: "error",
-            });
+            this.showMessage("Item not found with barcode", "error");
           }
         },
       });
     },
 
+    /**
+     * Add item to cart via event bus
+     */
     add_item_to_cart(item) {
-      // Add item to cart
-      evntBus.emit("add_item", item);
+      evntBus.emit(EVENT_NAMES.ADD_ITEM, item);
     },
 
-    // ========================================
-    // Search functions by name/code/batch/serial
-    // ========================================
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // UI NAVIGATION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Show offers panel
+     */
     show_offers() {
-      evntBus.emit("show_offers", "true");
-    },
-    show_coupons() {
-      evntBus.emit("show_coupons", "true");
+      evntBus.emit(EVENT_NAMES.SHOW_OFFERS, "true");
     },
 
+    /**
+     * Show coupons panel
+     */
+    show_coupons() {
+      evntBus.emit(EVENT_NAMES.SHOW_COUPONS, "true");
+    },
+
+    /**
+     * Handle item group change
+     * Clears search to avoid confusion
+     */
     onItemGroupChange() {
-      // Clear search when group changes to avoid confusion
       if (this.debounce_search) {
         this.debounce_search = "";
         this.first_search = "";
       }
-
       this.get_items();
     },
 
-    // Improve function to get items
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ITEMS FETCHING & MANAGEMENT
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Fetch items from server based on filters
+     */
     get_items() {
       if (!this.pos_profile) {
         evntBus.emit("show_mesage", {
@@ -519,7 +711,10 @@ export default {
       });
     },
 
-    // Helper function to build items map for quick search
+    /**
+     * Build items map for quick search
+     * Creates lookups by item_code and item_name (lowercase)
+     */
     _buildItemsMap() {
       this._itemsMap.clear();
 
@@ -532,6 +727,14 @@ export default {
       });
     },
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ITEM GROUPS MANAGEMENT
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Fetch available item groups
+     * Uses POS profile groups or fetches from server
+     */
     get_items_groups() {
       if (!this.pos_profile) {
         return;
@@ -559,6 +762,10 @@ export default {
       }
     },
 
+    /**
+     * Get table headers configuration
+     * @returns {Array} Table column definitions
+     */
     getItemsHeaders() {
       const items_headers = [
         {
@@ -588,7 +795,15 @@ export default {
       return items_headers;
     },
 
-    // Check if item has zero price and POS Profile doesn't allow it
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ITEM VALIDATION & ADDITION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Check if item has zero price and if it's allowed
+     * @param {Object} item - Item to check
+     * @returns {boolean} True if item is blocked, false if allowed
+     */
     checkZeroPriceItem(item) {
       if (
         item.has_zero_price &&
@@ -603,7 +818,10 @@ export default {
       return false; // Item allowed
     },
 
-    // Improve function to add item
+    /**
+     * Add item from table view
+     * Validates and emits add_item event
+     */
     add_item_table(event, item) {
       console.log(
         "ItemsSelector.vue(add_item_table): Added",
@@ -623,6 +841,10 @@ export default {
       this.qty = 1;
     },
 
+    /**
+     * Add item from card view
+     * Validates and emits add_item event
+     */
     add_item(item) {
       console.log("ItemsSelector.vue(add_item): Added", item.item_code);
 
@@ -639,7 +861,14 @@ export default {
       this.qty = 1;
     },
 
-    // Improve search processing function
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // SEARCH & FILTERING
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Handle enter key press in search field
+     * Adds first filtered item to cart
+     */
     enter_event() {
       let match = false;
 
@@ -726,7 +955,10 @@ export default {
       }
     },
 
-    // Helper function to reset search
+    /**
+     * Reset search fields and focus
+     * Clears all search-related state
+     */
     _resetSearch() {
       this.search = null;
       this.first_search = null;
@@ -737,12 +969,19 @@ export default {
       this.$refs.debounce_search.focus();
     },
 
+    /**
+     * Handle search input change
+     * Triggers item search by name/code/batch/serial
+     */
     search_onchange() {
       // Search by name/code/batch/serial (not barcode)
       this._performItemSearch();
     },
 
-    // Live search function with 200ms debounce
+    /**
+     * Perform live search with debounce
+     * Fetches items matching search term from server
+     */
     performLiveSearch(searchValue) {
       const vm = this;
 
@@ -798,6 +1037,10 @@ export default {
       });
     },
 
+    /**
+     * Internal item search by name, code, batch, or serial
+     * Called by search_onchange and enter_event
+     */
     _performItemSearch() {
       const vm = this;
 
@@ -848,6 +1091,14 @@ export default {
       });
     },
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // BARCODE SEARCH
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    /**
+     * Perform barcode-based search
+     * Updates search state and triggers server barcode lookup
+     */
     _performSearch() {
       const vm = this;
 
@@ -864,6 +1115,14 @@ export default {
       vm.search_barcode_from_server(vm.debounce_search);
     },
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // UTILITY HELPERS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    /**
+     * Get item quantity for barcode processing
+     * Returns current qty or defaults to 1
+     */
     get_item_qty(first_search) {
       // Set quantity correctly always
       const currentQty = Number(this.qty);
@@ -872,15 +1131,31 @@ export default {
       return scal_qty;
     },
 
+    /**
+     * Get search value
+     * Returns provided search or empty string
+     */
     get_search(first_search) {
       return first_search || "";
     },
 
+    /**
+     * Handle escape key press
+     * Resets search fields and focus
+     */
     esc_event() {
       this._resetSearch();
     },
 
-    // Improve function to update item details using get_items
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ITEM DETAILS UPDATE
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    /**
+     * Update item details from server
+     * Fetches latest prices, stock, and details for specified items
+     * @param {Array} items - Items to update
+     */
     update_items_details(items) {
       const vm = this;
       // Avoid triggering on initial load — wait until first list is displayed
@@ -939,10 +1214,22 @@ export default {
       });
     },
 
+    /**
+     * Update current filtered items details
+     * Refreshes prices and stock for displayed items
+     */
     update_cur_items_details() {
       this.update_items_details(this.filtred_items);
     },
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // BARCODE SCANNING
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    /**
+     * Initialize barcode scanner
+     * Attaches onScan library to document for hardware scanner support
+     */
     scan_barcode() {
       const vm = this;
       onScan.attachTo(document, {
@@ -958,13 +1245,21 @@ export default {
       });
     },
 
-    // Improve barcode processing function
+    /**
+     * Trigger barcode scan processing
+     * Routes scanned code to barcode analyzer
+     * @param {string} sCode - Scanned barcode value
+     */
     trigger_onscan(sCode) {
       // Direct barcode processing
       this.analyze_barcode_type(sCode);
     },
 
-    // Direct barcode search from server without cache - optimized for maximum speed
+    /**
+     * Search barcode directly from server
+     * Used when barcode not found in local cache
+     * @param {string} barcode - Barcode to search
+     */
     search_barcode_from_server(barcode) {
       const vm = this;
 
