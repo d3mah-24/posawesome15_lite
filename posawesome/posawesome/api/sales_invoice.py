@@ -12,21 +12,6 @@ from frappe import _
 from frappe.utils import flt
 
 
-
-@frappe.whitelist()
-def get_invoice(invoice_name):
-    """
-    GET - Get invoice details
-    """
-    try:
-        doc = frappe.get_doc("Sales Invoice", invoice_name)
-        result = doc.as_dict()
-        return result
-    except Exception as e:
-        frappe.log_error(f"sales_invoice.py(get_invoice): Error {str(e)}", "POS Submit")
-        return None
-
-
 @frappe.whitelist()
 def update_invoice(data):
     """
