@@ -647,15 +647,10 @@ def validate_pos_before_submit(doc):
     target_amount = flt(doc.rounded_total) if hasattr(doc, 'rounded_total') and doc.rounded_total else flt(doc.grand_total)
     difference = abs(total_payments - target_amount)
     
-    # Log payment details for debugging (shortened to avoid truncation)
-    frappe.log_error(f"POS validation: Payments {total_payments} vs Target {target_amount}, Diff {difference:.2f}", "POS Submit")
-    
     # Allow small floating point differences (up to 0.05 for currency precision)
     if difference > 0.05:
         frappe.throw(_("Payment amount must equal rounded total. Total payments: {0}, Rounded total: {1}, Difference: {2}").format(
             total_payments, target_amount, difference))
-    
-    frappe.log_error(f"sales_invoice.py(validate_pos_before_submit): Validated {doc.name}", "POS Submit")
 
 
 def before_cancel(doc, method):
@@ -688,8 +683,6 @@ def validate_pos_before_cancel(doc):
         )
         if shift_status == "Closed":
             frappe.throw(_("Cannot cancel invoice from closed shift"))
-    
-    frappe.log_error(f"sales_invoice.py(validate_pos_before_cancel): Validated {doc.name}", "POS Submit")
 
 
 
