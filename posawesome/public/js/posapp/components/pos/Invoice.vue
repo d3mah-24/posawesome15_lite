@@ -68,7 +68,7 @@
                   !!item.posa_is_offer ||
                   !!item.posa_is_replace ||
                   !!item.posa_offer_applied ||
-                  !!invoice_doc.is_return
+                  !!invoice_doc?.is_return
                 "
                 class="compact-rate-input"
                 placeholder="0.00"
@@ -91,13 +91,13 @@
                   !!item.posa_is_offer ||
                   !!item.posa_is_replace ||
                   !!item.posa_offer_applied ||
-                  !pos_profile.posa_allow_user_to_edit_item_discount ||
-                  !!invoice_doc.is_return
+                  !pos_profile?.posa_allow_user_to_edit_item_discount ||
+                  !!invoice_doc?.is_return
                 "
                 class="compact-discount-input"
                 placeholder="0"
                 min="0"
-                :max="pos_profile.posa_item_max_discount_allowed || 100"
+                :max="pos_profile?.posa_item_max_discount_allowed || 100"
                 step="0.01"
               />
               <span class="discount-suffix">%</span>
@@ -181,11 +181,11 @@
             ref="percentage_discount"
             step="0.01"
             min="0"
-            :max="pos_profile.posa_invoice_max_discount_allowed || 100"
+            :max="pos_profile?.posa_invoice_max_discount_allowed || 100"
             :disabled="
               !pos_profile ||
-              !pos_profile.posa_allow_user_to_edit_additional_discount ||
-              !!invoice_doc.is_return
+              !pos_profile?.posa_allow_user_to_edit_additional_discount ||
+              !!invoice_doc?.is_return
             "
             class="field-input discount-input"
             placeholder="0.00"
@@ -195,7 +195,7 @@
         <div class="summary-field readonly-field warning-field">
           <label>Items Disc</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile.currency)
+            {{ currencySymbol(pos_profile?.currency)
             }}{{ formatCurrency(total_items_discount_amount) }}
           </div>
         </div>
@@ -203,7 +203,7 @@
         <div class="summary-field readonly-field">
           <label>Before Disc</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile.currency)
+            {{ currencySymbol(pos_profile?.currency)
             }}{{ formatCurrency(total_before_discount) }}
           </div>
         </div>
@@ -211,24 +211,24 @@
         <div class="summary-field readonly-field">
           <label>Net Total</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile.currency)
-            }}{{ formatCurrency(invoice_doc.net_total) }}
+            {{ currencySymbol(pos_profile?.currency)
+            }}{{ formatCurrency(invoice_doc?.net_total) }}
           </div>
         </div>
 
         <div class="summary-field readonly-field info-field">
           <label>Tax</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile.currency)
-            }}{{ formatCurrency(invoice_doc.total_taxes_and_charges) }}
+            {{ currencySymbol(pos_profile?.currency)
+            }}{{ formatCurrency(invoice_doc?.total_taxes_and_charges) }}
           </div>
         </div>
 
         <div class="summary-field readonly-field success-field grand-total">
           <label>Grand Total</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile.currency)
-            }}{{ formatCurrency(invoice_doc.grand_total) }}
+            {{ currencySymbol(pos_profile?.currency)
+            }}{{ formatCurrency(invoice_doc?.grand_total) }}
           </div>
         </div>
       </div>
@@ -256,7 +256,7 @@
 
         <button
           class="action-btn secondary-btn"
-          :disabled="!pos_profile.posa_allow_return"
+          :disabled="!pos_profile?.posa_allow_return"
           @click="open_returns"
         >
           <v-icon size="16">mdi-keyboard-return</v-icon>
@@ -265,7 +265,7 @@
 
         <button
           class="action-btn purple-btn"
-          :disabled="!pos_profile.posa_allow_quick_return"
+          :disabled="!pos_profile?.posa_allow_quick_return"
           @click="quick_return"
         >
           <v-icon size="16">mdi-flash</v-icon>
@@ -286,84 +286,6 @@
 import { evntBus } from "../../bus";
 import format from "../../format";
 import Customer from "./Customer.vue";
-
-// ===== CONSTANTS =====
-const API_METHODS = {
-  UPDATE_INVOICE: "posawesome.posawesome.api.sales_invoice.update_invoice",
-  DELETE_INVOICE: "posawesome.posawesome.api.sales_invoice.delete_invoice",
-  GET_APPLICABLE_OFFERS: "posawesome.posawesome.api.pos_offer.get_applicable_offers",
-  GET_CUSTOMER_INFO: "posawesome.posawesome.api.customer.get_customer_info",
-  GET_CUSTOMER_ADDRESSES: "posawesome.posawesome.api.customer.get_customer_addresses",
-  GET_AVAILABLE_CREDIT: "posawesome.posawesome.api.customer.get_available_credit",
-  GET_DEFAULT_PAYMENT: "posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile",
-  PROCESS_BATCH_SELECTION: "posawesome.posawesome.api.batch.process_batch_selection",
-};
-
-const EVENT_NAMES = {
-  // Invoice Events
-  REGISTER_POS_PROFILE: "register_pos_profile",
-  ADD_ITEM: "add_item",
-  UPDATE_CUSTOMER: "update_customer",
-  FETCH_CUSTOMER_DETAILS: "fetch_customer_details",
-  NEW_INVOICE: "new_invoice",
-  LOAD_INVOICE: "load_invoice",
-  LOAD_RETURN_INVOICE: "load_return_invoice",
-  
-  // Item Events
-  ITEM_ADDED: "item_added",
-  ITEM_REMOVED: "item_removed",
-  ITEM_UPDATED: "item_updated",
-  
-  // Offers & Coupons
-  SET_OFFERS: "set_offers",
-  UPDATE_POS_OFFERS: "update_pos_offers",
-  UPDATE_INVOICE_OFFERS: "update_invoice_offers",
-  UPDATE_INVOICE_COUPONS: "update_invoice_coupons",
-  SET_ALL_ITEMS: "set_all_items",
-  SET_POS_COUPONS: "set_pos_coupons",
-  
-  // Payment Events
-  SHOW_PAYMENT: "show_payment",
-  SEND_INVOICE_DOC_PAYMENT: "send_invoice_doc_payment",
-  PAYMENTS_UPDATED: "payments_updated",
-  REQUEST_INVOICE_PRINT: "request_invoice_print",
-  INVOICE_SUBMITTED: "invoice_submitted",
-  
-  // UI Events
-  SHOW_MESSAGE: "show_mesage",
-  SHOW_LOADING: "show_loading",
-  HIDE_LOADING: "hide_loading",
-  
-  // Customer Events
-  SET_CUSTOMER: "set_customer",
-  SET_CUSTOMER_READONLY: "set_customer_readonly",
-  UPDATE_CUSTOMER_PRICE_LIST: "update_customer_price_list",
-  SET_CUSTOMER_INFO_TO_EDIT: "set_customer_info_to_edit",
-  OPEN_EDIT_CUSTOMER: "open_edit_customer",
-  OPEN_NEW_ADDRESS: "open_new_address",
-  ADD_THE_NEW_ADDRESS: "add_the_new_address",
-  
-  // Opening Shift Events
-  OPEN_RETURNS: "open_returns",
-  TOGGLE_QUICK_RETURN: "toggle_quick_return",
-  SET_LAST_INVOICE: "set_last_invoice",
-  INVOICE_SESSION_RESET: "invoice_session_reset",
-  SET_COMPANY: "set_company",
-  FREEZE: "freeze",
-  UNFREEZE: "unfreeze",
-  UPDATE_DELIVERY_DATE: "update_delivery_date",
-  UPDATE_DUE_DATE: "update_due_date",
-};
-
-const DEBOUNCE_DELAYS = {
-  ITEM_OPERATION: 200,
-  OFFERS: 200,
-  AUTO_UPDATE: 200,
-};
-
-const CACHE_DURATION = {
-  OFFERS: 30000, // 30 seconds
-};
 
 // ===== COMPONENT =====
 export default {
@@ -535,7 +457,7 @@ export default {
     },
     total_qty() {
       if (!this.invoice_doc?.items) return 0;
-      return this.invoice_doc.items.reduce(
+      return this.invoice_doc?.items.reduce(
         (sum, item) => sum + (item.qty || 0),
         0
       );
@@ -575,12 +497,12 @@ export default {
     },
     defaultPaymentMode() {
       const invoicePayments =
-        this.invoice_doc && Array.isArray(this.invoice_doc.payments)
-          ? this.invoice_doc.payments
+        this.invoice_doc && Array.isArray(this.invoice_doc?.payments)
+          ? this.invoice_doc?.payments
           : [];
       const profilePayments =
-        this.pos_profile && Array.isArray(this.pos_profile.payments)
-          ? this.pos_profile.payments
+        this.pos_profile && Array.isArray(this.pos_profile?.payments)
+          ? this.pos_profile?.payments
           : [];
       const payments = invoicePayments.length
         ? invoicePayments
@@ -600,8 +522,8 @@ export default {
       if (this.readonly) return false;
       if (!this.items || !this.items.length) return false;
       const payments =
-        this.invoice_doc && Array.isArray(this.invoice_doc.payments)
-          ? this.invoice_doc.payments
+        this.invoice_doc && Array.isArray(this.invoice_doc?.payments)
+          ? this.invoice_doc?.payments
           : [];
       const hasPositive = payments.some(
         (payment) => this.flt(payment.amount) > 0
@@ -614,8 +536,8 @@ export default {
     },
     hasChosenPayment() {
       const payments =
-        this.invoice_doc && Array.isArray(this.invoice_doc.payments)
-          ? this.invoice_doc.payments
+        this.invoice_doc && Array.isArray(this.invoice_doc?.payments)
+          ? this.invoice_doc?.payments
           : [];
       return payments.some((p) => this.flt(p.amount) > 0);
     },
@@ -797,7 +719,7 @@ export default {
      * Toggles quick return mode if allowed in POS profile
      */
     quick_return() {
-      if (!this.pos_profile.posa_allow_quick_return) {
+      if (!this.pos_profile?.posa_allow_quick_return) {
         evntBus.emit("show_mesage", {
           text: "Quick return is not enabled in POS profile",
           color: "error",
@@ -840,7 +762,7 @@ export default {
         if (
           this.items.length === 0 &&
           this.invoice_doc &&
-          this.invoice_doc.name
+          this.invoice_doc?.name
         ) {
           this.delete_draft_invoice();
         } else {
@@ -1117,13 +1039,13 @@ export default {
     },
 
     async reload_invoice() {
-      if (this.invoice_doc && this.invoice_doc.name) {
+      if (this.invoice_doc && this.invoice_doc?.name) {
         try {
           const result = await frappe.call({
             method: "frappe.client.get",
             args: {
               doctype: "Sales Invoice",
-              name: this.invoice_doc.name,
+              name: this.invoice_doc?.name,
             },
           });
 
@@ -1222,7 +1144,7 @@ export default {
       new_item.posa_row_id = this.makeid(20);
 
       if (
-        (!this.pos_profile.posa_auto_set_batch && new_item.has_batch_no) ||
+        (!this.pos_profile?.posa_auto_set_batch && new_item.has_batch_no) ||
         new_item.has_serial_no
       ) {
         this.expanded.push(new_item);
@@ -1231,12 +1153,12 @@ export default {
     },
 
     cancel_invoice() {
-      if (this.invoice_doc && this.invoice_doc.name) {
+      if (this.invoice_doc && this.invoice_doc?.name) {
         frappe.call({
           method: "frappe.client.delete",
           args: {
             doctype: "Sales Invoice",
-            name: this.invoice_doc.name,
+            name: this.invoice_doc?.name,
           },
           callback: (r) => {
             if (r.message) {
@@ -1256,7 +1178,7 @@ export default {
       this.posa_offers = [];
       evntBus.emit("set_pos_coupons", []);
       this.posa_coupons = [];
-      this.customer = this.pos_profile.customer;
+      this.customer = this.pos_profile?.customer;
       this.invoice_doc = "";
       this.return_doc = "";
       this.discount_amount = 0;
@@ -1267,7 +1189,7 @@ export default {
     },
 
     delete_draft_invoice() {
-      const name = this.invoice_doc && this.invoice_doc.name;
+      const name = this.invoice_doc && this.invoice_doc?.name;
       const reset = () => {
         this.reset_invoice_session();
       };
@@ -1320,7 +1242,7 @@ export default {
       }
       if (!data.name && !data.is_return) {
         this.items = [];
-        this.customer = this.pos_profile.customer;
+        this.customer = this.pos_profile?.customer;
         this.invoice_doc = "";
         this.discount_amount = 0;
         this.additional_discount_percentage = 0;
@@ -1375,10 +1297,10 @@ export default {
       // Always create a new invoice if no invoice exists or if we have items but no invoice name
       if (
         this.invoice_doc &&
-        this.invoice_doc.name &&
-        !this.invoice_doc.submitted_for_payment
+        this.invoice_doc?.name &&
+        !this.invoice_doc?.submitted_for_payment
       ) {
-        doc.name = this.invoice_doc.name;
+        doc.name = this.invoice_doc?.name;
       } else if (this.items.length > 0) {
         // Create new invoice when we have items but no existing invoice
       }
@@ -1386,10 +1308,10 @@ export default {
       doc.doctype = "Sales Invoice";
       doc.is_pos = 1;
       doc.ignore_pricing_rule = 1;
-      doc.company = this.pos_profile.company;
-      doc.pos_profile = this.pos_profile.name;
-      doc.currency = this.pos_profile.currency;
-      doc.naming_series = this.pos_profile.naming_series;
+      doc.company = this.pos_profile?.company;
+      doc.pos_profile = this.pos_profile?.name;
+      doc.currency = this.pos_profile?.currency;
+      doc.naming_series = this.pos_profile?.naming_series;
       doc.customer = this.customer;
       doc.posting_date = this.posting_date;
       doc.posa_pos_opening_shift = this.pos_opening_shift
@@ -1408,8 +1330,8 @@ export default {
       }
 
       if (this.invoice_doc) {
-        doc.is_return = this.invoice_doc.is_return;
-        doc.return_against = this.invoice_doc.return_against;
+        doc.is_return = this.invoice_doc?.is_return;
+        doc.return_against = this.invoice_doc?.return_against;
       }
 
       return doc;
@@ -1433,10 +1355,10 @@ export default {
       // Prefer current invoice payments (e.g., chosen in Payments dialog)
       if (
         this.invoice_doc &&
-        Array.isArray(this.invoice_doc.payments) &&
-        this.invoice_doc.payments.length
+        Array.isArray(this.invoice_doc?.payments) &&
+        this.invoice_doc?.payments.length
       ) {
-        return this.invoice_doc.payments.map((p) => ({
+        return this.invoice_doc?.payments.map((p) => ({
           amount: this.flt(p.amount),
           mode_of_payment: p.mode_of_payment,
           default: p.default,
@@ -1446,11 +1368,11 @@ export default {
       }
       // Fallback to POS Profile payments with zero amounts
       const payments = [];
-      if (this.pos_profile && Array.isArray(this.pos_profile.payments)) {
+      if (this.pos_profile && Array.isArray(this.pos_profile?.payments)) {
         let hasDefault = false;
 
         // First pass: add all payments and check if any is default
-        this.pos_profile.payments.forEach((payment, index) => {
+        this.pos_profile?.payments.forEach((payment, index) => {
           if (payment.default) hasDefault = true;
           payments.push({
             amount: 0,
@@ -1579,16 +1501,16 @@ export default {
         const invoice_doc = await this.process_invoice();
 
         // Add default payment method if no payments exist
-        if (!invoice_doc.payments || invoice_doc.payments.length === 0) {
+        if (!invoice_doc?.payments || invoice_doc?.payments.length === 0) {
           console.log("Invoice(payment): adding default");
           try {
             const defaultPayment = await frappe.call({
               method:
-                "posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile",
+                "posawesome.posawesome.api.pos_profile?.get_default_payment_from_pos_profile",
               args: {
-                pos_profile: this.pos_profile.name,
+                pos_profile: this.pos_profile?.name,
                 company:
-                  this.pos_profile.company ||
+                  this.pos_profile?.company ||
                   frappe.defaults.get_user_default("Company"),
               },
             });
@@ -1597,7 +1519,7 @@ export default {
               invoice_doc.payments = [
                 {
                   mode_of_payment: defaultPayment.message.mode_of_payment,
-                  amount: flt(invoice_doc.grand_total),
+                  amount: flt(invoice_doc?.grand_total),
                   account: defaultPayment.message.account,
                   default: 1,
                 },
@@ -1633,8 +1555,8 @@ export default {
         this.posa_coupons = [];
         this._cachedCalculations.clear();
 
-        if (this.pos_profile.posa_clear_customer_after_payment) {
-          this.customer = this.pos_profile.customer;
+        if (this.pos_profile?.posa_clear_customer_after_payment) {
+          this.customer = this.pos_profile?.customer;
           evntBus.emit("set_customer", this.customer);
         }
 
@@ -1656,7 +1578,7 @@ export default {
     },
 
     open_returns() {
-      if (!this.pos_profile.posa_allow_return) {
+      if (!this.pos_profile?.posa_allow_return) {
         evntBus.emit("show_mesage", {
           text: "Returns are not enabled in POS profile",
           color: "error",
@@ -1682,7 +1604,7 @@ export default {
     },
 
     update_item_detail(item) {
-      if (!item.item_code || this.invoice_doc.is_return) {
+      if (!item.item_code || this.invoice_doc?.is_return) {
         return;
       }
 
@@ -1713,11 +1635,11 @@ export default {
     },
 
     get_price_list() {
-      let price_list = this.pos_profile.selling_price_list;
+      let price_list = this.pos_profile?.selling_price_list;
       if (this.customer_info && this.pos_profile) {
         const { customer_price_list, customer_group_price_list } =
           this.customer_info;
-        const pos_price_list = this.pos_profile.selling_price_list;
+        const pos_price_list = this.pos_profile?.selling_price_list;
         if (customer_price_list && customer_price_list != pos_price_list) {
           price_list = customer_price_list;
         } else if (
@@ -1742,10 +1664,10 @@ export default {
       if (item.max_discount && item.max_discount > 0) {
         maxDiscount = item.max_discount;
       } else if (
-        this.pos_profile.posa_item_max_discount_allowed &&
-        this.pos_profile.posa_item_max_discount_allowed > 0
+        this.pos_profile?.posa_item_max_discount_allowed &&
+        this.pos_profile?.posa_item_max_discount_allowed > 0
       ) {
-        maxDiscount = this.pos_profile.posa_item_max_discount_allowed;
+        maxDiscount = this.pos_profile?.posa_item_max_discount_allowed;
       }
 
       if (value < 0) {
@@ -1819,7 +1741,7 @@ export default {
 
     update_price_list() {
       let price_list = this.get_price_list();
-      if (price_list == this.pos_profile.selling_price_list) {
+      if (price_list == this.pos_profile?.selling_price_list) {
         price_list = null;
       }
       evntBus.emit("update_customer_price_list", price_list);
@@ -1834,7 +1756,7 @@ export default {
       }
       const value = flt(this.additional_discount_percentage) || 0;
       const maxDiscount =
-        this.pos_profile.posa_invoice_max_discount_allowed || 100;
+        this.pos_profile?.posa_invoice_max_discount_allowed || 100;
 
       if (value < 0) {
         this.additional_discount_percentage = 0;
@@ -2142,7 +2064,7 @@ export default {
       }
 
       // Check cache first (cache for 30 seconds)
-      const cacheKey = `${this.invoice_doc.name}_${this.items.length}`;
+      const cacheKey = `${this.invoice_doc?.name}_${this.items.length}`;
       const now = Date.now();
 
       if (
@@ -2166,7 +2088,7 @@ export default {
       frappe.call({
         method: "posawesome.posawesome.api.pos_offer.get_applicable_offers",
         args: {
-          invoice_name: this.invoice_doc.name,
+          invoice_name: this.invoice_doc?.name,
         },
         callback: (r) => {
           this._offersProcessing = false;
@@ -2284,9 +2206,9 @@ export default {
 
     load_print_page(invoice_name) {
       const print_format =
-        this.pos_profile.print_format_for_online ||
-        this.pos_profile.print_format;
-      const letter_head = this.pos_profile.letter_head || 0;
+        this.pos_profile?.print_format_for_online ||
+        this.pos_profile?.print_format;
+      const letter_head = this.pos_profile?.letter_head || 0;
       const url =
         frappe.urllib.get_base_url() +
         "/printview?doctype=Sales%20Invoice&name=" +
@@ -2349,15 +2271,15 @@ export default {
       console.log("Invoice(submit): starting process");
       this.process_invoice()
         .then((invoice_doc) => {
-          console.log("Invoice(submit): process completed", invoice_doc.name);
-          const hasChosen = (invoice_doc.payments || []).some(
+          console.log("Invoice(submit): process completed", invoice_doc?.name);
+          const hasChosen = (invoice_doc?.payments || []).some(
             (p) => this.flt(p.amount) > 0
           );
           console.log(
             "Invoice(submit): payment check",
             hasChosen,
             "payments",
-            invoice_doc.payments?.length || 0
+            invoice_doc?.payments?.length || 0
           );
 
           if (!hasChosen) {
@@ -2369,7 +2291,7 @@ export default {
             throw new Error("No payment chosen");
           }
 
-          console.log("Invoice(submit): calling API", invoice_doc.name);
+          console.log("Invoice(submit): calling API", invoice_doc?.name);
 
           // Submit and print the invoice
           frappe.call({
@@ -2507,7 +2429,7 @@ export default {
 
     evntBus.on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
-      this.customer = data.pos_profile.customer;
+      this.customer = data.pos_profile?.customer;
       this.pos_opening_shift = data.pos_opening_shift;
       this.stock_settings = data.stock_settings;
       this.float_precision =
@@ -2532,7 +2454,7 @@ export default {
     evntBus.on("load_invoice", (data) => {
       this.new_invoice(data);
 
-      if (this.invoice_doc.is_return) {
+      if (this.invoice_doc?.is_return) {
         this.discount_amount = -data.discount_amount;
         this.additional_discount_percentage =
           -data.additional_discount_percentage;
@@ -2698,7 +2620,7 @@ export default {
       },
     },
     discount_amount() {
-      if (this.invoice_doc && this.invoice_doc.name) {
+      if (this.invoice_doc && this.invoice_doc?.name) {
         this.debouncedItemOperation("discount-amount-change");
       }
     },
