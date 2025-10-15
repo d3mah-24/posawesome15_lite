@@ -351,46 +351,6 @@ def delete_invoice(invoice_name):
 
 
 @frappe.whitelist()
-def get_draft_invoices(pos_opening_shift):
-    """
-    GET - Get all draft invoices for a POS opening shift
-    """
-    try:
-        filters = {
-            "posa_pos_opening_shift": pos_opening_shift,
-            "docstatus": 0,
-            "is_pos": 1
-        }
-        
-        invoices = frappe.get_all(
-            "Sales Invoice",
-            filters=filters,
-            fields=[
-                "name", "customer", "grand_total", "outstanding_amount",
-                "creation", "modified"
-            ],
-            order_by="modified desc"
-        )
-        
-        data = []
-        for invoice in invoices:
-            data.append({
-                "name": invoice.name,
-                "customer": invoice.customer,
-                "grand_total": invoice.grand_total,
-                "outstanding_amount": invoice.outstanding_amount,
-                "creation": invoice.creation,
-                "modified": invoice.modified
-            })
-        
-        return data
-        
-    except Exception as e:
-        frappe.log_error(f"sales_invoice.py(get_draft_invoices): Error {str(e)}", "POS Submit")
-        return []
-
-
-@frappe.whitelist()
 def search_invoices_for_return(invoice_name, company):
     """
     Search invoices for return operations
@@ -548,28 +508,6 @@ def get_minimal_invoice_response(invoice_doc):
     return minimal_response
 
 
-@frappe.whitelist()
-def create_payment_request(doc):
-    """
-    Create payment request for invoice
-    """
-    try:
-        # Implementation for payment request creation
-        # This is a placeholder - you may need to implement the actual logic
-        return {
-            "success": True,
-            "message": "Payment request created",
-            "data": {}
-        }
-    except Exception as e:
-        frappe.log_error(f"sales_invoice.py(create_payment_request): Error {str(e)}", "POS Submit")
-        return {
-            "success": False,
-            "message": str(e),
-            "data": {}
-        }
-
-
 # ===== SALES INVOICE VALIDATION HOOKS =====
 
 def validate(doc, method):
@@ -577,42 +515,26 @@ def validate(doc, method):
     Validate Sales Invoice
     """
     try:
-        # Basic POS validation
-        if doc.is_pos:
-            validate_pos_invoice(doc)
+        if not doc.is_pos:
+            return
+            
+        # Basic validations
+        if not doc.pos_profile:
+            frappe.throw(_("POS Profile is required for POS Invoice"))
+        if not doc.customer:
+            frappe.throw(_("Customer is required for POS Invoice"))
+        if not doc.items:
+            frappe.throw(_("At least one item is required"))
+        if not doc.posa_pos_opening_shift:
+            frappe.throw(_("POS Opening Shift is required"))
+        if not doc.company:
+            frappe.throw(_("Company is required"))
+        if not doc.currency:
+            frappe.throw(_("Currency is required"))
             
     except Exception as e:
         frappe.log_error(f"sales_invoice.py(validate): Error {str(e)}", "POS Submit")
         raise
-
-
-def validate_pos_invoice(doc):
-    """
-    Validate POS Invoice specific rules
-    """
-    # Validate POS Profile
-    if not doc.pos_profile:
-        frappe.throw(_("POS Profile is required for POS Invoice"))
-    
-    # Validate Customer
-    if not doc.customer:
-        frappe.throw(_("Customer is required for POS Invoice"))
-    
-    # Validate Items
-    if not doc.items:
-        frappe.throw(_("At least one item is required"))
-    
-    # Validate Opening Shift
-    if not doc.posa_pos_opening_shift:
-        frappe.throw(_("POS Opening Shift is required"))
-    
-    # Validate Company
-    if not doc.company:
-        frappe.throw(_("Company is required"))
-    
-    # Validate Currency
-    if not doc.currency:
-        frappe.throw(_("Currency is required"))
 
 
 def before_submit(doc, method):
@@ -620,37 +542,41 @@ def before_submit(doc, method):
     Before Submit Sales Invoice
     """
     try:
-        if doc.is_pos:
-            validate_pos_before_submit(doc)
-            
+        if not doc.is_pos:
+            return
+
+        # Basic validations
+        if not doc.pos_profile:
+            frappe.throw(_("POS Profile is required for POS Invoice"))
+        if not doc.customer:
+            frappe.throw(_("Customer is required for POS Invoice"))
+        if not doc.items:
+            frappe.throw(_("At least one item is required"))
+        if not doc.posa_pos_opening_shift:
+            frappe.throw(_("POS Opening Shift is required"))
+        if not doc.company:
+            frappe.throw(_("Company is required"))
+        if not doc.currency:
+            frappe.throw(_("Currency is required"))
+        if not doc.payments:
+            frappe.throw(_("At least one payment is required"))
+
+        # Validate payment amounts against rounded total (not grand total)
+        total_payments = sum(flt(payment.amount) for payment in doc.payments)
+
+        # Use rounded_total if available, otherwise use grand_total
+        target_amount = flt(doc.rounded_total) if hasattr(doc, 'rounded_total') and doc.rounded_total else flt(doc.grand_total)
+        difference = abs(total_payments - target_amount)
+
+        # Allow small floating point differences (up to 0.05 for currency precision)
+        if difference > 0.05:
+            frappe.throw(_(
+                "Payment amount must equal rounded total. Total payments: {0}, Rounded total: {1}, Difference: {2}"
+            ).format(total_payments, target_amount, difference))
+
     except Exception as e:
         frappe.log_error(f"sales_invoice.py(before_submit): Error {str(e)}", "POS Submit")
         raise
-
-
-def validate_pos_before_submit(doc):
-    """
-    Validate POS Invoice before submit
-    """
-    # Additional validations before submitting POS invoice
-    if not doc.posa_pos_opening_shift:
-        frappe.throw(_("POS Opening Shift is required before submit"))
-    
-    # Validate payments
-    if not doc.payments:
-        frappe.throw(_("At least one payment is required"))
-    
-    # Validate payment amounts against rounded total (not grand total)
-    total_payments = sum(flt(payment.amount) for payment in doc.payments)
-    
-    # Use rounded_total if available, otherwise use grand_total
-    target_amount = flt(doc.rounded_total) if hasattr(doc, 'rounded_total') and doc.rounded_total else flt(doc.grand_total)
-    difference = abs(total_payments - target_amount)
-    
-    # Allow small floating point differences (up to 0.05 for currency precision)
-    if difference > 0.05:
-        frappe.throw(_("Payment amount must equal rounded total. Total payments: {0}, Rounded total: {1}, Difference: {2}").format(
-            total_payments, target_amount, difference))
 
 
 def before_cancel(doc, method):

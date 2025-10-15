@@ -929,36 +929,12 @@ export default {
       formData["customer_credit_dict"] = this.customer_credit_dict;
       formData["is_cashback"] = this.is_cashback;
 
-      frappe
-        .call({
-          method: "posawesome.posawesome.api.sales_invoice.create_payment_request",
-          args: {
-            doc: {
-              name: vm.invoice_doc.name,
-              customer: vm.invoice_doc.customer,
-              contact_mobile: vm.invoice_doc.contact_mobile,
-              contact_person: vm.invoice_doc.contact_person,
-              contact_email: vm.invoice_doc.contact_email,
-              grand_total: vm.invoice_doc.grand_total,
-              payments: vm.invoice_doc.payments,
-              is_return: vm.invoice_doc.is_return
-            },
-          },
-        })
-        .then(({ message }) => {
-          evntBus.emit("unfreeze");
-          evntBus.emit("show_mesage", {
-            text: message.message || "Payment request sent successfully",
-            color: "success",
-          });
-        })
-        .fail(() => {
-          evntBus.emit("unfreeze");
-          evntBus.emit("show_mesage", {
-            text: "Payment request failed",
-            color: "error",
-          });
-        });
+      // Payment request functionality removed
+      evntBus.emit("unfreeze");
+      evntBus.emit("show_mesage", {
+        text: "Payment request feature has been disabled",
+        color: "info",
+      });
     },
   },
 
