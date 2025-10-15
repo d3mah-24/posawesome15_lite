@@ -2673,6 +2673,7 @@ export default {
 
 .v-data-table {
   font-size: 0.7rem !important;
+  overflow: auto !important;
 }
 
 .v-data-table .v-data-table__wrapper table {
@@ -2710,8 +2711,7 @@ export default {
   flex: 1 1 auto !important;
   max-height: calc(100vh - 170px) !important;
   box-sizing: border-box !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+  overflow: auto !important;
   display: flex !important;
   flex-direction: column !important;
 }

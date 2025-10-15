@@ -85,35 +85,6 @@
         </div>
       </div>
     </div>
-    <!-- <v-navigation-drawer
-      v-model="drawer"
-      :mini-variant.sync="mini"
-      app
-      class="primary margen-top"
-      width="170"
-    >
-      <v-list>
-        <v-list-item class="px-2">
-          <v-avatar>
-            <v-img :src="company_img"></v-img>
-          </v-avatar>
-          <span class="ml-2">{{ company }}</span>
-          <v-btn icon @click.stop="mini = !mini">
-            <v-icon>mdi-chevron-left</v-icon>
-          </v-btn>
-        </v-list-item>
-        <v-list v-model="item">
-          <v-list-item
-            v-for="(listItem, index) in items"
-            :key="listItem.text"
-            @click="changePage(listItem.text)"
-          >
-            <v-icon class="mr-2">{{ listItem.icon }}</v-icon>
-            <span>{{ listItem.text == 'POS' ? 'Point of Sale' : listItem.text == 'Payments' ? 'Payments' : listItem.text }}</span>
-          </v-list-item>
-        </v-list>
-      </v-list>
-    </v-navigation-drawer> -->
     <v-snackbar v-model="snack" :timeout="5000" :color="snackColor" top right @click="snack = false">
       {{ snackText }}
     </v-snackbar>

@@ -112,14 +112,6 @@
 
 ---
 
-## 🛠️ Tech Stack
-
-**Backend:** Frappe v15, ERPNext v15, Python 3.10+, MariaDB, Redis  
-**Frontend:** Vue 3.4.21, Vuetify 3.6.9, mitt, lodash  
-**Barcode Scanner:** [onScan.js](https://github.com/axenox/onscan.js) - Hardware barcode scanner detection library
-
----
-
 ## 📋 Configuration Options
 
 ### POS Profile Settings

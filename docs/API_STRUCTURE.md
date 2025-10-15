@@ -179,31 +179,6 @@ UpdateCustomer.vue  1 API call
 
 ---
 
-## 🔗 API Endpoint Format
-
-All API endpoints follow Frappe's whitelist convention:
-
-```
-frappe.call({
-    method: "posawesome.posawesome.api.<module>.<function_name>",
-    args: { ... },
-    callback: function(r) { ... }
-});
-```
-
-**Example:**
-```javascript
-frappe.call({
-    method: "posawesome.posawesome.api.customer.get_customer_names",
-    args: { pos_profile: "Main POS" },
-    callback: function(r) {
-        console.log(r.message);
-    }
-});
-```
-
----
-
 ## 📝 API Categories
 
 ### Customer APIs (9 endpoints)

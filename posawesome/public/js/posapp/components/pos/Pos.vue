@@ -31,7 +31,7 @@
 </template>
 
 <script>
-// ===== SECTION 1: IMPORTS =====
+// ===== IMPORTS =====
 import { evntBus } from "../../bus";
 import ItemsSelector from "./ItemsSelector.vue";
 import Invoice from "./Invoice.vue";
@@ -43,20 +43,38 @@ import ClosingDialog from "./ClosingDialog.vue";
 import NewAddress from "./NewAddress.vue";
 import Returns from "./Returns.vue";
 
-// ===== SECTION 2: EXPORT DEFAULT =====
+// ===== API CONSTANTS =====
+const API_METHODS = {
+  GET_CURRENT_SHIFT: "posawesome.posawesome.api.pos_opening_shift.get_current_shift_name",
+  MAKE_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening",
+  SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
+  GET_OFFERS: "posawesome.posawesome.api.pos_offer.get_offers_for_profile",
+};
+
+// ===== EVENT BUS EVENTS =====
+const EVENTS = {
+  CLOSE_OPENING_DIALOG: "close_opening_dialog",
+  REGISTER_POS_DATA: "register_pos_data",
+  REGISTER_POS_PROFILE: "register_pos_profile",
+  SET_COMPANY: "set_company",
+  SET_POS_OPENING_SHIFT: "set_pos_opening_shift",
+  SET_OFFERS: "set_offers",
+  SET_POS_SETTINGS: "set_pos_settings",
+  SHOW_PAYMENT: "show_payment",
+  SHOW_OFFERS: "show_offers",
+  SHOW_COUPONS: "show_coupons",
+  SHOW_MESSAGE: "show_mesage",
+  OPEN_CLOSING_DIALOG: "open_closing_dialog",
+  OPEN_CLOSING_DIALOG_EMIT: "open_ClosingDialog",
+  SUBMIT_CLOSING_POS: "submit_closing_pos",
+  REQUEST_INVOICE_PRINT: "request_invoice_print",
+  LOAD_POS_PROFILE: "LoadPosProfile",
+};
+
+// ===== COMPONENT =====
 export default {
-  // ===== SECTION 3: DATA =====
-  data: function () {
-    return {
-      dialog: false,
-      pos_profile: "",
-      pos_opening_shift: "",
-      payment: false,
-      offers: false,
-      coupons: false,
-    };
-  },
-  // ===== SECTION 4: COMPONENTS =====
+  name: "PosMain",
+
   components: {
     ItemsSelector,
     Invoice,
@@ -68,196 +86,305 @@ export default {
     PosCoupons,
     NewAddress,
   },
-  // ===== SECTION 5: METHODS =====
+
+  data() {
+    return {
+      dialog: false,
+      pos_profile: null,
+      pos_opening_shift: null,
+      payment: false,
+      offers: false,
+      coupons: false,
+    };
+  },
+
   methods: {
-    check_opening_entry() {
-      return frappe
-        .call(
-          "posawesome.posawesome.api.pos_opening_shift.get_current_shift_name"
-        )
-        .then((r) => {
-          if (r.message.success && r.message.data) {
-            // وردية مفتوحة موجودة - احصل على بيانات البروفايل الكاملة
-            this.get_full_profile_data(r.message.data.pos_profile);
-          } else {
-            evntBus.emit("show_mesage", {
-              text:
-                r.message.message ||
-                "No opening shift found, a new opening entry will be created.",
-              color: "info",
-            });
-            this.create_opening_voucher();
-          }
-        });
+    // ===== INITIALIZATION METHODS =====
+    
+    /**
+     * Check if there's an active opening shift
+     * If yes, load profile data; if no, create new opening voucher
+     */
+    async check_opening_entry() {
+      try {
+        const response = await frappe.call(API_METHODS.GET_CURRENT_SHIFT);
+        
+        if (response.message.success && response.message.data) {
+          // Active shift exists - load full profile data
+          await this.get_full_profile_data(response.message.data.pos_profile);
+        } else {
+          // No active shift - show message and create new opening voucher
+          this.show_message(
+            response.message.message || "No opening shift found, a new opening entry will be created.",
+            "info"
+          );
+          this.create_opening_voucher();
+        }
+      } catch (error) {
+        console.error("Pos.vue(check_opening_entry): Error", error);
+        this.show_message("Failed to check opening entry", "error");
+      }
     },
 
-    get_full_profile_data(pos_profile_name) {
-      // احصل على بيانات البروفايل الكاملة
-      frappe
-        .call({
+    /**
+     * Load complete POS profile data and initialize the system
+     * @param {string} pos_profile_name - Name of the POS profile
+     */
+    async get_full_profile_data(pos_profile_name) {
+      try {
+        // Fetch POS profile
+        const profileResponse = await frappe.call({
           method: "frappe.client.get",
           args: {
             doctype: "POS Profile",
             name: pos_profile_name,
           },
-        })
-        .then((profile_r) => {
-          if (profile_r.message) {
-            const pos_profile = profile_r.message;
-
-            // احصل على بيانات الوردية المفتوحة
-            frappe
-              .call({
-                method:
-                  "posawesome.posawesome.api.pos_opening_shift.get_current_shift_name",
-              })
-              .then((shift_r) => {
-                const shift_data = {
-                  pos_profile: pos_profile,
-                  pos_opening_shift: shift_r.message.success
-                    ? shift_r.message.data
-                    : null,
-                  company: { name: pos_profile.company },
-                  stock_settings: { allow_negative_stock: 0 },
-                };
-
-                console.log(
-                  "Pos.vue(check_opening_entry): Profile loaded",
-                  pos_profile.name
-                );
-                this.pos_profile = pos_profile;
-                this.pos_opening_shift = shift_r.message.success
-                  ? shift_r.message.data
-                  : null;
-                this.get_offers(pos_profile.name);
-                evntBus.emit("register_pos_profile", shift_data);
-                evntBus.emit("set_company", { name: pos_profile.company });
-                // Also emit shift data separately to ensure it reaches Navbar
-                evntBus.emit(
-                  "set_pos_opening_shift",
-                  shift_r.message.success ? shift_r.message.data : null
-                );
-              });
-          }
         });
+
+        if (!profileResponse.message) {
+          throw new Error("Failed to load POS profile");
+        }
+
+        const pos_profile = profileResponse.message;
+
+        // Fetch current shift data
+        const shiftResponse = await frappe.call(API_METHODS.GET_CURRENT_SHIFT);
+        
+        const pos_opening_shift = shiftResponse.message.success 
+          ? shiftResponse.message.data 
+          : null;
+
+        // Update component state
+        this.pos_profile = pos_profile;
+        this.pos_opening_shift = pos_opening_shift;
+
+        // Prepare data for event bus
+        const shift_data = {
+          pos_profile: pos_profile,
+          pos_opening_shift: pos_opening_shift,
+          company: { name: pos_profile.company },
+          stock_settings: { allow_negative_stock: 0 },
+        };
+
+        // Load offers for this profile
+        await this.get_offers(pos_profile.name);
+
+        // Emit events to notify other components
+        evntBus.emit(EVENTS.REGISTER_POS_PROFILE, shift_data);
+        evntBus.emit(EVENTS.SET_COMPANY, { name: pos_profile.company });
+        evntBus.emit(EVENTS.SET_POS_OPENING_SHIFT, pos_opening_shift);
+
+        console.log("Pos.vue(get_full_profile_data): Profile loaded", pos_profile.name);
+      } catch (error) {
+        console.error("Pos.vue(get_full_profile_data): Error", error);
+        this.show_message("Failed to load profile data", "error");
+      }
     },
+
+    /**
+     * Show opening dialog to create new shift
+     */
     create_opening_voucher() {
       this.dialog = true;
     },
-    get_closing_data() {
-      return frappe
-        .call(
-          "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening",
-          {
-            opening_shift: this.pos_opening_shift,
-          }
-        )
-        .then((r) => {
-          if (r.message) {
-            evntBus.emit("open_ClosingDialog", r.message);
-          } else {
-            console.log("Pos.vue(get_closing_data): Failed to load");
-            evntBus.emit("show_mesage", {
-              text: "Failed to load closing data",
-              color: "error",
-            });
-          }
-        });
+
+    /**
+     * Load POS settings from database
+     */
+    async get_pos_setting() {
+      try {
+        const doc = await frappe.db.get_doc("POS Settings", undefined);
+        evntBus.emit(EVENTS.SET_POS_SETTINGS, doc);
+      } catch (error) {
+        console.error("Pos.vue(get_pos_setting): Error", error);
+      }
     },
-    submit_closing_pos(data) {
-      frappe
-        .call(
-          "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
-          {
-            closing_shift: data,
-          }
-        )
-        .then((r) => {
-          if (r.message) {
-            console.log("Pos.vue(submit_closing_pos): Success");
-            evntBus.emit("show_mesage", {
-              text: "Cashier shift closed successfully",
-              color: "success",
-            });
-            this.check_opening_entry();
-          } else {
-            evntBus.emit("show_mesage", {
-              text: "Failed to close cashier shift",
-              color: "error",
-            });
-          }
-        });
-    },
-    get_offers(pos_profile) {
-      return frappe
-        .call("posawesome.posawesome.api.pos_offer.get_offers_for_profile", {
+
+    // ===== OFFERS METHODS =====
+
+    /**
+     * Fetch available offers for the current POS profile
+     * @param {string} pos_profile - POS profile name
+     */
+    async get_offers(pos_profile) {
+      try {
+        const response = await frappe.call(API_METHODS.GET_OFFERS, {
           profile: pos_profile,
-        })
-        .then((r) => {
-          if (r.message) {
-            evntBus.emit("set_offers", r.message);
-          } else {
-            evntBus.emit("show_mesage", {
-              text: "Failed to load offers",
-              color: "error",
-            });
-          }
         });
+
+        if (response.message) {
+          evntBus.emit(EVENTS.SET_OFFERS, response.message);
+        } else {
+          this.show_message("Failed to load offers", "error");
+        }
+      } catch (error) {
+        console.error("Pos.vue(get_offers): Error", error);
+        this.show_message("Failed to load offers", "error");
+      }
     },
-    get_pos_setting() {
-      frappe.db.get_doc("POS Settings", undefined).then((doc) => {
-        evntBus.emit("set_pos_settings", doc);
-      });
+
+    // ===== CLOSING SHIFT METHODS =====
+
+    /**
+     * Fetch closing shift data from current opening shift
+     */
+    async get_closing_data() {
+      try {
+        const response = await frappe.call(API_METHODS.MAKE_CLOSING_SHIFT, {
+          opening_shift: this.pos_opening_shift,
+        });
+
+        if (response.message) {
+          evntBus.emit(EVENTS.OPEN_CLOSING_DIALOG_EMIT, response.message);
+        } else {
+          console.log("Pos.vue(get_closing_data): Failed to load");
+          this.show_message("Failed to load closing data", "error");
+        }
+      } catch (error) {
+        console.error("Pos.vue(get_closing_data): Error", error);
+        this.show_message("Failed to load closing data", "error");
+      }
     },
+
+    /**
+     * Submit closing shift to backend
+     * @param {Object} data - Closing shift data
+     */
+    async submit_closing_pos(data) {
+      try {
+        const response = await frappe.call(API_METHODS.SUBMIT_CLOSING_SHIFT, {
+          closing_shift: data,
+        });
+
+        if (response.message) {
+          console.log("Pos.vue(submit_closing_pos): Success");
+          this.show_message("Cashier shift closed successfully", "success");
+          await this.check_opening_entry();
+        } else {
+          this.show_message("Failed to close cashier shift", "error");
+        }
+      } catch (error) {
+        console.error("Pos.vue(submit_closing_pos): Error", error);
+        this.show_message("Failed to close cashier shift", "error");
+      }
+    },
+
+    // ===== PANEL SWITCHING METHODS =====
+
+    /**
+     * Switch between different panels (items, payment, offers, coupons)
+     * @param {string} panelType - Type of panel to show
+     * @param {boolean} show - Whether to show or hide the panel
+     */
+    switchPanel(panelType, show) {
+      const isActive = show === "true";
+      
+      this.payment = panelType === "payment" && isActive;
+      this.offers = panelType === "offers" && isActive;
+      this.coupons = panelType === "coupons" && isActive;
+    },
+
+    // ===== UTILITY METHODS =====
+
+    /**
+     * Show message to user via event bus
+     * @param {string} text - Message text
+     * @param {string} color - Message color (success, error, info, warning)
+     */
+    show_message(text, color) {
+      evntBus.emit(EVENTS.SHOW_MESSAGE, { text, color });
+    },
+
+    /**
+     * Handle print request from Payments component
+     */
     onPrintRequest() {
-      evntBus.emit("request_invoice_print");
+      evntBus.emit(EVENTS.REQUEST_INVOICE_PRINT);
+    },
+
+    // ===== EVENT BUS HANDLERS =====
+
+    /**
+     * Register all event bus listeners
+     */
+    registerEventListeners() {
+      // Opening dialog events
+      evntBus.on(EVENTS.CLOSE_OPENING_DIALOG, this.handleCloseOpeningDialog);
+      evntBus.on(EVENTS.REGISTER_POS_DATA, this.handleRegisterPosData);
+
+      // Panel switching events
+      evntBus.on(EVENTS.SHOW_PAYMENT, this.handleShowPayment);
+      evntBus.on(EVENTS.SHOW_OFFERS, this.handleShowOffers);
+      evntBus.on(EVENTS.SHOW_COUPONS, this.handleShowCoupons);
+
+      // Closing shift events
+      evntBus.on(EVENTS.OPEN_CLOSING_DIALOG, this.handleOpenClosingDialog);
+      evntBus.on(EVENTS.SUBMIT_CLOSING_POS, this.handleSubmitClosingPos);
+    },
+
+    /**
+     * Unregister all event bus listeners
+     */
+    unregisterEventListeners() {
+      evntBus.$off(EVENTS.CLOSE_OPENING_DIALOG, this.handleCloseOpeningDialog);
+      evntBus.$off(EVENTS.REGISTER_POS_DATA, this.handleRegisterPosData);
+      evntBus.$off(EVENTS.SHOW_PAYMENT, this.handleShowPayment);
+      evntBus.$off(EVENTS.SHOW_OFFERS, this.handleShowOffers);
+      evntBus.$off(EVENTS.SHOW_COUPONS, this.handleShowCoupons);
+      evntBus.$off(EVENTS.OPEN_CLOSING_DIALOG, this.handleOpenClosingDialog);
+      evntBus.$off(EVENTS.SUBMIT_CLOSING_POS, this.handleSubmitClosingPos);
+      evntBus.$off(EVENTS.LOAD_POS_PROFILE);
+    },
+
+    // Event handler methods
+    handleCloseOpeningDialog() {
+      this.dialog = false;
+    },
+
+    handleRegisterPosData(data) {
+      this.pos_profile = data.pos_profile;
+      this.pos_opening_shift = data.pos_opening_shift;
+      this.get_offers(this.pos_profile.name);
+      evntBus.emit(EVENTS.REGISTER_POS_PROFILE, data);
+    },
+
+    handleShowPayment(data) {
+      this.switchPanel("payment", data);
+    },
+
+    handleShowOffers(data) {
+      this.switchPanel("offers", data);
+    },
+
+    handleShowCoupons(data) {
+      this.switchPanel("coupons", data);
+    },
+
+    handleOpenClosingDialog() {
+      this.get_closing_data();
+    },
+
+    handleSubmitClosingPos(data) {
+      this.submit_closing_pos(data);
     },
   },
-  // ===== SECTION 6: LIFECYCLE HOOKS =====
-  mounted: function () {
-    this.$nextTick(function () {
+
+  // ===== LIFECYCLE HOOKS =====
+
+  mounted() {
+    this.$nextTick(() => {
+      // Initialize POS system
       this.check_opening_entry();
       this.get_pos_setting();
-      evntBus.on("close_opening_dialog", () => {
-        this.dialog = false;
-      });
-      evntBus.on("register_pos_data", (data) => {
-        this.pos_profile = data.pos_profile;
-        this.get_offers(this.pos_profile.name);
-        this.pos_opening_shift = data.pos_opening_shift;
-        evntBus.emit("register_pos_profile", data);
-      });
-      evntBus.on("show_payment", (data) => {
-        this.payment = true ? data === "true" : false;
-        this.offers = false ? data === "true" : false;
-        this.coupons = false ? data === "true" : false;
-      });
-      evntBus.on("show_offers", (data) => {
-        this.offers = true ? data === "true" : false;
-        this.payment = false ? data === "true" : false;
-        this.coupons = false ? data === "true" : false;
-      });
-      evntBus.on("show_coupons", (data) => {
-        this.coupons = true ? data === "true" : false;
-        this.offers = false ? data === "true" : false;
-        this.payment = false ? data === "true" : false;
-      });
-      evntBus.on("open_closing_dialog", () => {
-        this.get_closing_data();
-      });
-      evntBus.on("submit_closing_pos", (data) => {
-        this.submit_closing_pos(data);
-      });
+
+      // Register event listeners
+      this.registerEventListeners();
     });
   },
+
   beforeDestroy() {
-    evntBus.$off("close_opening_dialog");
-    evntBus.$off("register_pos_data");
-    evntBus.$off("LoadPosProfile");
-    evntBus.$off("show_offers");
-    evntBus.$off("show_coupons");
-    evntBus.$off("open_closing_dialog");
-    evntBus.$off("submit_closing_pos");
+    // Clean up event listeners
+    this.unregisterEventListeners();
   },
 };
 </script>

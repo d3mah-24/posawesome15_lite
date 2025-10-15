@@ -13,19 +13,10 @@
 
 ## 🎯 Goal
 
-**Smoother Web POS** - Fast, responsive interface that collects all operations in a sequence, then sends them to the backend in optimized batches. This architecture ensures:
-- ⚡ Instant UI response (no waiting for backend on every action)
-- 📦 Operations queued and sent as batch transactions
-- 🚀 Minimal network calls for maximum performance
-- 💪 Smooth user experience even with slow connections
-
----
-
-## 📋 Overview
-
-Point of Sale application for ERPNext v15 built with Vue 3 and Vuetify 3.
-
-**Repository:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
+**Lite Web POS**
+- Fast, responsive interface (+ 30 BarcodeScan/s)
+- Server Side Batch Operations (Maximum durability & security)
+- Based On official Sales Invoice Doctype (No Calculations in Frontend)
 
 ---
 
@@ -41,76 +32,49 @@ Point of Sale application for ERPNext v15 built with Vue 3 and Vuetify 3.
 
 ---
 
-## ✨ Features
+## 📄 Features
 
-- **💰 Sales & Invoices**
-- **🎯 Offers & Coupons**
-- **👥 Customer Management**
-- **📦 Inventory**
-- **🔐 Shift Management**
-- **💳 Payment Features**
-- **🎨 Modern UI**
-
-### Key Highlights
-- Multiple payment modes with split payments
-- M-PESA/Phone payment integration
-- Auto-apply offers and coupons
-- Multi-barcode support (standard/weight/private)
-- Loyalty points and customer credit
-- Real-time inventory tracking
-- Draft and return invoices
-- Shift-based reconciliation
-
-📄 **[View Complete Features List →](./FEATURES.md)**
+📄 **[View Complete Features List →](./docs/FEATURES.md)**
 
 ---
 
-## � API Structure
+## 🔌 API Structure
 
-Frontend (Vue 3) ↔ Backend (Python) API mapping  
-**37 endpoints** across **9 API files**
-
-**Components:** Customer • Invoice • Items  
-Payments • Returns • Shifts
-
-🔗 **[View Complete API Documentation →](./API_STRUCTURE.md)**
+🔗 **[View Complete API Documentation →](./docs/API_STRUCTURE.md)**
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Backend
-- Frappe v15
-- ERPNext v15
-- Python 3.10+
-- MariaDB
-- Redis
-
-### Frontend
-- Vue 3.4.21
-- Vuetify 3.6.9
-- mitt
-- lodash
-
-### Tools
-- **Barcode Scanner:** [onScan.js](https://github.com/axenox/onscan.js) - Hardware barcode scanner detection
+🔧 **[View Complete Tech Stack Info →](./docs/TECH_STACK.md)**
 
 ---
 
-##  Documentation
+## 💻 Development Commands
 
-- **[FEATURES.md](./FEATURES.md)** - Complete feature list with details
-- **[API_STRUCTURE.md](./API_STRUCTURE.md)** - Frontend ↔ Backend API mapping
-- **[Task Sheet](https://docs.google.com/spreadsheets/d/1EX9QDOkw0UD-qPh3Ynpcw37q3b_bFtQ4)** - Project tasks & progress
+⚙️ **[View Common Development Commands →](./docs/common_dev_cmd.md)**
 
 ---
 
-## 🤝 Collaboration & Development
+## 🔍 Technical Analysis
 
-**Open for Development Partnership**
+### Frontend Queue System
+📊 **[Frontend Queue Analysis →](./docs/sales_invoice_sequncer_frontend.md)**
 
-- 💵 **Daily Rate:** $35 USD per day
-- 📊 **Payment:** Paid based on progress
+### Backend Queue System  
+📊 **[Backend Queue Analysis →](./docs/sales_invoice_sequncer_backend.md)**
+
+---
+
+## 📋 Project Remaining Tasks
+
+📈 **[Task Sheet →](https://docs.google.com/spreadsheets/d/1EX9QDOkw0UD-qPh3Ynpcw37q3b_bFtQ4)** - Project tasks & progress
+
+---
+
+## 💰 Collaboration Payments
+
+- 💵 **Daily Payment:** $35 USD Based On Progress
 - 🌐 **Payment Methods:**
   - Fiverr
   - Upwork
@@ -132,7 +96,7 @@ Payments • Returns • Shifts
 ## 👨‍💻 Contact
 
 <div align="center">
-    <img src="./imgs/ERPNext-support.png" height="80" alt="Future Support">
+    <img src="./imgs/ERPNext-support.png" height="120" alt="Future Support" style="border-radius: 50%;">
 </div>
 
 **Developer:** abdopcnet  

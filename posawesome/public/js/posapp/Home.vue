@@ -1,5 +1,5 @@
 <template>
-  <v-app class="">
+  <v-app>
     <v-main>
       <Navbar @changePage="setPage" />
       <keep-alive>
@@ -27,20 +27,6 @@ export default {
     setPage(page) {
       this.page = page;
     },
-    remove_frappe_nav() {
-      this.$nextTick(function () {
-        // Your existing logic here
-      });
-    },
-  },
-  mounted() {
-    this.remove_frappe_nav();
-  },
-  updated() {},
-  created: function () {
-    setTimeout(() => {
-      this.remove_frappe_nav();
-    }, 1000);
   },
 };
 </script>
@@ -52,37 +38,7 @@ export default {
   width: 100%;
   min-height: calc(100vh - 60px);
   padding: 1rem 0;
-  /* overflow-y: auto; */
 }
-
-/* Custom scrollbar styling for main container */
-/* .container1::-webkit-scrollbar {
-  width: 10px;
-} */
-
-/* .container1::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 5px;
-} */
-
-/* .container1::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 5px;
-} */
-
-/* .container1::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-} */
-
-/* Fallback for Firefox */
-/* .container1 {
-  scrollbar-width: thin;
-  scrollbar-color: #c1c1c1 #f1f1f1;
-} */
-
-/* Here first i take the full screen width then minus 2rem from left and right both side
- and set the max-width to 1024px so that it doesn't exceed on larger screens
-*/
 
 /* For very small screens, remove margins and use full width */
 @media (max-width: 1024px) {
