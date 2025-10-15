@@ -22,6 +22,11 @@
           :items-per-page="-1"
           density="compact"
         >
+          <template v-slot:item.item_name="{ item }">
+            <div style="width: 120px;">
+              <p>{{ item.item_name }}</p>
+            </div>
+          </template>
           <template v-slot:item.qty="{ item }">
             <div class="compact-qty-controls">
               <button
