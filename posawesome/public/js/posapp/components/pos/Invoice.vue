@@ -282,103 +282,234 @@
 </template>
 
 <script>
-// ===== SECTION 1: IMPORTS =====
+// ===== IMPORTS =====
 import { evntBus } from "../../bus";
 import format from "../../format";
 import Customer from "./Customer.vue";
 
-// ===== SECTION 2: EXPORT DEFAULT =====
+// ===== CONSTANTS =====
+const API_METHODS = {
+  UPDATE_INVOICE: "posawesome.posawesome.api.sales_invoice.update_invoice",
+  DELETE_INVOICE: "posawesome.posawesome.api.sales_invoice.delete_invoice",
+  GET_APPLICABLE_OFFERS: "posawesome.posawesome.api.pos_offer.get_applicable_offers",
+  GET_CUSTOMER_INFO: "posawesome.posawesome.api.customer.get_customer_info",
+  GET_CUSTOMER_ADDRESSES: "posawesome.posawesome.api.customer.get_customer_addresses",
+  GET_AVAILABLE_CREDIT: "posawesome.posawesome.api.customer.get_available_credit",
+  GET_DEFAULT_PAYMENT: "posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile",
+  PROCESS_BATCH_SELECTION: "posawesome.posawesome.api.batch.process_batch_selection",
+};
+
+const EVENT_NAMES = {
+  // Invoice Events
+  REGISTER_POS_PROFILE: "register_pos_profile",
+  ADD_ITEM: "add_item",
+  UPDATE_CUSTOMER: "update_customer",
+  FETCH_CUSTOMER_DETAILS: "fetch_customer_details",
+  NEW_INVOICE: "new_invoice",
+  LOAD_INVOICE: "load_invoice",
+  LOAD_RETURN_INVOICE: "load_return_invoice",
+  
+  // Item Events
+  ITEM_ADDED: "item_added",
+  ITEM_REMOVED: "item_removed",
+  ITEM_UPDATED: "item_updated",
+  
+  // Offers & Coupons
+  SET_OFFERS: "set_offers",
+  UPDATE_POS_OFFERS: "update_pos_offers",
+  UPDATE_INVOICE_OFFERS: "update_invoice_offers",
+  UPDATE_INVOICE_COUPONS: "update_invoice_coupons",
+  SET_ALL_ITEMS: "set_all_items",
+  SET_POS_COUPONS: "set_pos_coupons",
+  
+  // Payment Events
+  SHOW_PAYMENT: "show_payment",
+  SEND_INVOICE_DOC_PAYMENT: "send_invoice_doc_payment",
+  PAYMENTS_UPDATED: "payments_updated",
+  REQUEST_INVOICE_PRINT: "request_invoice_print",
+  INVOICE_SUBMITTED: "invoice_submitted",
+  
+  // UI Events
+  SHOW_MESSAGE: "show_mesage",
+  SHOW_LOADING: "show_loading",
+  HIDE_LOADING: "hide_loading",
+  
+  // Customer Events
+  SET_CUSTOMER: "set_customer",
+  SET_CUSTOMER_READONLY: "set_customer_readonly",
+  UPDATE_CUSTOMER_PRICE_LIST: "update_customer_price_list",
+  SET_CUSTOMER_INFO_TO_EDIT: "set_customer_info_to_edit",
+  OPEN_EDIT_CUSTOMER: "open_edit_customer",
+  OPEN_NEW_ADDRESS: "open_new_address",
+  ADD_THE_NEW_ADDRESS: "add_the_new_address",
+  
+  // Opening Shift Events
+  OPEN_RETURNS: "open_returns",
+  TOGGLE_QUICK_RETURN: "toggle_quick_return",
+  SET_LAST_INVOICE: "set_last_invoice",
+  INVOICE_SESSION_RESET: "invoice_session_reset",
+  SET_COMPANY: "set_company",
+  FREEZE: "freeze",
+  UNFREEZE: "unfreeze",
+  UPDATE_DELIVERY_DATE: "update_delivery_date",
+  UPDATE_DUE_DATE: "update_due_date",
+};
+
+const DEBOUNCE_DELAYS = {
+  ITEM_OPERATION: 200,
+  OFFERS: 200,
+  AUTO_UPDATE: 200,
+};
+
+const CACHE_DURATION = {
+  OFFERS: 30000, // 30 seconds
+};
+
+// ===== COMPONENT =====
 export default {
+  name: "Invoice",
+  
   mixins: [format],
-  components: { Customer },
-  props: ["is_payment"],
-  // ===== SECTION 3: DATA =====
+  
+  components: { 
+    Customer 
+  },
+  
+  props: {
+    is_payment: {
+      type: Boolean,
+      default: false,
+    },
+  },
+
+  // ===== DATA =====
   data() {
     return {
-      pos_profile: "",
-      pos_opening_shift: "",
-      stock_settings: "",
-      invoice_doc: "",
-      return_doc: "",
+      // POS Configuration
+      pos_profile: null,
+      pos_opening_shift: null,
+      stock_settings: null,
+      
+      // Invoice Documents
+      invoice_doc: null,
+      return_doc: null,
+      
+      // Customer Data
       customer: "",
       customer_info: {},
+      
+      // Pricing & Discounts
       discount_amount: 0,
       additional_discount_percentage: 0,
       total_tax: 0,
+      
+      // Items Management
       items: [],
+      allItems: [],
+      itemsPerPage: 1000,
+      
+      // Offers & Promotions
       posOffers: [],
       posa_offers: [],
       posa_coupons: [],
-      allItems: [],
       discount_percentage_offer_name: null,
-      itemsPerPage: 1000,
+      
+      // Precision Settings
       float_precision: 2,
       currency_precision: 2,
+      
+      // Date & Return Management
       invoice_posting_date: false,
       posting_date: frappe.datetime.nowdate(),
       quick_return_value: false,
+      
+      // Auto-save State Management
       _autoSaveProcessing: false,
       _pendingAutoSaveDoc: null,
       _pendingAutoSaveReason: "auto",
       _autoSaveWorkerTimer: null,
       _autoUpdateTimer: null,
-
-      // Offers optimization variables
+      
+      // Offers Optimization
       _offersDebounceTimer: null,
       _offersCache: null,
       _offersProcessing: false,
-
-      // Item operations debounce
+      
+      // Item Operations Debouncing
       _itemOperationTimer: null,
       _updatingFromAPI: false,
       _itemOperationsQueue: [],
       _processingOperations: false,
+      
+      // Caching
+      _cachedCalculations: new Map(),
+      _lastCalculationTime: 0,
+      _calculationDebounceTimer: null,
+      _couponCache: null,
+      
+      // Table Headers Configuration
       items_headers: [
         {
           title: "I-Name",
           align: "start",
           sortable: true,
           key: "item_name",
-          style: "min-width: 200px; max-width: 300px; white-space: normal;",
-          width: "25%"
+          width: "25%",
         },
-        { title: "Qty", key: "qty", align: "center", width: "10%" },
-        { title: "Uom", key: "uom", align: "center", width: "10%" },
+        { 
+          title: "Qty", 
+          key: "qty", 
+          align: "center", 
+          width: "8%" 
+        },
+        { 
+          title: "Uom", 
+          key: "uom", 
+          align: "center", 
+          width: "8%" 
+        },
         {
           title: "Price",
           key: "price_list_rate",
           align: "center",
-          width: "10%"
+          width: "10%",
         },
-        { title: "D-Price", key: "rate", align: "center", width: "10%" },
+        { 
+          title: "D-Price", 
+          key: "rate", 
+          align: "center", 
+          width: "10%" 
+        },
         {
           title: "Dis %",
           key: "discount_percentage",
           align: "center",
-          width: "10%"
+          width: "8%",
         },
         {
           title: "Dis Amount",
           key: "discount_amount",
           align: "center",
-          width: "10%"
+          width: "10%",
         },
-        { title: "Total", key: "amount", align: "center", width: "10%" },
+        { 
+          title: "Total", 
+          key: "amount", 
+          align: "center", 
+          width: "11%" 
+        },
         {
           title: "Delete",
           key: "actions",
           align: "end",
           sortable: false,
-          width: "5%"
+          width: "5%",
         },
       ],
-      _cachedCalculations: new Map(),
-      _lastCalculationTime: 0,
-      _calculationDebounceTimer: null,
     };
   },
 
-  // ===== SECTION 4: COMPUTED =====
+  // ===== COMPUTED =====
   computed: {
     dynamicHeaders() {
       let headers = [...this.items_headers];
@@ -490,8 +621,64 @@ export default {
     },
   },
 
-  // ===== SECTION 5: METHODS =====
+  // ===== METHODS =====
+  /**
+   * METHODS ORGANIZATION:
+   * 
+   * 1. ITEM QUANTITY MANAGEMENT
+   *    - onQtyChange, onQtyInput, refreshTotals
+   *    - increaseQuantity, decreaseQuantity
+   *    - getDiscountAmount
+   * 
+   * 2. RETURN & VALIDATION
+   *    - quick_return, remove_item, validate
+   *    - open_returns
+   * 
+   * 3. ITEM MANAGEMENT
+   *    - add_item, get_new_item, generateRowId
+   *    - update_items_details, update_item_detail
+   * 
+   * 4. INVOICE AUTO-SAVE & UPDATE
+   *    - auto_update_invoice, queue_auto_save
+   *    - reload_invoice, debounced_auto_update
+   *    - mergeItemsFromAPI
+   * 
+   * 5. INVOICE OPERATIONS
+   *    - create_draft_invoice, get_invoice_doc
+   *    - update_invoice, process_invoice
+   *    - cancel_invoice, delete_draft_invoice
+   *    - new_invoice, reset_invoice_session
+   * 
+   * 6. PAYMENT & SUBMISSION
+   *    - show_payment, printInvoice
+   *    - get_payments, load_print_page
+   * 
+   * 7. PRICING & DISCOUNTS
+   *    - setDiscountPercentage, setItemRate
+   *    - update_discount_umount
+   *    - fetch_customer_details, get_price_list
+   * 
+   * 8. OFFERS & PROMOTIONS
+   *    - handelOffers, updatePosOffers, updateInvoiceOffers
+   *    - applyNewOffer, removeApplyOffer
+   *    - checkOfferIsAppley, checkOfferCoupon
+   * 
+   * 9. BATCH & SERIAL MANAGEMENT
+   *    - set_serial_no, set_batch_qty
+   * 
+   * 10. UTILITY & HELPERS
+   *     - makeid, shortcut methods
+   *     - debouncedItemOperation, processItemOperations
+   */
   methods: {
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ITEM QUANTITY MANAGEMENT
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Handle quantity change event
+     * Validates and updates item quantity, triggers auto-save
+     */
     onQtyChange(item) {
       try {
         const newQty = Number(item.qty) || 0;
@@ -506,16 +693,30 @@ export default {
         });
       }
     },
+    
+    /**
+     * Handle real-time quantity input changes
+     * Updates display without triggering calculations
+     */
     onQtyInput(item) {
       item.qty = Number(item.qty) || 0;
       // Just update the display, no need to recalculate discount
       this.refreshTotals();
     },
+    
+    /**
+     * Clear cached calculations and force UI update
+     * Used when item data changes to recalculate totals
+     */
     refreshTotals() {
       this._cachedCalculations.clear();
       this.$forceUpdate();
     },
 
+    /**
+     * Increment item quantity by 1
+     * Emits item_updated event for reactive updates
+     */
     increaseQuantity(item) {
       try {
         const currentQty = Number(item.qty) || 0;
@@ -536,6 +737,10 @@ export default {
       }
     },
 
+    /**
+     * Decrement item quantity by 1
+     * Removes item if quantity reaches 0
+     */
     decreaseQuantity(item) {
       try {
         const currentQty = Number(item.qty) || 0;
@@ -583,6 +788,14 @@ export default {
       return ""; // Return empty string so it doesn't show in UI
     },
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // RETURN & VALIDATION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Handle quick return functionality
+     * Toggles quick return mode if allowed in POS profile
+     */
     quick_return() {
       if (!this.pos_profile.posa_allow_quick_return) {
         evntBus.emit("show_mesage", {
@@ -612,6 +825,11 @@ export default {
       this.quick_return_value = !this.quick_return_value;
       evntBus.emit("toggle_quick_return", this.quick_return_value);
     },
+    
+    /**
+     * Remove item from invoice
+     * Deletes draft invoice if last item is removed
+     */
     remove_item(item) {
       const index = this.items.findIndex(
         (el) => el.posa_row_id == item.posa_row_id
@@ -655,6 +873,14 @@ export default {
       }
     },
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ITEM MANAGEMENT
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Add item to invoice
+     * Merges with existing item if same code and UOM, otherwise creates new
+     */
     async add_item(item) {
       if (!item || !item.item_code) {
         evntBus.emit("show_mesage", {
@@ -735,6 +961,14 @@ export default {
       }
     },
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // INVOICE AUTO-SAVE & UPDATE
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /**
+     * Auto-update invoice with debouncing
+     * Handles merging local and API data to prevent conflicts
+     */
     async auto_update_invoice(doc = null, reason = "auto") {
       if (this.invoice_doc?.submitted_for_payment) {
         return;
