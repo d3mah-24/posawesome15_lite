@@ -654,35 +654,17 @@ def validate_pos_before_submit(doc):
 
 
 def before_cancel(doc, method):
-    """
-    Before Cancel Sales Invoice
-    """
-    try:
-        if doc.is_pos:
-            validate_pos_before_cancel(doc)
-            
-    except Exception as e:
-        frappe.log_error(f"sales_invoice.py(before_cancel): Error {str(e)}", "POS Submit")
-        raise
+    """Block cancelling POS invoices when the linked shift is closed."""
+    if not (doc.is_pos and doc.posa_pos_opening_shift):
+        return
 
-
-def validate_pos_before_cancel(doc):
-    """
-    Validate POS Invoice before cancel
-    """
-    # Check if invoice can be cancelled
-    if doc.docstatus != 1:
-        frappe.throw(_("Only submitted invoices can be cancelled"))
-    
-    # Check if opening shift is still open
-    if doc.posa_pos_opening_shift:
-        shift_status = frappe.get_cached_value(
-            "POS Opening Shift",
-            doc.posa_pos_opening_shift,
-            "status"
-        )
-        if shift_status == "Closed":
-            frappe.throw(_("Cannot cancel invoice from closed shift"))
+    shift_status = frappe.get_cached_value(
+        "POS Opening Shift",
+        doc.posa_pos_opening_shift,
+        "status",
+    )
+    if shift_status == "Closed":
+        frappe.throw(_("Cannot cancel invoice from closed shift"))
 
 
 
