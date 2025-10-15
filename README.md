@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="./pos_lite.png" height="128">
+    <img src="./imgs/pos_lite.png" height="128">
     <h2>POS Awesome Lite</h2>
     <p><em>Point of Sale for ERPNext v15</em></p>
     
@@ -132,7 +132,7 @@ Payments • Returns • Shifts
 ## 👨‍💻 Contact
 
 <div align="center">
-    <img src="./ERPNext-support.png" height="80" alt="Future Support">
+    <img src="./imgs/ERPNext-support.png" height="80" alt="Future Support">
 </div>
 
 **Developer:** abdopcnet  
