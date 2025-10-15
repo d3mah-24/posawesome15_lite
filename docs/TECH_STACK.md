@@ -105,13 +105,30 @@
 
 ---
 
+## Browser Storage Usage
+
+### ✅ Used Storage Mechanisms
+- **Cookies** - Session management and user preferences
+  - User authentication tokens
+  - Language and theme preferences
+  - Shopping cart persistence
+- **Local Storage** - Persistent data storage
+  - User settings and configurations
+  - Offline data caching
+  - Application state persistence
+
+### ❌ Not Used Storage Mechanisms
+- **Cache Storage** - Not implemented
+- **Indexed DB** - Not implemented  
+- **Session Storage** - Not implemented
+
 ## Performance Optimizations
 
 ### Frontend
 - **Code Splitting** - Lazy loading components
 - **Tree Shaking** - Remove unused code
 - **Minification** - Compress JavaScript/CSS
-- **Caching** - Browser caching strategies
+- **Browser Caching** - Using Local Storage only
 
 ### Backend
 - **Database Indexing** - Optimized queries
