@@ -102,7 +102,7 @@
 ## 👨‍💻 Contact
 
 <div align="center">
-    <img src="./imgs/ERPNext-support.png" height="120" alt="Future Support" style="border-radius: 50%;">
+    <img src="./imgs/ERPNext-support.png" height="200" alt="Future Support" style="border-radius: 20px;">
 </div>
 
 **Developer:** abdopcnet  
