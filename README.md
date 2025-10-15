@@ -50,6 +50,12 @@
 
 ---
 
+## ⌨️ Keyboard Shortcuts
+
+⌨️ **[View Complete Shortcuts Guide →](./docs/SHORTCUTS.md)**
+
+---
+
 ## 💻 Development Commands
 
 ⚙️ **[View Common Development Commands →](./docs/common_dev_cmd.md)**

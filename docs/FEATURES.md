@@ -101,17 +101,6 @@
 
 ---
 
-## ⌨️ Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `Ctrl/Cmd + S` | Open payment |
-| `Ctrl/Cmd + X` | Submit payment |
-| `Ctrl/Cmd + D` | Remove item |
-| `ESC` | Clear/Close |
-
----
-
 ## 📋 Configuration Options
 
 ### POS Profile Settings
