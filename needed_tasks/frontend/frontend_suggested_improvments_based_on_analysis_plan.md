@@ -93,30 +93,26 @@ Based on comprehensive frontend analysis, this document outlines specific improv
 
 ## 🎯 Phase 1: Immediate Resource Reduction (Week 1)
 
-### 1.1 Component Splitting & Lazy Loading
-- [ ] **Split Invoice.vue (2,357 lines)**
-  - Create `InvoiceHeader.vue` (200 lines max)
-  - Create `InvoiceItems.vue` (300 lines max)
-  - Create `InvoiceSummary.vue` (200 lines max)
-  - Create `InvoiceActions.vue` (150 lines max)
-  - **Resource Impact**: Reduce memory by 60%
-
-- [ ] **Split ItemsSelector.vue (1,801 lines)**
-  - Create `ItemSearch.vue` (200 lines max)
-  - Create `ItemList.vue` (300 lines max)
-  - Create `ItemFilters.vue` (150 lines max)
-  - **Resource Impact**: Reduce memory by 50%
-
-- [ ] **Split Payments.vue (1,670 lines)**
-  - Create `PaymentMethods.vue` (300 lines max)
-  - Create `PaymentSummary.vue` (200 lines max)
-  - Create `PaymentActions.vue` (150 lines max)
-  - **Resource Impact**: Reduce memory by 40%
-
-### 1.2 Queue System Optimization
+### 1.1 Queue System Optimization
 - [ ] **Optimize Item Operations Queue**
   - Increase debouncing to 500ms (from 200ms)
   - Implement proper timer cleanup
+  - Fix memory leaks in queue management
+  - **Resource Impact**: Reduce CPU usage by 60%
+
+- [ ] **Improve Auto-Save Queue**
+  - Implement request deduplication
+  - Add optimistic updates
+  - Reduce API overload
+  - **Resource Impact**: Reduce API calls by 70%
+
+- [ ] **Enhance Offers Queue**
+  - Extend cache from 30s to 5 minutes
+  - Implement smart cache invalidation
+  - Fix processing conflicts
+  - **Resource Impact**: Reduce API calls by 80%
+
+### 1.2 Search & Performance Optimization
   - Add error boundaries
   - **Resource Impact**: Reduce CPU usage by 40%
 
@@ -280,103 +276,29 @@ Based on comprehensive frontend analysis, this document outlines specific improv
 
 ## 🎯 Specific Resource Reduction Techniques
 
-### 1. **Component Splitting Strategy**
-```javascript
-// Before: Monolithic Invoice.vue (2,357 lines)
-// After: Split into 4 components
-const InvoiceHeader = () => import('./InvoiceHeader.vue')
-const InvoiceItems = () => import('./InvoiceItems.vue')
-const InvoiceSummary = () => import('./InvoiceSummary.vue')
-const InvoiceActions = () => import('./InvoiceActions.vue')
-```
+### 1. **State Management Strategy**
+- Replace event bus with Pinia stores
+- Implement reactive state management
+- Reduce memory usage by 40%
+- Improve state synchronization
 
-### 2. **State Management Strategy**
-```javascript
-// Before: Event bus with 20+ listeners
-// After: Pinia stores with reactive state
-export const useInvoiceStore = defineStore('invoice', {
-  state: () => ({
-    items: [],
-    totals: {},
-    payments: []
-  }),
-  actions: {
-    updateInvoice(data) {
-      // Optimized state updates
-    }
-  }
-})
-```
+### 2. **API Optimization Strategy**
+- Implement intelligent caching
+- Reduce API calls by 70%
+- Add request deduplication
+- Optimize data fetching patterns
 
-### 3. **API Optimization Strategy**
-```javascript
-// Before: Multiple API calls
-// After: Single cached call
-const apiCache = new Map()
-const getCachedData = (key, fetcher) => {
-  if (apiCache.has(key)) {
-    return Promise.resolve(apiCache.get(key))
-  }
-  return fetcher().then(data => {
-    apiCache.set(key, data)
-    return data
-  })
-}
-```
+### 3. **Memory Management Strategy**
+- Implement proper cleanup mechanisms
+- Fix memory leaks in components
+- Add error boundaries
+- Optimize component lifecycle
 
-### 4. **Memory Management Strategy**
-```javascript
-// Before: Memory leaks
-// After: Proper cleanup
-export default {
-  mounted() {
-    this.setupEventListeners()
-  },
-  beforeDestroy() {
-    this.cleanupEventListeners()
-    this.clearTimers()
-    this.clearCache()
-  }
-}
-```
-
-### 5. **Queue System Optimization Strategy**
-```javascript
-// Before: Complex queue system
-// After: Optimized queue with proper cleanup
-export const useOptimizedQueue = () => {
-  const queue = ref([])
-  const processing = ref(false)
-  const timer = ref(null)
-  
-  const processQueue = debounce(() => {
-    if (processing.value) return
-    processing.value = true
-    
-    // Process queue items
-    const items = queue.value.splice(0)
-    processItems(items).finally(() => {
-      processing.value = false
-    })
-  }, 500)
-  
-  const addToQueue = (item) => {
-    queue.value.push(item)
-    processQueue()
-  }
-  
-  const cleanup = () => {
-    if (timer.value) {
-      clearTimeout(timer.value)
-      timer.value = null
-    }
-    queue.value = []
-    processing.value = false
-  }
-  
-  return { addToQueue, cleanup }
-}
-```
+### 4. **Queue System Optimization Strategy**
+- Implement optimized queue with proper cleanup
+- Add debouncing to reduce API calls
+- Fix memory leaks in queue management
+- Optimize queue processing performance
 
 ## 📈 Success Metrics
 
@@ -405,10 +327,9 @@ export const useOptimizedQueue = () => {
 ### Resource Optimization Priorities:
 1. **Memory Leaks** - Fix immediately (Critical)
 2. **Bundle Size** - Reduce by 80% (High)
-3. **Component Splitting** - Split large components (High)
-4. **Queue Optimization** - Optimize queue system (High)
-5. **API Optimization** - Implement caching (Medium)
-6. **Performance Tuning** - Optimize calculations (Medium)
+3. **Queue Optimization** - Optimize queue system (High)
+4. **API Optimization** - Implement caching (Medium)
+5. **Performance Tuning** - Optimize calculations (Medium)
 
 ### Browser Compatibility:
 - **Chrome**: Full optimization support
