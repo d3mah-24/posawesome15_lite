@@ -172,9 +172,8 @@ export default {
         // Emit events to notify other components
         evntBus.emit(EVENTS.REGISTER_POS_PROFILE, shift_data);
         evntBus.emit(EVENTS.SET_COMPANY, { name: pos_profile.company });
+        // Profile loaded
         evntBus.emit(EVENTS.SET_POS_OPENING_SHIFT, pos_opening_shift);
-
-        console.log("Pos.vue(get_full_profile_data): Profile loaded", pos_profile.name);
       } catch (error) {
         console.error("Pos.vue(get_full_profile_data): Error", error);
         this.show_message("Failed to load profile data", "error");
@@ -237,7 +236,7 @@ export default {
         if (response.message) {
           evntBus.emit(EVENTS.OPEN_CLOSING_DIALOG_EMIT, response.message);
         } else {
-          console.log("Pos.vue(get_closing_data): Failed to load");
+          // Failed to load closing data
           this.show_message("Failed to load closing data", "error");
         }
       } catch (error) {
@@ -257,7 +256,7 @@ export default {
         });
 
         if (response.message) {
-          console.log("Pos.vue(submit_closing_pos): Success");
+          // Closing shift submitted successfully
           this.show_message("Cashier shift closed successfully", "success");
           await this.check_opening_entry();
         } else {
