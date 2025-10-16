@@ -1395,7 +1395,7 @@ export default {
       const vm = this;
       return new Promise((resolve, reject) => {
         frappe.call({
-          method: "posawesome.posawesome.api.sales_invoice.update_invoice",
+          method: "posawesome.posawesome.api.sales_invoice.update_invoice.update_invoice",
           args: {
             data: doc,
           },
@@ -1506,7 +1506,7 @@ export default {
           try {
             const defaultPayment = await frappe.call({
               method:
-                "posawesome.posawesome.api.pos_profile?.get_default_payment_from_pos_profile",
+                "posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile.get_default_payment_from_pos_profile",
               args: {
                 pos_profile: this.pos_profile?.name,
                 company:
@@ -1533,7 +1533,7 @@ export default {
               try {
                 await frappe.call({
                   method:
-                    "posawesome.posawesome.api.sales_invoice.update_invoice",
+                    "posawesome.posawesome.api.sales_invoice.update_invoice.update_invoice",
                   args: {
                     invoice_data: invoice_doc,
                   },
@@ -1616,7 +1616,7 @@ export default {
       const vm = this;
       if (this.customer) {
         frappe.call({
-          method: "posawesome.posawesome.api.customer.get_customer_info",
+          method: "posawesome.posawesome.api.customer.customer_info.get_customer_info",
           args: {
             customer: vm.customer,
           },
@@ -1792,7 +1792,7 @@ export default {
 
       const vm = this;
       frappe.call({
-        method: "posawesome.posawesome.api.batch.process_batch_selection",
+        method: "posawesome.posawesome.api.item.batch.process_batch_selection",
         args: {
           item_code: item.item_code,
           current_item_row_id: item.posa_row_id,
@@ -2086,7 +2086,7 @@ export default {
       this._offersProcessing = true;
 
       frappe.call({
-        method: "posawesome.posawesome.api.pos_offer.get_applicable_offers",
+        method: "posawesome.posawesome.api.pos_offer.get_applicable_offers.get_applicable_offers",
         args: {
           invoice_name: this.invoice_doc?.name,
         },
@@ -2295,7 +2295,7 @@ export default {
 
           // Submit and print the invoice
           frappe.call({
-            method: "posawesome.posawesome.api.sales_invoice.submit_invoice",
+            method: "posawesome.posawesome.api.sales_invoice.submit_invoice.submit_invoice",
             args: {
               data: {
                 total_change: 0,
