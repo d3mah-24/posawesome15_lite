@@ -24,7 +24,7 @@
 - **Current State**: Sequential processing
 - **Issues**: Blocking operations, API overload
 - **Impact**: 30% of performance problems
-- **Optimization**: Implement request deduplication, optimistic updates
+- **Optimization**: Increase debouncing to 500ms, proper cleanup
 
 #### 3. **Offers Queue** (`_offersDebounceTimer`)
 - **Current State**: 30-second cache
@@ -36,7 +36,7 @@
 - **Current State**: No debouncing
 - **Issues**: Excessive API calls, no caching
 - **Impact**: 15% of performance problems
-- **Optimization**: Add 500ms debouncing, implement caching
+- **Optimization**: Add 500ms debouncing
 
 #### 5. **Payment Queue** (Payments component)
 - **Current State**: Complex validation
@@ -58,7 +58,7 @@
 
 ## 🎯 Browser Resource Optimization Strategy
 
-Based on comprehensive frontend analysis, this document outlines specific improvements to make the browser-side extremely lightweight in resource consumption.
+Based on frontend analysis, this document outlines specific improvements to make the browser-side lightweight in resource consumption.
 
 ## 🚨 Critical Resource Issues Identified
 
@@ -101,8 +101,7 @@ Based on comprehensive frontend analysis, this document outlines specific improv
   - **Resource Impact**: Reduce CPU usage by 60%
 
 - [ ] **Improve Auto-Save Queue**
-  - Implement request deduplication
-  - Add optimistic updates
+  - Increase debouncing to 500ms
   - Reduce API overload
   - **Resource Impact**: Reduce API calls by 70%
 
@@ -117,8 +116,7 @@ Based on comprehensive frontend analysis, this document outlines specific improv
   - **Resource Impact**: Reduce CPU usage by 40%
 
 - [ ] **Optimize Auto-Save Queue**
-  - Implement request deduplication
-  - Add optimistic updates
+  - Increase debouncing to 500ms
   - Improve error handling
   - **Resource Impact**: Reduce API calls by 60%
 
@@ -152,18 +150,7 @@ Based on comprehensive frontend analysis, this document outlines specific improv
 
 ## 🚀 Phase 2: Advanced Resource Optimization
 
-### 2.1 State Management Optimization
-- [ ] **Implement Pinia Stores**
-  - Replace event bus with Pinia
-  - Centralized state management
-  - **Resource Impact**: Reduce memory by 40%
-
-- [ ] **State Persistence Strategy**
-  - Session storage for critical data
-  - Local storage for user preferences
-  - **Resource Impact**: Reduce API calls by 80%
-
-### 2.2 API Optimization
+### 2.1 API Optimization
 - [ ] **Response Caching**
   - Cache API responses in memory
   - Implement cache invalidation
@@ -209,9 +196,9 @@ Based on comprehensive frontend analysis, this document outlines specific improv
   - Reduce component overhead
   - **Resource Impact**: Reduce memory by 20%
 
-- [ ] **Component Reusability**
-  - Create shared component library
+- [ ] **Code Optimization**
   - Reduce code duplication
+  - Optimize algorithms
   - **Resource Impact**: Reduce bundle by 25%
 
 ### 3.3 Advanced Caching
@@ -266,22 +253,15 @@ Based on comprehensive frontend analysis, this document outlines specific improv
 
 ### Phase 3: Ultra-Lightweight Features
 1. **Day 1-2**: Virtual scrolling
-2. **Day 3-4**: Advanced caching
+2. **Day 3-4**: Bundle optimization
 3. **Day 5**: Final optimizations
 
 ## 🎯 Specific Resource Reduction Techniques
 
-### 1. **State Management Strategy**
-- Replace event bus with Pinia stores
-- Implement reactive state management
-- Reduce memory usage by 40%
-- Improve state synchronization
-
-### 2. **API Optimization Strategy**
-- Implement intelligent caching
-- Reduce API calls by 70%
-- Add request deduplication
-- Optimize data fetching patterns
+### 1. **Bundle Optimization Strategy**
+- Reduce bundle size
+- Optimize imports
+- Remove unused code
 
 ### 3. **Memory Management Strategy**
 - Implement proper cleanup mechanisms
@@ -323,7 +303,7 @@ Based on comprehensive frontend analysis, this document outlines specific improv
 1. **Memory Leaks** - Fix immediately (Critical)
 2. **Bundle Size** - Reduce by 80% (High)
 3. **Queue Optimization** - Optimize queue system (High)
-4. **API Optimization** - Implement caching (Medium)
+4. **Bundle Optimization** - Reduce bundle size (Medium)
 5. **Performance Tuning** - Optimize calculations (Medium)
 
 ### Browser Compatibility:
