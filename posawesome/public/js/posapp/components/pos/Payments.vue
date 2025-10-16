@@ -556,7 +556,7 @@ export default {
         return;
       }
         frappe.call({
-          method: "posawesome.posawesome.api.sales_invoice.submit_invoice",
+          method: "posawesome.posawesome.api.sales_invoice.submit_invoice.submit_invoice",
           args: {
           data: data,
           invoice: {
@@ -867,7 +867,7 @@ export default {
       }
       
       frappe.call({
-        method: "posawesome.posawesome.api.customer.get_customer_addresses",
+        method: "posawesome.posawesome.api.customer.customer_addresses.get_customer_addresses",
         args: { customer: customer },
         async: true,
         callback: function (r) {
