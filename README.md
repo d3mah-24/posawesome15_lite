@@ -24,7 +24,7 @@
 
 **Remote Desktop Access** - Test the POS system remotely
 - 💻 **Server:** `remote_hoptodesk_pos_pc`
-- 🌐 **Platform:** [HopToDesk](https://hoptodesk.com)
+- 🌐 **Application:** [HopToDesk](https://hoptodesk.com)
 - 🔑 **ID:** `378901992`
 
 ---
