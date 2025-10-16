@@ -61,6 +61,12 @@
 - 📦 Repository: [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 - 🌿 Branch: **main only**
 
+**Server Specifications:**
+- 💾 **RAM:** 324 GB DDR5
+- 🔧 **CPU:** 2x AMD EPYC 9555
+- ⚡ **Cores/Threads:** 2024 cores / 128 threads
+- 🔋 **Power:** 360 Watt
+
 ⚠️ **STRICT POLICY:**  
 **Any work done outside this process or not following the Development Server Policy:**
 - ❌ Will NOT be reviewed
