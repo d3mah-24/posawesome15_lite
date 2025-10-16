@@ -100,6 +100,13 @@ posawesome/public/js/posapp/
 
 ## 📈 Performance Metrics Analysis
 
+### Performance Metrics Screenshots
+![Performance Metrics - October 16, 2025 09:02 AM](./imgs/metrics_16_10_2025_09_02_am.png)
+*Performance metrics captured on October 16, 2025 at 09:02 AM*
+
+![Performance Metrics - October 16, 2025 10:24 AM](./imgs/metrics_16_10_2025_10_24_am.png)
+*Performance metrics captured on October 16, 2025 at 10:24 AM*
+
 ### Current Performance Issues:
 - **Startup Time**: 3-5 seconds (Target: <2s)
 - **API Calls on Load**: 15-20 calls (Target: 1-2)
