@@ -14,12 +14,12 @@ class CacheManager {
    */
   async clearAllCaches() {
     if (this.isClearing) {
-      console.log('[Cache] clearing already in progress');
+      // Clearing already in progress
       return;
     }
 
     this.isClearing = true;
-    console.log('[Cache] starting comprehensive cache clearing');
+    // Starting comprehensive cache clearing
 
     try {
       // Clear localStorage
@@ -40,7 +40,7 @@ class CacheManager {
       // Clear Frappe specific caches
       await this.clearFrappeCaches();
       
-      console.log('[Cache] all caches cleared successfully');
+      // All caches cleared successfully
       return true;
       
     } catch (error) {
@@ -60,7 +60,7 @@ class CacheManager {
       keys.forEach(key => {
         localStorage.removeItem(key);
       });
-      console.log('[Cache] cleared localStorage items', keys.length);
+      // localStorage cleared
     } catch (error) {
       console.error('Error clearing localStorage:', error);
     }
@@ -75,7 +75,7 @@ class CacheManager {
       keys.forEach(key => {
         sessionStorage.removeItem(key);
       });
-      console.log('[Cache] cleared sessionStorage items', keys.length);
+      // sessionStorage cleared
     } catch (error) {
       console.error('Error clearing sessionStorage:', error);
     }
@@ -101,7 +101,7 @@ class CacheManager {
         });
         
         await Promise.all(deletePromises);
-        console.log('[Cache] cleared IndexedDB databases', databases.length);
+        // IndexedDB databases cleared
       }
     } catch (error) {
       console.error('Error clearing IndexedDB:', error);
@@ -117,7 +117,7 @@ class CacheManager {
         const cacheNames = await caches.keys();
         const deletePromises = cacheNames.map(cacheName => caches.delete(cacheName));
         await Promise.all(deletePromises);
-        console.log('[Cache] cleared service worker caches', cacheNames.length);
+        // Service worker caches cleared
       }
     } catch (error) {
       console.error('Error clearing service worker cache:', error);
@@ -139,7 +139,7 @@ class CacheManager {
         await window.clearCustomCaches();
       }
       
-      console.log('[Cache] browser cache cleared');
+      // Browser cache cleared
     } catch (error) {
       console.error('Error clearing browser cache:', error);
     }
@@ -163,7 +163,7 @@ class CacheManager {
         localStorage.removeItem(key);
       });
       
-      console.log('[Cache] cleared Frappe-specific cache items', frappeKeys.length);
+      // Frappe-specific cache items cleared
       
       // Clear any Frappe global variables
       if (window.frappe && window.frappe.cache) {
@@ -184,7 +184,7 @@ class CacheManager {
    */
   reloadPage(delay = 1000) {
     setTimeout(() => {
-      console.log('[Cache] reloading page');
+      // Reloading page
       location.reload();
     }, delay);
   }
@@ -199,7 +199,7 @@ class CacheManager {
         color: type
       });
     } else {
-      console.log(`[Cache] ${type.toUpperCase()} ${message}`);
+      // Cache status logged
     }
   }
 }
