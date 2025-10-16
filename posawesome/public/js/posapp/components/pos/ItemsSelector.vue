@@ -1307,69 +1307,6 @@ export default {
     },
   },
 
-  computed: {
-    // Remove all types of cache - direct filtering
-    filtred_items() {
-      this.search = this.get_search(this.first_search);
-
-      let filtred_list = [];
-
-      let filtred_group_list = [];
-
-      // Filter by group
-      if (this.item_group != "ALL") {
-        filtred_group_list = this.items.filter((item) =>
-          item.item_group.toLowerCase().includes(this.item_group.toLowerCase())
-        );
-      } else {
-        filtred_group_list = this.items;
-      }
-
-      // Simple search logic - only item_code and item_name
-      if (!this.search || this.search.length < 3) {
-        filtred_list = filtred_group_list.slice(0, 50);
-      } else if (this.search) {
-        // Search in item_code
-        filtred_list = filtred_group_list.filter((item) =>
-          item.item_code.toLowerCase().includes(this.search.toLowerCase())
-        );
-
-        // Search in item_name if no results
-        if (filtred_list.length === 0) {
-          filtred_list = filtred_group_list.filter((item) =>
-            item.item_name.toLowerCase().includes(this.search.toLowerCase())
-          );
-        }
-      }
-
-      // Final filtering - show all items directly
-      filtred_list = filtred_list.slice(0, 50);
-
-      return filtred_list;
-    },
-
-    // Inline style for scroll host (keeps template tidy)
-    itemsScrollStyle() {
-      if (!this.itemsScrollHeight) {
-        return {};
-      }
-      return {
-        maxHeight: `${this.itemsScrollHeight}px`,
-      };
-    },
-
-    debounce_search: {
-      get() {
-        return this.first_search;
-      },
-      set: _.debounce(function (newValue) {
-        this.first_search = newValue;
-        // Trigger live search after 200ms
-        this.performLiveSearch(newValue);
-      }, 200),
-    },
-  },
-
   created: function () {
     this.$nextTick(function () {});
     evntBus.on("register_pos_profile", (data) => {
