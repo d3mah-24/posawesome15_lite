@@ -38,13 +38,13 @@
 - ⚙️ **[Dev Commands](./docs/common_dev_cmd.md)** - Common development commands
 
 ### 🎨 Frontend Development
-- 🔍 **[Frontend Analysis](./needed_tasks/frontend/frontend_analysis.md)** - Comprehensive Vue.js analysis
-- 🚀 **[Frontend Optimization Plan](./needed_tasks/frontend/frontend_suggested_improvments_based_on_analysis_plan.md)** - Complete optimization strategy
+- 🔍 **[Frontend Analysis](./improvements_tasks/frontend/frontend_analysis.md)** - Comprehensive Vue.js analysis
+- 🚀 **[Frontend Optimization Plan](./improvements_tasks/frontend/frontend_suggested_improvments_based_on_analysis_plan.md)** - Complete optimization strategy
 
 ### 🔧 Backend Development
-- 📊 **[Backend Analysis](./needed_tasks/backend/backend_analysis.md)** - Backend queue system analysis
-- 🚀 **[Backend Improvements Plan](./needed_tasks/backend/backend_suggested_improvments_based_on_analysis_plan.md)** - Backend optimization strategy
-- 🔌 **[API Structure](./needed_tasks/backend/API_STRUCTURE.md)** - API documentation
+- 📊 **[Backend Analysis](./improvements_tasks/backend/backend_analysis.md)** - Backend queue system analysis
+- 🚀 **[Backend Improvements Plan](./improvements_tasks/backend/backend_suggested_improvments_based_on_analysis_plan.md)** - Backend optimization strategy
+- 🔌 **[API Structure](./improvements_tasks/backend/API_STRUCTURE.md)** - API documentation
 
 ---
 
