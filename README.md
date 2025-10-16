@@ -28,12 +28,11 @@
 - 🌐 **Platform:** [HopToDesk](https://hoptodesk.com)
 - 🔑 **ID:** `378901992`
 
-
 *Connect via HopToDesk to access a live demo environment.*
 
 ---
 
-## 📊 Metrics & Performance Tests
+## 📊 Performance Tests
 
 ### Performance Benchmarks
 - **Bundle Size:** Optimized JavaScript bundle with reduced console.log statements
@@ -52,53 +51,36 @@
 
 *Performance metrics captured on October 16, 2025 at 09:02 AM*
 
----
-
-## 📄 Features
-
-📄 **[View Complete Features List →](./docs/FEATURES.md)**
+**References:**
+- 📊 **[Frontend Analysis](./needed_tasks/frontend/frontend_analysis.md)** - Comprehensive frontend analysis
+- 🚀 **[Complete Optimization Plan](./needed_tasks/frontend/frontend_suggested_improvments_based_on_analysis_plan.md)** - Complete analysis & optimization strategy
 
 ---
 
-## 🔌 API Structure
+## 🎨 Frontend Tasks
 
-🔗 **[View Complete API Documentation →](./docs/API_STRUCTURE.md)**
-
----
-
-## 🛠️ Tech Stack
-
-🔧 **[View Complete Tech Stack Info →](./docs/TECH_STACK.md)**
+**References:**
+- 🔍 **[Frontend Analysis](./needed_tasks/frontend/frontend_analysis.md)** - Comprehensive frontend analysis
+- 🚀 **[Complete Optimization Plan](./needed_tasks/frontend/frontend_suggested_improvments_based_on_analysis_plan.md)** - Complete analysis & optimization strategy
+- 🗺️ **[Invoice Vue Map](./needed_tasks/frontend/INVOICE_VUE_MAP.md)** - Invoice Vue component mapping
 
 ---
 
-## ⌨️ Keyboard Shortcuts
+## 🔧 Backend Tasks
 
-⌨️ **[View Complete Shortcuts Guide →](./docs/SHORTCUTS.md)**
-
----
-
-## 💻 Development Commands
-
-⚙️ **[View Common Development Commands →](./docs/common_dev_cmd.md)**
+**References:**
+- 📊 **[Backend Analysis](./needed_tasks/backend/backend_analysis.md)** - Backend queue system analysis
+- 🚀 **[Backend Improvements Plan](./needed_tasks/backend/backend_suggested_improvments_based_on_analysis_plan.md)** - Backend optimization strategy
+- 🔌 **[API Structure](./needed_tasks/backend/API_STRUCTURE.md)** - API documentation
 
 ---
 
-## 🔍 Technical Analysis
+## 📁 Documentation
 
-### Frontend Queue System
-📊 **[Frontend Queue Analysis →](./docs/sales_invoice_sequncer_frontend.md)**
-
-### Backend Queue System  
-📊 **[Backend Queue Analysis →](./docs/sales_invoice_sequncer_backend.md)**
-
----
-
-### Current Issues
-📁 **[Current Issues →](./current_issues/)**
-
-### Needed Tasks
-📈 **[Task Sheet →](https://docs.google.com/spreadsheets/d/1EX9QDOkw0UD-qPh3Ynpcw37q3b_bFtQ4)** - Project tasks & progress
+- 📄 **[Features](./docs/FEATURES.md)** - Complete feature list
+- 🔧 **[Tech Stack](./docs/TECH_STACK.md)** - Technology stack details
+- ⌨️ **[Shortcuts](./docs/SHORTCUTS.md)** - Keyboard shortcuts guide
+- ⚙️ **[Dev Commands](./docs/common_dev_cmd.md)** - Common development commands
 
 ---
 
