@@ -45,10 +45,10 @@ import Returns from "./Returns.vue";
 
 // ===== API CONSTANTS =====
 const API_METHODS = {
-  GET_CURRENT_SHIFT: "posawesome.posawesome.api.pos_opening_shift.get_current_shift_name",
+  GET_CURRENT_SHIFT: "posawesome.posawesome.api.pos_opening_shift.get_current_shift_name.get_current_shift_name",
   MAKE_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening",
   SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
-  GET_OFFERS: "posawesome.posawesome.api.pos_offer.get_offers_for_profile",
+  GET_OFFERS: "posawesome.posawesome.api.pos_offer.get_offers_for_profile.get_offers_for_profile",
 };
 
 // ===== EVENT BUS EVENTS =====
