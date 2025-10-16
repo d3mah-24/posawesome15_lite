@@ -48,6 +48,15 @@
 
 ---
 
+## 🚀 Feature Requests
+
+### 📁 Feature Requests Directory
+- 📂 **[Feature Requests](./feature_requests/)** - All feature request documentation
+- 🔍 **[Customer Search by Mobile](./feature_requests/customer_searchby_mobile_no/)** - Auto-complete mobile search functionality
+- ⏰ **[Shift Time Controller](./feature_requests/shift_time_controller/)** - POS opening/closing shift timer control
+
+---
+
 ## 💰 Collaboration
 
 - 💵 **Daily Payment:** $35 USD Based On Progress
