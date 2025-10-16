@@ -149,11 +149,6 @@
           </template>
           <template v-slot:item.price_list_rate="{ item }">
             <div class="compact-price-display">
-              <!-- :class="{
-                  'discounted-price':
-                    flt(item.rate, currency_precision) <
-                    flt(item.base_rate, currency_precision),
-                }" -->
               <span class="amount-value">
                 {{ formatCurrency(item.price_list_rate) }}
               </span>
@@ -520,64 +515,7 @@ export default {
     },
   },
 
-  // ===== METHODS =====
-  /**
-   * METHODS ORGANIZATION:
-   * 
-   * 1. ITEM QUANTITY MANAGEMENT
-   *    - onQtyChange, onQtyInput, refreshTotals
-   *    - increaseQuantity, decreaseQuantity
-   *    - getDiscountAmount
-   * 
-   * 2. RETURN & VALIDATION
-   *    - quick_return, remove_item, validate
-   *    - open_returns
-   * 
-   * 3. ITEM MANAGEMENT
-   *    - add_item, get_new_item, generateRowId
-   *    - update_items_details, update_item_detail
-   * 
-   * 4. INVOICE AUTO-SAVE & UPDATE
-   *    - auto_update_invoice, queue_auto_save
-   *    - reload_invoice, debounced_auto_update
-   *    - mergeItemsFromAPI
-   * 
-   * 5. INVOICE OPERATIONS
-   *    - create_draft_invoice, get_invoice_doc
-   *    - update_invoice, process_invoice
-   *    - cancel_invoice, delete_draft_invoice
-   *    - new_invoice, reset_invoice_session
-   * 
-   * 6. PAYMENT & SUBMISSION
-   *    - show_payment, printInvoice
-   *    - get_payments, load_print_page
-   * 
-   * 7. PRICING & DISCOUNTS
-   *    - setDiscountPercentage, setItemRate
-   *    - update_discount_umount
-   *    - fetch_customer_details, get_price_list
-   * 
-   * 8. OFFERS & PROMOTIONS
-   *    - handelOffers, updatePosOffers, updateInvoiceOffers
-   *    - applyNewOffer, removeApplyOffer
-   *    - checkOfferIsAppley, checkOfferCoupon
-   * 
-   * 9. BATCH & SERIAL MANAGEMENT
-   *    - set_serial_no, set_batch_qty
-   * 
-   * 10. UTILITY & HELPERS
-   *     - makeid, shortcut methods
-   *     - debouncedItemOperation, processItemOperations
-   */
   methods: {
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ITEM QUANTITY MANAGEMENT
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Handle quantity change event
-     * Validates and updates item quantity, triggers auto-save
-     */
     onQtyChange(item) {
       try {
         const newQty = Number(item.qty) || 0;
@@ -593,28 +531,16 @@ export default {
       }
     },
     
-    /**
-     * Handle real-time quantity input changes
-     * Updates display without triggering calculations
-     */
     onQtyInput(item) {
       item.qty = Number(item.qty) || 0;
       // Just update the display, no need to recalculate discount
       this.refreshTotals();
     },
     
-    /**
-     * Clear cached calculations and force UI update
-     * Used when item data changes to recalculate totals
-     */
     refreshTotals() {
       this.$forceUpdate();
     },
 
-    /**
-     * Increment item quantity by 1
-     * Emits item_updated event for reactive updates
-     */
     increaseQuantity(item) {
       try {
         const currentQty = Number(item.qty) || 0;
@@ -634,10 +560,6 @@ export default {
       }
     },
 
-    /**
-     * Decrement item quantity by 1
-     * Removes item if quantity reaches 0
-     */
     decreaseQuantity(item) {
       try {
         const currentQty = Number(item.qty) || 0;
@@ -684,14 +606,6 @@ export default {
       return ""; // Return empty string so it doesn't show in UI
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // RETURN & VALIDATION
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Handle quick return functionality
-     * Toggles quick return mode if allowed in POS profile
-     */
     quick_return() {
       if (!this.pos_profile?.posa_allow_quick_return) {
         evntBus.emit("show_mesage", {
@@ -722,10 +636,6 @@ export default {
       evntBus.emit("toggle_quick_return", this.quick_return_value);
     },
     
-    /**
-     * Remove item from invoice
-     * Deletes draft invoice if last item is removed
-     */
     remove_item(item) {
       const index = this.items.findIndex(
         (el) => el.posa_row_id == item.posa_row_id
@@ -769,14 +679,6 @@ export default {
       }
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ITEM MANAGEMENT
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Add item to invoice
-     * Merges with existing item if same code and UOM, otherwise creates new
-     */
     async add_item(item) {
       if (!item || !item.item_code) {
         evntBus.emit("show_mesage", {
@@ -856,14 +758,6 @@ export default {
       }
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // INVOICE AUTO-SAVE & UPDATE
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Auto-update invoice with debouncing
-     * Handles merging local and API data to prevent conflicts
-     */
     async auto_update_invoice(doc = null, reason = "auto") {
       if (this.invoice_doc?.submitted_for_payment) {
         return;
