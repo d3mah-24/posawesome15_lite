@@ -51,9 +51,9 @@
 ## 🚀 Feature Requests
 
 ### 📁 Feature Requests Directory
-- 📂 **[Feature Requests](./feature_requests/)** - All feature request documentation
-- 🔍 **[Customer Search by Mobile](./feature_requests/customer_searchby_mobile_no/)** - Auto-complete mobile search functionality
-- ⏰ **[Shift Time Controller](./feature_requests/shift_time_controller/)** - POS opening/closing shift timer control
+- 🔍 **[Customer Search by Mobile](./feature_requests/customer_searchby_mobile_no/auto_complete_mobile_search.md)** - Auto-complete mobile search functionality
+- ⏰ **[Shift Time Controller](./feature_requests/shift_time_controller/pos_opening_closing_shift_timer.md)** - POS opening/closing shift timer control
+- 🎨 **[Customize Main Menu](./feature_requests/main_manu/customize_menu.md)** - CSS styling for main menu appearance
 
 ---
 
