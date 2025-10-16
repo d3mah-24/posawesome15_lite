@@ -87,7 +87,7 @@ export default {
         // Load only default customer initially
         this.load_default_customer();
       } catch (error) {
-        console.log("Customer.vue(get_customer_names): Error", error);
+        // Error fetching customers
         evntBus.emit("show_mesage", {
           message: "An unexpected error occurred while fetching customers",
           color: "error",
@@ -106,10 +106,7 @@ export default {
       // Use the already loaded POS Profile data
       const default_customer = this.pos_profile.pos_profile?.customer;
       if (default_customer) {
-        console.log(
-          "Customer.vue(load_default_customer): Loaded",
-          default_customer
-        );
+        // Default customer loaded
         this.customer = default_customer;
         evntBus.emit("update_customer", default_customer);
       } else {
@@ -127,15 +124,12 @@ export default {
         },
         callback: (r) => {
           if (r.message) {
-            console.log(
-              "Customer.vue(load_all_customers): Loaded",
-              r.message.length
-            );
+            // All customers loaded
             this.customers = r.message;
           }
         },
         error: (err) => {
-          console.log("Customer.vue(load_all_customers): Error", err);
+          // Error loading customers
           evntBus.emit("show_mesage", {
             message: "Failed to fetch customers",
             color: "error",
@@ -147,7 +141,7 @@ export default {
       try {
         evntBus.emit("open_update_customer", null);
       } catch (error) {
-        console.log("Customer.vue(new_customer): Error", error);
+        // Error opening new customer
         evntBus.emit("show_mesage", {
           message: "Error opening new customer form",
           color: "error",
@@ -158,7 +152,7 @@ export default {
       try {
         evntBus.emit("open_update_customer", this.customer_info);
       } catch (error) {
-        console.log("Customer.vue(edit_customer): Error", error);
+        // Error opening edit customer
         evntBus.emit("show_mesage", {
           message: "Error opening customer edit form",
           color: "error",
@@ -184,7 +178,7 @@ export default {
           textFifth.indexOf(searchText) > -1;
         return result;
       } catch (error) {
-        console.log("Customer.vue(customFilter): Error", error);
+        // Error in custom filter
         return false;
       }
     },
@@ -200,10 +194,7 @@ export default {
         });
 
         evntBus.on("register_pos_profile", (pos_profile) => {
-          console.log(
-            "Customer.vue(register_pos_profile): Registered",
-            pos_profile?.pos_profile?.name
-          );
+          // POS profile registered
           this.pos_profile = pos_profile;
           this.get_customer_names();
         });
@@ -214,7 +205,7 @@ export default {
         });
 
         evntBus.on("set_customer", (customer) => {
-          console.log("Customer.vue(set_customer): Set", customer);
+          // Customer set
           this.customer = customer;
         });
 
@@ -239,7 +230,7 @@ export default {
           this.load_all_customers();
         });
       } catch (error) {
-        console.log("Customer.vue(created): Error", error);
+        // Error during initialization
         evntBus.emit("show_mesage", {
           message: "An error occurred during component initialization",
           color: "error",
@@ -250,7 +241,7 @@ export default {
   // ===== SECTION 6: WATCH =====
   watch: {
     customer() {
-      console.log("Customer.vue(customer): Changed", this.customer);
+      // Customer changed
       evntBus.emit("update_customer", this.customer);
     },
   },
