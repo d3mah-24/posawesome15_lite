@@ -56,193 +56,329 @@
 </template>
 
 <script>
-// ===== SECTION 1: IMPORTS =====
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// IMPORTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 import { evntBus } from "../../bus";
 import UpdateCustomer from "./UpdateCustomer.vue";
-// ===== SECTION 2: EXPORT DEFAULT =====
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONSTANTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/**
+ * API methods for customer operations
+ */
+const API_METHODS = {
+  GET_CUSTOMER_NAMES: 'posawesome.posawesome.api.customer.customer_names.get_customer_names',
+};
+
+/**
+ * Event names for bus communication
+ */
+const EVENT_NAMES = {
+  // Emitted events
+  UPDATE_CUSTOMER: 'update_customer',
+  SHOW_MESSAGE: 'show_mesage',
+  OPEN_UPDATE_CUSTOMER: 'open_update_customer',
+  
+  // Listened events
+  TOGGLE_QUICK_RETURN: 'toggle_quick_return',
+  REGISTER_POS_PROFILE: 'register_pos_profile',
+  PAYMENTS_REGISTER_POS_PROFILE: 'payments_register_pos_profile',
+  SET_CUSTOMER: 'set_customer',
+  ADD_CUSTOMER_TO_LIST: 'add_customer_to_list',
+  SET_CUSTOMER_READONLY: 'set_customer_readonly',
+  SET_CUSTOMER_INFO_TO_EDIT: 'set_customer_info_to_edit',
+  FETCH_CUSTOMER_DETAILS: 'fetch_customer_details',
+  CUSTOMER_DROPDOWN_OPENED: 'customer_dropdown_opened',
+};
+
+/**
+ * Error messages
+ */
+const ERROR_MESSAGES = {
+  UNEXPECTED_ERROR: 'An unexpected error occurred while fetching customers',
+  POS_PROFILE_NOT_LOADED: 'POS Profile not loaded',
+  DEFAULT_CUSTOMER_NOT_DEFINED: 'Default customer not defined in POS Profile',
+  FAILED_TO_FETCH: 'Failed to fetch customers',
+  NEW_CUSTOMER_ERROR: 'Error opening new customer form',
+  EDIT_CUSTOMER_ERROR: 'Error opening customer edit form',
+  INITIALIZATION_ERROR: 'An error occurred during component initialization',
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// COMPONENT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 export default {
-  // ===== SECTION 3: DATA =====
-  data: () => {
+  name: 'Customer',
+  
+  components: {
+    UpdateCustomer,
+  },
+  
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // DATA
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  data() {
     return {
-      pos_profile: "",
+      pos_profile: null,
       customers: [],
-      customer: "",
+      customer: '',
       readonly: false,
       customer_info: {},
       quick_return: false,
     };
   },
-  // ===== SECTION 4: COMPONENTS =====
-  components: {
-    UpdateCustomer,
-  },
-  // ===== SECTION 5: METHODS =====
+  
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // COMPUTED
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  computed: {},
+  
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // METHODS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
   methods: {
+    /**
+     * Initialize customer data
+     * Loads default customer initially for performance
+     */
     get_customer_names() {
-      const vm = this;
       try {
         if (this.customers.length > 0) {
           return;
         }
-        // Load only default customer initially
+        // Load only default customer initially for better performance
         this.load_default_customer();
       } catch (error) {
-        // Error fetching customers
-        evntBus.emit("show_mesage", {
-          message: "An unexpected error occurred while fetching customers",
-          color: "error",
-        });
+        this.showMessage(ERROR_MESSAGES.UNEXPECTED_ERROR, 'error');
       }
     },
+
+    /**
+     * Load default customer from POS profile
+     * Sets initial customer without fetching all customers
+     */
     load_default_customer() {
       if (!this.pos_profile) {
-        evntBus.emit("show_mesage", {
-          message: "POS Profile not loaded",
-          color: "error",
-        });
+        this.showMessage(ERROR_MESSAGES.POS_PROFILE_NOT_LOADED, 'error');
         return;
       }
 
-      // Use the already loaded POS Profile data
       const default_customer = this.pos_profile.pos_profile?.customer;
       if (default_customer) {
-        // Default customer loaded
         this.customer = default_customer;
-        evntBus.emit("update_customer", default_customer);
+        evntBus.emit(EVENT_NAMES.UPDATE_CUSTOMER, default_customer);
       } else {
-        evntBus.emit("show_mesage", {
-          message: "Default customer not defined in POS Profile",
-          color: "error",
-        });
+        this.showMessage(ERROR_MESSAGES.DEFAULT_CUSTOMER_NOT_DEFINED, 'error');
       }
     },
+
+    /**
+     * Load all customers from server
+     * Called when dropdown is opened/focused
+     */
     load_all_customers() {
       frappe.call({
-        method: "posawesome.posawesome.api.customer.customer_names.get_customer_names",
+        method: API_METHODS.GET_CUSTOMER_NAMES,
         args: {
           pos_profile: this.pos_profile.pos_profile,
         },
         callback: (r) => {
           if (r.message) {
-            // All customers loaded
             this.customers = r.message;
           }
         },
         error: (err) => {
-          // Error loading customers
-          evntBus.emit("show_mesage", {
-            message: "Failed to fetch customers",
-            color: "error",
-          });
+          this.showMessage(ERROR_MESSAGES.FAILED_TO_FETCH, 'error');
         },
       });
     },
+
+    /**
+     * Open new customer dialog
+     * Emits event to open UpdateCustomer component
+     */
     new_customer() {
       try {
-        evntBus.emit("open_update_customer", null);
+        evntBus.emit(EVENT_NAMES.OPEN_UPDATE_CUSTOMER, null);
       } catch (error) {
-        // Error opening new customer
-        evntBus.emit("show_mesage", {
-          message: "Error opening new customer form",
-          color: "error",
-        });
+        this.showMessage(ERROR_MESSAGES.NEW_CUSTOMER_ERROR, 'error');
       }
     },
+
+    /**
+     * Open edit customer dialog
+     * Emits event with current customer info
+     */
     edit_customer() {
       try {
-        evntBus.emit("open_update_customer", this.customer_info);
+        evntBus.emit(EVENT_NAMES.OPEN_UPDATE_CUSTOMER, this.customer_info);
       } catch (error) {
-        // Error opening edit customer
-        evntBus.emit("show_mesage", {
-          message: "Error opening customer edit form",
-          color: "error",
-        });
+        this.showMessage(ERROR_MESSAGES.EDIT_CUSTOMER_ERROR, 'error');
       }
     },
+
+    /**
+     * Custom filter for customer autocomplete
+     * Searches across multiple fields: name, tax_id, email, mobile, customer_name
+     * @param {Object} item - Customer item
+     * @param {string} queryText - Search query
+     * @param {string} itemText - Item text (not used)
+     * @returns {boolean} True if match found
+     */
     customFilter(item, queryText, itemText) {
       try {
-        // custom filter for customer search
-        const textOne = item.customer_name
-          ? item.customer_name.toLowerCase()
-          : "";
-        const textTwo = item.tax_id ? item.tax_id.toLowerCase() : "";
-        const textThree = item.email_id ? item.email_id.toLowerCase() : "";
-        const textFour = item.mobile_no ? item.mobile_no.toLowerCase() : "";
-        const textFifth = item.name.toLowerCase();
         const searchText = queryText.toLowerCase();
-        const result =
-          textOne.indexOf(searchText) > -1 ||
-          textTwo.indexOf(searchText) > -1 ||
-          textThree.indexOf(searchText) > -1 ||
-          textFour.indexOf(searchText) > -1 ||
-          textFifth.indexOf(searchText) > -1;
-        return result;
+        const fields = [
+          item.customer_name,
+          item.tax_id,
+          item.email_id,
+          item.mobile_no,
+          item.name,
+        ];
+
+        return fields.some((field) =>
+          field ? field.toLowerCase().indexOf(searchText) > -1 : false
+        );
       } catch (error) {
-        // Error in custom filter
         return false;
       }
     },
+
+    /**
+     * Show message to user via event bus
+     * @param {string} message - Message text
+     * @param {string} color - Message color (success, error, warning, info)
+     */
+    showMessage(message, color) {
+      evntBus.emit(EVENT_NAMES.SHOW_MESSAGE, { message, color });
+    },
+
+    /**
+     * Register event listeners
+     * Sets up all event bus subscriptions
+     */
+    registerEventListeners() {
+      try {
+        evntBus.on(EVENT_NAMES.TOGGLE_QUICK_RETURN, this.handleToggleQuickReturn);
+        evntBus.on(EVENT_NAMES.REGISTER_POS_PROFILE, this.handleRegisterPosProfile);
+        evntBus.on(EVENT_NAMES.PAYMENTS_REGISTER_POS_PROFILE, this.handlePaymentsRegisterPosProfile);
+        evntBus.on(EVENT_NAMES.SET_CUSTOMER, this.handleSetCustomer);
+        evntBus.on(EVENT_NAMES.ADD_CUSTOMER_TO_LIST, this.handleAddCustomerToList);
+        evntBus.on(EVENT_NAMES.SET_CUSTOMER_READONLY, this.handleSetCustomerReadonly);
+        evntBus.on(EVENT_NAMES.SET_CUSTOMER_INFO_TO_EDIT, this.handleSetCustomerInfoToEdit);
+        evntBus.on(EVENT_NAMES.FETCH_CUSTOMER_DETAILS, this.handleFetchCustomerDetails);
+        evntBus.on(EVENT_NAMES.CUSTOMER_DROPDOWN_OPENED, this.handleCustomerDropdownOpened);
+      } catch (error) {
+        this.showMessage(ERROR_MESSAGES.INITIALIZATION_ERROR, 'error');
+      }
+    },
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // EVENT HANDLERS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    /**
+     * Handle quick return toggle
+     * @param {boolean} value - Quick return state
+     */
+    handleToggleQuickReturn(value) {
+      this.quick_return = value;
+    },
+
+    /**
+     * Handle POS profile registration
+     * @param {Object} pos_profile - POS profile data
+     */
+    handleRegisterPosProfile(pos_profile) {
+      this.pos_profile = pos_profile;
+      this.get_customer_names();
+    },
+
+    /**
+     * Handle payments POS profile registration
+     * @param {Object} pos_profile - POS profile data
+     */
+    handlePaymentsRegisterPosProfile(pos_profile) {
+      this.pos_profile = pos_profile;
+      this.get_customer_names();
+    },
+
+    /**
+     * Handle set customer
+     * @param {string} customer - Customer name
+     */
+    handleSetCustomer(customer) {
+      this.customer = customer;
+    },
+
+    /**
+     * Handle add customer to list
+     * @param {Object} customer - Customer data
+     */
+    handleAddCustomerToList(customer) {
+      this.customers.push(customer);
+    },
+
+    /**
+     * Handle set customer readonly
+     * @param {boolean} value - Readonly state
+     */
+    handleSetCustomerReadonly(value) {
+      this.readonly = value;
+    },
+
+    /**
+     * Handle set customer info to edit
+     * @param {Object} data - Customer info
+     */
+    handleSetCustomerInfoToEdit(data) {
+      this.customer_info = data;
+    },
+
+    /**
+     * Handle fetch customer details
+     */
+    handleFetchCustomerDetails() {
+      this.get_customer_names();
+    },
+
+    /**
+     * Handle customer dropdown opened
+     */
+    handleCustomerDropdownOpened() {
+      this.load_all_customers();
+    },
   },
 
-  computed: {},
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // LIFECYCLE HOOKS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  created: function () {
-    this.$nextTick(function () {
-      try {
-        evntBus.on("toggle_quick_return", (value) => {
-          this.quick_return = value;
-        });
-
-        evntBus.on("register_pos_profile", (pos_profile) => {
-          // POS profile registered
-          this.pos_profile = pos_profile;
-          this.get_customer_names();
-        });
-
-        evntBus.on("payments_register_pos_profile", (pos_profile) => {
-          this.pos_profile = pos_profile;
-          this.get_customer_names();
-        });
-
-        evntBus.on("set_customer", (customer) => {
-          // Customer set
-          this.customer = customer;
-        });
-
-        evntBus.on("add_customer_to_list", (customer) => {
-          this.customers.push(customer);
-        });
-
-        evntBus.on("set_customer_readonly", (value) => {
-          this.readonly = value;
-        });
-
-        evntBus.on("set_customer_info_to_edit", (data) => {
-          this.customer_info = data;
-        });
-
-        evntBus.on("fetch_customer_details", () => {
-          this.get_customer_names();
-        });
-
-        // Load all customers when dropdown is opened
-        evntBus.on("customer_dropdown_opened", () => {
-          this.load_all_customers();
-        });
-      } catch (error) {
-        // Error during initialization
-        evntBus.emit("show_mesage", {
-          message: "An error occurred during component initialization",
-          color: "error",
-        });
-      }
+  created() {
+    this.$nextTick(() => {
+      this.registerEventListeners();
     });
   },
-  // ===== SECTION 6: WATCH =====
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // WATCHERS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   watch: {
+    /**
+     * Watch customer changes
+     * Emits update_customer event when customer changes
+     */
     customer() {
-      // Customer changed
-      evntBus.emit("update_customer", this.customer);
+      evntBus.emit(EVENT_NAMES.UPDATE_CUSTOMER, this.customer);
     },
   },
 };

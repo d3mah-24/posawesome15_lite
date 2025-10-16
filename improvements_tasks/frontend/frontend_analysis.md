@@ -107,6 +107,15 @@ posawesome/public/js/posapp/
 ![Performance Metrics - October 16, 2025 10:24 AM](./imgs/metrics_16_10_2025_10_24_am.png)
 *Performance metrics captured on October 16, 2025 at 10:24 AM*
 
+![Huge Bundle Payload](./imgs/huge_bundle_payload.png)
+*Bundle size analysis showing large payload issues*
+
+![CSS Vuetify Loading](./imgs/css_vuetify_loading.png)
+*Vuetify CSS loading performance analysis*
+
+![CSS Issues](./imgs/css_issues.png)
+*CSS-related performance issues and optimization opportunities*
+
 ### Current Performance Issues:
 - **Startup Time**: 3-5 seconds (Target: <2s)
 - **API Calls on Load**: 15-20 calls (Target: 1-2)

@@ -105,35 +105,154 @@
 </template>
 
 <script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// IMPORTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 import { evntBus } from '../../bus';
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONSTANTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/**
+ * API methods for customer operations
+ */
+const API_METHODS = {
+  CREATE_CUSTOMER: 'posawesome.posawesome.api.customer.create_customer.create_customer',
+};
+
+/**
+ * Event names for bus communication
+ */
+const EVENT_NAMES = {
+  // Emitted events
+  SHOW_MESSAGE: 'show_mesage',
+  ADD_CUSTOMER_TO_LIST: 'add_customer_to_list',
+  SET_CUSTOMER: 'set_customer',
+  FETCH_CUSTOMER_DETAILS: 'fetch_customer_details',
+  
+  // Listened events
+  OPEN_UPDATE_CUSTOMER: 'open_update_customer',
+  REGISTER_POS_PROFILE: 'register_pos_profile',
+  PAYMENTS_REGISTER_POS_PROFILE: 'payments_register_pos_profile',
+};
+
+/**
+ * Validation messages
+ */
+const VALIDATION_MESSAGES = {
+  CUSTOMER_NAME_REQUIRED: 'Customer name is required.',
+  CUSTOMER_GROUP_REQUIRED: 'Customer group name is required.',
+  TERRITORY_REQUIRED: 'Territory name is required.',
+};
+
+/**
+ * Success messages
+ */
+const SUCCESS_MESSAGES = {
+  CUSTOMER_CREATED: 'Customer created successfully.',
+  CUSTOMER_UPDATED: 'Customer data updated successfully.',
+};
+
+/**
+ * Error messages
+ */
+const ERROR_MESSAGES = {
+  FAILED_TO_CREATE: 'Failed to create customer.',
+  FAILED_TO_LOAD_GROUPS: 'Error loading customer groups',
+  FAILED_TO_LOAD_TERRITORIES: 'Error loading territories',
+  FAILED_TO_LOAD_GENDERS: 'Error loading genders',
+};
+
+/**
+ * Customer type constant
+ */
+const CUSTOMER_TYPE = {
+  INDIVIDUAL: 'Individual',
+};
+
+/**
+ * Database limits
+ */
+const DB_LIMITS = {
+  CUSTOMER_GROUPS: 1000,
+  TERRITORIES: 5000,
+  GENDERS: 10,
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// COMPONENT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 export default {
-  data: () => ({
-    customerDialog: false,
-    pos_profile: '',
-    customer_id: '',
-    customer_name: '',
-    tax_id: '',
-    mobile_no: '',
-    email_id: '',
-    referral_code: '',
-    birthday: null,
-    birthday_menu: false,
-    group: '',
-    groups: [],
-    territory: '',
-    territorys: [],
-    genders: [],
-    customer_type: 'Individual',
-    gender: '',
-    loyalty_points: null,
-    loyalty_program: null,
-  }),
+  name: 'UpdateCustomer',
+  
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // DATA
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  data() {
+    return {
+      // Dialog state
+      customerDialog: false,
+      
+      // POS Profile
+      pos_profile: null,
+      
+      // Customer data
+      customer_id: '',
+      customer_name: '',
+      tax_id: '',
+      mobile_no: '',
+      email_id: '',
+      referral_code: '',
+      birthday: null,
+      birthday_menu: false,
+      customer_type: CUSTOMER_TYPE.INDIVIDUAL,
+      gender: '',
+      loyalty_points: null,
+      loyalty_program: null,
+      
+      // Dropdown options
+      group: '',
+      groups: [],
+      territory: '',
+      territorys: [],
+      genders: [],
+    };
+  },
+  
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // COMPUTED
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  computed: {},
+  
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // WATCHERS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
   watch: {},
+  
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // METHODS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
   methods: {
+    /**
+     * Close customer dialog
+     * Clears form data
+     */
     close_dialog() {
       this.customerDialog = false;
       this.clear_customer();
     },
+
+    /**
+     * Clear customer form data
+     * Resets all fields to default values
+     */
     clear_customer() {
       this.customer_name = '';
       this.tax_id = '';
@@ -144,189 +263,255 @@ export default {
       this.group = frappe.defaults.get_user_default('Customer Group');
       this.territory = frappe.defaults.get_user_default('Territory');
       this.customer_id = '';
-      this.customer_type = 'Individual';
+      this.customer_type = CUSTOMER_TYPE.INDIVIDUAL;
       this.gender = '';
       this.loyalty_points = null;
       this.loyalty_program = null;
     },
+
+    /**
+     * Load customer groups from database
+     * Loads only leaf nodes (is_group = 0)
+     */
     getCustomerGroups() {
       if (this.groups.length > 0) return;
-      const vm = this;
+
       frappe.db
         .get_list('Customer Group', {
           fields: ['name'],
           filters: { is_group: 0 },
-          limit: 1000,
+          limit: DB_LIMITS.CUSTOMER_GROUPS,
           order_by: 'name',
         })
         .then((data) => {
           if (data.length > 0) {
-            data.forEach((el) => {
-              vm.groups.push(el.name);
-            });
+            this.groups = data.map((el) => el.name);
           }
         })
         .catch((err) => {
-          evntBus.emit('show_mesage', {
-            text: 'Error loading customer groups',
-            color: 'error',
-          });
+          this.showMessage(ERROR_MESSAGES.FAILED_TO_LOAD_GROUPS, 'error');
         });
     },
+
+    /**
+     * Load territories from database
+     * Loads only leaf nodes (is_group = 0)
+     */
     getCustomerTerritorys() {
       if (this.territorys.length > 0) return;
-      const vm = this;
+
       frappe.db
         .get_list('Territory', {
           fields: ['name'],
           filters: { is_group: 0 },
-          limit: 5000,
+          limit: DB_LIMITS.TERRITORIES,
           order_by: 'name',
         })
         .then((data) => {
           if (data.length > 0) {
-            data.forEach((el) => {
-              vm.territorys.push(el.name);
-            });
+            this.territorys = data.map((el) => el.name);
           }
         })
         .catch((err) => {
-          evntBus.emit('show_mesage', {
-            text: 'Error loading territories',
-            color: 'error',
-          });
+          this.showMessage(ERROR_MESSAGES.FAILED_TO_LOAD_TERRITORIES, 'error');
         });
     },
+
+    /**
+     * Load genders from database
+     */
     getGenders() {
-      const vm = this;
       frappe.db
         .get_list('Gender', {
           fields: ['name'],
-          page_length: 10,
+          page_length: DB_LIMITS.GENDERS,
         })
         .then((data) => {
           if (data.length > 0) {
-            data.forEach((el) => {
-              vm.genders.push(el.name);
-            });
+            this.genders = data.map((el) => el.name);
           }
         })
         .catch((err) => {
-          evntBus.emit('show_mesage', {
-            text: 'Error loading genders',
-            color: 'error',
-          });
+          this.showMessage(ERROR_MESSAGES.FAILED_TO_LOAD_GENDERS, 'error');
         });
     },
-    submit_dialog() {
-      // validate if all required fields are filled
+
+    /**
+     * Validate customer form data
+     * @returns {boolean} True if valid, false otherwise
+     */
+    validateForm() {
       if (!this.customer_name) {
-        evntBus.emit('show_mesage', {
-          text: 'Customer name is required.',
-          color: 'error',
-        });
-        return;
+        this.showMessage(VALIDATION_MESSAGES.CUSTOMER_NAME_REQUIRED, 'error');
+        return false;
       }
       if (!this.group) {
-        evntBus.emit('show_mesage', {
-          text: 'Customer group name is required.',
-          color: 'error',
-        });
-        return;
+        this.showMessage(VALIDATION_MESSAGES.CUSTOMER_GROUP_REQUIRED, 'error');
+        return false;
       }
       if (!this.territory) {
-        evntBus.emit('show_mesage', {
-          text: 'Territory name is required.',
-          color: 'error',
-        });
+        this.showMessage(VALIDATION_MESSAGES.TERRITORY_REQUIRED, 'error');
+        return false;
+      }
+      return true;
+    },
+
+    /**
+     * Submit customer dialog
+     * Creates or updates customer based on customer_id
+     */
+    submit_dialog() {
+      if (!this.validateForm()) {
         return;
       }
-      if (this.customer_name) {
-        const vm = this;
-        const args = {
-          customer_id: this.customer_id,
-          customer_name: this.customer_name,
-          company: this.pos_profile.company,
-          tax_id: this.tax_id,
-          mobile_no: this.mobile_no,
-          email_id: this.email_id,
-          referral_code: this.referral_code,
-          birthday: this.birthday,
-          customer_group: this.group,
-          territory: this.territory,
-          customer_type: this.customer_type,
-          gender: this.gender,
-          method: this.customer_id ? 'update' : 'create',
-          pos_profile_doc: JSON.stringify(this.pos_profile),
-        };
-        frappe.call({
-          method: 'posawesome.posawesome.api.customer.create_customer.create_customer',
-          args: args,
-          callback: (r) => {
-            if (!r.exc && r.message.name) {
-              // Customer operation successful
-              let text = 'Customer created successfully.';
-              if (vm.customer_id) {
-                text = 'Customer data updated successfully.';
-              }
-              args.name = r.message.name;
-              frappe.utils.play_sound('submit');
-              // Add customer to list only when creating
-              if (!vm.customer_id) {
-                evntBus.emit('add_customer_to_list', args);
-              }
-              // Don't send set_customer when updating to avoid rewriting customer name
-              if (!vm.customer_id) {
-                evntBus.emit('set_customer', r.message.name);
-              }
-              // Don't refetch customer list when updating to avoid duplication
-              if (!vm.customer_id) {
-                evntBus.emit('fetch_customer_details');
-              }
-              this.close_dialog();
-            } else {
-              frappe.utils.play_sound('error');
-              evntBus.emit('show_mesage', {
-                text: 'Failed to create customer.',
-                color: 'error',
-              });
-            }
-          },
-        });
-        this.customerDialog = false;
-      }
+
+      const args = {
+        customer_id: this.customer_id,
+        customer_name: this.customer_name,
+        company: this.pos_profile.company,
+        tax_id: this.tax_id,
+        mobile_no: this.mobile_no,
+        email_id: this.email_id,
+        referral_code: this.referral_code,
+        birthday: this.birthday,
+        customer_group: this.group,
+        territory: this.territory,
+        customer_type: this.customer_type,
+        gender: this.gender,
+        method: this.customer_id ? 'update' : 'create',
+        pos_profile_doc: JSON.stringify(this.pos_profile),
+      };
+
+      frappe.call({
+        method: API_METHODS.CREATE_CUSTOMER,
+        args: args,
+        callback: (r) => {
+          if (!r.exc && r.message.name) {
+            this.handleCustomerSuccess(r.message.name, args);
+          } else {
+            this.handleCustomerError();
+          }
+        },
+      });
+
+      this.customerDialog = false;
     },
-  },
-  created: function () {
-    evntBus.on('open_update_customer', (data) => {
-      this.customerDialog = true;
-      if (data) {
-        this.customer_name = data.customer_name;
-        this.customer_id = data.name;
-        this.tax_id = data.tax_id;
-        this.mobile_no = data.mobile_no;
-        this.email_id = data.email_id;
-        this.referral_code = data.referral_code;
-        this.birthday = data.birthday;
-        this.group = data.customer_group;
-        this.territory = data.territory;
-        this.loyalty_points = data.loyalty_points;
-        this.loyalty_program = data.loyalty_program;
-        this.gender = data.gender;
+
+    /**
+     * Handle successful customer creation/update
+     * @param {string} customerName - Created/updated customer name
+     * @param {Object} args - Customer data
+     */
+    handleCustomerSuccess(customerName, args) {
+      const isUpdate = !!this.customer_id;
+      const message = isUpdate 
+        ? SUCCESS_MESSAGES.CUSTOMER_UPDATED 
+        : SUCCESS_MESSAGES.CUSTOMER_CREATED;
+
+      frappe.utils.play_sound('submit');
+      args.name = customerName;
+
+      // Only emit events for new customers to avoid duplication
+      if (!isUpdate) {
+        evntBus.emit(EVENT_NAMES.ADD_CUSTOMER_TO_LIST, args);
+        evntBus.emit(EVENT_NAMES.SET_CUSTOMER, customerName);
+        evntBus.emit(EVENT_NAMES.FETCH_CUSTOMER_DETAILS);
       }
 
-      // Load data only when dialog is opened
+      this.close_dialog();
+    },
+
+    /**
+     * Handle customer creation/update error
+     */
+    handleCustomerError() {
+      frappe.utils.play_sound('error');
+      this.showMessage(ERROR_MESSAGES.FAILED_TO_CREATE, 'error');
+    },
+
+    /**
+     * Show message to user via event bus
+     * @param {string} text - Message text
+     * @param {string} color - Message color (success, error, warning, info)
+     */
+    showMessage(text, color) {
+      evntBus.emit(EVENT_NAMES.SHOW_MESSAGE, { text, color });
+    },
+
+    /**
+     * Populate form with customer data
+     * @param {Object} data - Customer data
+     */
+    populateCustomerData(data) {
+      if (!data) return;
+
+      this.customer_name = data.customer_name;
+      this.customer_id = data.name;
+      this.tax_id = data.tax_id;
+      this.mobile_no = data.mobile_no;
+      this.email_id = data.email_id;
+      this.referral_code = data.referral_code;
+      this.birthday = data.birthday;
+      this.group = data.customer_group;
+      this.territory = data.territory;
+      this.loyalty_points = data.loyalty_points;
+      this.loyalty_program = data.loyalty_program;
+      this.gender = data.gender;
+    },
+
+    /**
+     * Register event listeners
+     * Sets up all event bus subscriptions
+     */
+    registerEventListeners() {
+      evntBus.on(EVENT_NAMES.OPEN_UPDATE_CUSTOMER, this.handleOpenUpdateCustomer);
+      evntBus.on(EVENT_NAMES.REGISTER_POS_PROFILE, this.handleRegisterPosProfile);
+      evntBus.on(EVENT_NAMES.PAYMENTS_REGISTER_POS_PROFILE, this.handlePaymentsRegisterPosProfile);
+    },
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // EVENT HANDLERS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    /**
+     * Handle open update customer event
+     * @param {Object|null} data - Customer data for editing or null for new
+     */
+    handleOpenUpdateCustomer(data) {
+      this.customerDialog = true;
+      this.populateCustomerData(data);
+
+      // Load dropdown data only when dialog opens
       this.getCustomerGroups();
       this.getCustomerTerritorys();
       this.getGenders();
-    });
-    evntBus.on('register_pos_profile', (data) => {
+    },
+
+    /**
+     * Handle POS profile registration
+     * @param {Object} data - Profile data
+     */
+    handleRegisterPosProfile(data) {
       this.pos_profile = data.pos_profile;
-    });
-    evntBus.on('payments_register_pos_profile', (data) => {
+    },
+
+    /**
+     * Handle payments POS profile registration
+     * @param {Object} data - Profile data
+     */
+    handlePaymentsRegisterPosProfile(data) {
       this.pos_profile = data.pos_profile;
-    });
-    // set default values for customer group and territory from user defaults
+    },
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // LIFECYCLE HOOKS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  created() {
+    this.registerEventListeners();
+    
+    // Set default values from user defaults
     this.group = frappe.defaults.get_user_default('Customer Group');
     this.territory = frappe.defaults.get_user_default('Territory');
   },
