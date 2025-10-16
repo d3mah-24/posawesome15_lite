@@ -32,7 +32,7 @@
               <button
                 class="qty-btn minus-btn"
                 @click="decreaseQuantity(item)"
-                :disabled="item.qty <= 0"
+                :disabled="!(item.qty && item.qty > 0)"
                 type="button"
               >
                 <span class="btn-icon">−</span>
@@ -64,12 +64,12 @@
                 @change="setItemRate(item, $event)"
                 @blur="setItemRate(item, $event)"
                 @keyup.enter="setItemRate(item, $event)"
-                :disabled="
-                  !!item.posa_is_offer ||
-                  !!item.posa_is_replace ||
-                  !!item.posa_offer_applied ||
-                  !!invoice_doc?.is_return
-                "
+                :disabled="Boolean(
+                  item.posa_is_offer ||
+                  item.posa_is_replace ||
+                  item.posa_offer_applied ||
+                  invoice_doc?.is_return
+                )"
                 class="compact-rate-input"
                 placeholder="0.00"
               />
@@ -87,13 +87,13 @@
                 @change="setDiscountPercentage(item, $event)"
                 @blur="setDiscountPercentage(item, $event)"
                 @keyup.enter="setDiscountPercentage(item, $event)"
-                :disabled="
-                  !!item.posa_is_offer ||
-                  !!item.posa_is_replace ||
-                  !!item.posa_offer_applied ||
+                :disabled="Boolean(
+                  item.posa_is_offer ||
+                  item.posa_is_replace ||
+                  item.posa_offer_applied ||
                   !pos_profile?.posa_allow_user_to_edit_item_discount ||
-                  !!invoice_doc?.is_return
-                "
+                  invoice_doc?.is_return
+                )"
                 class="compact-discount-input"
                 placeholder="0"
                 min="0"
@@ -127,7 +127,7 @@
           </template>
           <template v-slot:item.posa_is_offer="{ item }">
             <v-checkbox
-              :model-value="!!item.posa_is_offer || !!item.posa_is_replace"
+              :model-value="Boolean(item.posa_is_offer || item.posa_is_replace)"
               :disabled="true"
             ></v-checkbox>
           </template>
@@ -135,7 +135,7 @@
           <template v-slot:item.actions="{ item }">
             <div class="flex justify-end">
               <v-btn
-                :disabled="!!item.posa_is_offer || !!item.posa_is_replace"
+                :disabled="Boolean(item.posa_is_offer || item.posa_is_replace)"
                 icon
                 color="error"
                 size="small"
@@ -182,11 +182,11 @@
             step="0.01"
             min="0"
             :max="pos_profile?.posa_invoice_max_discount_allowed || 100"
-            :disabled="
+            :disabled="Boolean(
               !pos_profile ||
               !pos_profile?.posa_allow_user_to_edit_additional_discount ||
-              !!invoice_doc?.is_return
-            "
+              invoice_doc?.is_return
+            )"
             class="field-input discount-input"
             placeholder="0.00"
           />
@@ -327,11 +327,8 @@ export default {
       
       // Items Management
       items: [],
-      allItems: [],
-      itemsPerPage: 1000,
       
       // Offers & Promotions
-      posOffers: [],
       posa_offers: [],
       posa_coupons: [],
       discount_percentage_offer_name: null,
@@ -345,29 +342,9 @@ export default {
       posting_date: frappe.datetime.nowdate(),
       quick_return_value: false,
       
-      // Auto-save State Management
-      _autoSaveProcessing: false,
-      _pendingAutoSaveDoc: null,
-      _pendingAutoSaveReason: "auto",
-      _autoSaveWorkerTimer: null,
-      _autoUpdateTimer: null,
-      
-      // Offers Optimization
-      _offersDebounceTimer: null,
-      _offersCache: null,
-      _offersProcessing: false,
-      
-      // Item Operations Debouncing
+      // Simple State Management
       _itemOperationTimer: null,
       _updatingFromAPI: false,
-      _itemOperationsQueue: [],
-      _processingOperations: false,
-      
-      // Caching
-      _cachedCalculations: new Map(),
-      _lastCalculationTime: 0,
-      _calculationDebounceTimer: null,
-      _couponCache: null,
       
       // Table Headers Configuration
       items_headers: [
@@ -631,7 +608,6 @@ export default {
      * Used when item data changes to recalculate totals
      */
     refreshTotals() {
-      this._cachedCalculations.clear();
       this.$forceUpdate();
     },
 
@@ -646,7 +622,6 @@ export default {
 
         item.qty = newQty;
 
-        this._cachedCalculations.clear();
         this.$forceUpdate();
 
         // Emit event for Event-driven approach
@@ -675,7 +650,6 @@ export default {
           return;
         }
 
-        this._cachedCalculations.clear();
         this.$forceUpdate();
 
         // Emit event for Event-driven approach
@@ -830,7 +804,7 @@ export default {
         existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
         reason = "item-updated";
       } else {
-        console.log("Invoice(add_item): added", new_item.item_code);
+        // Item added
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
         new_item.posa_offer_applied = 0;
@@ -845,8 +819,7 @@ export default {
 
       // Check if this is the first item and no invoice exists
       if (this.items.length === 1 && !this.invoice_doc?.name) {
-        console.log("Invoice(add_item): creating new draft");
-        // Create draft invoice immediately for first item
+        // Creating new draft
         this.create_draft_invoice();
         return;
       } else {
@@ -864,7 +837,7 @@ export default {
         const result = await this.update_invoice(doc);
 
         if (result) {
-          console.log("Invoice(create_draft): created", result.name);
+          // Draft created
           this.invoice_doc = result;
           evntBus.emit("show_mesage", {
             text: "Draft invoice created",
@@ -929,7 +902,7 @@ export default {
         // Always update invoice_doc with API response (totals, taxes, etc.)
         if (result) {
           if (result.name && !this.invoice_doc?.name) {
-            console.log("Invoice(auto_update): created", result.name);
+            // Auto update created
             evntBus.emit("show_mesage", {
               text: "Draft invoice created",
               color: "success",
@@ -1421,10 +1394,10 @@ export default {
 
       try {
         const result = await this.update_invoice(doc);
-        console.log("Invoice(process): success", doc.name);
+        // Process completed successfully
         return result;
       } catch (error) {
-        console.log("Invoice(process): error", error.message);
+        // Error processing invoice
         evntBus.emit("show_mesage", {
           text: "Error processing invoice",
           color: "error",
@@ -1460,7 +1433,7 @@ export default {
 
         // Add default payment method if no payments exist
         if (!invoice_doc?.payments || invoice_doc?.payments.length === 0) {
-          console.log("Invoice(payment): adding default");
+          // Adding default payment
           try {
             const defaultPayment = await frappe.call({
               method:
@@ -1482,11 +1455,8 @@ export default {
                   default: 1,
                 },
               ];
-              console.log(
-                "Invoice(payment): added default",
-                defaultPayment.message.mode_of_payment
-              );
-
+              // Default payment added
+              
               // Save default payment to server
               try {
                 await frappe.call({
@@ -1496,22 +1466,21 @@ export default {
                     invoice_data: invoice_doc,
                   },
                 });
-                console.log("Invoice(payment): default saved");
+                // Default payment saved
               } catch (error) {
-                console.log("Invoice(payment): save failed", error);
+                // Payment save failed
               }
             }
           } catch (error) {
-            console.log("Invoice(payment): get failed", error);
+            // Payment get failed
           }
         }
 
         evntBus.emit("send_invoice_doc_payment", invoice_doc);
         evntBus.emit("show_payment", "true");
 
-        this.posa_offers = [];
-        this.posa_coupons = [];
-        this._cachedCalculations.clear();
+    this.posa_offers = [];
+    this.posa_coupons = [];
 
         if (this.pos_profile?.posa_clear_customer_after_payment) {
           this.customer = this.pos_profile?.customer;
@@ -1552,22 +1521,6 @@ export default {
 
     close_payments() {
       evntBus.emit("show_payment", "false");
-    },
-
-    update_items_details(items) {
-      if (!items.length) return;
-
-      // Use unified debounce for all item operations
-      this.debouncedItemOperation("items-details-update");
-    },
-
-    update_item_detail(item) {
-      if (!item.item_code || this.invoice_doc?.is_return) {
-        return;
-      }
-
-      // Use unified debounce for all item operations
-      this.debouncedItemOperation("item-detail-update");
     },
 
     fetch_customer_details() {
@@ -1835,15 +1788,8 @@ export default {
     },
 
     makeid(length) {
-      let result = "";
-      const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
-      const charactersLength = characters.length;
-      for (var i = 0; i < length; i++) {
-        result += characters.charAt(
-          Math.floor(Math.random() * charactersLength)
-        );
-      }
-      return result;
+      return crypto.randomUUID ? crypto.randomUUID().substring(0, length) : 
+             Math.random().toString(36).substring(2, 2 + length);
     },
 
     checkOfferIsAppley(item, offer) {
@@ -1878,87 +1824,13 @@ export default {
     },
 
     mergeItemsFromAPI(apiItems) {
-      console.log(
-        "Invoice(merge): merging items",
-        this.items.length,
-        "local",
-        apiItems.length,
-        "api"
-      );
-
-      // Handle null or undefined apiItems
-      if (!apiItems || !Array.isArray(apiItems)) {
-        console.log("Invoice(merge): api null, keeping local");
-        return;
-      }
-
-      // Always update invoice_doc with API totals, regardless of items merge strategy
-      // This ensures totals are always updated from server
-
-      // If local items are more than API items, keep local items
-      // This happens when user adds items quickly before API responds
-      if (this.items.length > (apiItems?.length || 0)) {
-        console.log(
-          "Invoice(merge): keeping local",
-          this.items.length,
-          ">",
-          apiItems.length
-        );
-        return;
-      }
-
-      // If API has more items, use API items
-      if ((apiItems?.length || 0) > this.items.length) {
-        console.log(
-          "Invoice(merge): using api",
-          apiItems.length,
-          ">",
-          this.items.length
-        );
+      // Simple merge - use API items if available
+      if (apiItems && Array.isArray(apiItems) && apiItems.length > 0) {
         this.items = apiItems;
-        return;
-      }
-
-      // If counts are equal, merge by updating existing items
-      console.log("Invoice(merge): equal counts", this.items.length);
-      if (Array.isArray(apiItems)) {
-        apiItems.forEach((apiItem) => {
-          const localIndex = this.items.findIndex(
-            (localItem) =>
-              localItem.item_code === apiItem.item_code &&
-              localItem.posa_row_id === apiItem.posa_row_id
-          );
-
-          if (localIndex >= 0) {
-            // Update existing item with API data
-            console.log("Invoice(merge): updating", apiItem.item_code);
-            this.items[localIndex] = { ...this.items[localIndex], ...apiItem };
-          } else {
-            // Check if item exists with different criteria (same item_code and uom)
-            const existingItemIndex = this.items.findIndex(
-              (localItem) =>
-                localItem.item_code === apiItem.item_code &&
-                localItem.uom === apiItem.uom
-            );
-
-            if (existingItemIndex >= 0) {
-              console.log("Invoice(merge): updating by uom", apiItem.item_code);
-              this.items[existingItemIndex] = {
-                ...this.items[existingItemIndex],
-                ...apiItem,
-              };
-            } else {
-              console.log("Invoice(merge): adding new", apiItem.item_code);
-              this.items.push(apiItem);
-            }
-          }
-        });
       }
     },
 
     debouncedItemOperation(operation = "item-operation") {
-      console.log("Invoice(debounce):", operation);
-      
       // Clear existing timer
       if (this._itemOperationTimer) {
         clearTimeout(this._itemOperationTimer);
@@ -1973,30 +1845,25 @@ export default {
     sendInvoiceUpdate() {
       if (!this.invoice_doc?.name) return;
       
-      console.log("Invoice(send): sending update to server");
+      // Sending update to server
       
       const doc = this.get_invoice_doc("item-update");
       
       this.auto_update_invoice(doc, "item-update")
         .then(() => {
-          console.log("Invoice(send): update sent successfully");
+          // Update sent successfully
         })
         .catch((error) => {
-          console.log("Invoice(send): error", error.message);
+          // Error handling
         });
     },
 
 
     handelOffers() {
-      // Clear existing timer
-      if (this._offersDebounceTimer) {
-        clearTimeout(this._offersDebounceTimer);
-      }
-
-      // Set new debounced timer with same delay
-      this._offersDebounceTimer = setTimeout(() => {
+      // Simple offers handling - no complex debouncing
+      if (this.invoice_doc?.name && this.items && this.items.length > 1) {
         this._processOffers();
-      }, 200); // 200ms for fast response
+      }
     },
 
     _processOffers() {
@@ -2016,14 +1883,14 @@ export default {
         this._offersCache.key === cacheKey &&
         now - this._offersCache.timestamp < 30000
       ) {
-        console.log("Invoice(offers): using cached");
+        // Using cached offers
         this.updatePosOffers(this._offersCache.data);
         return;
       }
 
       // Prevent multiple simultaneous calls
       if (this._offersProcessing) {
-        console.log("Invoice(offers): already processing");
+        // Already processing offers
         return;
       }
 
@@ -2093,19 +1960,9 @@ export default {
 
     updateInvoiceOffers(offers) {
       this.posa_offers = offers || [];
-
-      if (offers && offers.length > 0) {
-        const offer_names = offers.map((offer) => offer.name || offer.title);
-        this.applyOffersToInvoice(offer_names);
-      }
     },
 
     removeApplyOffer(invoiceOffer) {
-      if (invoiceOffer.name || invoiceOffer.title) {
-        const offer_name = invoiceOffer.name || invoiceOffer.title;
-        this.removeOffersFromInvoice([offer_name]);
-      }
-
       const index = this.posa_offers.findIndex(
         (el) => el.row_id === invoiceOffer.row_id
       );
@@ -2115,12 +1972,6 @@ export default {
     },
 
     applyNewOffer(offer) {
-      // SIMPLIFIED: Use Python API to apply new offers
-      if (offer.name || offer.title) {
-        const offer_name = offer.name || offer.title;
-        this.applyOffersToInvoice([offer_name]);
-      }
-
       const newOffer = {
         offer_name: offer.name,
         row_id: offer.row_id,
@@ -2134,18 +1985,6 @@ export default {
         coupon: offer.coupon,
       };
       this.posa_offers.push(newOffer);
-    },
-
-    applyOffersToInvoice(offer_names) {
-      // Offers are now applied automatically in sales_invoice.py
-      // No need to call backend API here
-      console.log("Invoice(offers): auto applied", offer_names);
-    },
-
-    removeOffersFromInvoice(offer_names) {
-      // Offers removal is now handled automatically in sales_invoice.py
-      // No need to call backend API here
-      console.log("Invoice(offers): auto removed", offer_names);
     },
 
     load_print_page(invoice_name) {
@@ -2172,23 +2011,6 @@ export default {
       );
     },
 
-    debugTableDimensions() {
-      try {
-        if (!this.$el || typeof this.$el.querySelector !== "function") {
-          return;
-        }
-        const table = this.$el.querySelector(
-          ".invoice-items-scrollable .v-data-table__wrapper table"
-        );
-        if (!table) return;
-        const rows = table.querySelectorAll("tr");
-        rows.forEach((row, rIdx) => {
-          [...row.children].forEach((cell, cIdx) => {
-            const cs = window.getComputedStyle(cell);
-          });
-        });
-      } catch (e) {}
-    },
     printInvoice() {
       if (!this.invoice_doc || !this.items || !this.items.length) {
         evntBus.emit("show_mesage", {
@@ -2212,20 +2034,15 @@ export default {
         color: "info",
       });
 
-      console.log("Invoice(submit): starting process");
+      // Starting submit process
       this.process_invoice()
         .then((invoice_doc) => {
-          console.log("Invoice(submit): process completed", invoice_doc?.name);
+          // Process completed
           const hasChosen = (invoice_doc?.payments || []).some(
             (p) => this.flt(p.amount) > 0
           );
-          console.log(
-            "Invoice(submit): payment check",
-            hasChosen,
-            "payments",
-            invoice_doc?.payments?.length || 0
-          );
-
+          // Payment check completed
+          
           if (!hasChosen) {
             evntBus.emit("show_mesage", {
               text: "Choose a payment method amount first",
@@ -2235,8 +2052,8 @@ export default {
             throw new Error("No payment chosen");
           }
 
-          console.log("Invoice(submit): calling API", invoice_doc?.name);
-
+          // Calling submit API
+          
           // Submit and print the invoice
           frappe.call({
             method: "posawesome.posawesome.api.sales_invoice.submit_invoice.submit_invoice",
@@ -2253,37 +2070,24 @@ export default {
             },
             async: true,
             callback: (r) => {
-              console.log(
-                "Invoice(submit): callback received",
-                r.message ? "success" : "error"
-              );
+              // Callback received
               evntBus.emit("unfreeze");
 
               if (r.message) {
-                console.log("Invoice(submit): successful");
+                // Submit successful
 
                 // Handle different response formats
                 let invoice_data = null;
                 if (r.message.success && r.message.invoice) {
                   // New format: { success: true, invoice: {...} }
                   invoice_data = r.message.invoice;
-                  console.log(
-                    "Invoice(submit): using success response",
-                    invoice_data.name
-                  );
+                  // Using success response format
                 } else if (r.message.name) {
                   // Old format: direct invoice object
                   invoice_data = r.message;
-                  console.log(
-                    "Invoice(submit): using direct object",
-                    invoice_data.name
-                  );
+                  // Using direct object format
                 } else {
-                  console.log("Invoice(submit): unexpected format");
-                  console.log(
-                    "Invoice(submit): message keys",
-                    Object.keys(r.message)
-                  );
+                  // Unexpected response format
                   evntBus.emit("show_mesage", {
                     text: "Unexpected response format from server",
                     color: "error",
@@ -2292,7 +2096,7 @@ export default {
                 }
 
                 if (invoice_data && invoice_data.name) {
-                  console.log("Invoice(submit): successful", invoice_data.name);
+                  // Invoice submitted successfully
 
                   this.load_print_page(invoice_data.name);
                   evntBus.emit("set_last_invoice", invoice_data.name);
@@ -2303,21 +2107,21 @@ export default {
                   frappe.utils.play_sound("submit");
 
                   // Clear local data after successful submission to prevent auto-save errors
-                  console.log("Invoice(submit): clearing local data");
+                  // Clearing local data
                   this.items = [];
                   this.invoice_doc = null;
 
                   evntBus.emit("new_invoice", "false");
                   evntBus.emit("invoice_submitted");
                 } else {
-                  console.log("Invoice(submit): no name in response");
+                  // No name in response
                   evntBus.emit("show_mesage", {
                     text: "Invoice submitted but no name received",
                     color: "warning",
                   });
                 }
               } else {
-                console.log("Invoice(submit): no message in response");
+                // No message in response
                 evntBus.emit("show_mesage", {
                   text: "Failed to submit invoice",
                   color: "error",
@@ -2335,7 +2139,7 @@ export default {
           });
         })
         .catch((error) => {
-          console.error("Invoice(submit): process error", error);
+          // Process error occurred
           evntBus.emit("unfreeze");
           evntBus.emit("show_mesage", {
             text: "Failed to prepare invoice for printing: " + error.message,
@@ -2368,8 +2172,6 @@ export default {
   },
 
   mounted() {
-    this._cachedCalculations = new Map();
-    this._lastCalculationTime = Date.now();
 
     evntBus.on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
@@ -2434,22 +2236,22 @@ export default {
 
     // Event-driven approach for items changes
     evntBus.on("item_added", (item) => {
-      console.log("Invoice(events): item_added", item.item_code);
+      // Item added event
       this.debouncedItemOperation("item-added");
     });
 
     evntBus.on("item_removed", (item) => {
-      console.log("Invoice(events): item_removed", item.item_code);
+      // Item removed event
       this.debouncedItemOperation("item-removed");
     });
 
     evntBus.on("item_updated", (item) => {
-      console.log("Invoice(events): item_updated", item.item_code);
+      // Item updated event
       this.debouncedItemOperation("item-updated");
     });
 
     this.$nextTick(() => {
-      this.debugTableDimensions();
+      // Component mounted
     });
     evntBus.on("send_invoice_doc_payment", (doc) => {
       this.invoice_doc = doc;
@@ -2490,32 +2292,9 @@ export default {
     evntBus.$off("update_invoice_offers");
     evntBus.$off("update_invoice_coupons");
     evntBus.$off("set_all_items");
-
-    this._cachedCalculations.clear();
-    this._couponCache = null;
-
-    if (this._calculationDebounceTimer) {
-      clearTimeout(this._calculationDebounceTimer);
-    }
-    if (this._offersDebounceTimer) {
-      clearTimeout(this._offersDebounceTimer);
-    }
     if (this._itemOperationTimer) {
       clearTimeout(this._itemOperationTimer);
     }
-
-    // Clear operations queue
-    this._itemOperationsQueue = [];
-    this._processingOperations = false;
-    if (this._autoUpdateTimer) {
-      clearTimeout(this._autoUpdateTimer);
-    }
-    if (this._autoSaveWorkerTimer) {
-      clearTimeout(this._autoSaveWorkerTimer);
-    }
-    this._pendingAutoSaveDoc = null;
-    this._pendingAutoSaveReason = "auto";
-    this._autoSaveProcessing = false;
   },
   created() {
     document.addEventListener("keydown", this.shortOpenPayment.bind(this));
@@ -2571,7 +2350,7 @@ export default {
   },
   updated() {
     this.$nextTick(() => {
-      this.debugTableDimensions();
+      // Component mounted
     });
   },
 };
