@@ -2814,6 +2814,8 @@ export default {
   border-collapse: collapse;
   flex: 1 1 auto !important;
   max-height: calc(100vh - 170px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 /* Ultra-compact table layout */
@@ -2864,16 +2866,17 @@ export default {
   overflow-y: auto !important;
   width: 100% !important;
   max-width: 100% !important;
+  max-height: calc(100vh - 170px) !important;
   box-sizing: border-box !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
 }
 
-/* Professional scrollbar styling */
+/* Professional scrollbar styling - matching ItemsSelector */
 .invoice-items-scrollable .v-data-table__wrapper::-webkit-scrollbar,
 .invoice-items-scrollable::-webkit-scrollbar {
-  width: 6px !important;
-  height: 6px !important;
+  width: 5px !important;
+  height: 5px !important;
 }
 
 .invoice-items-scrollable .v-data-table__wrapper::-webkit-scrollbar-track,
@@ -2884,17 +2887,18 @@ export default {
 
 .invoice-items-scrollable .v-data-table__wrapper::-webkit-scrollbar-thumb,
 .invoice-items-scrollable::-webkit-scrollbar-thumb {
-  background: #1976d2 !important;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
   border-radius: 3px !important;
 }
 
 .invoice-items-scrollable .v-data-table__wrapper::-webkit-scrollbar-thumb:hover,
 .invoice-items-scrollable::-webkit-scrollbar-thumb:hover {
-  background: #1565c0 !important;
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%) !important;
 }
 
 /* Hide scrollbar for IE, Edge and Firefox */
-.v-data-table__wrapper {
+.invoice-items-scrollable .v-data-table__wrapper,
+.invoice-items-scrollable {
   -ms-overflow-style: auto !important;
   scrollbar-width: thin !important;
   scrollbar-color: #1976d2 #f1f1f1 !important;
