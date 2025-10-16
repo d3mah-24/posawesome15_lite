@@ -23,68 +23,32 @@
 ## 🖥️ Try It Live
 
 **Remote Desktop Access** - Test the POS system remotely
-
 - 💻 **Server:** `remote_hoptodesk_pos_pc`
 - 🌐 **Platform:** [HopToDesk](https://hoptodesk.com)
 - 🔑 **ID:** `378901992`
 
-*Connect via HopToDesk to access a live demo environment.*
-
 ---
 
-## 📊 Performance Tests
+## 📚 Documentation
 
-### Performance Benchmarks
-- **Bundle Size:** Optimized JavaScript bundle with reduced console.log statements
-- **Load Time:** Improved by removing unnecessary logo loading (453 KiB saved)
-- **Memory Usage:** Reduced by eliminating debug statements and unused code
-- **API Calls:** Optimized with debounced operations (1-second delay)
+### 📁 Core Documentation
+- 📄 **[Features](./docs/FEATURES.md)** - Complete feature list
+- 🔧 **[Tech Stack](./docs/TECH_STACK.md)** - Technology stack details
+- ⌨️ **[Shortcuts](./docs/SHORTCUTS.md)** - Keyboard shortcuts guide
+- ⚙️ **[Dev Commands](./docs/common_dev_cmd.md)** - Common development commands
 
-### Code Quality Metrics
-- **Console Statements:** Removed 51+ console.log statements across all Vue components
-- **File Size Reduction:** Invoice.vue reduced from 3,497 to optimized size
-- **Method Consolidation:** Removed redundant methods and simplified logic
-- **CSS Optimization:** Fixed opacity parsing errors and improved styling
+### 🎨 Frontend Development
+- 🔍 **[Frontend Analysis](./needed_tasks/frontend/frontend_analysis.md)** - Comprehensive Vue.js analysis
+- 🚀 **[Frontend Optimization Plan](./needed_tasks/frontend/frontend_suggested_improvments_based_on_analysis_plan.md)** - Complete optimization strategy
 
-### Test Results
-![Performance Metrics](./imgs/metrics_16_10_2025_09_02_am.png)
-
-*Performance metrics captured on October 16, 2025 at 09:02 AM*
-
-**References:**
-- 📊 **[Frontend Analysis](./needed_tasks/frontend/frontend_analysis.md)** - Comprehensive frontend analysis
-- 🚀 **[Complete Optimization Plan](./needed_tasks/frontend/frontend_suggested_improvments_based_on_analysis_plan.md)** - Complete analysis & optimization strategy
-
----
-
-## 🎨 Frontend Tasks
-
-**References:**
-- 🔍 **[Frontend Analysis](./needed_tasks/frontend/frontend_analysis.md)** - Comprehensive frontend analysis
-- 🚀 **[Complete Optimization Plan](./needed_tasks/frontend/frontend_suggested_improvments_based_on_analysis_plan.md)** - Complete analysis & optimization strategy
-- 🗺️ **[Invoice Vue Map](./needed_tasks/frontend/INVOICE_VUE_MAP.md)** - Invoice Vue component mapping
-
----
-
-## 🔧 Backend Tasks
-
-**References:**
+### 🔧 Backend Development
 - 📊 **[Backend Analysis](./needed_tasks/backend/backend_analysis.md)** - Backend queue system analysis
 - 🚀 **[Backend Improvements Plan](./needed_tasks/backend/backend_suggested_improvments_based_on_analysis_plan.md)** - Backend optimization strategy
 - 🔌 **[API Structure](./needed_tasks/backend/API_STRUCTURE.md)** - API documentation
 
 ---
 
-## 📁 Documentation
-
-- 📄 **[Features](./docs/FEATURES.md)** - Complete feature list
-- 🔧 **[Tech Stack](./docs/TECH_STACK.md)** - Technology stack details
-- ⌨️ **[Shortcuts](./docs/SHORTCUTS.md)** - Keyboard shortcuts guide
-- ⚙️ **[Dev Commands](./docs/common_dev_cmd.md)** - Common development commands
-
----
-
-## 💰 Collaboration Payments
+## 💰 Collaboration
 
 - 💵 **Daily Payment:** $35 USD Based On Progress
 - 🌐 **Payment Methods:**
