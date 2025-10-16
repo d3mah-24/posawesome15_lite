@@ -823,11 +823,6 @@ export default {
      * Validates and emits add_item event
      */
     add_item_table(event, item) {
-      console.log(
-        "ItemsSelector.vue(add_item_table): Added",
-        item.item.item_code
-      );
-
       // Check zero price using shared function
       if (this.checkZeroPriceItem(item.item)) {
         return;
@@ -846,8 +841,6 @@ export default {
      * Validates and emits add_item event
      */
     add_item(item) {
-      console.log("ItemsSelector.vue(add_item): Added", item.item_code);
-
       // Check zero price using shared function
       if (this.checkZeroPriceItem(item)) {
         return;
