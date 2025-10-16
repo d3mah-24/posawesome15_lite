@@ -2,7 +2,6 @@
   <v-row justify="center">
     <v-dialog v-model="customerDialog" max-width="400px" @click:outside="clear_customer">
       <div class="customer-modal">
-        <!-- Compact Header -->
         <div class="modal-header">
           <v-icon size="16" color="white">mdi-account-circle</v-icon>
           <span class="modal-title">{{ customer_id ? 'Update Customer' : 'New Customer' }}</span>
@@ -11,15 +10,12 @@
           </button>
         </div>
 
-        <!-- Compact Content with Custom Input Fields -->
         <div class="modal-body">
-          <!-- Full width customer name -->
           <div class="field-group">
             <label class="field-label">Customer Name *</label>
             <input type="text" v-model="customer_name" class="custom-input" placeholder="Enter name" />
           </div>
 
-          <!-- Two columns -->
           <div class="field-row">
             <div class="field-group half">
               <label class="field-label">Tax ID</label>
@@ -90,7 +86,6 @@
           </div>
         </div>
 
-        <!-- Compact Footer -->
         <div class="modal-footer">
           <button class="btn-cancel" @click="close_dialog">
             <v-icon size="13">mdi-close</v-icon> Cancel
@@ -105,59 +100,34 @@
 </template>
 
 <script>
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// IMPORTS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 import { evntBus } from '../../bus';
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// CONSTANTS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-/**
- * API methods for customer operations
- */
 const API_METHODS = {
   CREATE_CUSTOMER: 'posawesome.posawesome.api.customer.create_customer.create_customer',
 };
 
-/**
- * Event names for bus communication
- */
 const EVENT_NAMES = {
-  // Emitted events
   SHOW_MESSAGE: 'show_mesage',
   ADD_CUSTOMER_TO_LIST: 'add_customer_to_list',
   SET_CUSTOMER: 'set_customer',
   FETCH_CUSTOMER_DETAILS: 'fetch_customer_details',
   
-  // Listened events
   OPEN_UPDATE_CUSTOMER: 'open_update_customer',
   REGISTER_POS_PROFILE: 'register_pos_profile',
   PAYMENTS_REGISTER_POS_PROFILE: 'payments_register_pos_profile',
 };
 
-/**
- * Validation messages
- */
 const VALIDATION_MESSAGES = {
   CUSTOMER_NAME_REQUIRED: 'Customer name is required.',
   CUSTOMER_GROUP_REQUIRED: 'Customer group name is required.',
   TERRITORY_REQUIRED: 'Territory name is required.',
 };
 
-/**
- * Success messages
- */
 const SUCCESS_MESSAGES = {
   CUSTOMER_CREATED: 'Customer created successfully.',
   CUSTOMER_UPDATED: 'Customer data updated successfully.',
 };
 
-/**
- * Error messages
- */
 const ERROR_MESSAGES = {
   FAILED_TO_CREATE: 'Failed to create customer.',
   FAILED_TO_LOAD_GROUPS: 'Error loading customer groups',
@@ -165,42 +135,22 @@ const ERROR_MESSAGES = {
   FAILED_TO_LOAD_GENDERS: 'Error loading genders',
 };
 
-/**
- * Customer type constant
- */
 const CUSTOMER_TYPE = {
   INDIVIDUAL: 'Individual',
 };
 
-/**
- * Database limits
- */
 const DB_LIMITS = {
   CUSTOMER_GROUPS: 1000,
   TERRITORIES: 5000,
   GENDERS: 10,
 };
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// COMPONENT
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 export default {
   name: 'UpdateCustomer',
-  
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // DATA
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  
   data() {
     return {
-      // Dialog state
       customerDialog: false,
-      
-      // POS Profile
       pos_profile: null,
-      
-      // Customer data
       customer_id: '',
       customer_name: '',
       tax_id: '',
@@ -213,8 +163,6 @@ export default {
       gender: '',
       loyalty_points: null,
       loyalty_program: null,
-      
-      // Dropdown options
       group: '',
       groups: [],
       territory: '',
@@ -223,36 +171,11 @@ export default {
     };
   },
   
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // COMPUTED
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  
-  computed: {},
-  
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // WATCHERS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  
-  watch: {},
-  
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // METHODS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  
   methods: {
-    /**
-     * Close customer dialog
-     * Clears form data
-     */
     close_dialog() {
       this.customerDialog = false;
       this.clear_customer();
     },
-
-    /**
-     * Clear customer form data
-     * Resets all fields to default values
-     */
     clear_customer() {
       this.customer_name = '';
       this.tax_id = '';
@@ -269,10 +192,6 @@ export default {
       this.loyalty_program = null;
     },
 
-    /**
-     * Load customer groups from database
-     * Loads only leaf nodes (is_group = 0)
-     */
     getCustomerGroups() {
       if (this.groups.length > 0) return;
 
@@ -293,10 +212,6 @@ export default {
         });
     },
 
-    /**
-     * Load territories from database
-     * Loads only leaf nodes (is_group = 0)
-     */
     getCustomerTerritorys() {
       if (this.territorys.length > 0) return;
 
@@ -317,9 +232,6 @@ export default {
         });
     },
 
-    /**
-     * Load genders from database
-     */
     getGenders() {
       frappe.db
         .get_list('Gender', {
@@ -336,10 +248,6 @@ export default {
         });
     },
 
-    /**
-     * Validate customer form data
-     * @returns {boolean} True if valid, false otherwise
-     */
     validateForm() {
       if (!this.customer_name) {
         this.showMessage(VALIDATION_MESSAGES.CUSTOMER_NAME_REQUIRED, 'error');
@@ -356,10 +264,6 @@ export default {
       return true;
     },
 
-    /**
-     * Submit customer dialog
-     * Creates or updates customer based on customer_id
-     */
     submit_dialog() {
       if (!this.validateForm()) {
         return;
@@ -397,11 +301,6 @@ export default {
       this.customerDialog = false;
     },
 
-    /**
-     * Handle successful customer creation/update
-     * @param {string} customerName - Created/updated customer name
-     * @param {Object} args - Customer data
-     */
     handleCustomerSuccess(customerName, args) {
       const isUpdate = !!this.customer_id;
       const message = isUpdate 
@@ -411,7 +310,6 @@ export default {
       frappe.utils.play_sound('submit');
       args.name = customerName;
 
-      // Only emit events for new customers to avoid duplication
       if (!isUpdate) {
         evntBus.emit(EVENT_NAMES.ADD_CUSTOMER_TO_LIST, args);
         evntBus.emit(EVENT_NAMES.SET_CUSTOMER, customerName);
@@ -421,27 +319,15 @@ export default {
       this.close_dialog();
     },
 
-    /**
-     * Handle customer creation/update error
-     */
     handleCustomerError() {
       frappe.utils.play_sound('error');
       this.showMessage(ERROR_MESSAGES.FAILED_TO_CREATE, 'error');
     },
 
-    /**
-     * Show message to user via event bus
-     * @param {string} text - Message text
-     * @param {string} color - Message color (success, error, warning, info)
-     */
     showMessage(text, color) {
       evntBus.emit(EVENT_NAMES.SHOW_MESSAGE, { text, color });
     },
 
-    /**
-     * Populate form with customer data
-     * @param {Object} data - Customer data
-     */
     populateCustomerData(data) {
       if (!data) return;
 
@@ -459,59 +345,33 @@ export default {
       this.gender = data.gender;
     },
 
-    /**
-     * Register event listeners
-     * Sets up all event bus subscriptions
-     */
     registerEventListeners() {
       evntBus.on(EVENT_NAMES.OPEN_UPDATE_CUSTOMER, this.handleOpenUpdateCustomer);
       evntBus.on(EVENT_NAMES.REGISTER_POS_PROFILE, this.handleRegisterPosProfile);
       evntBus.on(EVENT_NAMES.PAYMENTS_REGISTER_POS_PROFILE, this.handlePaymentsRegisterPosProfile);
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // EVENT HANDLERS
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    /**
-     * Handle open update customer event
-     * @param {Object|null} data - Customer data for editing or null for new
-     */
     handleOpenUpdateCustomer(data) {
       this.customerDialog = true;
       this.populateCustomerData(data);
 
-      // Load dropdown data only when dialog opens
       this.getCustomerGroups();
       this.getCustomerTerritorys();
       this.getGenders();
     },
 
-    /**
-     * Handle POS profile registration
-     * @param {Object} data - Profile data
-     */
     handleRegisterPosProfile(data) {
       this.pos_profile = data.pos_profile;
     },
 
-    /**
-     * Handle payments POS profile registration
-     * @param {Object} data - Profile data
-     */
     handlePaymentsRegisterPosProfile(data) {
       this.pos_profile = data.pos_profile;
     },
   },
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // LIFECYCLE HOOKS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
   created() {
     this.registerEventListeners();
     
-    // Set default values from user defaults
     this.group = frappe.defaults.get_user_default('Customer Group');
     this.territory = frappe.defaults.get_user_default('Territory');
   },
@@ -519,7 +379,6 @@ export default {
 </script>
 
 <style scoped>
-/* Ultra-compact beautiful modal */
 .customer-modal {
   background: #fff;
   border-radius: 12px;
