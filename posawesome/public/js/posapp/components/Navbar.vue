@@ -360,7 +360,7 @@ export default {
 
       try {
         const response = await frappe.call({
-          method: 'posawesome.posawesome.api.pos_opening_shift.get_user_shift_invoice_count',
+          method: 'posawesome.posawesome.api.pos_opening_shift.get_user_shift_invoice_count.get_user_shift_invoice_count',
           args: {
             pos_profile: this.pos_profile.name,
             pos_opening_shift: this.pos_opening_shift.name
