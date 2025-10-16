@@ -67,17 +67,6 @@ This document outlines mandatory backend improvement and architecture tasks deri
   - Include detailed error information
   - Example: "Purchase Payment Control Diagnostics"
 
-**Implementation:**
-```python
-def example_function():
-    try:
-        # Function logic
-        pass
-    except Exception as e:
-        frappe.log_error(f"Module(example_function): Error {str(e)}", "Diagnostic Title")
-        raise
-```
-
 ### 7. Direct Invoice Printing Service
 - [ ] **Windows Service development**
   - Handle direct printing of Sales Invoices
@@ -183,49 +172,22 @@ def example_function():
 ## 🔍 Technical Implementation Details
 
 ### Database Optimization
-```python
-# Example optimized query
-def get_optimized_invoice_data(invoice_id):
-    try:
-        # Use specific fields only
-        invoice = frappe.get_doc("Sales Invoice", invoice_id, 
-                               fields=["name", "customer", "total", "status"])
-        return invoice
-    except Exception as e:
-        frappe.log_error(f"get_optimized_invoice_data: {str(e)}", "Invoice Data Retrieval")
-        raise
-```
+- Use specific fields only
+- Optimize database queries
+- Implement efficient data retrieval patterns
+- Reduce database load
 
 ### Caching Strategy
-```python
-# Example caching implementation
-@frappe.whitelist()
-def get_cached_customer_data(customer_id):
-    cache_key = f"customer_data_{customer_id}"
-    cached_data = frappe.cache().get_value(cache_key)
-    
-    if not cached_data:
-        cached_data = frappe.get_doc("Customer", customer_id)
-        frappe.cache().set_value(cache_key, cached_data, expires_in_sec=300)
-    
-    return cached_data
-```
+- Implement intelligent caching
+- Cache frequently accessed data
+- Implement cache invalidation
+- Reduce API calls
 
 ### Error Handling Pattern
-```python
-# Standardized error handling
-def api_function():
-    try:
-        # Business logic here
-        result = process_data()
-        return {"status": "success", "data": result}
-    except ValidationError as e:
-        frappe.log_error(f"Validation Error: {str(e)}", "API Validation")
-        return {"status": "error", "message": "Validation failed"}
-    except Exception as e:
-        frappe.log_error(f"Unexpected Error: {str(e)}", "API Error")
-        return {"status": "error", "message": "Internal server error"}
-```
+- Implement consistent error handling
+- Use proper exception types
+- Log errors with context
+- Return meaningful error messages
 
 ---
 
