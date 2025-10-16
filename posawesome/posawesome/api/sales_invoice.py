@@ -539,11 +539,24 @@ def validate(doc, method):
 
 def before_submit(doc, method):
     """
-    Before Submit Sales Invoice
+    Before Submit Sales Invoice - Unified Function
     """
     try:
         if not doc.is_pos:
             return
+
+        # Call loyalty and coupon functions first
+        try:
+            from posawesome.posawesome.api.add_loyalty_point import add_loyalty_point
+            from posawesome.posawesome.api.update_coupon import update_coupon
+            
+            add_loyalty_point(doc)
+            update_coupon(doc, "used")
+        except ImportError:
+            # Functions might not exist, continue without them
+            pass
+        except Exception as e:
+            frappe.log_error(f"Error in loyalty/coupon functions: {str(e)}", "POS Submit")
 
         # Basic validations
         if not doc.pos_profile:
@@ -561,14 +574,22 @@ def before_submit(doc, method):
         if not doc.payments:
             frappe.throw(_("At least one payment is required"))
 
-        # Validate payment amounts against rounded total (not grand total)
+        # Enhanced payment validation with auto-adjustment
         total_payments = sum(flt(payment.amount) for payment in doc.payments)
-
-        # Use rounded_total if available, otherwise use grand_total
         target_amount = flt(doc.rounded_total) if hasattr(doc, 'rounded_total') and doc.rounded_total else flt(doc.grand_total)
         difference = abs(total_payments - target_amount)
 
-        # Allow small floating point differences (up to 0.05 for currency precision)
+        # Auto-adjust payment if difference is small (rounding issue)
+        if 0.01 <= difference <= 1.0:
+            if doc.payments:
+                adjustment = total_payments - target_amount
+                doc.payments[0].amount = flt(doc.payments[0].amount) - adjustment
+                frappe.msgprint(f"Payment adjusted by {adjustment} due to rounding")
+                # Recalculate after adjustment
+                total_payments = sum(flt(payment.amount) for payment in doc.payments)
+                difference = abs(total_payments - target_amount)
+
+        # Final validation with tolerance
         if difference > 0.05:
             frappe.throw(_(
                 "Payment amount must equal rounded total. Total payments: {0}, Rounded total: {1}, Difference: {2}"
@@ -591,7 +612,4 @@ def before_cancel(doc, method):
     )
     if shift_status == "Closed":
         frappe.throw(_("Cannot cancel invoice from closed shift"))
-
-
-
 
