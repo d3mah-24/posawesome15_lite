@@ -121,7 +121,7 @@ export default {
     },
     load_all_customers() {
       frappe.call({
-        method: "posawesome.posawesome.api.customer.get_customer_names",
+        method: "posawesome.posawesome.api.customer.customer_names.get_customer_names",
         args: {
           pos_profile: this.pos_profile.pos_profile,
         },
