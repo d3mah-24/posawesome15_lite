@@ -125,7 +125,6 @@ export default {
       snackColor: '',
       snackText: '',
       company_name: '',
-      company_logo: '',
       pos_profile: '',
       freeze: false,
       freezeTitle: '',
@@ -297,7 +296,6 @@ export default {
       if (this.pos_profile && this.pos_profile.company) {
         frappe.db.get_doc('Company', this.pos_profile.company).then((company_doc) => {
           this.company_name = company_doc.company_name;
-          this.company_logo = company_doc.company_logo;
         }).catch(() => {
           // Error fetching company info
         });
@@ -418,7 +416,6 @@ export default {
         });
         evntBus.on('set_company', (data) => {
           this.company_name = data.name;
-          this.company_logo = data.company_logo || '';
         });
         evntBus.on('register_pos_profile', (data) => {
           this.pos_profile = data.pos_profile;
