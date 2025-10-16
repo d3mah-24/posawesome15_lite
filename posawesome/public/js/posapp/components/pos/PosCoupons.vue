@@ -151,7 +151,7 @@ export default {
                 color: 'error',
               });
             } else {
-              console.log('PosCoupons.vue(add_coupon): Added', new_coupon);
+              // Coupon added
               vm.new_coupon = null;
               const coupon = res.coupon;
               vm.posa_coupons.push({
