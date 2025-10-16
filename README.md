@@ -95,8 +95,12 @@
 
 ---
 
-## 📋 Project Remaining Tasks
+## 📋 Remaining Tasks & Issues
 
+### Current Issues
+📁 **[Current Issues →](./current_issues/)**
+
+### Needed Tasks
 📈 **[Task Sheet →](https://docs.google.com/spreadsheets/d/1EX9QDOkw0UD-qPh3Ynpcw37q3b_bFtQ4)** - Project tasks & progress
 
 ---
