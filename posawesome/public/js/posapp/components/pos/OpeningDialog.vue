@@ -143,7 +143,7 @@ export default {
 
     const get_opening_dialog_data = () => {
         frappe.call({
-          method: 'posawesome.posawesome.api.pos_profile.get_opening_dialog_data',
+          method: 'posawesome.posawesome.api.pos_profile.get_opening_dialog_data.get_opening_dialog_data',
           args: {},
         callback: function (r) {
           if (r.message) {
@@ -173,7 +173,7 @@ export default {
       }
       is_loading.value = true;
       frappe
-        .call('posawesome.posawesome.api.pos_opening_shift.create_opening_voucher', {
+        .call('posawesome.posawesome.api.pos_opening_shift.create_opening_voucher.create_opening_voucher', {
           pos_profile: pos_profile.value,
           company: company.value,
           balance_details: payments_methods.value,
