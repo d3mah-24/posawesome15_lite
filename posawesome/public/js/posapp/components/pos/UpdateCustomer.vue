@@ -260,7 +260,7 @@ export default {
           pos_profile_doc: JSON.stringify(this.pos_profile),
         };
         frappe.call({
-          method: 'posawesome.posawesome.api.customer.create_customer',
+          method: 'posawesome.posawesome.api.customer.create_customer.create_customer',
           args: args,
           callback: (r) => {
             if (!r.exc && r.message.name) {
