@@ -130,12 +130,12 @@ export default {
     const max25chars = (v) => v.length <= 20 || 'Input too long!';
 
     const close_dialog = () => {
-      console.log('ClosingDialog.vue(close_dialog): Closed');
+      // Dialog closed
       closingDialog.value = false;
     };
 
     const submit_dialog = () => {
-      console.log('ClosingDialog.vue(submit_dialog): Submitted');
+      // Dialog submitted
       evntBus.emit('submit_closing_pos', dialog_data.value);
       closingDialog.value = false;
     };
@@ -169,13 +169,13 @@ export default {
     };
 
     const openClosingDialogHandler = (data) => {
-      console.log('ClosingDialog.vue(openClosingDialogHandler): Opened');
+      // Dialog opened
       closingDialog.value = true;
       dialog_data.value = data;
     };
 
     const registerPosProfileHandler = (data) => {
-      console.log('ClosingDialog.vue(registerPosProfileHandler): Registered', data.pos_profile?.name);
+      // Profile registered
       pos_profile.value = data.pos_profile;
       if (!pos_profile.value.posa_hide_expected_amount) {
         headers.value.push({
@@ -194,13 +194,13 @@ export default {
     };
 
     onMounted(() => {
-      console.log('ClosingDialog.vue(onMounted): Mounted');
+      // Component mounted
       evntBus.on('open_ClosingDialog', openClosingDialogHandler);
       evntBus.on('register_pos_profile', registerPosProfileHandler);
     });
 
     onBeforeUnmount(() => {
-      console.log('ClosingDialog.vue(onBeforeUnmount): Unmounted');
+      // Component unmounted
       evntBus.off('open_ClosingDialog', openClosingDialogHandler);
       evntBus.off('register_pos_profile', registerPosProfileHandler);
     });
