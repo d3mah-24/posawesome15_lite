@@ -27,7 +27,6 @@
 - 💻 **Server:** `remote_hoptodesk_pos_pc`
 - 🌐 **Platform:** [HopToDesk](https://hoptodesk.com)
 - 🔑 **ID:** `378901992`
-- 🔐 **Password:** `12341234`
 
 
 *Connect via HopToDesk to access a live demo environment.*
