@@ -62,6 +62,52 @@
 
 ---
 
+## External Libraries & Dependencies
+
+### Core Libraries
+- **Bootstrap 4.6.2** - CSS framework
+  - Responsive grid system
+  - Component library
+  - Cross-browser compatibility
+
+- **jQuery 3.7.0** - JavaScript library
+  - DOM manipulation
+  - Event handling
+  - AJAX requests
+
+- **Vue 3.5.21** - Progressive JavaScript framework
+  - Composition API
+  - Reactive data binding
+  - Component-based architecture
+
+### Mapping & Visualization
+- **Leaflet 1.2.0** - Interactive maps
+  - Open-source mapping library
+  - Mobile-friendly
+  - Plugin ecosystem
+
+### Date & Time Management
+- **Moment.js 2.29.4** - Date manipulation
+  - Date parsing and formatting
+  - Relative time calculations
+  - Internationalization support
+
+- **Moment Timezone 0.5.43** - Timezone handling
+  - Timezone conversion
+  - DST handling
+  - Global timezone database
+
+### Polyfills & Compatibility
+- **core-js** - JavaScript polyfills
+  - ES6+ feature support
+  - Browser compatibility
+  - Modern JavaScript features
+
+- **core-js-global@2.6.12** - Global polyfills
+- **core-js-global@2.6.9** - Legacy support
+
+---
+
 ## Hardware Integration
 
 ### Barcode Scanner
