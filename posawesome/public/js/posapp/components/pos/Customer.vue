@@ -1,5 +1,4 @@
 <template>
-  <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
     <v-autocomplete
       density="compact"
@@ -56,34 +55,18 @@
 </template>
 
 <script>
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// IMPORTS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 import { evntBus } from "../../bus";
 import UpdateCustomer from "./UpdateCustomer.vue";
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// CONSTANTS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-/**
- * API methods for customer operations
- */
 const API_METHODS = {
   GET_CUSTOMER_NAMES: 'posawesome.posawesome.api.customer.customer_names.get_customer_names',
 };
 
-/**
- * Event names for bus communication
- */
 const EVENT_NAMES = {
-  // Emitted events
   UPDATE_CUSTOMER: 'update_customer',
   SHOW_MESSAGE: 'show_mesage',
   OPEN_UPDATE_CUSTOMER: 'open_update_customer',
   
-  // Listened events
   TOGGLE_QUICK_RETURN: 'toggle_quick_return',
   REGISTER_POS_PROFILE: 'register_pos_profile',
   PAYMENTS_REGISTER_POS_PROFILE: 'payments_register_pos_profile',
@@ -95,9 +78,6 @@ const EVENT_NAMES = {
   CUSTOMER_DROPDOWN_OPENED: 'customer_dropdown_opened',
 };
 
-/**
- * Error messages
- */
 const ERROR_MESSAGES = {
   UNEXPECTED_ERROR: 'An unexpected error occurred while fetching customers',
   POS_PROFILE_NOT_LOADED: 'POS Profile not loaded',
@@ -108,20 +88,12 @@ const ERROR_MESSAGES = {
   INITIALIZATION_ERROR: 'An error occurred during component initialization',
 };
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// COMPONENT
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 export default {
   name: 'Customer',
   
   components: {
     UpdateCustomer,
   },
-  
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // DATA
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
   data() {
     return {
@@ -133,38 +105,20 @@ export default {
       quick_return: false,
     };
   },
-  
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // COMPUTED
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  
-  computed: {},
-  
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // METHODS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   
   methods: {
-    /**
-     * Initialize customer data
-     * Loads default customer initially for performance
-     */
     get_customer_names() {
       try {
         if (this.customers.length > 0) {
           return;
         }
-        // Load only default customer initially for better performance
         this.load_default_customer();
       } catch (error) {
         this.showMessage(ERROR_MESSAGES.UNEXPECTED_ERROR, 'error');
       }
     },
 
-    /**
-     * Load default customer from POS profile
-     * Sets initial customer without fetching all customers
-     */
     load_default_customer() {
       if (!this.pos_profile) {
         this.showMessage(ERROR_MESSAGES.POS_PROFILE_NOT_LOADED, 'error');
@@ -180,10 +134,6 @@ export default {
       }
     },
 
-    /**
-     * Load all customers from server
-     * Called when dropdown is opened/focused
-     */
     load_all_customers() {
       frappe.call({
         method: API_METHODS.GET_CUSTOMER_NAMES,
@@ -201,10 +151,6 @@ export default {
       });
     },
 
-    /**
-     * Open new customer dialog
-     * Emits event to open UpdateCustomer component
-     */
     new_customer() {
       try {
         evntBus.emit(EVENT_NAMES.OPEN_UPDATE_CUSTOMER, null);
@@ -213,10 +159,6 @@ export default {
       }
     },
 
-    /**
-     * Open edit customer dialog
-     * Emits event with current customer info
-     */
     edit_customer() {
       try {
         evntBus.emit(EVENT_NAMES.OPEN_UPDATE_CUSTOMER, this.customer_info);
@@ -225,14 +167,6 @@ export default {
       }
     },
 
-    /**
-     * Custom filter for customer autocomplete
-     * Searches across multiple fields: name, tax_id, email, mobile, customer_name
-     * @param {Object} item - Customer item
-     * @param {string} queryText - Search query
-     * @param {string} itemText - Item text (not used)
-     * @returns {boolean} True if match found
-     */
     customFilter(item, queryText, itemText) {
       try {
         const searchText = queryText.toLowerCase();
@@ -252,19 +186,10 @@ export default {
       }
     },
 
-    /**
-     * Show message to user via event bus
-     * @param {string} message - Message text
-     * @param {string} color - Message color (success, error, warning, info)
-     */
     showMessage(message, color) {
       evntBus.emit(EVENT_NAMES.SHOW_MESSAGE, { message, color });
     },
 
-    /**
-     * Register event listeners
-     * Sets up all event bus subscriptions
-     */
     registerEventListeners() {
       try {
         evntBus.on(EVENT_NAMES.TOGGLE_QUICK_RETURN, this.handleToggleQuickReturn);
@@ -281,86 +206,44 @@ export default {
       }
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // EVENT HANDLERS
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    /**
-     * Handle quick return toggle
-     * @param {boolean} value - Quick return state
-     */
     handleToggleQuickReturn(value) {
       this.quick_return = value;
     },
 
-    /**
-     * Handle POS profile registration
-     * @param {Object} pos_profile - POS profile data
-     */
     handleRegisterPosProfile(pos_profile) {
       this.pos_profile = pos_profile;
       this.get_customer_names();
     },
 
-    /**
-     * Handle payments POS profile registration
-     * @param {Object} pos_profile - POS profile data
-     */
     handlePaymentsRegisterPosProfile(pos_profile) {
       this.pos_profile = pos_profile;
       this.get_customer_names();
     },
 
-    /**
-     * Handle set customer
-     * @param {string} customer - Customer name
-     */
     handleSetCustomer(customer) {
       this.customer = customer;
     },
 
-    /**
-     * Handle add customer to list
-     * @param {Object} customer - Customer data
-     */
     handleAddCustomerToList(customer) {
       this.customers.push(customer);
     },
 
-    /**
-     * Handle set customer readonly
-     * @param {boolean} value - Readonly state
-     */
     handleSetCustomerReadonly(value) {
       this.readonly = value;
     },
 
-    /**
-     * Handle set customer info to edit
-     * @param {Object} data - Customer info
-     */
     handleSetCustomerInfoToEdit(data) {
       this.customer_info = data;
     },
 
-    /**
-     * Handle fetch customer details
-     */
     handleFetchCustomerDetails() {
       this.get_customer_names();
     },
 
-    /**
-     * Handle customer dropdown opened
-     */
     handleCustomerDropdownOpened() {
       this.load_all_customers();
     },
   },
-
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // LIFECYCLE HOOKS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   created() {
     this.$nextTick(() => {
@@ -368,15 +251,7 @@ export default {
     });
   },
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // WATCHERS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
   watch: {
-    /**
-     * Watch customer changes
-     * Emits update_customer event when customer changes
-     */
     customer() {
       evntBus.emit(EVENT_NAMES.UPDATE_CUSTOMER, this.customer);
     },
