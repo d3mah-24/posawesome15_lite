@@ -27,8 +27,31 @@
 - 💻 **Server:** `remote_hoptodesk_pos_pc`
 - 🌐 **Platform:** [HopToDesk](https://hoptodesk.com)
 - 🔑 **ID:** `378901992`
+- 🔐 **Password:** `12341234`
+
 
 *Connect via HopToDesk to access a live demo environment.*
+
+---
+
+## 📊 Metrics & Performance Tests
+
+### Performance Benchmarks
+- **Bundle Size:** Optimized JavaScript bundle with reduced console.log statements
+- **Load Time:** Improved by removing unnecessary logo loading (453 KiB saved)
+- **Memory Usage:** Reduced by eliminating debug statements and unused code
+- **API Calls:** Optimized with debounced operations (1-second delay)
+
+### Code Quality Metrics
+- **Console Statements:** Removed 51+ console.log statements across all Vue components
+- **File Size Reduction:** Invoice.vue reduced from 3,497 to optimized size
+- **Method Consolidation:** Removed redundant methods and simplified logic
+- **CSS Optimization:** Fixed opacity parsing errors and improved styling
+
+### Test Results
+![Performance Metrics](./imgs/metrics_16_10_2025_09_02_am.png)
+
+*Performance metrics captured on October 16, 2025 at 09:02 AM*
 
 ---
 
