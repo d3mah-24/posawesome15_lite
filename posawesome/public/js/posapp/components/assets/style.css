@@ -14,7 +14,7 @@ tr.v-data-table__tr td {
 .v-table>.v-table__wrapper>table>thead>tr>th {
     padding: 4px 6px !important;
     transition-duration: .28s;
-    transition-property: box-shadow, opacity, background, height;
+    transition-property: box-shadow, background, height;
     transition-timing-function:
         cubic-bezier(.4, 0, .2, 1);
 }
