@@ -63,14 +63,14 @@
                       hide-details
                       dense
                       class="mt-0 pt-0"
-                      :disabled="
+                      :disabled="Boolean(
                         (offer.offer == 'Give Product' &&
                           !offer.give_item &&
                           (!offer.replace_cheapest_item || !offer.replace_item)) ||
                         (offer.offer == 'Grand Total' &&
                           discount_percentage_offer_name &&
                           discount_percentage_offer_name != offer.name)
-                      "
+                      )"
                     ></v-checkbox>
                   </v-col>
                   <v-col cols="auto" v-if="offer.offer_applied">
