@@ -362,6 +362,7 @@ export default {
       _updatingFromAPI: false,
       _itemOperationsQueue: [],
       _processingOperations: false,
+      _lastClickTimes: {},
       
       // Caching
       _cachedCalculations: new Map(),
@@ -641,6 +642,18 @@ export default {
      */
     increaseQuantity(item) {
       try {
+        // Prevent rapid double-clicks
+        const now = Date.now();
+        const lastClickKey = `increase_${item.posa_row_id}`;
+        if (this._lastClickTimes && this._lastClickTimes[lastClickKey] && 
+            (now - this._lastClickTimes[lastClickKey]) < 300) {
+          console.log("Invoice(qty): preventing rapid double-click");
+          return;
+        }
+        
+        if (!this._lastClickTimes) this._lastClickTimes = {};
+        this._lastClickTimes[lastClickKey] = now;
+
         const currentQty = Number(item.qty) || 0;
         const newQty = currentQty + 1;
 
@@ -665,6 +678,18 @@ export default {
      */
     decreaseQuantity(item) {
       try {
+        // Prevent rapid double-clicks
+        const now = Date.now();
+        const lastClickKey = `decrease_${item.posa_row_id}`;
+        if (this._lastClickTimes && this._lastClickTimes[lastClickKey] && 
+            (now - this._lastClickTimes[lastClickKey]) < 300) {
+          console.log("Invoice(qty): preventing rapid double-click");
+          return;
+        }
+        
+        if (!this._lastClickTimes) this._lastClickTimes = {};
+        this._lastClickTimes[lastClickKey] = now;
+
         const currentQty = Number(item.qty) || 0;
         const newQty = Math.max(0, currentQty - 1);
 
@@ -1947,6 +1972,28 @@ export default {
           apiItems.length
         );
         return;
+      }
+
+      // Merge items intelligently - preserve local changes that are more recent
+      if (this.items.length === apiItems.length) {
+        console.log("Invoice(merge): equal counts", this.items.length);
+        
+        // Compare each item and preserve local changes
+        this.items.forEach((localItem, index) => {
+          const apiItem = apiItems[index];
+          if (apiItem && localItem.item_code === apiItem.item_code) {
+            // If local quantity is higher, keep local (user increased qty)
+            if (localItem.qty > apiItem.qty) {
+              console.log("Invoice(merge): preserving local qty", localItem.item_code, localItem.qty, ">", apiItem.qty);
+              apiItems[index] = { ...apiItem, qty: localItem.qty };
+            }
+            // If local has more recent changes, preserve them
+            else if (localItem.qty === apiItem.qty && localItem.posa_row_id === apiItem.posa_row_id) {
+              // Keep local item if it has the same data (no conflict)
+              apiItems[index] = localItem;
+            }
+          }
+        });
       }
 
       // If API has more items, use API items
