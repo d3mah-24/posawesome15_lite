@@ -3,6 +3,9 @@
 ## Overview
 This document describes the timer-based control system for POS opening and closing shifts, ensuring users can only open/close shifts within allowed time periods as defined in the POS profile settings.
 
+## 🖼️ Visual Reference
+![POS Opening Closing Shift Timer](./pos_opening_closing_shift_timer.png)
+
 ## 🕐 Timer Control System
 
 ### **Opening Shift Timer**
