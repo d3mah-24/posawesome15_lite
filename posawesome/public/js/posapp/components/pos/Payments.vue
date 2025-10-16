@@ -443,7 +443,7 @@ export default {
       return defaultPayment;
     },
     back_to_invoice() {
-      console.log('Payments.vue(back_to_invoice): Closed');
+      // Back to invoice
       evntBus.emit("show_payment", "false");
       evntBus.emit("set_customer_readonly", false);
     },
@@ -741,7 +741,7 @@ export default {
         if (payment.base_amount !== undefined) {
           payment.base_amount = isReturn ? -Math.abs(amount) : amount;
         }
-        console.log('Payments.vue(set_rest_amount): Filled', amount);
+        // Amount filled
         evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
       }
       else if (actual_remaining < 0) {
@@ -754,7 +754,7 @@ export default {
         if (payment.base_amount !== undefined) {
           payment.base_amount = isReturn ? -Math.abs(excess_amount) : excess_amount;
         }
-        console.log('Payments.vue(set_rest_amount): Excess', excess_amount);
+        // Excess amount handled
         evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
       }
     },
