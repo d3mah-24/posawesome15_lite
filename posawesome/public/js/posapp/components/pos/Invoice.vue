@@ -990,53 +990,11 @@ export default {
         return Promise.resolve();
       }
 
-      this._pendingAutoSaveDoc = this.get_invoice_doc(reason);
-      this._pendingAutoSaveReason = reason;
-
-      if (!this._autoSaveProcessing) {
-        return this._run_auto_save_worker();
-      }
-
-      return Promise.resolve();
+      // Simple: just send update immediately
+      const doc = this.get_invoice_doc(reason);
+      return this.auto_update_invoice(doc, reason);
     },
 
-    _run_auto_save_worker() {
-      if (this._autoSaveProcessing) {
-        return Promise.resolve();
-      }
-
-      if (!this._pendingAutoSaveDoc) {
-        return Promise.resolve();
-      }
-
-      const doc = this._pendingAutoSaveDoc;
-      const reason = this._pendingAutoSaveReason || "auto";
-
-      this._pendingAutoSaveDoc = null;
-      this._pendingAutoSaveReason = "auto";
-      this._autoSaveProcessing = true;
-
-      return this.auto_update_invoice(doc, reason)
-        .then(() => {
-          // Auto save success - no logging needed
-        })
-        .catch((error) => {
-          console.log("Invoice(auto_save): error", error.message);
-        })
-        .finally(() => {
-          this._autoSaveProcessing = false;
-
-          if (this._pendingAutoSaveDoc) {
-            if (this._autoSaveWorkerTimer) {
-              clearTimeout(this._autoSaveWorkerTimer);
-            }
-            this._autoSaveWorkerTimer = setTimeout(() => {
-              this._autoSaveWorkerTimer = null;
-              this._run_auto_save_worker();
-            }, 0);
-          }
-        });
-    },
 
     async reload_invoice() {
       if (this.invoice_doc && this.invoice_doc?.name) {
@@ -2000,48 +1958,34 @@ export default {
 
     debouncedItemOperation(operation = "item-operation") {
       console.log("Invoice(debounce):", operation);
-      // Add operation to queue
-      if (!this._itemOperationsQueue.includes(operation)) {
-        this._itemOperationsQueue.push(operation);
-      }
-
+      
       // Clear existing timer
       if (this._itemOperationTimer) {
         clearTimeout(this._itemOperationTimer);
       }
 
-      // Set new debounced timer for all item operations
+      // Wait 1 second after user stops, then send update
       this._itemOperationTimer = setTimeout(() => {
-        this.processItemOperations();
-      }, 500); // 500ms to wait for user actions to complete
+        this.sendInvoiceUpdate();
+      }, 1000); // 1 second delay
     },
 
-    processItemOperations() {
-      if (this._processingOperations) {
-        return;
-      }
-
-      this._processingOperations = true;
-
-      console.log("Invoice(process): operations started");
-
-      // Process offers after all item operations are complete
-      this.handelOffers();
-
-      // Use queue_auto_save for better batching with combined operations
-      const combinedReason =
-        this._itemOperationsQueue.join("-") || "item-operation";
-      console.log("Invoice(auto_save):", combinedReason);
-
-      // Clear queue immediately
-      this._itemOperationsQueue = [];
-
-      // Call queue_auto_save and reset processing flag after completion
-      this.queue_auto_save(combinedReason).finally(() => {
-        this._processingOperations = false;
-        console.log("Invoice(process): operations completed");
-      });
+    sendInvoiceUpdate() {
+      if (!this.invoice_doc?.name) return;
+      
+      console.log("Invoice(send): sending update to server");
+      
+      const doc = this.get_invoice_doc("item-update");
+      
+      this.auto_update_invoice(doc, "item-update")
+        .then(() => {
+          console.log("Invoice(send): update sent successfully");
+        })
+        .catch((error) => {
+          console.log("Invoice(send): error", error.message);
+        });
     },
+
 
     handelOffers() {
       // Clear existing timer
