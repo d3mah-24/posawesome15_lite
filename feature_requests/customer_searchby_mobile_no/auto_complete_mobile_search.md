@@ -3,6 +3,9 @@
 ## Overview
 This document describes the auto-complete search functionality for the customer field in POS Awesome, which allows searching customers by both customer name and mobile number.
 
+## 🖼️ Visual Reference
+![Auto Complete Mobile Search](./auto_complete_mobile_search.png)
+
 ## 🔍 Search Functionality
 
 ### **Customer Field Search Capabilities**
