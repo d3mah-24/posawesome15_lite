@@ -308,9 +308,6 @@ export default {
 
   // ===== WATCH =====
   watch: {
-    /**
-     * Watch filtered items changes to update details and scroll height
-     */
     filtred_items(newValue, oldValue) {
       if (newValue.length !== oldValue.length) {
         this.update_items_details(newValue);
@@ -318,9 +315,6 @@ export default {
       this.scheduleScrollHeightUpdate();
     },
 
-    /**
-     * Watch customer changes to reload items
-     */
     customer(newVal, oldVal) {
       if (this._suppressCustomerWatcher) {
         this._suppressCustomerWatcher = false;
@@ -331,9 +325,6 @@ export default {
       }
     },
 
-    /**
-     * Watch view mode changes to recalculate scroll area
-     */
     items_view() {
       this.scheduleScrollHeightUpdate();
     },
@@ -341,10 +332,6 @@ export default {
 
   // ===== COMPUTED =====
   computed: {
-    /**
-     * Filter items based on search and group selection
-     * Direct filtering without cache for maximum performance
-     */
     filtred_items() {
       this.search = this.get_search(this.first_search);
 
@@ -380,9 +367,6 @@ export default {
       return filtred_list.slice(0, UI_CONFIG.MAX_DISPLAYED_ITEMS);
     },
 
-    /**
-     * Generate inline style for scrollable area
-     */
     itemsScrollStyle() {
       if (!this.itemsScrollHeight) {
         return {};
@@ -392,9 +376,6 @@ export default {
       };
     },
 
-    /**
-     * Debounced search with live updates
-     */
     debounce_search: {
       get() {
         return this.first_search;
@@ -406,56 +387,13 @@ export default {
     },
   },
 
-  // ===== METHODS =====
-  /**
-   * METHODS ORGANIZATION:
-   * 
-   * 1. LAYOUT & SCROLL MANAGEMENT
-   *    - scheduleScrollHeightUpdate, updateScrollableHeight
-   * 
-   * 2. BARCODE PROCESSING
-   *    - handle_barcode_input, analyze_barcode_type
-   *    - process_scale_barcode, process_private_barcode, process_normal_barcode
-   * 
-   * 3. ITEMS FETCHING & MANAGEMENT
-   *    - get_items, get_items_groups
-   *    - update_items_details, update_cur_items_details
-   * 
-   * 4. SEARCH FUNCTIONALITY
-   *    - performLiveSearch, search_onchange
-   *    - search_barcode_from_server, enter_event
-   * 
-   * 5. ITEM ADDITION
-   *    - add_item, add_item_table, add_item_to_cart
-   *    - checkZeroPriceItem
-   * 
-   * 6. UI HELPERS
-   *    - show_offers, show_coupons
-   *    - onItemGroupChange, esc_event
-   * 
-   * 7. UTILITY METHODS
-   *    - getItemsHeaders, get_item_qty, get_search
-   *    - _buildItemsMap, _resetSearch
-   */
   methods: {
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // LAYOUT & SCROLL MANAGEMENT
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Schedule scroll height update on next tick
-     * Defers measurement until DOM updates settle
-     */
     scheduleScrollHeightUpdate() {
       this.$nextTick(() => {
         this.updateScrollableHeight();
       });
     },
 
-    /**
-     * Calculate and set scrollable area height
-     * Ensures optimal use of viewport space
-     */
     updateScrollableHeight() {
       const scrollRef = this.$refs.itemsScrollArea;
       const scrollEl = scrollRef ? scrollRef.$el || scrollRef : null;
@@ -482,13 +420,6 @@ export default {
       }
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // BARCODE PROCESSING
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Handle barcode input - auto-process and clear
-     */
     handle_barcode_input() {
       if (!this.barcode_search.trim()) return;
 
@@ -499,20 +430,12 @@ export default {
       if (barcodeInput) barcodeInput.value = "";
     },
 
-    /**
-     * Analyze and route barcode to appropriate processor
-     * Priority: Scale → Private → Normal
-     */
     analyze_barcode_type(barcode_value) {
       if (this.process_scale_barcode(barcode_value)) return;
       if (this.process_private_barcode(barcode_value)) return;
       this.process_normal_barcode(barcode_value);
     },
 
-    /**
-     * Process weight/scale barcode
-     * @returns {boolean} True if barcode matches scale pattern
-     */
     process_scale_barcode(barcode_value) {
       const {
         posa_enable_scale_barcode,
@@ -547,10 +470,6 @@ export default {
       return false;
     },
 
-    /**
-     * Process private barcode
-     * @returns {boolean} True if barcode matches private pattern
-     */
     process_private_barcode(barcode_value) {
       const {
         posa_enable_private_barcode,
@@ -584,9 +503,6 @@ export default {
       return false;
     },
 
-    /**
-     * Process normal standard barcode
-     */
     process_normal_barcode(barcode_value) {
       frappe.call({
         method: "posawesome.posawesome.api.item.search_items_barcode.search_items_barcode",
@@ -605,35 +521,18 @@ export default {
       });
     },
 
-    /**
-     * Add item to cart via event bus
-     */
     add_item_to_cart(item) {
       evntBus.emit(EVENT_NAMES.ADD_ITEM, item);
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // UI NAVIGATION
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Show offers panel
-     */
     show_offers() {
       evntBus.emit(EVENT_NAMES.SHOW_OFFERS, "true");
     },
 
-    /**
-     * Show coupons panel
-     */
     show_coupons() {
       evntBus.emit(EVENT_NAMES.SHOW_COUPONS, "true");
     },
 
-    /**
-     * Handle item group change
-     * Clears search to avoid confusion
-     */
     onItemGroupChange() {
       if (this.debounce_search) {
         this.debounce_search = "";
@@ -642,13 +541,6 @@ export default {
       this.get_items();
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ITEMS FETCHING & MANAGEMENT
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Fetch items from server based on filters
-     */
     get_items() {
       if (!this.pos_profile) {
         evntBus.emit("show_mesage", {
@@ -682,9 +574,6 @@ export default {
         },
         callback: function (r) {
           if (r.message) {
-            // Simple data mapping - only essential fields
-            // Backend returns: item_code, item_name, item_group, stock_uom,
-            // rate, price_list_rate, base_rate, currency, actual_qty, has_zero_price
             vm.items = (r.message || []).map((it) => ({
               item_code: it.item_code,
               item_name: it.item_name,
@@ -711,10 +600,6 @@ export default {
       });
     },
 
-    /**
-     * Build items map for quick search
-     * Creates lookups by item_code and item_name (lowercase)
-     */
     _buildItemsMap() {
       this._itemsMap.clear();
 
@@ -727,14 +612,6 @@ export default {
       });
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ITEM GROUPS MANAGEMENT
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Fetch available item groups
-     * Uses POS profile groups or fetches from server
-     */
     get_items_groups() {
       if (!this.pos_profile) {
         return;
@@ -762,10 +639,6 @@ export default {
       }
     },
 
-    /**
-     * Get table headers configuration
-     * @returns {Array} Table column definitions
-     */
     getItemsHeaders() {
       const items_headers = [
         {
@@ -795,15 +668,6 @@ export default {
       return items_headers;
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ITEM VALIDATION & ADDITION
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Check if item has zero price and if it's allowed
-     * @param {Object} item - Item to check
-     * @returns {boolean} True if item is blocked, false if allowed
-     */
     checkZeroPriceItem(item) {
       if (
         item.has_zero_price &&
@@ -818,10 +682,6 @@ export default {
       return false; // Item allowed
     },
 
-    /**
-     * Add item from table view
-     * Validates and emits add_item event
-     */
     add_item_table(event, item) {
       // Check zero price using shared function
       if (this.checkZeroPriceItem(item.item)) {
@@ -836,10 +696,6 @@ export default {
       this.qty = 1;
     },
 
-    /**
-     * Add item from card view
-     * Validates and emits add_item event
-     */
     add_item(item) {
       // Check zero price using shared function
       if (this.checkZeroPriceItem(item)) {
@@ -854,14 +710,6 @@ export default {
       this.qty = 1;
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // SEARCH & FILTERING
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    /**
-     * Handle enter key press in search field
-     * Adds first filtered item to cart
-     */
     enter_event() {
       let match = false;
 
@@ -948,10 +796,6 @@ export default {
       }
     },
 
-    /**
-     * Reset search fields and focus
-     * Clears all search-related state
-     */
     _resetSearch() {
       this.search = null;
       this.first_search = null;
@@ -962,19 +806,11 @@ export default {
       this.$refs.debounce_search.focus();
     },
 
-    /**
-     * Handle search input change
-     * Triggers item search by name/code/batch/serial
-     */
     search_onchange() {
       // Search by name/code/batch/serial (not barcode)
       this._performItemSearch();
     },
 
-    /**
-     * Perform live search with debounce
-     * Fetches items matching search term from server
-     */
     performLiveSearch(searchValue) {
       const vm = this;
 
@@ -1030,10 +866,6 @@ export default {
       });
     },
 
-    /**
-     * Internal item search by name, code, batch, or serial
-     * Called by search_onchange and enter_event
-     */
     _performItemSearch() {
       const vm = this;
 
@@ -1084,14 +916,6 @@ export default {
       });
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // BARCODE SEARCH
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    /**
-     * Perform barcode-based search
-     * Updates search state and triggers server barcode lookup
-     */
     _performSearch() {
       const vm = this;
 
@@ -1108,14 +932,6 @@ export default {
       vm.search_barcode_from_server(vm.debounce_search);
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // UTILITY HELPERS
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    /**
-     * Get item quantity for barcode processing
-     * Returns current qty or defaults to 1
-     */
     get_item_qty(first_search) {
       // Set quantity correctly always
       const currentQty = Number(this.qty);
@@ -1124,31 +940,14 @@ export default {
       return scal_qty;
     },
 
-    /**
-     * Get search value
-     * Returns provided search or empty string
-     */
     get_search(first_search) {
       return first_search || "";
     },
 
-    /**
-     * Handle escape key press
-     * Resets search fields and focus
-     */
     esc_event() {
       this._resetSearch();
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ITEM DETAILS UPDATE
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    /**
-     * Update item details from server
-     * Fetches latest prices, stock, and details for specified items
-     * @param {Array} items - Items to update
-     */
     update_items_details(items) {
       const vm = this;
       // Avoid triggering on initial load — wait until first list is displayed
@@ -1207,22 +1006,10 @@ export default {
       });
     },
 
-    /**
-     * Update current filtered items details
-     * Refreshes prices and stock for displayed items
-     */
     update_cur_items_details() {
       this.update_items_details(this.filtred_items);
     },
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // BARCODE SCANNING
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    /**
-     * Initialize barcode scanner
-     * Attaches onScan library to document for hardware scanner support
-     */
     scan_barcode() {
       const vm = this;
       onScan.attachTo(document, {
@@ -1238,21 +1025,11 @@ export default {
       });
     },
 
-    /**
-     * Trigger barcode scan processing
-     * Routes scanned code to barcode analyzer
-     * @param {string} sCode - Scanned barcode value
-     */
     trigger_onscan(sCode) {
       // Direct barcode processing
       this.analyze_barcode_type(sCode);
     },
 
-    /**
-     * Search barcode directly from server
-     * Used when barcode not found in local cache
-     * @param {string} barcode - Barcode to search
-     */
     search_barcode_from_server(barcode) {
       const vm = this;
 
@@ -1790,11 +1567,5 @@ export default {
   .search-field-wrapper {
     height: 26px;
   }
-}
-
-.v-table > .v-table__wrapper > table > tbody > tr > th,
-.v-table > .v-table__wrapper > table > tfoot > tr > th,
-.v-table > .v-table__wrapper > table > thead > tr > th {
-  height: 0 !important;
 }
 </style>
