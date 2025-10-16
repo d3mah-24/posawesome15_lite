@@ -95,8 +95,6 @@
 
 ---
 
-## 📋 Remaining Tasks & Issues
-
 ### Current Issues
 📁 **[Current Issues →](./current_issues/)**
 
