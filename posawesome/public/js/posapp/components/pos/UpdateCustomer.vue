@@ -264,7 +264,7 @@ export default {
           args: args,
           callback: (r) => {
             if (!r.exc && r.message.name) {
-              console.log('UpdateCustomer.vue(submit_dialog): Success', r.message.name);
+              // Customer operation successful
               let text = 'Customer created successfully.';
               if (vm.customer_id) {
                 text = 'Customer data updated successfully.';
