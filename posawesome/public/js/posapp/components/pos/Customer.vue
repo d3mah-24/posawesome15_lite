@@ -15,7 +15,8 @@
       @click:append="new_customer"
       prepend-inner-icon="mdi-account-edit"
       @click:prepend-inner="edit_customer"
-      @focus="load_all_customers"
+      @focus="handleCustomerFocus"
+      @update:search="performSearch"
       :style="{ backgroundColor: quick_return ? '#EF9A9A' : 'white' }"
     >
       <template v-slot:item="{ props, item }">
@@ -59,7 +60,8 @@ import { evntBus } from "../../bus";
 import UpdateCustomer from "./UpdateCustomer.vue";
 
 const API_METHODS = {
-  GET_CUSTOMER_NAMES: 'posawesome.posawesome.api.customer.customer_names.get_customer_names',
+  GET_MANY_CUSTOMERS: 'posawesome.posawesome.api.customer.get_many_customers',
+  GET_CUSTOMERS_COUNT: 'posawesome.posawesome.api.customer.get_customers_count',
 };
 
 const EVENT_NAMES = {
@@ -103,12 +105,13 @@ export default {
       readonly: false,
       customer_info: {},
       quick_return: false,
+      searchTimeout: null,
     };
   },
 
   
   methods: {
-    get_customer_names() {
+    get_many_customers() {
       try {
         if (this.customers.length > 0) {
           return;
@@ -117,6 +120,11 @@ export default {
       } catch (error) {
         this.showMessage(ERROR_MESSAGES.UNEXPECTED_ERROR, 'error');
       }
+    },
+
+    handleCustomerFocus() {
+      // Handle focus event properly without passing event object
+      this.load_all_customers("");
     },
 
     load_default_customer() {
@@ -134,19 +142,76 @@ export default {
       }
     },
 
-    load_all_customers() {
+    load_all_customers(searchTerm = "") {
+      console.log("🔄 load_all_customers called");
+      console.log("📋 pos_profile:", this.pos_profile);
+      console.log("🔍 search_term:", searchTerm);
+      
+      if (!this.pos_profile) {
+        console.error("❌ POS Profile not loaded");
+        this.showMessage(ERROR_MESSAGES.POS_PROFILE_NOT_LOADED, 'error');
+        return;
+      }
+
+      // Handle different searchTerm types (string, event, or undefined)
+      let cleanSearchTerm = "";
+      if (searchTerm) {
+        if (typeof searchTerm === 'string') {
+          cleanSearchTerm = searchTerm;
+        } else if (searchTerm.target && searchTerm.target.value) {
+          // It's an event object
+          cleanSearchTerm = searchTerm.target.value;
+        } else if (searchTerm.value !== undefined) {
+          // It's an object with value property
+          cleanSearchTerm = String(searchTerm.value || "");
+        } else {
+          cleanSearchTerm = String(searchTerm);
+        }
+      }
+
+      // Use new POSNext-style API with server-side search
+      const args = {
+        pos_profile: this.pos_profile.pos_profile,
+        limit: 100, // Increased limit for better UX
+      };
+
+      // Add search term if provided
+      if (cleanSearchTerm && cleanSearchTerm.trim()) {
+        args.search_term = cleanSearchTerm.trim();
+        console.log("🔎 Server-side search for:", args.search_term);
+      }
+
       frappe.call({
-        method: API_METHODS.GET_CUSTOMER_NAMES,
-        args: {
-          pos_profile: this.pos_profile.pos_profile,
-        },
+        method: API_METHODS.GET_MANY_CUSTOMERS,
+        args: args,
         callback: (r) => {
+          console.log("✅ API Response:", r);
           if (r.message) {
+            console.log("📊 Customers loaded:", r.message.length, "customers");
+            console.log("📋 First few customers:", r.message.slice(0, 3));
             this.customers = r.message;
           }
         },
         error: (err) => {
-          this.showMessage(ERROR_MESSAGES.FAILED_TO_FETCH, 'error');
+          console.error("❌ API Error:", err);
+          // Fallback to legacy wrapper function
+          console.log("🔄 Falling back to legacy wrapper...");
+          frappe.call({
+            method: 'posawesome.posawesome.api.customer.get_customer_names',
+            args: {
+              pos_profile: this.pos_profile.pos_profile,
+            },
+            callback: (r) => {
+              if (r.message) {
+                console.log("✅ Fallback successful:", r.message.length, "customers");
+                this.customers = r.message;
+              }
+            },
+            error: (fallbackErr) => {
+              console.error("❌ Fallback API Error:", fallbackErr);
+              this.showMessage(ERROR_MESSAGES.FAILED_TO_FETCH, 'error');
+            },
+          });
         },
       });
     },
@@ -169,21 +234,27 @@ export default {
 
     customFilter(item, queryText, itemText) {
       try {
-        const searchText = queryText.toLowerCase();
-        const fields = [
-          item.customer_name,
-          item.tax_id,
-          item.email_id,
-          item.mobile_no,
-          item.name,
-        ];
-
-        return fields.some((field) =>
-          field ? field.toLowerCase().indexOf(searchText) > -1 : false
-        );
+        // Since we now have server-side search, we can show all returned results
+        // The server already filtered based on search term
+        return true;
       } catch (error) {
         return false;
       }
+    },
+
+    // Enhanced search with server-side filtering (POSNext style)
+    performSearch(searchTerm) {
+      console.log("🔍 performSearch called with:", searchTerm);
+      
+      // Clear previous timeout
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+      }
+      
+      // Debounce search requests
+      this.searchTimeout = setTimeout(() => {
+        this.load_all_customers(searchTerm);
+      }, 300); // 300ms debounce
     },
 
     showMessage(message, color) {
@@ -212,12 +283,12 @@ export default {
 
     handleRegisterPosProfile(pos_profile) {
       this.pos_profile = pos_profile;
-      this.get_customer_names();
+      this.get_many_customers();
     },
 
     handlePaymentsRegisterPosProfile(pos_profile) {
       this.pos_profile = pos_profile;
-      this.get_customer_names();
+      this.get_many_customers();
     },
 
     handleSetCustomer(customer) {
@@ -237,11 +308,11 @@ export default {
     },
 
     handleFetchCustomerDetails() {
-      this.get_customer_names();
+      this.get_many_customers();
     },
 
     handleCustomerDropdownOpened() {
-      this.load_all_customers();
+      this.load_all_customers("");
     },
   },
 
@@ -249,6 +320,13 @@ export default {
     this.$nextTick(() => {
       this.registerEventListeners();
     });
+  },
+
+  beforeDestroy() {
+    // Clean up search timeout
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
   },
 
   watch: {
