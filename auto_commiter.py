@@ -6,22 +6,28 @@ import os
 def main():
     os.chdir("/home/frappe/frappe-bench-15/apps/posawesome")
     
-    # git status --porcelain
+    # Get changed files
     result = subprocess.run("git status --porcelain", shell=True, capture_output=True, text=True)
     if not result.stdout.strip():
         return
     
-    # أول ملف متغير
-    first_file = result.stdout.split('\n')[0][2:].strip()
+    # Collect files
+    files = []
+    for line in result.stdout.split('\n'):
+        if line.strip():
+            filename = line[2:].strip()
+            files.append(filename)
     
-    # git add
-    subprocess.run(f'git add "{first_file}"', shell=True)
+    # Sort by modification time - oldest first
+    files.sort(key=lambda f: os.path.getmtime(f))
+    oldest_file = files[0]
     
-    # git commit
+    # Git operations
+    subprocess.run(f'git add "{oldest_file}"', shell=True)
+    
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    subprocess.run(f'git commit -m "Auto: {first_file} at {timestamp}"', shell=True)
+    subprocess.run(f'git commit -m "Auto: {oldest_file} at {timestamp}"', shell=True)
     
-    # git push
     subprocess.run("git push origin main", shell=True)
 
 if __name__ == "__main__":
