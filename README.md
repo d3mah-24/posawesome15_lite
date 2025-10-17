@@ -3,7 +3,7 @@
     <h2>POS Awesome Lite</h2>
     <p><em>Point of Sale for ERPNext v15</em></p>
 
-![Version](https://img.shields.io/badge/version-14.10.2025-blue)
+![Version](https://img.shields.io/badge/version-17.10.2025-blue)
 ![License](https://img.shields.io/badge/license-GPLv3-green)
 ![ERPNext](https://img.shields.io/badge/ERPNext-v15-orange)
 ![Frappe](https://img.shields.io/badge/Frappe-v15-red)
@@ -39,12 +39,18 @@
 
 ### 🎨 Frontend Development
 - 🔍 **[Frontend Analysis](./improvements_tasks/frontend/frontend_analysis.md)** - Comprehensive Vue.js analysis
-- 🚀 **[Frontend Optimization Plan](./improvements_tasks/frontend/frontend_suggested_improvments_based_on_analysis_plan.md)** - Complete optimization strategy
+- 📋 **[Frontend Policy](./improvements_tasks/frontend/frontend_improvment_policy.md)** - Development policy & batch queue system
 
-### 🔧 Backend Development
-- 📊 **[Backend Analysis](./improvements_tasks/backend/backend_analysis.md)** - Backend queue system analysis
-- 🚀 **[Backend Improvements Plan](./improvements_tasks/backend/backend_suggested_improvments_based_on_analysis_plan.md)** - Backend optimization strategy
+### 🔧 Backend Development  
+- 📋 **[Backend Policy](./improvements_tasks/backend/backend_improvment_policy.md)** - API structure & performance policy
 - 🔌 **[API Structure](./improvements_tasks/backend/API_STRUCTURE.md)** - API documentation
+
+### 🚀 Development Policies
+**Mandatory compliance for all code contributions:**
+- **Frontend:** 3-API batch queue system (CREATE → UPDATE → SUBMIT)
+- **Backend:** Frappe ORM only with specific field selection
+- **Performance:** < 100ms response time, lightweight components
+- **Structure:** DocType-based API organization, no caching except temp batches
 
 ---
 
