@@ -239,10 +239,40 @@ def interactive_commit():
     else:
         print("👋 Goodbye!")
 
+def auto_commit_all():
+    """Automatically commit all changed files and push"""
+    changed_files = get_changed_files()
+    
+    if not changed_files:
+        print("✨ No changed files detected!")
+        return False
+    
+    print(f"\n🤖 Auto-committing {len(changed_files)} files...")
+    committed = 0
+    
+    for filepath in changed_files:
+        if commit_file(filepath):
+            committed += 1
+    
+    print(f"\n🎉 Successfully committed {committed}/{len(changed_files)} files!")
+    
+    if committed > 0:
+        # Auto push to remote
+        print("\n🚀 Pushing to remote repository...")
+        success, output, error = run_git_command("git push origin main")
+        if success:
+            print("✅ Successfully pushed to remote!")
+            return True
+        else:
+            print(f"❌ Failed to push: {error}")
+            return False
+    
+    return committed > 0
+
 def main():
     """Main function"""
-    print("🚀 Smart Git Commit Tool")
-    print("=" * 40)
+    print("🚀 Smart Git Auto-Commit & Push Tool")
+    print("=" * 45)
     
     # Check if we're in a git repository
     success, output, error = run_git_command("git status")
@@ -250,8 +280,8 @@ def main():
         print("❌ Not a git repository or git not found!")
         sys.exit(1)
     
-    # Run interactive commit process
-    interactive_commit()
+    # Auto commit and push all changes
+    success = auto_commit_all()
     
     # Show final status
     print("\n📈 Current status:")
@@ -260,6 +290,11 @@ def main():
         print("Recent commits:")
         for line in output.split('\n'):
             print(f"  🔹 {line}")
+    
+    if success:
+        print("\n✅ All changes committed and pushed successfully!")
+    else:
+        print("\n⚠️  No changes were committed or push failed")
 
 if __name__ == "__main__":
     main()
