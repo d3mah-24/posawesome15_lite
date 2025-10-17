@@ -104,7 +104,7 @@ import { evntBus } from '../../bus';
 
 const API_METHODS = {
   POST_CUSTOMER: 'posawesome.posawesome.api.customer.create_customer.create_customer',
-  UPDATE_CUSTOMER: 'posawesome.posawesome.api.customer.update_customer',
+  UPDATE_CUSTOMER: 'posawesome.posawesome.api.customer.update_customer.update_customer',
 };
 
 const EVENT_NAMES = {
