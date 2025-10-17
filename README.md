@@ -80,9 +80,6 @@ crontab -e
 
 # Add this line to run every hour
 0 * * * * cd /home/frappe/frappe-bench-15/apps/posawesome && python3 auto_commiter.py --silent
-
-# Or run every 30 minutes for more frequent commits
-*/30 * * * * cd /home/frappe/frappe-bench-15/apps/posawesome && python3 auto_commiter.py --silent
 ```
 
 **📋 Auto Commit Policy:**
@@ -90,7 +87,8 @@ crontab -e
 - ✅ **Smart Messages:** Intelligent commit messages based on file type and path
 - ✅ **Auto Push:** Automatically pushes all commits to remote repository
 - ✅ **Zero Manual Work:** No need to manually stage, commit, or push files
-- ✅ **Cron Compatible:** Runs silently in background with logging
+- ✅ **Handles Deletions:** Automatically commits deleted files
+- ✅ **Cron Compatible:** Runs silently in background
 
 **🎯 Usage:**
 1. Make your changes to any files
