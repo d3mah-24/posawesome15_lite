@@ -35,10 +35,10 @@ doc_events = {
         "before_submit": "posawesome.posawesome.api.sales_invoice.before_submit.before_submit",
         "before_cancel": "posawesome.posawesome.api.sales_invoice.before_cancel.before_cancel",
     },
-    "Customer": {
-        "validate": "posawesome.posawesome.api.customer.validate",
-        "after_insert": "posawesome.posawesome.api.customer.after_insert",
-    },
+    # "Customer": {
+    #     # "validate": "posawesome.posawesome.api.customer.validate",
+    #     # "after_insert": "posawesome.posawesome.api.customer.after_insert",
+    # },
 }
 
 

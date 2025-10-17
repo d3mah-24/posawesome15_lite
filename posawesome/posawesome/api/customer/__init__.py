@@ -6,7 +6,7 @@ Consolidated API endpoints for customer management following RESTful conventions
 This module provides a clean, organized API structure:
 - get_customer: Retrieve single customer details
 - get_many_customers: Search and retrieve multiple customers  
-- post_customer: Create new customer
+- create_customer: Create new customer
 - update_customer: Update existing customer
 - delete_customer: Delete customer (hard delete)
 - soft_delete_customer: Disable customer (soft delete)
@@ -22,7 +22,7 @@ from __future__ import unicode_literals
 # Import all modern API functions
 from .get_customer import get_customer
 from .get_many_customers import get_many_customers, get_customers_count
-from .post_customer import post_customer
+from .create_customer import create_customer
 from .update_customer import update_customer, patch_customer
 from .delete_customer import delete_customer, soft_delete_customer
 from .get_customer_credit import get_customer_credit, get_customer_credit_summary
@@ -31,8 +31,9 @@ from .get_customer_addresses import (
     get_customer_primary_address,
     get_customer_shipping_addresses
 )
-from .get_customer_coupons import get_customer_coupons, get_active_gift_coupons
+from .get_customer_coupons import get_customer_coupons, get_active_gift_coupons, get_pos_coupon
 from .get_customer_balance import get_customer_balance, get_customer_outstanding_invoices
+from .get_customer_groups import get_customer_groups, get_child_customer_groups, get_customer_group_condition, get_customer_groups_list
 
 # Backward compatibility functions - wrapper functions for legacy API calls
 def get_customer_names(*args, **kwargs):
@@ -52,8 +53,8 @@ def get_available_credit(*args, **kwargs):
     return get_customer_credit(*args, **kwargs)
 
 def create_customer(*args, **kwargs):
-    """Legacy wrapper for post_customer"""
-    return post_customer(*args, **kwargs)
+    """Legacy wrapper for create_customer"""
+    return create_customer(*args, **kwargs)
 
 # get_customer_balance is already imported above, no wrapper needed
 
@@ -64,7 +65,7 @@ API_ENDPOINTS = {
     "modern": {
         "GET /api/customer/{id}": "posawesome.posawesome.api.customer.get_customer",
         "GET /api/customers": "posawesome.posawesome.api.customer.get_many_customers", 
-        "POST /api/customer": "posawesome.posawesome.api.customer.post_customer",
+        "POST /api/customer": "posawesome.posawesome.api.customer.create_customer",
         "PUT /api/customer/{id}": "posawesome.posawesome.api.customer.update_customer",
         "PATCH /api/customer/{id}": "posawesome.posawesome.api.customer.patch_customer",
         "DELETE /api/customer/{id}": "posawesome.posawesome.api.customer.delete_customer",
@@ -81,7 +82,7 @@ API_ENDPOINTS = {
         "get_customers": "get_many_customers", 
         "get_customer_info": "get_customer",
         "get_available_credit": "get_customer_credit",
-        "create_customer": "post_customer",
+        "create_customer": "create_customer",
     }
 }
 
@@ -90,7 +91,7 @@ FUNCTION_MAPPING = {
     # Customer CRUD Operations
     "get_single_customer": get_customer,
     "search_customers": get_many_customers,
-    "create_new_customer": post_customer,
+    "create_new_customer": create_customer,
     "modify_customer": update_customer,
     "partial_update_customer": patch_customer,
     "remove_customer": delete_customer,
@@ -98,6 +99,9 @@ FUNCTION_MAPPING = {
     
     # Customer Related Data
     "customer_credit_info": get_customer_credit,
+    "pos_coupon_validation": get_pos_coupon,
+    "customer_groups": get_customer_groups,
+    "customer_groups_list": get_customer_groups_list,
     "customer_addresses_list": get_customer_addresses,
     "customer_coupons_list": get_customer_coupons,
     "customer_balance_info": get_customer_balance,

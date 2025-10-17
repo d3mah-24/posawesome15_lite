@@ -279,3 +279,123 @@ def _get_loyalty_coupons(customer_id, active_only=True):
     except Exception as e:
         frappe.logger().warning(f"Error getting loyalty coupons: {e}")
         return []
+
+
+@frappe.whitelist()
+def get_pos_coupon(coupon_code, customer_id=None, company=None):
+    """
+    Validate and get specific POS coupon details.
+    
+    Args:
+        coupon_code (str): Coupon code to validate (required)
+        customer_id (str): Customer ID for validation (optional)
+        company (str): Company for validation (optional)
+        
+    Returns:
+        dict: Coupon details if valid, error message if invalid
+    """
+    try:
+        if not coupon_code:
+            frappe.throw(_("Coupon code is required"))
+            
+        coupon_code = coupon_code.strip()
+        
+        # Check if coupon exists and is valid
+        coupon_details = _validate_coupon_code(coupon_code, customer_id, company)
+        
+        return coupon_details
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in get_pos_coupon: {str(e)}")
+        return {
+            "valid": False,
+            "message": str(e),
+            "coupon_code": coupon_code
+        }
+
+
+def _validate_coupon_code(coupon_code, customer_id=None, company=None):
+    """
+    Validate coupon code and return details.
+    
+    Args:
+        coupon_code (str): Coupon code to validate
+        customer_id (str): Customer ID for validation
+        company (str): Company for validation
+        
+    Returns:
+        dict: Coupon validation result with details
+    """
+    try:
+        # Check if POS Coupon doctype exists
+        if not frappe.db.exists("DocType", "POS Coupon"):
+            return {
+                "valid": False,
+                "message": _("POS Coupon module is not available"),
+                "coupon_code": coupon_code
+            }
+        
+        # Find coupon by code
+        filters = {"coupon_code": coupon_code}
+        if company:
+            filters["company"] = company
+            
+        coupon = frappe.db.get_value(
+            "POS Coupon", 
+            filters,
+            ["name", "customer", "coupon_type", "coupon_amount", "used", "expiry_date", "company"],
+            as_dict=True
+        )
+        
+        if not coupon:
+            return {
+                "valid": False,
+                "message": _("Invalid coupon code: {0}").format(coupon_code),
+                "coupon_code": coupon_code
+            }
+        
+        # Check if already used
+        if coupon.used:
+            return {
+                "valid": False,
+                "message": _("Coupon has already been used"),
+                "coupon_code": coupon_code
+            }
+        
+        # Check expiry date
+        if coupon.expiry_date and coupon.expiry_date < date.today():
+            return {
+                "valid": False,
+                "message": _("Coupon has expired"),
+                "coupon_code": coupon_code,
+                "expiry_date": coupon.expiry_date
+            }
+        
+        # Check customer match if specified
+        if customer_id and coupon.customer != customer_id:
+            return {
+                "valid": False,
+                "message": _("Coupon is not valid for this customer"),
+                "coupon_code": coupon_code
+            }
+        
+        # Valid coupon
+        return {
+            "valid": True,
+            "message": _("Valid coupon"),
+            "coupon_code": coupon_code,
+            "coupon_name": coupon.name,
+            "customer": coupon.customer,
+            "coupon_type": coupon.coupon_type,
+            "coupon_amount": coupon.coupon_amount,
+            "company": coupon.company,
+            "expiry_date": coupon.expiry_date
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error validating coupon: {e}")
+        return {
+            "valid": False,
+            "message": _("Error validating coupon: {0}").format(str(e)),
+            "coupon_code": coupon_code
+        }

@@ -47,7 +47,7 @@ API_ENDPOINTS = {
     "modern": {
         "GET /api/customer/{id}": "posawesome.posawesome.api.customer.get_customer",
         "GET /api/customers": "posawesome.posawesome.api.customer.get_many_customers", 
-        "POST /api/customer": "posawesome.posawesome.api.customer.post_customer",
+        "POST /api/customer": "posawesome.posawesome.api.customer.create_customer",
         "PUT /api/customer/{id}": "posawesome.posawesome.api.customer.update_customer",
         "PATCH /api/customer/{id}": "posawesome.posawesome.api.customer.patch_customer",
         "DELETE /api/customer/{id}": "posawesome.posawesome.api.customer.delete_customer",

@@ -103,7 +103,7 @@
 import { evntBus } from '../../bus';
 
 const API_METHODS = {
-  POST_CUSTOMER: 'posawesome.posawesome.api.customer.post_customer',
+  POST_CUSTOMER: 'posawesome.posawesome.api.customer.create_customer.create_customer',
   UPDATE_CUSTOMER: 'posawesome.posawesome.api.customer.update_customer',
 };
 
@@ -144,6 +144,11 @@ const DB_LIMITS = {
   CUSTOMER_GROUPS: 1000,
   TERRITORIES: 5000,
   GENDERS: 10,
+};
+
+const DEFAULT_VALUES = {
+  CUSTOMER_GROUP: 'Individual',
+  TERRITORY: 'Rest Of The World',
 };
 
 export default {
@@ -373,8 +378,8 @@ export default {
   created() {
     this.registerEventListeners();
     
-    this.group = frappe.defaults.get_user_default('Customer Group');
-    this.territory = frappe.defaults.get_user_default('Territory');
+    this.group = frappe.defaults.get_user_default('Customer Group') || DEFAULT_VALUES.CUSTOMER_GROUP;
+    this.territory = frappe.defaults.get_user_default('Territory') || DEFAULT_VALUES.TERRITORY;
   },
 };
 </script>

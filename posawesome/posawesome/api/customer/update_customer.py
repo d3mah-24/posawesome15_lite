@@ -122,7 +122,7 @@ def update_customer(
         
         # Handle POS-specific fields if they exist
         if birthday is not None and hasattr(customer_doc, 'posa_birthday'):
-            from .post_customer import _parse_birthday
+            from .create_customer import _parse_birthday
             formatted_birthday = _parse_birthday(birthday) if birthday else None
             customer_doc.posa_birthday = formatted_birthday
             updated_fields.append("posa_birthday")

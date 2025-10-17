@@ -50,8 +50,9 @@ def get_customer(customer_id):
             "birthday": getattr(customer_doc, 'posa_birthday', None),
             "posa_discount": getattr(customer_doc, 'posa_discount', 0),
             
-            # Business fields
+            # Business fields - maintaining backward compatibility
             "default_price_list": customer_doc.default_price_list,
+            "customer_price_list": customer_doc.default_price_list,  # Legacy compatibility
             "loyalty_program": customer_doc.loyalty_program,
             "disabled": customer_doc.disabled,
             
