@@ -67,7 +67,7 @@ def update_invoice(data):
             data.get("is_return") or invoice_doc.is_return
         )
         if is_return_invoice and invoice_doc.get("return_against"):
-            from .validate_return_items import validate_return_items
+            from .validate_return_items_utils import validate_return_items
             invoice_items = [d.as_dict() for d in invoice_doc.items]
             validation = validate_return_items(
                 invoice_doc.return_against, invoice_items
@@ -181,7 +181,7 @@ def update_invoice(data):
             pass
 
         # Return only essential data needed by POS frontend
-        from .get_minimal_invoice_response import get_minimal_invoice_response
+        from .invoice_response_utils import get_minimal_invoice_response
         result = get_minimal_invoice_response(invoice_doc)
         return result
         
