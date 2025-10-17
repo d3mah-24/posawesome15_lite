@@ -63,7 +63,7 @@
 
 ---
 
-## � Development Tools
+## 🔧 Development Tools
 
 ### 🤖 Auto Commit Tool
 **MANDATORY for all development work**
@@ -100,7 +100,7 @@ python3 auto_commiter.py
 
 ---
 
-## �💰 Collaboration
+## 💰 Collaboration
 
 - 💵 **Daily Payment:** $35 USD Based On Progress
 - 🌐 **Payment Methods:**
