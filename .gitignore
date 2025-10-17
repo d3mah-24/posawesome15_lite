@@ -7,6 +7,6 @@ node_modules
 __pycache__
 dist
 
-# Analysis directories (submodules)
-dirs/POS-Awesome-V15/
-dirs/POSNext/
+# Ignore analysis directories
+POS-Awesome-V15
+POSNext
