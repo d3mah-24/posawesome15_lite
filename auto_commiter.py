@@ -27,7 +27,7 @@ def run_git(command):
         return False, "", str(e)
 
 def commit_and_push():
-    """Simple: add all, commit, push, log"""
+    """Commit each file separately, then push all"""
     os.chdir(REPO_PATH)
     
     # Check if there are any changes
@@ -36,7 +36,7 @@ def commit_and_push():
         log("No changes to commit")
         return True
     
-    # Get list of changed files for logging
+    # Get list of changed files
     files = []
     for line in status.split('\n'):
         if line.strip():
@@ -44,37 +44,44 @@ def commit_and_push():
     
     log(f"Found {len(files)} changed files: {', '.join(files)}")
     
-    # Add all changes
-    success, output, error = run_git("git add .")
-    if not success:
-        log(f"Failed to add files: {error}")
-        return False
+    committed_count = 0
+    commit_ids = []
     
-    # Commit with timestamp
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    commit_msg = f"Auto-commit: {len(files)} files at {timestamp}"
+    # Commit each file separately
+    for filepath in files:
+        # Add single file
+        success, output, error = run_git(f'git add "{filepath}"')
+        if not success:
+            log(f"Failed to add {filepath}: {error}")
+            continue
+        
+        # Commit single file
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        commit_msg = f"Auto-commit: {filepath} at {timestamp}"
+        
+        success, output, error = run_git(f'git commit -m "{commit_msg}"')
+        if success:
+            # Get commit ID
+            success, commit_id, error = run_git("git rev-parse --short HEAD")
+            if success:
+                commit_ids.append(commit_id)
+                log(f"Committed: {commit_id} - {filepath}")
+                committed_count += 1
+        else:
+            if "nothing to commit" not in error:
+                log(f"Failed to commit {filepath}: {error}")
     
-    success, output, error = run_git(f'git commit -m "{commit_msg}"')
-    if not success:
-        if "nothing to commit" in error:
-            log("Nothing to commit")
+    if committed_count > 0:
+        # Push all commits
+        success, output, error = run_git("git push origin main")
+        if success:
+            log(f"Pushed {committed_count} commits successfully: {', '.join(commit_ids)}")
             return True
-        log(f"Failed to commit: {error}")
-        return False
+        else:
+            log(f"Failed to push: {error}")
+            return False
     
-    # Get commit ID
-    success, commit_id, error = run_git("git rev-parse --short HEAD")
-    if success:
-        log(f"Committed: {commit_id} - {len(files)} files")
-    
-    # Push
-    success, output, error = run_git("git push origin main")
-    if success:
-        log(f"Pushed commit {commit_id} successfully")
-        return True
-    else:
-        log(f"Failed to push: {error}")
-        return False
+    return True
 
 def main():
     """Main function"""
