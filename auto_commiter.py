@@ -22,10 +22,10 @@ def main():
     files.sort(key=lambda f: os.path.getmtime(f))
     oldest_file = files[0]
     
-    # Git operations
+    # Git operations - commit only this specific file
     subprocess.run(f'git add "{oldest_file}"', shell=True)
     
-    subprocess.run(f'git commit -m "{oldest_file}"', shell=True)
+    subprocess.run(f'git commit -m "{oldest_file}" -- "{oldest_file}"', shell=True)
     
     subprocess.run("git push origin main", shell=True)
 
