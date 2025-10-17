@@ -451,7 +451,7 @@ export default {
         barcode_value.length === posa_scale_barcode_lenth
       ) {
         frappe.call({
-          method: "posawesome.posawesome.api.item.search_scale_barcode.search_scale_barcode",
+          method: "posawesome.posawesome.api.item.get_scale_barcode.get_scale_barcode",
           args: { 
             pos_profile: this.pos_profile, 
             barcode_value: barcode_value 
