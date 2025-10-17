@@ -40,7 +40,7 @@ def submit_invoice(name=None, data=None, invoice=None, invoice_data=None, print_
         
         if not invoice_name:
             # Log what parameters we received to help debug
-            frappe.log_error(f"submit_invoice called without name. Parameters: name={name}, data={type(data)}, invoice={type(invoice)}, invoice_data={type(invoice_data)}")
+            frappe.log_error(f"submit_invoice: Missing name. name={name}", "Submit Invoice Missing Name")
             frappe.throw(_("Invoice name is required for submission"))
 
         # ERPNext Natural Submission
