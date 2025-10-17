@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 
 import frappe
 from .get_offers import get_offers
-from .is_offer_applicable import is_offer_applicable
+from .offer_utils import is_offer_applicable
 
 
 @frappe.whitelist()

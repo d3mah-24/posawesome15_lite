@@ -78,7 +78,7 @@
 
 ---
 
-## 💰 Collaboration
+## 💰 Collaboration 
 
 - 💵 **Daily Payment:** $35 USD Based On Progress
 - 🌐 **Payment Methods:**

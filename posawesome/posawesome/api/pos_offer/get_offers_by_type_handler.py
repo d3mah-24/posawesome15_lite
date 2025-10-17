@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 import frappe
 from .get_offer_fields_mapping import get_offer_fields_mapping
 from .get_offer_filters_mapping import get_offer_filters_mapping
-from .is_offer_applicable import is_offer_applicable
+from .offer_utils import is_offer_applicable
 
 
 def get_offers_by_type_handler(offer_type, invoice_name, coupon_code=None):
