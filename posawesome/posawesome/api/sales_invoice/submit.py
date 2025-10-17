@@ -14,29 +14,33 @@ from frappe import _
 @frappe.whitelist()
 def submit_invoice(name=None, data=None, invoice=None, invoice_data=None, print_invoice=False):
     """
-    POST - Submit invoice using ERPNext's natural operations
-    
-    ERPNext Natural Approach:
-    - Use ERPNext's official submit() method
-    - Business logic (offers, payments) handled in before_submit hook
-    - No manual processing, dual saves, or complex payment logic needed
+    Submit a Sales Invoice using ERPNext natural operations.
+    This replaces complex retry mechanisms with simple ERPNext patterns.
     """
     try:
+        # Debug logging
+        frappe.log_error(f"submit_invoice called: name={bool(name)}, data={bool(data)}, invoice={bool(invoice)}, invoice_data={bool(invoice_data)}", "Submit Debug Params")
+        
         # Handle different parameter formats for backward compatibility
         invoice_name = None
         
         if name:
             invoice_name = name
-        elif data:
-            data_dict = json.loads(data) if isinstance(data, str) else data
-            invoice_name = data_dict.get("name")
         elif invoice:
             # The frontend passes the whole invoice document here
-            invoice_dict = json.loads(invoice) if isinstance(invoice, str) else invoice  
-            invoice_name = invoice_dict.get("name")
+            try:
+                invoice_dict = json.loads(invoice) if isinstance(invoice, str) else invoice  
+                invoice_name = invoice_dict.get("name")
+                frappe.log_error(f"submit_invoice: Parsed invoice name = {invoice_name}", "Submit Debug")
+            except Exception as parse_error:
+                frappe.log_error(f"submit_invoice: Failed to parse invoice: {str(parse_error)}", "Submit Parse Error")
         elif invoice_data:
             invoice_data_dict = json.loads(invoice_data) if isinstance(invoice_data, str) else invoice_data
             invoice_name = invoice_data_dict.get("name")
+        elif data:
+            # Check if data contains invoice name (fallback)
+            data_dict = json.loads(data) if isinstance(data, str) else data
+            invoice_name = data_dict.get("name")
         
         if not invoice_name:
             # Log what parameters we received to help debug
