@@ -2,6 +2,12 @@
 """
 Smart Git Commit Script
 Automatically detects changed files and commits them one by one with intelligent commit messages
+
+This replaces the old commit_files.sh script with a more intelligent and flexible approach:
+- Auto-detects all changed files (staged, unstaged, untracked)
+- Interactive mode for selective commits
+- Smart commit messages based on file type and path
+- No manual maintenance required
 """
 
 import os
