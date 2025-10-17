@@ -15,16 +15,24 @@ from frappe.utils import flt
 @frappe.whitelist()
 def update_invoice(data):
     """
-    PUT - Update invoice data
-    Let ERPNext handle all calculations through set_missing_values() and save()
+    PUT - Update invoice data (Simplified POSNext-style approach)
+    Let ERPNext handle all calculations and concurrency naturally
     
     This is the PRIMARY API for all invoice operations (create, update, add/remove items).
     Replaces: add_item_to_invoice, update_item_in_invoice, delete_item_from_invoice
+    
+    Features:
+    - Simplified concurrency handling (no Redis locking)
+    - Natural ERPNext document lifecycle
+    - Optimized for reliability over complexity
     """
     try:
         data = json.loads(data) if isinstance(data, str) else data
     except (json.JSONDecodeError, ValueError) as e:
         frappe.throw(_("Invalid JSON data: {0}").format(str(e)))
+
+    # Simplified approach following POSNext pattern - no Redis locking needed
+    # ERPNext framework handles concurrency at document level
 
     try:
         if data.get("name"):
@@ -34,6 +42,16 @@ def update_invoice(data):
                 # Validate draft status
                 if invoice_doc.docstatus != 0:
                     frappe.throw(_("Cannot update submitted invoice"))
+                
+                # Clean customer-related fields if customer changed
+                if data.get("customer") and data.get("customer") != invoice_doc.customer:
+                    # Clear fields that belong to previous customer
+                    invoice_doc.contact_person = None
+                    invoice_doc.customer_address = None
+                    invoice_doc.address_display = None
+                    invoice_doc.contact_display = None
+                    invoice_doc.contact_mobile = None
+                    invoice_doc.contact_email = None
                 
                 invoice_doc.update(data)
             except frappe.DoesNotExistError:
@@ -93,8 +111,10 @@ def update_invoice(data):
         frappe.flags.ignore_account_permission = True
         invoice_doc.docstatus = 0
         
-        # Use faster save without hooks for draft invoices
-        # This reduces lock duration significantly
+        # Save the invoice - let ERPNext handle conflicts naturally
+        invoice_doc.flags.ignore_permissions = True
+        frappe.flags.ignore_account_permission = True
+        invoice_doc.docstatus = 0
         invoice_doc.save(ignore_version=True)
         
         # Commit immediately to release locks
@@ -166,4 +186,6 @@ def update_invoice(data):
         return result
         
     except Exception as e:
+        frappe.logger().error(f"Error in update_invoice: {str(e)}")
+        frappe.logger().error(frappe.get_traceback())
         raise
