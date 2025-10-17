@@ -867,7 +867,7 @@ export default {
       }
       
       frappe.call({
-        method: "posawesome.posawesome.api.customer.get_customer_addresses.get_many_customer_addresses",
+        method: "posawesome.posawesome.api.customer.get_many_customer_addresses.get_many_customer_addresses",
         args: { customer_id: customer },
         async: true,
         callback: function (r) {
