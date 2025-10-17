@@ -733,119 +733,172 @@ export default {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
     },
 
-    async create_draft_invoice() {
-      try {
-        const doc = this.get_invoice_doc("draft");
-        const result = await this.update_invoice(doc);
+   async create_draft_invoice() {
+  try {
+    const doc = this.get_invoice_doc("draft");
+    
+    // Use create_invoice instead of update_invoice
+    const result = await this.create_invoice(doc);
 
-        if (result) {
-          // Draft created
-          this.invoice_doc = result;
-          evntBus.emit("show_mesage", {
-            text: "Draft invoice created",
-            color: "success",
-          });
+    if (result) {
+      this.invoice_doc = result;
+      evntBus.emit("show_mesage", {
+        text: "Draft invoice created",
+        color: "success",
+      });
+    } else {
+      this.invoice_doc = null;
+      this.items = [];
+    }
+  } catch (error) {
+    evntBus.emit("show_mesage", {
+      text: "Error creating draft invoice",
+      color: "error",
+    });
+  }
+},
+create_invoice(doc) {
+  const vm = this;
+  return new Promise((resolve, reject) => {
+    frappe.call({
+      method: "posawesome.posawesome.api.sales_invoice.create.create_invoice",
+      args: {
+        data: doc,
+      },
+      async: true,
+      callback: function (r) {
+        if (r.message !== undefined) {
+          if (r.message === null) {
+            vm.invoice_doc = null;
+            vm.items = [];
+            resolve(null);
+          } else {
+            vm.invoice_doc = r.message;
+
+            // Update posa_offers from backend response
+            if (r.message.posa_offers) {
+              vm.posa_offers = r.message.posa_offers;
+
+              const appliedOffers = vm.posa_offers.filter(
+                (offer) => offer.offer_applied
+              );
+              if (appliedOffers.length > 0) {
+                evntBus.emit("update_pos_offers", appliedOffers);
+              }
+            }
+
+            resolve(vm.invoice_doc);
+          }
         } else {
-          // Handle case when API returns null (no items)
-          this.invoice_doc = null;
-          this.items = [];
+          reject(new Error("Failed to create invoice"));
         }
-      } catch (error) {
+      },
+      error: function (err) {
         evntBus.emit("show_mesage", {
-          text: "Error creating draft invoice",
+          text: "Error creating invoice",
           color: "error",
         });
-      }
-    },
+        reject(err);
+      },
+    });
+  });
+},
 
     async auto_update_invoice(doc = null, reason = "auto") {
-      if (this.invoice_doc?.submitted_for_payment) {
-        return;
-      }
+  if (this.invoice_doc?.submitted_for_payment) {
+    return;
+  }
 
-      // Skip auto-update if no items and no invoice doc
-      if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
-        return;
-      }
+  // Skip auto-update if no items and no invoice doc
+  if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
+    return;
+  }
 
-      const payload = doc || this.get_invoice_doc(reason);
+  const payload = doc || this.get_invoice_doc(reason);
 
-      try {
-        const result = await this.update_invoice(payload);
+  try {
+    let result;
+    
+    // Decide whether to create or update based on invoice_doc.name
+    if (!this.invoice_doc?.name && this.items.length > 0) {
+      // Create new invoice
+      result = await this.create_invoice(payload);
+    } else if (this.invoice_doc?.name) {
+      // Update existing invoice
+      result = await this.update_invoice(payload);
+    } else {
+      // No items and no invoice - do nothing
+      return null;
+    }
 
-        // Handle case when API returns null (no items)
-        if (!result) {
-          this.invoice_doc = null;
-          this.items = [];
-          return null;
-        }
+    // Handle case when API returns null (no items)
+    if (!result) {
+      this.invoice_doc = null;
+      this.items = [];
+      return null;
+    }
 
-        if (result && Array.isArray(result.items)) {
-          // Set flag to prevent watcher loop
-          this._updatingFromAPI = true;
+    if (result && Array.isArray(result.items)) {
+      // Set flag to prevent watcher loop
+      this._updatingFromAPI = true;
 
-          // Merge API items with local items instead of replacing
-          this.mergeItemsFromAPI(result.items);
+      // Merge API items with local items
+      this.mergeItemsFromAPI(result.items);
 
-          // Reset flag after update
-          this.$nextTick(() => {
-            this._updatingFromAPI = false;
-          });
-        }
-
-        // Always update invoice_doc with API response (totals, taxes, etc.)
-        if (result) {
-          if (result.name && !this.invoice_doc?.name) {
-            // Auto update created
-            evntBus.emit("show_mesage", {
-              text: "Draft invoice created",
-              color: "success",
-            });
-          }
-
-          // Update invoice_doc with latest totals from server
-          this.invoice_doc = {
-            ...this.invoice_doc,
-            ...result,
-            // Preserve local items if they exist and are more recent
-            items:
-              this.items.length > (result.items?.length || 0)
-                ? this.items
-                : result.items || [],
-          };
-        }
-
-        // Reset flag after invoice_doc is updated
+      // Reset flag after update
+      this.$nextTick(() => {
         this._updatingFromAPI = false;
+      });
+    }
 
-        return result;
-      } catch (error) {
-        if (
-          error?.message &&
-          error.message.includes("Document has been modified")
-        ) {
-          try {
-            await this.reload_invoice();
-          } catch (reloadError) {
-            console.error(
-              "Failed to reload invoice after modification conflict",
-              reloadError
-            );
-          }
-          return;
-        }
-
+    // Always update invoice_doc with API response
+    if (result) {
+      if (result.name && !this.invoice_doc?.name) {
         evntBus.emit("show_mesage", {
-          text: "Auto-saving draft failed",
-          color: "error",
+          text: "Draft invoice created",
+          color: "success",
         });
-
-        // Reset flag on error
-        this._updatingFromAPI = false;
-
-        throw error;
       }
-    },
+
+      // Update invoice_doc with latest totals from server
+      this.invoice_doc = {
+        ...this.invoice_doc,
+        ...result,
+        items:
+          this.items.length > (result.items?.length || 0)
+            ? this.items
+            : result.items || [],
+      };
+    }
+
+    this._updatingFromAPI = false;
+    return result;
+    
+  } catch (error) {
+    if (
+      error?.message &&
+      error.message.includes("Document has been modified")
+    ) {
+      try {
+        await this.reload_invoice();
+      } catch (reloadError) {
+        console.error(
+          "Failed to reload invoice after modification conflict",
+          reloadError
+        );
+      }
+      return;
+    }
+
+    evntBus.emit("show_mesage", {
+      text: "Auto-saving draft failed",
+      color: "error",
+    });
+
+    this._updatingFromAPI = false;
+    throw error;
+  }
+},
 
     queue_auto_save(reason = "auto") {
       if (this.invoice_doc?.submitted_for_payment) {
@@ -1217,71 +1270,76 @@ export default {
     },
 
     update_invoice(doc) {
-      const vm = this;
-      return new Promise((resolve, reject) => {
-        frappe.call({
-          method: "posawesome.posawesome.api.sales_invoice.update.update_invoice",
-          args: {
-            data: doc,
-          },
-          async: true,
-          callback: function (r) {
-            if (r.message !== undefined) {
-              // Handle null response (invoice deleted)
-              if (r.message === null) {
-                vm.invoice_doc = null;
-                vm.items = [];
-                resolve(null);
-              } else {
-                vm.invoice_doc = r.message;
+  const vm = this;
+  return new Promise((resolve, reject) => {
+    // Ensure we have an invoice name for updates
+    if (!doc.name) {
+      reject(new Error("Invoice name required for updates"));
+      return;
+    }
 
-                // Update posa_offers from backend response
-                if (r.message.posa_offers) {
-                  vm.posa_offers = r.message.posa_offers;
+    frappe.call({
+      method: "posawesome.posawesome.api.sales_invoice.update.update_invoice",
+      args: {
+        data: doc,
+      },
+      async: true,
+      callback: function (r) {
+        if (r.message !== undefined) {
+          if (r.message === null) {
+            vm.invoice_doc = null;
+            vm.items = [];
+            resolve(null);
+          } else {
+            vm.invoice_doc = r.message;
 
-                  // Send applied offers to PosOffers component
-                  const appliedOffers = vm.posa_offers.filter(
-                    (offer) => offer.offer_applied
-                  );
-                  if (appliedOffers.length > 0) {
-                    evntBus.emit("update_pos_offers", appliedOffers);
-                  }
-                }
+            // Update posa_offers from backend response
+            if (r.message.posa_offers) {
+              vm.posa_offers = r.message.posa_offers;
 
-                resolve(vm.invoice_doc);
+              const appliedOffers = vm.posa_offers.filter(
+                (offer) => offer.offer_applied
+              );
+              if (appliedOffers.length > 0) {
+                evntBus.emit("update_pos_offers", appliedOffers);
               }
-            } else {
-              reject(new Error("Failed to update invoice"));
             }
-          },
-          error: function (err) {
-            if (
-              err.message &&
-              err.message.includes("Document has been modified")
-            ) {
-              evntBus.emit("show_mesage", {
-                text: "Invoice was modified elsewhere, will reload",
-                color: "warning",
-              });
 
-              vm.reload_invoice()
-                .then(() => {
-                  resolve(vm.invoice_doc);
-                })
-                .catch((reloadError) => {
-                  reject(reloadError);
-                });
-            } else {
-              evntBus.emit("show_mesage", {
-                text: "Error updating invoice",
-                color: "error",
-              });
-              reject(err);
-            }
-          },
-        });
-      });
-    },
+            resolve(vm.invoice_doc);
+          }
+        } else {
+          reject(new Error("Failed to update invoice"));
+        }
+      },
+      error: function (err) {
+        if (
+          err.message &&
+          err.message.includes("Document has been modified")
+        ) {
+          evntBus.emit("show_mesage", {
+            text: "Invoice was modified elsewhere, will reload",
+            color: "warning",
+          });
+
+          vm.reload_invoice()
+            .then(() => {
+              resolve(vm.invoice_doc);
+            })
+            .catch((reloadError) => {
+              reject(reloadError);
+            });
+        } else {
+          evntBus.emit("show_mesage", {
+            text: "Error updating invoice",
+            color: "error",
+          });
+          reject(err);
+        }
+      },
+    });
+  });
+},
+
 
     async process_invoice() {
       const doc = this.get_invoice_doc("payment");
