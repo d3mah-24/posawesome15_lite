@@ -68,8 +68,21 @@
 ### 🤖 Auto Commit Tool
 **MANDATORY for all development work**
 
+**Manual Usage:**
 ```bash
 python3 auto_commiter.py
+```
+
+**Automated Cron Setup (Recommended):**
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line to run every hour
+0 * * * * cd /home/frappe/frappe-bench-15/apps/posawesome && python3 auto_commiter.py --silent
+
+# Or run every 30 minutes for more frequent commits
+*/30 * * * * cd /home/frappe/frappe-bench-15/apps/posawesome && python3 auto_commiter.py --silent
 ```
 
 **📋 Auto Commit Policy:**
@@ -77,6 +90,7 @@ python3 auto_commiter.py
 - ✅ **Smart Messages:** Intelligent commit messages based on file type and path
 - ✅ **Auto Push:** Automatically pushes all commits to remote repository
 - ✅ **Zero Manual Work:** No need to manually stage, commit, or push files
+- ✅ **Cron Compatible:** Runs silently in background with logging
 
 **🎯 Usage:**
 1. Make your changes to any files
