@@ -106,7 +106,7 @@ export default {
       }
       this.isLoading = true;
         frappe.call({
-          method: 'posawesome.posawesome.api.sales_invoice.get_invoices_for_return.get_invoices_for_return',
+          method: 'posawesome.posawesome.api.sales_invoice.get_return.get_invoices_for_return',
           args: {
           invoice_name: this.invoice_name,
           company: this.company

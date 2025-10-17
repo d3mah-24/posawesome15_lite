@@ -556,7 +556,7 @@ export default {
         return;
       }
         frappe.call({
-          method: "posawesome.posawesome.api.sales_invoice.submit_invoice.submit_invoice",
+          method: "posawesome.posawesome.api.sales_invoice.submit.submit_invoice",
           args: {
           data: data,
           invoice: {

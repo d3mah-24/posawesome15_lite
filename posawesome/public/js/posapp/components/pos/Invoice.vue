@@ -1026,7 +1026,7 @@ export default {
 
       frappe
         .call({
-          method: "posawesome.posawesome.api.sales_invoice.delete_invoice",
+          method: "posawesome.posawesome.api.sales_invoice.delete.delete_invoice",
           args: { invoice_name: name },
         })
         .then(reset)
@@ -1220,7 +1220,7 @@ export default {
       const vm = this;
       return new Promise((resolve, reject) => {
         frappe.call({
-          method: "posawesome.posawesome.api.sales_invoice.update_invoice.update_invoice",
+          method: "posawesome.posawesome.api.sales_invoice.update.update_invoice",
           args: {
             data: doc,
           },
@@ -1355,7 +1355,7 @@ export default {
               try {
                 await frappe.call({
                   method:
-                    "posawesome.posawesome.api.sales_invoice.update_invoice.update_invoice",
+                    "posawesome.posawesome.api.sales_invoice.update.update_invoice",
                   args: {
                     invoice_data: invoice_doc,
                   },
@@ -1950,7 +1950,7 @@ export default {
           
           // Submit and print the invoice
           frappe.call({
-            method: "posawesome.posawesome.api.sales_invoice.submit_invoice.submit_invoice",
+            method: "posawesome.posawesome.api.sales_invoice.submit.submit_invoice",
             args: {
               data: {
                 total_change: 0,
