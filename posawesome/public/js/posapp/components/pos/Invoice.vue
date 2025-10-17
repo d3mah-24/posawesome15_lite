@@ -1421,9 +1421,9 @@ export default {
       const vm = this;
       if (this.customer) {
         frappe.call({
-          method: "posawesome.posawesome.api.customer.customer_info.get_customer_info",
+          method: "posawesome.posawesome.api.customer.get_customer",
           args: {
-            customer: vm.customer,
+            customer_id: vm.customer,
           },
           async: false,
           callback: (r) => {
@@ -2062,6 +2062,48 @@ export default {
       return invoiceDoc.payments.some(
         (payment) => this.flt(payment.amount) > 0
       );
+    },
+
+    update_item_detail(item) {
+      // Update item details from allItems data when customer changes
+      if (!item || !item.item_code || !this.allItems) {
+        return;
+      }
+
+      try {
+        // Find updated item data from allItems
+        const updatedItem = this.allItems.find(
+          (allItem) => allItem.item_code === item.item_code
+        );
+
+        if (updatedItem) {
+          // Update relevant fields while preserving POS-specific data
+          const fieldsToUpdate = [
+            'price_list_rate',
+            'rate', 
+            'base_rate',
+            'currency',
+            'actual_qty',
+            'item_name',
+            'stock_uom',
+            'item_group',
+            'serial_no_data',
+            'batch_no_data',
+            'item_uoms'
+          ];
+
+          fieldsToUpdate.forEach(field => {
+            if (updatedItem.hasOwnProperty(field)) {
+              item[field] = updatedItem[field];
+            }
+          });
+
+          // Mark as detail synced to avoid repeated updates
+          item._detailSynced = true;
+        }
+      } catch (error) {
+        console.error("Error updating item detail:", error);
+      }
     },
   },
 
