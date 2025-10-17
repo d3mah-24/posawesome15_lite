@@ -1479,7 +1479,7 @@ create_invoice(doc) {
       const vm = this;
       if (this.customer) {
         frappe.call({
-          method: "posawesome.posawesome.api.customer.get_customer",
+          method: "posawesome.posawesome.api.customer.get_customer.get_customer",
           args: {
             customer_id: vm.customer,
           },
