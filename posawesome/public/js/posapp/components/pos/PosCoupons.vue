@@ -173,18 +173,15 @@ export default {
       });
     },
     setActiveGiftCoupons() {
-      if (!this.customer) {
-        evntBus.emit('show_mesage', {
-          text: 'No customer for active gift coupons',
-          color: 'error'
-        });
+      if (!this.customer || !this.customer.trim || this.customer.trim() === '') {
+        // Silent return - no error message needed during customer switching
         return;
       }
       const vm = this;
       frappe.call({
-        method: 'posawesome.posawesome.api.customer.pos_coupon.get_active_gift_coupons',
+        method: 'posawesome.posawesome.api.customer.get_customer_coupons',
         args: {
-          customer: vm.customer,
+          customer_id: vm.customer,
           company: vm.pos_profile.company,
         },
         callback: function (r) {
@@ -258,12 +255,15 @@ export default {
             to_remove.push(el.coupon);
           }
         });
+        // Update customer BEFORE calling setActiveGiftCoupons
         this.customer = customer;
         if (to_remove.length) {
           this.removeCoupon(to_remove);
         }
-        // Only call setActiveGiftCoupons when customer actually changes
-        this.setActiveGiftCoupons();
+        // Only call setActiveGiftCoupons when customer is valid and has a value
+        if (this.customer && this.customer.trim && this.customer.trim() !== '') {
+          this.setActiveGiftCoupons();
+        }
       }
     });
     evntBus.on('update_pos_coupons', (data) => {
