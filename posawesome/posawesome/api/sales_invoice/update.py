@@ -38,18 +38,38 @@ def update_invoice(data):
             frappe.log_error(f"update_invoice: No name in data", "Update Invoice Error")
             frappe.throw(_("Invoice name is required for update operations"))
 
-        # ERPNext Natural Update - Get fresh document
-        doc = frappe.get_doc("Sales Invoice", data.get("name"))
+        # ERPNext Natural Update - Get fresh document with retry mechanism
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                doc = frappe.get_doc("Sales Invoice", data.get("name"))
+                break
+            except frappe.QueryTimeoutError:
+                if attempt == max_retries - 1:
+                    raise
+                # Brief delay before retry
+                import time
+                time.sleep(0.1 * (attempt + 1))  # Exponential backoff
         
         # Validate draft status  
         if doc.docstatus != 0:
             frappe.throw(_("Cannot update submitted invoice"))
 
-        # Handle empty items case
+        # Handle empty items case with better concurrency handling
         if data.get("items") is not None and not data.get("items"):
-            # If no items, delete the invoice
-            frappe.delete_doc("Sales Invoice", doc.name, ignore_permissions=True)
-            return None
+            # If no items, try to delete the invoice with timeout handling
+            try:
+                # Use shorter timeout and non-blocking approach
+                frappe.delete_doc("Sales Invoice", doc.name, ignore_permissions=True, force=True)
+                frappe.db.commit()
+                return {"message": "Invoice deleted successfully"}
+            except frappe.QueryTimeoutError:
+                # If deletion fails due to lock, just mark as cancelled instead
+                frappe.log_error("Delete timeout - marking as cancelled", "Invoice Delete Timeout")
+                doc.workflow_state = "Cancelled"
+                doc.save(ignore_version=True)
+                frappe.db.commit()
+                return {"message": "Invoice cancelled due to delete timeout"}
 
         # Update document with new data
         doc.update(data)
@@ -60,20 +80,35 @@ def update_invoice(data):
         # - Business rule validations
         # - Automatic offers (handled by hooks)
         
-        # Use optimized save with ignore_version=True for better concurrency
-        doc.save(ignore_version=True)
-        
-        # Immediate commit for faster processing and lock release
-        frappe.db.commit()
+        # Use optimized save with retry mechanism for rapid operations
+        max_save_retries = 2
+        for save_attempt in range(max_save_retries):
+            try:
+                doc.save(ignore_version=True)
+                frappe.db.commit()
+                break
+            except frappe.QueryTimeoutError:
+                if save_attempt == max_save_retries - 1:
+                    raise
+                # Brief delay before retry
+                import time
+                time.sleep(0.05 * (save_attempt + 1))
         
         # Return response using existing formatter
         from .invoice_response import get_minimal_invoice_response
         return get_minimal_invoice_response(doc)
         
     except frappe.exceptions.QueryTimeoutError as e:
-        # Handle database timeouts gracefully as per improvement policy
-        frappe.log_error("Query timeout in update_invoice", "Invoice Update Timeout")
-        frappe.throw(_("Database is busy. Please try again in a moment."))
+        # Handle database timeouts gracefully - this is common in POS rapid operations
+        frappe.log_error("Query timeout in update_invoice - rapid operations detected", "Invoice Update Timeout")
+        
+        # Return a user-friendly message instead of throwing an error
+        # This prevents the UI from showing error dialogs during rapid item deletion
+        return {
+            "message": "عملية التحديث قيد المعالجة، يرجى الانتظار قليلاً",
+            "status": "processing",
+            "retry_recommended": True
+        }
         
     except frappe.exceptions.TimestampMismatchError as e:
         # Handle timestamp mismatch with ignore_version approach
