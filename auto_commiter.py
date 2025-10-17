@@ -72,10 +72,13 @@ def commit_and_push():
                 log(f"Failed to commit {filepath}: {error}")
     
     if committed_count > 0:
+        # Log before push
+        log(f"Ready to push {committed_count} commits: {', '.join(commit_ids)}")
+        
         # Push all commits
         success, output, error = run_git("git push origin main")
         if success:
-            log(f"Pushed {committed_count} commits successfully: {', '.join(commit_ids)}")
+            log(f"Pushed {committed_count} commits successfully")
             return True
         else:
             log(f"Failed to push: {error}")
