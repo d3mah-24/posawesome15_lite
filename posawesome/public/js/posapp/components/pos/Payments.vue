@@ -822,8 +822,8 @@ export default {
       this.clear_all_amounts();
       if (e) {
         frappe
-          .call("posawesome.posawesome.api.customer.get_available_credit", {
-            customer: this.invoice_doc.customer,
+          .call("posawesome.posawesome.api.customer.get_customer_credit", {
+            customer_id: this.invoice_doc.customer,
             company: this.pos_profile.company,
           })
           .then((r) => {
@@ -867,8 +867,8 @@ export default {
       }
       
       frappe.call({
-        method: "posawesome.posawesome.api.customer.customer_addresses.get_customer_addresses",
-        args: { customer: customer },
+        method: "posawesome.posawesome.api.customer.get_customer_addresses",
+        args: { customer_id: customer },
         async: true,
         callback: function (r) {
           if (!r.exc) {
