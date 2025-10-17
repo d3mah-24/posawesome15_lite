@@ -11,22 +11,13 @@ def main():
     if not result.stdout.strip():
         return
     
-    # Collect files
-    files = []
-    for line in result.stdout.split('\n'):
-        if line.strip():
-            filename = line[2:].strip()
-            files.append(filename)
+    # Get first file from git status
+    first_line = result.stdout.split('\n')[0].strip()
+    filename = first_line[2:].strip()
     
-    # Sort by modification time - oldest first
-    files.sort(key=lambda f: os.path.getmtime(f))
-    oldest_file = files[0]
-    
-    # Git operations - commit only this specific file
-    subprocess.run(f'git add "{oldest_file}"', shell=True)
-    
-    subprocess.run(f'git commit -m "{oldest_file}" -- "{oldest_file}"', shell=True)
-    
+    # Git operations
+    subprocess.run(f'git add "{filename}"', shell=True)
+    subprocess.run(f'git commit -m "{filename}" -- "{filename}"', shell=True)
     subprocess.run("git push origin main", shell=True)
 
 if __name__ == "__main__":
