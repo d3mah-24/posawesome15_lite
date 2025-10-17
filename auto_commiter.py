@@ -3,7 +3,6 @@ import subprocess
 import datetime
 import os
 
-# تبسيط كامل - أقل من 30 سطر
 def main():
     os.chdir("/home/frappe/frappe-bench-15/apps/posawesome")
     
