@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Simple Auto Git Commit & Push
-Just commits all changes and pushes with basic logging
+Simple Git Auto Commit - One file only
+git status > git add > git commit > git push
 """
 
 import os
@@ -10,13 +10,6 @@ import datetime
 
 # Configuration
 REPO_PATH = "/home/frappe/frappe-bench-15/apps/posawesome"
-LOG_FILE = "/home/frappe/frappe-bench-15/apps/posawesome/auto_commiter.log"
-
-def log(message):
-    """Log message with timestamp"""
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(LOG_FILE, "a") as f:
-        f.write(f"[{timestamp}] {message}\n")
 
 def run_git(command):
     """Run git command"""
@@ -26,74 +19,47 @@ def run_git(command):
     except Exception as e:
         return False, "", str(e)
 
-def commit_and_push():
-    """Commit each file separately, then push all"""
-    os.chdir(REPO_PATH)
-    
-    # Check if there are any changes
+def get_first_changed_file():
+    """Get first changed file from git status"""
     success, status, error = run_git("git status --porcelain")
     if not success or not status.strip():
-        log("No changes to commit")
-        return True
+        return None
     
-    # Get list of changed files
-    files = []
-    for line in status.split('\n'):
-        if line.strip():
-            files.append(line[3:].strip())
+    # First line = first file
+    first_line = status.split('\n')[0].strip()
+    if first_line:
+        filename = first_line[2:].strip()  # Remove status codes (XY format)
+        return filename
+    return None
+
+def commit_one_file():
+    """Commit one file only"""
+    os.chdir(REPO_PATH)
     
-    log(f"Found {len(files)} changed files: {', '.join(files)}")
+    # git status
+    filename = get_first_changed_file()
+    if not filename:
+        return False
     
-    committed_count = 0
-    commit_ids = []
+    # git add
+    success, output, error = run_git(f'git add "{filename}"')
+    if not success:
+        return False
     
-    # Commit each file separately
-    for filepath in files:
-        # Add single file
-        success, output, error = run_git(f'git add "{filepath}"')
-        if not success:
-            log(f"Failed to add {filepath}: {error}")
-            continue
-        
-        # Commit single file
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        commit_msg = f"Auto-commit: {filepath} at {timestamp}"
-        
-        success, output, error = run_git(f'git commit -m "{commit_msg}"')
-        if success:
-            # Get commit ID
-            success, commit_id, error = run_git("git rev-parse --short HEAD")
-            if success:
-                commit_ids.append(commit_id)
-                log(f"Committed: {commit_id} - {filepath}")
-                committed_count += 1
-        else:
-            if "nothing to commit" not in error:
-                log(f"Failed to commit {filepath}: {error}")
+    # git commit
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    commit_msg = f"Auto-commit: {filename} at {timestamp}"
+    success, output, error = run_git(f'git commit -m "{commit_msg}"')
+    if not success:
+        return False
     
-    if committed_count > 0:
-        # Log before push
-        log(f"Ready to push {committed_count} commits: {', '.join(commit_ids)}")
-        
-        # Push all commits
-        success, output, error = run_git("git push origin main")
-        if success:
-            log(f"Pushed {committed_count} commits successfully")
-            return True
-        else:
-            log(f"Failed to push: {error}")
-            return False
-    
-    return True
+    # git push
+    success, output, error = run_git("git push origin main")
+    return success
 
 def main():
-    """Main function"""
-    log("=== Auto-commit started ===")
-    success = commit_and_push()
-    if success:
-        log("=== Auto-commit completed successfully ===")
-    else:
-        log("=== Auto-commit failed ===")
+    """One file only"""
+    commit_one_file()
 
 if __name__ == "__main__":
     main()
