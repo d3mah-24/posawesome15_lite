@@ -116,7 +116,7 @@ export default {
       this.address.customer = this.customer;
       this.address.doctype = 'Customer';
       frappe.call({
-        method: 'posawesome.posawesome.api.customer.customer_addresses.make_address',
+        method: 'posawesome.posawesome.api.customer.get_customer_addresses.create_customer_address',
         args: {
           args: this.address,
         },
