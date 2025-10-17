@@ -63,7 +63,44 @@
 
 ---
 
-## 💰 Collaboration
+## � Development Tools
+
+### 🤖 Auto Commit Tool
+**MANDATORY for all development work**
+
+```bash
+python3 auto_commiter.py
+```
+
+**📋 Auto Commit Policy:**
+- ✅ **One File Per Commit:** Each file gets its own commit for precise tracking
+- ✅ **Smart Messages:** Intelligent commit messages based on file type and path
+- ✅ **Auto Push:** Automatically pushes all commits to remote repository
+- ✅ **Zero Manual Work:** No need to manually stage, commit, or push files
+
+**🎯 Usage:**
+1. Make your changes to any files
+2. Run `python3 auto_commiter.py`
+3. Script automatically:
+   - Detects all changed files
+   - Commits each file separately with smart messages
+   - Pushes all commits to `main` branch
+
+**⚠️ STRICT POLICY:**
+- **MUST USE** `auto_commiter.py` for all commits
+- **NO MANUAL** `git add`, `git commit`, or `git push` commands
+- **ENSURES** clean commit history with one file per commit
+- **ENABLES** easy tracking and rollback of individual file changes
+
+**📊 Benefits:**
+- 🔍 **Easy Debugging:** Find exactly which file caused issues
+- 🔄 **Selective Rollback:** Revert individual files without affecting others
+- 📈 **Better Tracking:** Clear history of what changed when
+- 🤝 **Team Coordination:** Understand exactly what each commit does
+
+---
+
+## �💰 Collaboration
 
 - 💵 **Daily Payment:** $35 USD Based On Progress
 - 🌐 **Payment Methods:**
