@@ -188,3 +188,4 @@ def _parse_birthday(birthday_input):
     except Exception as e:
         frappe.logger().error(f"Error parsing birthday: {e}")
         return None
+    
