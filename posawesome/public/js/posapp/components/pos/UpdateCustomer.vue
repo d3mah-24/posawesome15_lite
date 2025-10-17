@@ -103,7 +103,8 @@
 import { evntBus } from '../../bus';
 
 const API_METHODS = {
-  CREATE_CUSTOMER: 'posawesome.posawesome.api.customer.create_customer.create_customer',
+  POST_CUSTOMER: 'posawesome.posawesome.api.customer.post_customer',
+  UPDATE_CUSTOMER: 'posawesome.posawesome.api.customer.update_customer',
 };
 
 const EVENT_NAMES = {
@@ -287,7 +288,7 @@ export default {
       };
 
       frappe.call({
-        method: API_METHODS.CREATE_CUSTOMER,
+        method: this.customer_id ? API_METHODS.UPDATE_CUSTOMER : API_METHODS.POST_CUSTOMER,
         args: args,
         callback: (r) => {
           if (!r.exc && r.message.name) {
