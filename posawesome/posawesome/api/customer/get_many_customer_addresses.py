@@ -11,18 +11,18 @@ from frappe import _
 
 
 @frappe.whitelist()
-def get_many_customer_addresses(customer):
+def get_many_customer_addresses(customer_id):
     """
     Get all addresses for a customer.
     
     Args:
-        customer (str): Customer name/ID
+        customer_id (str): Customer name/ID
         
     Returns:
         list: List of address documents
     """
     try:
-        if not customer:
+        if not customer_id:
             frappe.throw(_("Customer is required"))
             
         # Get all address links for this customer
@@ -30,7 +30,7 @@ def get_many_customer_addresses(customer):
             "Dynamic Link",
             filters={
                 "link_doctype": "Customer",
-                "link_name": customer,
+                "link_name": customer_id,
                 "parenttype": "Address"
             },
             fields=["parent"]
