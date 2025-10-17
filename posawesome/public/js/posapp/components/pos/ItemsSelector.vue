@@ -205,9 +205,9 @@ import _ from "lodash";
 const API_METHODS = {
   GET_ITEMS: "posawesome.posawesome.api.item.get_items",
   GET_ITEMS_GROUPS: "posawesome.posawesome.api.item.get_items_groups",
-  SEARCH_ITEMS_BARCODE: "posawesome.posawesome.api.item.search_items_barcode",
-  SEARCH_SCALE_BARCODE: "posawesome.posawesome.api.item.search_scale_barcode",
-  SEARCH_PRIVATE_BARCODE: "posawesome.posawesome.api.item.search_private_barcode",
+  SEARCH_ITEMS_BARCODE: "posawesome.posawesome.api.item.get_items_barcode",
+  SEARCH_SCALE_BARCODE: "posawesome.posawesome.api.item.get_scale_barcode",
+  SEARCH_PRIVATE_BARCODE: "posawesome.posawesome.api.item.get_private_barcode",
 };
 
 const EVENT_NAMES = {
@@ -484,7 +484,7 @@ export default {
         barcode_value.length === posa_private_barcode_lenth
       ) {
         frappe.call({
-          method: "posawesome.posawesome.api.item.search_private_barcode.search_private_barcode",
+          method: "posawesome.posawesome.api.item.get_private_barcode.get_private_barcode",
           args: { 
             pos_profile: this.pos_profile, 
             barcode_value: barcode_value 
@@ -505,7 +505,7 @@ export default {
 
     process_normal_barcode(barcode_value) {
       frappe.call({
-        method: "posawesome.posawesome.api.item.search_items_barcode.search_items_barcode",
+        method: "posawesome.posawesome.api.item.get_items_barcode.get_items_barcode",
         args: { 
           pos_profile: this.pos_profile, 
           barcode_value: barcode_value 
