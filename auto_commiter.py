@@ -4,8 +4,7 @@ Smart Git Commit Script
 Automatically detects changed files and commits them one by one with intelligent commit messages
 
 This replaces the old commit_files.sh script with a more intelligent and flexible approach:
-- Auto-detects all changed files (staged, unstaged, untracked)
-- Interactive mode for selective commits
+- Auto-detects all changed files (staged, unstaged, untracked, deleted)
 - Smart commit messages based on file type and path
 - No manual maintenance required
 - Cron-friendly with silent mode
@@ -14,26 +13,10 @@ This replaces the old commit_files.sh script with a more intelligent and flexibl
 import os
 import subprocess
 import sys
-import datetime
 from pathlib import Path
 
-# Configuration for cron mode
+# Configuration
 REPO_PATH = "/home/frappe/frappe-bench-15/apps/posawesome"
-LOG_FILE = "/home/frappe/frappe-bench-15/apps/posawesome/auto_commiter.log"
-
-def log_message(message, silent_mode=False):
-    """Log message with timestamp for cron mode"""
-    if silent_mode:
-        # Write to log file for cron
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        try:
-            with open(LOG_FILE, "a", encoding="utf-8") as f:
-                f.write(f"[{timestamp}] {message}\n")
-        except:
-            pass  # Ignore log errors in cron mode
-    else:
-        # Print for interactive mode
-        print(message)
 
 def run_git_command(command):
     """Run a git command and return the output"""
@@ -44,28 +27,53 @@ def run_git_command(command):
         return False, "", str(e)
 
 def get_changed_files(silent_mode=False):
-    """Get list of changed files from git"""
-    log_message("🔍 Detecting changed files...", silent_mode)
+    """Get list of changed files from git including deleted files"""
+    if not silent_mode:
+        print("🔍 Detecting changed files...")
     
-    # Get staged files
-    success, staged_files, error = run_git_command("git diff --cached --name-only")
-    staged = staged_files.split('\n') if staged_files else []
+    # Get all changes using git status --porcelain (includes deleted files)
+    success, status_output, error = run_git_command("git status --porcelain")
+    if not success:
+        return []
     
-    # Get unstaged files  
-    success, unstaged_files, error = run_git_command("git diff --name-only")
-    unstaged = unstaged_files.split('\n') if unstaged_files else []
+    all_files = []
+    file_statuses = []
     
-    # Get untracked files
-    success, untracked_files, error = run_git_command("git ls-files --others --exclude-standard")
-    untracked = untracked_files.split('\n') if untracked_files else []
+    for line in status_output.split('\n'):
+        if line.strip():
+            status = line[:2]
+            filepath = line[3:].strip()
+            
+            # Handle different git status codes
+            if status == " D":  # Deleted in working tree
+                all_files.append(filepath)
+                file_statuses.append(("🗑️", "DELETED", filepath))
+            elif status == "D ":  # Deleted in index
+                all_files.append(filepath)
+                file_statuses.append(("🗑️", "STAGED_DELETE", filepath))
+            elif status == " M":  # Modified in working tree
+                all_files.append(filepath)
+                file_statuses.append(("🔄", "MODIFIED", filepath))
+            elif status == "M ":  # Modified in index
+                all_files.append(filepath)
+                file_statuses.append(("📝", "STAGED", filepath))
+            elif status == "??":  # Untracked
+                all_files.append(filepath)
+                file_statuses.append(("🆕", "UNTRACKED", filepath))
+            elif status == "A ":  # Added to index
+                all_files.append(filepath)
+                file_statuses.append(("✨", "ADDED", filepath))
+            elif status == "MM":  # Modified in both index and working tree
+                all_files.append(filepath)
+                file_statuses.append(("🔄", "MODIFIED_BOTH", filepath))
+            else:  # Other status codes
+                all_files.append(filepath)
+                file_statuses.append(("📄", "OTHER", filepath))
     
-    # Combine all changed files (remove empty strings)
-    all_files = list(filter(None, staged + unstaged + untracked))
-    
-    log_message(f"📊 Found {len(all_files)} changed files:", silent_mode)
-    for i, file in enumerate(all_files, 1):
-        status = "📝" if file in staged else "🔄" if file in unstaged else "🆕"
-        log_message(f"  {i:2d}. {status} {file}", silent_mode)
+    if not silent_mode:
+        print(f"📊 Found {len(all_files)} changed files:")
+        for i, (emoji, status, filepath) in enumerate(file_statuses, 1):
+            print(f"  {i:2d}. {emoji} [{status}] {filepath}")
     
     return all_files
 
@@ -144,37 +152,39 @@ def generate_commit_message(filepath):
     return f"📄 Update file: {filename}"
 
 def commit_file(filepath, silent_mode=False):
-    """Add and commit a single file"""
-    log_message(f"\n📝 Processing: {filepath}", silent_mode)
-    
-    # Check if file exists
-    if not os.path.exists(os.path.join(REPO_PATH, filepath)):
-        log_message(f"⚠️  File not found: {filepath}", silent_mode)
-        return False
+    """Add and commit a single file (including deletions)"""
+    if not silent_mode:
+        print(f"\n📝 Processing: {filepath}")
     
     # Generate commit message
     commit_msg = generate_commit_message(filepath)
-    log_message(f"💬 Commit message: {commit_msg}", silent_mode)
+    if not silent_mode:
+        print(f"💬 Commit message: {commit_msg}")
     
-    # Add file to staging
+    # For deleted files, we need to use 'git add' which will stage the deletion
     success, output, error = run_git_command(f'git add "{filepath}"')
     if not success:
-        log_message(f"❌ Failed to stage file: {error}", silent_mode)
+        if not silent_mode:
+            print(f"❌ Failed to stage file: {error}")
         return False
     
-    log_message("✅ File staged successfully", silent_mode)
+    if not silent_mode:
+        print("✅ File staged successfully")
     
     # Commit the file
     success, output, error = run_git_command(f'git commit -m "{commit_msg}"')
     if not success:
         if "nothing to commit" in error:
-            log_message("ℹ️  No changes to commit", silent_mode)
+            if not silent_mode:
+                print("ℹ️  No changes to commit")
             return True
         else:
-            log_message(f"❌ Failed to commit: {error}", silent_mode)
+            if not silent_mode:
+                print(f"❌ Failed to commit: {error}")
             return False
     
-    log_message("✅ File committed successfully", silent_mode)
+    if not silent_mode:
+        print("✅ File committed successfully")
     return True
 
 def interactive_commit():
@@ -264,27 +274,35 @@ def auto_commit_all(silent_mode=False):
     changed_files = get_changed_files(silent_mode)
     
     if not changed_files:
-        log_message("✨ No changed files detected!", silent_mode)
+        if not silent_mode:
+            print("✨ No changed files detected!")
         return False
     
-    log_message(f"\n🤖 Auto-committing {len(changed_files)} files...", silent_mode)
+    if not silent_mode:
+        print(f"\n🤖 Auto-committing {len(changed_files)} files...")
+    
     committed = 0
     
     for filepath in changed_files:
         if commit_file(filepath, silent_mode):
             committed += 1
     
-    log_message(f"\n🎉 Successfully committed {committed}/{len(changed_files)} files!", silent_mode)
+    if not silent_mode:
+        print(f"\n🎉 Successfully committed {committed}/{len(changed_files)} files!")
     
     if committed > 0:
         # Auto push to remote
-        log_message("\n🚀 Pushing to remote repository...", silent_mode)
+        if not silent_mode:
+            print("\n🚀 Pushing to remote repository...")
+        
         success, output, error = run_git_command("git push origin main")
         if success:
-            log_message("✅ Successfully pushed to remote!", silent_mode)
+            if not silent_mode:
+                print("✅ Successfully pushed to remote!")
             return True
         else:
-            log_message(f"❌ Failed to push: {error}", silent_mode)
+            if not silent_mode:
+                print(f"❌ Failed to push: {error}")
             return False
     
     return committed > 0
@@ -304,7 +322,8 @@ def main():
     # Check if we're in a git repository
     success, output, error = run_git_command("git status")
     if not success:
-        log_message("❌ Not a git repository or git not found!", silent_mode)
+        if not silent_mode:
+            print("❌ Not a git repository or git not found!")
         sys.exit(1)
     
     # Auto commit and push all changes
@@ -323,9 +342,6 @@ def main():
             print("\n✅ All changes committed and pushed successfully!")
         else:
             print("\n⚠️  No changes were committed or push failed")
-    else:
-        # Log final status for cron
-        log_message("=== Auto-commit cron job completed ===", silent_mode)
 
 if __name__ == "__main__":
     main()
