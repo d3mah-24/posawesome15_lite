@@ -34,7 +34,9 @@ def update_invoice(data):
     try:
         # Validate input
         if not data.get("name"):
-            frappe.throw(_("Invoice name is required"))
+            # Log more details about the call to help debug
+            frappe.log_error(f"update_invoice called without name. Data keys: {list(data.keys()) if data else 'None'}")
+            frappe.throw(_("Invoice name is required for update operations"))
 
         # ERPNext Natural Update - Get fresh document
         doc = frappe.get_doc("Sales Invoice", data.get("name"))
