@@ -25,8 +25,7 @@ def main():
     # Git operations
     subprocess.run(f'git add "{oldest_file}"', shell=True)
     
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    subprocess.run(f'git commit -m "Auto: {oldest_file} at {timestamp}"', shell=True)
+    subprocess.run(f'git commit -m "{oldest_file}"', shell=True)
     
     subprocess.run("git push origin main", shell=True)
 
