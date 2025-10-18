@@ -309,41 +309,74 @@
 // ===== SECTION 1: IMPORTS =====
 import { evntBus } from "../../bus";
 import format from "../../format";
+
+// CONSTANTS
+const API_METHODS = {
+  SUBMIT_INVOICE: 'posawesome.posawesome.api.sales_invoice.submit.submit_invoice',
+  GET_INVOICE: 'frappe.client.get',
+  GET_CUSTOMER_CREDIT: 'posawesome.posawesome.api.customer.get_customer_credit.get_customer_credit',
+  GET_ADDRESSES: 'posawesome.posawesome.api.customer.get_many_customer_addresses.get_many_customer_addresses'
+};
+
+const EVENT_NAMES = {
+  SHOW_PAYMENT: 'show_payment',
+  SET_CUSTOMER_READONLY: 'set_customer_readonly',
+  SHOW_MESSAGE: 'show_mesage',
+  SET_LAST_INVOICE: 'set_last_invoice',
+  NEW_INVOICE: 'new_invoice',
+  INVOICE_SUBMITTED: 'invoice_submitted',
+  PAYMENTS_UPDATED: 'payments_updated',
+  FREEZE: 'freeze',
+  UNFREEZE: 'unfreeze',
+  OPEN_EDIT_CUSTOMER: 'open_edit_customer',
+  OPEN_NEW_ADDRESS: 'open_new_address',
+  TOGGLE_QUICK_RETURN: 'toggle_quick_return',
+  SEND_INVOICE_DOC_PAYMENT: 'send_invoice_doc_payment',
+  REGISTER_POS_PROFILE: 'register_pos_profile',
+  ADD_THE_NEW_ADDRESS: 'add_the_new_address',
+  UPDATE_CUSTOMER: 'update_customer',
+  SET_POS_SETTINGS: 'set_pos_settings',
+  SET_CUSTOMER_INFO_TO_EDIT: 'set_customer_info_to_edit',
+  UPDATE_DUE_DATE: 'update_due_date'
+};
+
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   mixins: [format],
-  data: () => ({
-    loading: false,
-    pos_profile: "",
-    invoice_doc: "",
-    customer: "", // Default customer from POS Profile
-    loyalty_amount: 0,
-    is_credit_sale: 0,
-    is_write_off_change: 0,
-    date_menu: false,
-    po_date_menu: false,
-    addresses: [],
-    paid_change: 0,
-    paid_change_rules: [],
-    is_return: false,
-    is_cashback: true,
-    redeem_customer_credit: false,
-    customer_credit_dict: [],
-    phone_dialog: false,
-    allow_print_in_dialog: false,
-    invoiceType: "Invoice",
-    pos_settings: "",
-    customer_info: "",
-    quick_return: false,
-    selected_return_payment_idx: null,
-    readonly: false,
-  }),
 
+  // ===== DATA =====
+  data() {
+    return {
+      loading: false,
+      pos_profile: "",
+      invoice_doc: "",
+      customer: "",
+      loyalty_amount: 0,
+      is_credit_sale: 0,
+      is_write_off_change: 0,
+      date_menu: false,
+      addresses: [],
+      paid_change: 0,
+      paid_change_rules: [],
+      is_return: false,
+      is_cashback: true,
+      redeem_customer_credit: false,
+      customer_credit_dict: [],
+      phone_dialog: false,
+      pos_settings: "",
+      customer_info: "",
+      quick_return: false,
+      selected_return_payment_idx: null
+    };
+  },
+
+  // ===== COMPUTED =====
   computed: {
     total_payments() {
       let total = parseFloat(this.invoice_doc.loyalty_amount || 0);
-      if (this.invoice_doc && this.invoice_doc.payments) {
-        this.invoice_doc.payments.forEach((payment) => {
+      
+      if (this.invoice_doc?.payments) {
+        this.invoice_doc.payments.forEach(payment => {
           total += this.flt(payment.amount || 0);
         });
       }
@@ -354,73 +387,63 @@ export default {
 
       return this.flt(total, this.currency_precision);
     },
+
     diff_payment() {
       const target_amount = flt(this.invoice_doc.rounded_total) || flt(this.invoice_doc.grand_total);
-      let diff_payment = this.flt(
+      const diff_payment = this.flt(
         target_amount - this.total_payments,
         this.currency_precision
       );
       this.paid_change = -diff_payment;
-      // Match POS-Awesome-V15 behavior: return 0 if negative (overpaid)
       return diff_payment >= 0 ? diff_payment : 0;
     },
+
     credit_change() {
-      let change = -this.diff_payment;
+      const change = -this.diff_payment;
       if (this.paid_change > change) return 0;
       return this.flt(this.paid_change - change, this.currency_precision);
     },
-    diff_lable() {
-      let lable = this.diff_payment < 0 ? "Remaining" : "Pay Later";
-      return lable;
-    },
+
     available_pioints_amount() {
-      let amount = 0;
-      if (this.customer_info.loyalty_points) {
-        amount =
-          this.customer_info.loyalty_points *
-          this.customer_info.conversion_factor;
-      }
-      return amount;
+      if (!this.customer_info?.loyalty_points) return 0;
+      return this.customer_info.loyalty_points * this.customer_info.conversion_factor;
     },
+
     available_customer_credit() {
-      let total = 0;
-      this.customer_credit_dict.map((row) => {
-        total += row.total_credit;
-      });
-
-      return total;
+      return this.customer_credit_dict.reduce((total, row) => total + row.total_credit, 0);
     },
+
     redeemed_customer_credit() {
-      let total = 0;
-      this.customer_credit_dict.map((row) => {
-        if (flt(row.credit_to_redeem)) total += flt(row.credit_to_redeem);
-        else row.credit_to_redeem = 0;
-      });
+      return this.customer_credit_dict.reduce((total, row) => {
+        const credit = flt(row.credit_to_redeem);
+        if (!credit) row.credit_to_redeem = 0;
+        return total + credit;
+      }, 0);
+    },
 
-      return total;
-    },
     vaildatPayment() {
-      if (!this.invoice_doc || !this.invoice_doc.payments) {
-        return true;
-      }
-      return false;
+      return !this.invoice_doc || !this.invoice_doc.payments;
     },
+
     request_payment_field() {
-      // If there is a payment method of type Phone, enable the Request button
-      if (this.invoice_doc && this.invoice_doc.payments) {
-        return this.invoice_doc.payments.some(payment => payment.type === 'Phone');
-      }
-      return false;
-    },
+      return this.invoice_doc?.payments?.some(payment => payment.type === 'Phone') || false;
+    }
   },
 
+  // ===== METHODS =====
   methods: {
+    showMessage(text, color) {
+      evntBus.emit(EVENT_NAMES.SHOW_MESSAGE, { text, color });
+    },
+
     emitPrintRequest() {
       this.$emit('request-print');
     },
+
     exposeSubmit(print = true, autoMode = false) {
       this.submit(undefined, autoMode, print);
     },
+
     autoPayWithDefault(invoice_doc) {
       this.invoice_doc = invoice_doc;
       const defaultPayment = this.getDefaultPayment();
@@ -429,45 +452,39 @@ export default {
       }
       this.exposeSubmit(true, true);
     },
+
     getDefaultPayment() {
-      const payments = (this.invoice_doc && Array.isArray(this.invoice_doc.payments)) ? this.invoice_doc.payments : [];
-      
-      // First try to find a payment marked as default
-      let defaultPayment = payments.find((payment) => payment.default == 1);
-      
-      // If no default payment is found, use the first payment as default
-      if (!defaultPayment && payments.length > 0) {
-        defaultPayment = payments[0];
-      }
-      
-      return defaultPayment;
+      const payments = Array.isArray(this.invoice_doc?.payments) ? this.invoice_doc.payments : [];
+      return payments.find(payment => payment.default == 1) || payments[0] || null;
     },
+
     back_to_invoice() {
-      // Back to invoice
-      evntBus.emit("show_payment", "false");
-      evntBus.emit("set_customer_readonly", false);
+      evntBus.emit(EVENT_NAMES.SHOW_PAYMENT, "false");
+      evntBus.emit(EVENT_NAMES.SET_CUSTOMER_READONLY, false);
     },
+
+    back_to_invoice() {
+      evntBus.emit(EVENT_NAMES.SHOW_PAYMENT, "false");
+      evntBus.emit(EVENT_NAMES.SET_CUSTOMER_READONLY, false);
+    },
+
     async submit(event, autoMode = false, print = false) {
       if (event && typeof event.preventDefault === "function") {
         event.preventDefault();
       }
-
       try {
         await this.refreshInvoiceDoc();
       } catch (error) {
-        // Failed to refresh invoice before submit
+        console.warn(error?.message ||"Failed to refresh invoice before submit");
       }
 
-      if (this.invoice_doc && this.invoice_doc.docstatus === 1) {
+      if (this.invoice_doc?.docstatus === 1) {
         if (print) {
           this.load_print_page();
         }
-        evntBus.emit("show_mesage", {
-          text: "Invoice has already been submitted",
-          color: "info",
-        });
-        evntBus.emit("set_last_invoice", this.invoice_doc.name);
-        evntBus.emit("new_invoice", "false");
+        this.showMessage("Invoice has already been submitted", "info");
+        evntBus.emit(EVENT_NAMES.SET_LAST_INVOICE, this.invoice_doc.name);
+        evntBus.emit(EVENT_NAMES.NEW_INVOICE, "false");
         this.back_to_invoice();
         return;
       }
@@ -475,106 +492,93 @@ export default {
       if (autoMode) {
         const defaultPayment = this.getDefaultPayment();
         if (!defaultPayment) {
-          evntBus.emit("show_mesage", {
-            text: "No default payment method in POS profile",
-            color: "error",
-          });
+          this.showMessage("No default payment method in POS profile", "error");
           return;
         }
-        defaultPayment.amount = this.flt(
-          this.invoice_doc.grand_total,
-          this.currency_precision
-        );
+        defaultPayment.amount = this.flt(this.invoice_doc.grand_total, this.currency_precision);
       }
 
       this.submit_invoice(print, autoMode);
     },
+
     submit_invoice(print, autoMode, retrying = false) {
-      // existing logic continues
-    if (this.quick_return) {
-      this.invoice_doc.is_return = 1;
-      // For quick return without reference, don't set return_against
-      // ERPNext allows return invoices without return_against for standalone returns
-      
-      let total = 0;
-      this.invoice_doc.items.forEach(item => {
-        // Ensure quantities and amounts are negative for returns
-        item.qty = -1 * Math.abs(item.qty);
-        item.stock_qty = -1 * Math.abs(item.stock_qty || item.qty);
-        item.amount = -1 * Math.abs(item.amount);
-        item.net_amount = -1 * Math.abs(item.net_amount || item.amount);
-        total += item.amount;
-      });
-      
-      // Update all totals for return invoice
-      this.invoice_doc.total = total;
-      this.invoice_doc.net_total = total;
-      this.invoice_doc.grand_total = total;
-      this.invoice_doc.rounded_total = total;
-      this.invoice_doc.base_total = total;
-      this.invoice_doc.base_net_total = total;
-      this.invoice_doc.base_grand_total = total;
-      
-      // Update payments to match the negative total
-      if (typeof this.selected_return_payment_idx === 'number') {
-        this.invoice_doc.payments.forEach((payment) => {
-          payment.amount = payment.idx === this.selected_return_payment_idx ? total : 0;
+      if (this.quick_return) {
+        this.invoice_doc.is_return = 1;
+        
+        let total = 0;
+        this.invoice_doc.items.forEach(item => {
+          item.qty = -1 * Math.abs(item.qty);
+          item.stock_qty = -1 * Math.abs(item.stock_qty || item.qty);
+          item.amount = -1 * Math.abs(item.amount);
+          item.net_amount = -1 * Math.abs(item.net_amount || item.amount);
+          total += item.amount;
         });
-      } else {
-        if (this.invoice_doc.payments && this.invoice_doc.payments.length > 0) {
-          this.invoice_doc.payments[0].amount = total;
+        
+        this.invoice_doc.total = total;
+        this.invoice_doc.net_total = total;
+        this.invoice_doc.grand_total = total;
+        this.invoice_doc.rounded_total = total;
+        this.invoice_doc.base_total = total;
+        this.invoice_doc.base_net_total = total;
+        this.invoice_doc.base_grand_total = total;
+        
+        if (typeof this.selected_return_payment_idx === 'number') {
+          this.invoice_doc.payments.forEach(payment => {
+            payment.amount = payment.idx === this.selected_return_payment_idx ? total : 0;
+          });
+        } else {
+          if (this.invoice_doc.payments?.length > 0) {
+            this.invoice_doc.payments[0].amount = total;
+          }
         }
+        
+        this.quick_return = false;
       }
-      
-      this.quick_return = false;
-    }
+
       let totalPayedAmount = 0;
-      this.invoice_doc.payments.forEach((payment) => {
+      this.invoice_doc.payments.forEach(payment => {
         payment.amount = flt(payment.amount);
         totalPayedAmount += payment.amount;
       });
       
-      // Validate payment amounts before submission against rounded total
       const targetAmount = flt(this.invoice_doc.rounded_total) || flt(this.invoice_doc.grand_total);
       const difference = Math.abs(totalPayedAmount - targetAmount);
       
       if (difference > 0.05) {
-        evntBus.emit("show_mesage", {
-          text: `Payment mismatch: Total ${totalPayedAmount} vs Target ${targetAmount}`,
-          color: "error"
-        });
+        this.showMessage(`Payment mismatch: Total ${totalPayedAmount} vs Target ${targetAmount}`, "error");
         return;
       }
+
       if (this.invoice_doc.is_return && totalPayedAmount == 0) {
         this.invoice_doc.is_pos = 0;
       }
+
       if (this.customer_credit_dict.length) {
-        this.customer_credit_dict.forEach((row) => {
+        this.customer_credit_dict.forEach(row => {
           row.credit_to_redeem = flt(row.credit_to_redeem);
         });
       }
-      let data = {};
-      data["total_change"] = !this.invoice_doc.is_return ? -this.diff_payment : 0;
-      data["paid_change"] = !this.invoice_doc.is_return ? this.paid_change : 0;
-      data["credit_change"] = -this.credit_change;
-      data["redeemed_customer_credit"] = this.redeemed_customer_credit;
-      data["customer_credit_dict"] = this.customer_credit_dict;
-      data["is_cashback"] = this.is_cashback;
 
-      const vm = this;
+      const data = {
+        total_change: !this.invoice_doc.is_return ? -this.diff_payment : 0,
+        paid_change: !this.invoice_doc.is_return ? this.paid_change : 0,
+        credit_change: -this.credit_change,
+        redeemed_customer_credit: this.redeemed_customer_credit,
+        customer_credit_dict: this.customer_credit_dict,
+        is_cashback: this.is_cashback
+      };
+
       if (autoMode) {
-        vm.load_print_page();
-        evntBus.emit("show_mesage", {
-          text: "Invoice printed using default payment method",
-          color: "success",
-        });
-        evntBus.emit("new_invoice", "false");
-        vm.back_to_invoice();
+        this.load_print_page();
+        this.showMessage("Invoice printed using default payment method", "success");
+        evntBus.emit(EVENT_NAMES.NEW_INVOICE, "false");
+        this.back_to_invoice();
         return;
       }
-        frappe.call({
-          method: "posawesome.posawesome.api.sales_invoice.submit.submit_invoice",
-          args: {
+
+      frappe.call({
+        method: API_METHODS.SUBMIT_INVOICE,
+        args: {
           data: data,
           invoice: {
             name: this.invoice_doc.name,
@@ -596,109 +600,84 @@ export default {
             shipping_address_name: this.invoice_doc.shipping_address_name,
             customer_address: this.invoice_doc.customer_address,
             shipping_address: this.invoice_doc.shipping_address
-          },
-        },
-        async: true,
-        callback: function (r) {
-          if (r.message) {
-            if (print) {
-              vm.load_print_page();
-            }
-            evntBus.emit("set_last_invoice", vm.invoice_doc.name);
-            evntBus.emit("show_mesage", {
-              text: `Invoice ${r.message.name} submitted successfully`,
-              color: "success",
-            });
-            frappe.utils.play_sound("submit");
-            this.addresses = [];
-            evntBus.emit("new_invoice", "false");
-            evntBus.emit("invoice_submitted");
-            vm.back_to_invoice();
-          } else {
-            evntBus.emit("show_mesage", {
-              text: "Failed to submit invoice",
-              color: "error",
-            });
           }
         },
-        error(err) {
-          const errorMsg = err && err.message ? err.message : "";
-          const isTimestampError =
-            typeof errorMsg === "string" &&
-            errorMsg.includes("Document has been modified");
+        async: true,
+        callback: (r) => {
+          if (r.message) {
+            if (print) {
+              this.load_print_page();
+            }
+            evntBus.emit(EVENT_NAMES.SET_LAST_INVOICE, this.invoice_doc.name);
+            this.showMessage(`Invoice ${r.message.name} submitted successfully`, "success");
+            frappe.utils.play_sound("submit");
+            this.addresses = [];
+            evntBus.emit(EVENT_NAMES.NEW_INVOICE, "false");
+            evntBus.emit(EVENT_NAMES.INVOICE_SUBMITTED);
+            this.back_to_invoice();
+          } else {
+            this.showMessage("Failed to submit invoice", "error");
+          }
+        },
+        error: (err) => {
+          const errorMsg = err?.message || "";
+          const isTimestampError = typeof errorMsg === "string" && errorMsg.includes("Document has been modified");
 
           if (!retrying && isTimestampError) {
-            vm.refreshInvoiceDoc()
+            this.refreshInvoiceDoc()
               .then(() => {
-                vm.submit_invoice(print, autoMode, true);
+                this.submit_invoice(print, autoMode, true);
               })
               .catch(() => {
-                evntBus.emit("show_mesage", {
-                  text: "Invoice was modified elsewhere, please try again",
-                  color: "warning",
-                });
+                this.showMessage("Invoice was modified elsewhere, please try again", "warning");
               });
             return;
           }
 
-          evntBus.emit("show_mesage", {
-            text: err?.message || "Failed to submit invoice",
-            color: "error",
-          });
-        },
+          this.showMessage(err?.message || "Failed to submit invoice", "error");
+        }
       });
     },
+
     refreshInvoiceDoc() {
-      const vm = this;
-      if (!vm.invoice_doc || !vm.invoice_doc.name) {
+      if (!this.invoice_doc?.name) {
         return Promise.resolve();
       }
 
-      const shouldMergeLocalPayments = vm.invoice_doc.docstatus === 0;
-      const localPayments = shouldMergeLocalPayments && vm.invoice_doc.payments
-        ? vm.invoice_doc.payments.map((payment) => ({ ...payment }))
+      const shouldMergeLocalPayments = this.invoice_doc.docstatus === 0;
+      const localPayments = shouldMergeLocalPayments && this.invoice_doc.payments
+        ? this.invoice_doc.payments.map(payment => ({ ...payment }))
         : [];
 
       return new Promise((resolve, reject) => {
         frappe.call({
-          method: "frappe.client.get",
+          method: API_METHODS.GET_INVOICE,
           args: {
             doctype: "Sales Invoice",
-            name: vm.invoice_doc.name,
+            name: this.invoice_doc.name
           },
           async: true,
-          callback(res) {
+          callback: (res) => {
             if (res.message) {
               const freshDoc = res.message;
 
               if (shouldMergeLocalPayments && freshDoc.docstatus === 0) {
-                const mergedPayments = (freshDoc.payments || []).map((payment) => {
-                  const localMatch = localPayments.find((localPayment) => {
-                    if (
-                      typeof localPayment.idx !== "undefined" &&
-                      typeof payment.idx !== "undefined"
-                    ) {
+                const mergedPayments = (freshDoc.payments || []).map(payment => {
+                  const localMatch = localPayments.find(localPayment => {
+                    if (localPayment.idx !== undefined && payment.idx !== undefined) {
                       return payment.idx === localPayment.idx;
                     }
                     return payment.mode_of_payment === localPayment.mode_of_payment;
                   });
 
-                  if (localMatch) {
-                    return {
-                      ...payment,
-                      amount: localMatch.amount,
-                    };
-                  }
-
-                  return payment;
+                  return localMatch ? { ...payment, amount: localMatch.amount } : payment;
                 });
 
                 const seen = new Set(
-                  mergedPayments.map(
-                    (payment) => `${payment.mode_of_payment || ""}__${payment.idx || ""}`
-                  )
+                  mergedPayments.map(payment => `${payment.mode_of_payment || ""}__${payment.idx || ""}`)
                 );
-                localPayments.forEach((localPayment) => {
+
+                localPayments.forEach(localPayment => {
                   const key = `${localPayment.mode_of_payment || ""}__${localPayment.idx || ""}`;
                   if (!seen.has(key) && flt(localPayment.amount)) {
                     mergedPayments.push(localPayment);
@@ -708,382 +687,346 @@ export default {
                 freshDoc.payments = mergedPayments;
               }
 
-              vm.invoice_doc = freshDoc;
+              this.invoice_doc = freshDoc;
               resolve();
             } else {
               reject(new Error("Failed to refresh invoice"));
             }
           },
-          error(err) {
-            reject(err);
-          },
+          error: (err) => reject(err)
         });
       });
     },
+
     set_full_amount(idx) {
-      // Zero all payments first, then set only the chosen one
       const isReturn = !!this.invoice_doc.is_return;
       const total = this.invoice_doc.rounded_total || this.invoice_doc.grand_total;
-      this.invoice_doc.payments.forEach((p) => {
+      
+      this.invoice_doc.payments.forEach(p => {
         p.amount = 0;
-        if (typeof p.base_amount !== 'undefined') p.base_amount = 0;
+        if (p.base_amount !== undefined) p.base_amount = 0;
       });
-      const payment = this.invoice_doc.payments.find((p) => p.idx == idx);
+      
+      const payment = this.invoice_doc.payments.find(p => p.idx == idx);
       if (payment) {
         payment.amount = isReturn ? -Math.abs(total) : total;
-        if (typeof payment.base_amount !== 'undefined') payment.base_amount = payment.amount;
+        if (payment.base_amount !== undefined) payment.base_amount = payment.amount;
       }
-      evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
+      
+      evntBus.emit(EVENT_NAMES.PAYMENTS_UPDATED, JSON.parse(JSON.stringify(this.invoice_doc.payments)));
     },
+
     set_rest_amount(idx) {
-      // Enhanced behavior: Distribute excess payment amount when focusing on payment field
       const isReturn = !!this.invoice_doc.is_return;
       const invoice_total = flt(this.invoice_doc.rounded_total) || flt(this.invoice_doc.grand_total);
       const total_payments = this.total_payments;
       const actual_remaining = this.flt(invoice_total - total_payments, this.currency_precision);
       
-      // Only fill if the focused payment field is empty and there's a remaining amount
       const payment = this.invoice_doc.payments.find(p => p.idx === idx);
       if (!payment || this.flt(payment.amount) !== 0) {
-        return; // Don't fill if payment already has an amount
+        return;
       }
       
       if (actual_remaining > 0) {
-        // Fill with remaining amount if there's a balance to be paid
         let amount = actual_remaining;
-        if (isReturn) {
-          amount = -Math.abs(amount);
-        }
+        if (isReturn) amount = -Math.abs(amount);
+        
         payment.amount = amount;
         if (payment.base_amount !== undefined) {
           payment.base_amount = isReturn ? -Math.abs(amount) : amount;
         }
-        // Amount filled
-        evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
-      }
-      else if (actual_remaining < 0) {
-        // Handle excess payment distribution
+        evntBus.emit(EVENT_NAMES.PAYMENTS_UPDATED, JSON.parse(JSON.stringify(this.invoice_doc.payments)));
+      } else if (actual_remaining < 0) {
         let excess_amount = Math.abs(actual_remaining);
-        if (isReturn) {
-          excess_amount = -Math.abs(excess_amount);
-        }
+        if (isReturn) excess_amount = -Math.abs(excess_amount);
+        
         payment.amount = excess_amount;
         if (payment.base_amount !== undefined) {
           payment.base_amount = isReturn ? -Math.abs(excess_amount) : excess_amount;
         }
-        // Excess amount handled
-        evntBus.emit('payments_updated', JSON.parse(JSON.stringify(this.invoice_doc.payments)));
+        evntBus.emit(EVENT_NAMES.PAYMENTS_UPDATED, JSON.parse(JSON.stringify(this.invoice_doc.payments)));
       }
     },
+
     clear_all_amounts() {
-      this.invoice_doc.payments.forEach((payment) => {
+      this.invoice_doc.payments.forEach(payment => {
         payment.amount = 0;
       });
     },
+
     load_print_page() {
-      const print_format =
-        this.pos_profile.print_format_for_online ||
-        this.pos_profile.print_format;
+      const print_format = this.pos_profile.print_format_for_online || this.pos_profile.print_format;
       const letter_head = this.pos_profile.letter_head || 0;
-      const url =
-        frappe.urllib.get_base_url() +
-        "/printview?doctype=Sales%20Invoice&name=" +
-        this.invoice_doc.name +
-        "&trigger_print=1" +
-        "&format=" +
-        print_format +
-        "&no_letterhead=" +
-        letter_head;
+      const url = `${frappe.urllib.get_base_url()}/printview?doctype=Sales%20Invoice&name=${this.invoice_doc.name}&trigger_print=1&format=${print_format}&no_letterhead=${letter_head}`;
+      
       const printWindow = window.open(url, "Print");
-      printWindow.addEventListener(
-        "load",
-        function () {
-          printWindow.print();
-          // Auto-close print window after printing
-          setTimeout(() => {
-            printWindow.close();
-          }, 1000);
-        },
-        true
-      );
+      printWindow.addEventListener("load", function () {
+        printWindow.print();
+        setTimeout(() => printWindow.close(), 1000);
+      }, true);
     },
+
     validate_due_date() {
       const today = frappe.datetime.now_date();
       const parse_today = Date.parse(today);
       const new_date = Date.parse(this.invoice_doc.due_date);
+      
       if (new_date < parse_today) {
         setTimeout(() => {
           this.invoice_doc.due_date = today;
         }, 0);
       }
     },
+
     shortPay(e) {
       if (e.key === "x" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         this.submit();
       }
     },
+
     set_paid_change() {
       if (!this.paid_change) this.paid_change = 0;
 
       this.paid_change_rules = [];
-      let change = -this.diff_payment;
+      const change = -this.diff_payment;
+      
       if (this.paid_change > change) {
-        this.paid_change_rules = [
-          "Paid change cannot be greater than total change!",
-        ];
+        this.paid_change_rules = ["Paid change cannot be greater than total change!"];
         this.credit_change = 0;
       }
     },
+
     get_available_credit(e) {
       this.clear_all_amounts();
-      if (e) {
-        frappe
-          .call("posawesome.posawesome.api.customer.get_customer_credit.get_customer_credit", {
-            customer_id: this.invoice_doc.customer,
-            company: this.pos_profile.company,
-          })
-          .then((r) => {
-            const data = r.message;
-            if (data.length) {
-              const amount =
-                this.invoice_doc.grand_total;
-              let remainAmount = amount;
-
-              data.forEach((row) => {
-                if (remainAmount > 0) {
-                  if (remainAmount >= row.total_credit) {
-                    row.credit_to_redeem = row.total_credit;
-                    remainAmount = remainAmount - row.total_credit;
-                  } else {
-                    row.credit_to_redeem = remainAmount;
-                    remainAmount = 0;
-                  }
-                } else {
-                  row.credit_to_redeem = 0;
-                }
-              });
-
-              this.customer_credit_dict = data;
-            } else {
-              this.customer_credit_dict = [];
-            }
-          });
-      } else {
+      
+      if (!e) {
         this.customer_credit_dict = [];
+        return;
       }
+
+      frappe.call(API_METHODS.GET_CUSTOMER_CREDIT, {
+        customer_id: this.invoice_doc.customer,
+        company: this.pos_profile.company
+      }).then((r) => {
+        const data = r.message;
+        
+        if (!data?.length) {
+          this.customer_credit_dict = [];
+          return;
+        }
+
+        const amount = this.invoice_doc.grand_total;
+        let remainAmount = amount;
+
+        data.forEach(row => {
+          if (remainAmount > 0) {
+            row.credit_to_redeem = remainAmount >= row.total_credit ? row.total_credit : remainAmount;
+            remainAmount -= row.credit_to_redeem;
+          } else {
+            row.credit_to_redeem = 0;
+          }
+        });
+
+        this.customer_credit_dict = data;
+      });
     },
+
     get_addresses() {
-      const vm = this;
-      // Use customer from invoice_doc if available, otherwise use default customer
-      const customer = vm.invoice_doc && vm.invoice_doc.customer ? vm.invoice_doc.customer : vm.customer;
+      const customer = this.invoice_doc?.customer || this.customer;
       
       if (!customer) {
-        vm.addresses = [];
+        this.addresses = [];
         return;
       }
       
       frappe.call({
-        method: "posawesome.posawesome.api.customer.get_many_customer_addresses.get_many_customer_addresses",
+        method: API_METHODS.GET_ADDRESSES,
         args: { customer_id: customer },
         async: true,
-        callback: function (r) {
-          if (!r.exc) {
-            vm.addresses = r.message;
-          } else {
-            vm.addresses = [];
-          }
-        },
+        callback: (r) => {
+          this.addresses = r.exc ? [] : r.message;
+        }
       });
     },
-    addressFilter(item, queryText, itemText) {
-      const textOne = item.address_title
-        ? item.address_title.toLowerCase()
-        : "";
-      const textTwo = item.address_line1
-        ? item.address_line1.toLowerCase()
-        : "";
-      const textThree = item.address_line2
-        ? item.address_line2.toLowerCase()
-        : "";
-      const textFour = item.city ? item.city.toLowerCase() : "";
-      const textFifth = item.name.toLowerCase();
+
+    addressFilter(item, queryText) {
       const searchText = queryText.toLowerCase();
-      return (
-        textOne.indexOf(searchText) > -1 ||
-        textTwo.indexOf(searchText) > -1 ||
-        textThree.indexOf(searchText) > -1 ||
-        textFour.indexOf(searchText) > -1 ||
-        textFifth.indexOf(searchText) > -1
+      const fields = [
+        item.address_title,
+        item.address_line1,
+        item.address_line2,
+        item.city,
+        item.name
+      ];
+
+      return fields.some(field => 
+        field?.toLowerCase().includes(searchText)
       );
     },
+
+      // Open dialog to create new address
     new_address() {
-      evntBus.emit("open_new_address", this.invoice_doc.customer);
+      evntBus.emit(EVENT_NAMES.OPEN_NEW_ADDRESS, this.invoice_doc.customer);
     },
+
+    //  Request payment (disabled feature)
     request_payment() {
       this.phone_dialog = false;
-      const vm = this;
+      
       if (!this.invoice_doc.contact_mobile) {
-        evntBus.emit("show_mesage", {
-          text: "Please enter customer phone number",
-          color: "error",
-        });
-        evntBus.emit("open_edit_customer");
+        this.showMessage("Please enter customer phone number", "error");
+        evntBus.emit(EVENT_NAMES.OPEN_EDIT_CUSTOMER);
         this.back_to_invoice();
         return;
       }
-      evntBus.emit("freeze", {
-        title: "Please wait for payment...",
-      });
-      this.invoice_doc.payments.forEach((payment) => {
+
+      evntBus.emit(EVENT_NAMES.FREEZE, { title: "Please wait for payment..." });
+      
+      this.invoice_doc.payments.forEach(payment => {
         payment.amount = flt(payment.amount);
       });
-      let formData = { ...this.invoice_doc };
-      formData["total_change"] = -this.diff_payment;
-      formData["paid_change"] = this.paid_change;
-      formData["credit_change"] = -this.credit_change;
-      formData["redeemed_customer_credit"] = this.redeemed_customer_credit;
-      formData["customer_credit_dict"] = this.customer_credit_dict;
-      formData["is_cashback"] = this.is_cashback;
 
-      // Payment request functionality removed
-      evntBus.emit("unfreeze");
-      evntBus.emit("show_mesage", {
-        text: "Payment request feature has been disabled",
-        color: "info",
-      });
-    },
+      evntBus.emit(EVENT_NAMES.UNFREEZE);
+      this.showMessage("Payment request feature has been disabled", "info");
+    }
   },
 
+  // ===== LIFECYCLE HOOKS =====
   mounted() {
     this.$nextTick(() => {
-      evntBus.on("toggle_quick_return", (value) => {
+      evntBus.on(EVENT_NAMES.TOGGLE_QUICK_RETURN, (value) => {
         this.quick_return = value;
-    });
-      evntBus.on("send_invoice_doc_payment", (invoice_doc) => {
+      });
+
+      evntBus.on(EVENT_NAMES.SEND_INVOICE_DOC_PAYMENT, (invoice_doc) => {
         this.invoice_doc = invoice_doc;
         
-        // Ensure payments array exists and has proper idx values
-        if (!this.invoice_doc.payments || !Array.isArray(this.invoice_doc.payments)) {
-          evntBus.emit("show_mesage", {
-            text: "No payments array in invoice document",
-            color: "error",
-          });
+        if (!Array.isArray(this.invoice_doc.payments)) {
+          this.showMessage("No payments array in invoice document", "error");
           this.invoice_doc.payments = [];
         } else {
-          // Ensure all payments have idx values
           this.invoice_doc.payments.forEach((payment, index) => {
-            if (!payment.idx) {
-              payment.idx = index + 1;
-            }
+            if (!payment.idx) payment.idx = index + 1;
           });
         }
         
-        const default_payment = this.invoice_doc.payments.find(
-          (payment) => payment.default == 1
-        );
+        const default_payment = this.invoice_doc.payments.find(payment => payment.default == 1);
         this.is_credit_sale = 0;
         this.is_write_off_change = 0;
+
         if (default_payment && !invoice_doc.is_return) {
-          default_payment.amount = this.flt(
-            invoice_doc.grand_total,
-            this.currency_precision
-          );
+          default_payment.amount = this.flt(invoice_doc.grand_total, this.currency_precision);
         }
+
         if (invoice_doc.is_return) {
-          // Align with Payments_new.vue: reset all payments then set default to negative full amount
           this.is_return = true;
           const total = invoice_doc.rounded_total || invoice_doc.grand_total;
-          invoice_doc.payments.forEach((payment) => {
+          
+          invoice_doc.payments.forEach(payment => {
             payment.amount = 0;
-            if (typeof payment.base_amount !== 'undefined') payment.base_amount = 0;
+            if (payment.base_amount !== undefined) payment.base_amount = 0;
           });
+
           if (default_payment) {
             const neg = -Math.abs(total);
             default_payment.amount = neg;
-            if (typeof default_payment.base_amount !== 'undefined') default_payment.base_amount = neg;
+            if (default_payment.base_amount !== undefined) default_payment.base_amount = neg;
           }
         }
+
         this.loyalty_amount = 0;
         this.get_addresses();
       });
-      evntBus.on("register_pos_profile", (data) => {
+
+      evntBus.on(EVENT_NAMES.REGISTER_POS_PROFILE, (data) => {
         this.pos_profile = data.pos_profile;
-        // Set default customer from POS Profile
-        if (data.pos_profile && data.pos_profile.customer) {
+        if (data.pos_profile?.customer) {
           this.customer = data.pos_profile.customer;
-          // Load addresses for default customer
           this.get_addresses();
         }
       });
-      evntBus.on("add_the_new_address", (data) => {
+
+      evntBus.on(EVENT_NAMES.ADD_THE_NEW_ADDRESS, (data) => {
         this.addresses.push(data);
         this.$forceUpdate();
       });
     });
-    evntBus.on("update_customer", (customer) => {
+
+    evntBus.on(EVENT_NAMES.UPDATE_CUSTOMER, (customer) => {
       if (this.customer != customer) {
         this.customer_credit_dict = [];
         this.redeem_customer_credit = false;
         this.is_cashback = true;
       }
     });
-    evntBus.on("set_pos_settings", (data) => {
+
+    evntBus.on(EVENT_NAMES.SET_POS_SETTINGS, (data) => {
       this.pos_settings = data;
     });
-    evntBus.on("set_customer_info_to_edit", (data) => {
+
+    evntBus.on(EVENT_NAMES.SET_CUSTOMER_INFO_TO_EDIT, (data) => {
       this.customer_info = data;
     });
     
-    // Due date update handler
-    evntBus.on("update_due_date", (date) => {
+    evntBus.on(EVENT_NAMES.UPDATE_DUE_DATE, (date) => {
       if (this.invoice_doc) {
         this.invoice_doc.due_date = date;
       }
     });
   },
+
   created() {
     document.addEventListener("keydown", this.shortPay.bind(this));
   },
+
   beforeDestroy() {
-    evntBus.$off("send_invoice_doc_payment");
-    evntBus.$off("register_pos_profile");
-    evntBus.$off("add_the_new_address");
-    evntBus.$off("update_customer");
-    evntBus.$off("set_pos_settings");
-    evntBus.$off("set_customer_info_to_edit");
-    evntBus.$off("update_invoice_coupons");
-    evntBus.$off("update_delivery_date");
-    evntBus.$off("update_due_date");
+    const events = [
+      EVENT_NAMES.SEND_INVOICE_DOC_PAYMENT,
+      EVENT_NAMES.REGISTER_POS_PROFILE,
+      EVENT_NAMES.ADD_THE_NEW_ADDRESS,
+      EVENT_NAMES.UPDATE_CUSTOMER,
+      EVENT_NAMES.SET_POS_SETTINGS,
+      EVENT_NAMES.SET_CUSTOMER_INFO_TO_EDIT,
+      'update_invoice_coupons',
+      'update_delivery_date',
+      EVENT_NAMES.UPDATE_DUE_DATE
+    ];
+
+    events.forEach(event => evntBus.$off(event));
   },
+
   destroyed() {
     document.removeEventListener("keydown", this.shortPay);
   },
+
+  // ===== WATCHERS =====
   watch: {
     loyalty_amount(value) {
       if (value > this.available_pioints_amount) {
         this.invoice_doc.loyalty_amount = 0;
         this.invoice_doc.redeem_loyalty_points = 0;
         this.invoice_doc.loyalty_points = 0;
-        evntBus.emit("show_mesage", {
-          text: `Cannot enter points greater than available balance ${this.available_pioints_amount}`,
-          color: "error",
-        });
+        this.showMessage(
+          `Cannot enter points greater than available balance ${this.available_pioints_amount}`,
+          "error"
+        );
       } else {
         this.invoice_doc.loyalty_amount = this.flt(this.loyalty_amount);
         this.invoice_doc.redeem_loyalty_points = 1;
-        this.invoice_doc.loyalty_points =
-          this.flt(this.loyalty_amount) / this.customer_info.conversion_factor;
+        this.invoice_doc.loyalty_points = this.flt(this.loyalty_amount) / this.customer_info.conversion_factor;
       }
     },
+
     is_credit_sale(value) {
-      if (value == 1 && this.invoice_doc && this.invoice_doc.payments && Array.isArray(this.invoice_doc.payments)) {
-        this.invoice_doc.payments.forEach((payment) => {
+      if (value == 1 && Array.isArray(this.invoice_doc?.payments)) {
+        this.invoice_doc.payments.forEach(payment => {
           payment.amount = 0;
           payment.base_amount = 0;
         });
       }
     },
+
     is_write_off_change(value) {
       if (value == 1) {
         this.invoice_doc.write_off_amount = this.diff_payment;
@@ -1093,28 +1036,88 @@ export default {
         this.invoice_doc.write_off_outstanding_amount_automatically = 0;
       }
     },
+
     redeemed_customer_credit(value) {
       if (value > this.available_customer_credit) {
-        evntBus.emit("show_mesage", {
-          text: `Customer credit can be redeemed up to ${this.available_customer_credit}`,
-          color: "error",
-        });
+        this.showMessage(
+          `Customer credit can be redeemed up to ${this.available_customer_credit}`,
+          "error"
+        );
       }
-    },
-  },
+    }
+  }
 };
 </script>
 
 <style scoped>
-/* ===== ULTRA-COMPACT PAYMENTS COMPONENT STYLING ===== */
+/* SHARED LABEL STYLES */
+.summary-field-large label,
+.summary-field-small label,
+.payment-amount label,
+.loyalty-field-large label,
+.loyalty-field-small label,
+.credit-field-large label,
+.credit-field-small label,
+.credit-available label,
+.credit-redeem label,
+.option-date label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0;
+  padding: 0 2px;
+  line-height: 1;
+}
 
+/* CONTAINER STYLES */
 .payments-container {
   width: 100%;
   height: 100%;
   position: relative;
 }
 
-/* Fixed Back Button - Beautiful Design */
+.payments-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.payments-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px;
+}
+
+/* Professional Scrollbar */
+.payments-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.payments-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.payments-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border-radius: 3px;
+}
+
+.payments-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+}
+
+/* Section Divider */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #e0e0e0 50%, transparent 100%);
+  margin: 4px 0;
+}
+
+/* BACK BUTTON */
 .back-button-fixed {
   position: absolute;
   bottom: 12px;
@@ -1162,86 +1165,34 @@ export default {
   line-height: 1;
 }
 
-.payments-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-}
-
-.payments-scroll {
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 6px;
-}
-
-/* Professional Scrollbar */
-.payments-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.payments-scroll::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.payments-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-  border-radius: 3px;
-}
-
-.payments-scroll::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
-}
-
-/* Section Divider */
-.section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, #e0e0e0 50%, transparent 100%);
-  margin: 4px 0;
-}
-
-/* Payment Summary Section */
-.payment-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin-bottom: 2px;
-}
-
-.summary-row {
+/* SHARED ROW LAYOUT */
+.summary-row,
+.loyalty-row,
+.credit-row {
   display: flex;
   gap: 3px;
   align-items: flex-start;
 }
 
-.summary-field-large {
+.summary-field-large,
+.loyalty-field-large,
+.credit-field-large {
   flex: 1.4;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.summary-field-small {
+.summary-field-small,
+.loyalty-field-small,
+.credit-field-small {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.summary-field-large label,
-.summary-field-small label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin: 0;
-  padding: 0 2px;
-  line-height: 1;
-}
-
-/* Field Display Styles */
+/* FIELD DISPLAY STYLES (SHARED) */
 .field-display {
   display: flex;
   align-items: center;
@@ -1269,6 +1220,7 @@ export default {
   text-align: right;
 }
 
+/* Display Variants */
 .success-display {
   background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
   border-color: #4caf50;
@@ -1306,7 +1258,7 @@ export default {
   color: #757575;
 }
 
-/* Field Input Wrapper */
+/* FIELD INPUT WRAPPER (SHARED) */
 .field-input-wrapper {
   display: flex;
   align-items: center;
@@ -1372,7 +1324,14 @@ export default {
   cursor: not-allowed;
 }
 
-/* Payment Methods Section */
+/* SECTION-SPECIFIC STYLES */
+.payment-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 2px;
+}
+
 .payment-methods {
   display: flex;
   flex-direction: column;
@@ -1380,6 +1339,35 @@ export default {
   margin: 2px 0;
 }
 
+.payment-loyalty {
+  margin: 3px 0;
+}
+
+.payment-credit {
+  margin: 3px 0;
+}
+
+.payment-options {
+  display: flex;
+  gap: 4px;
+  margin: 3px 0;
+  padding: 4px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+  border-radius: 4px;
+}
+
+.credit-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 3px 0;
+  padding: 4px;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-radius: 4px;
+  border: 1px solid #ff9800;
+}
+
+/* PAYMENT METHOD ROW */
 .payment-method-row {
   display: flex;
   gap: 3px;
@@ -1391,16 +1379,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-.payment-amount label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  padding: 0 2px;
-  line-height: 1;
 }
 
 .payment-method-btn {
@@ -1463,87 +1441,7 @@ export default {
   opacity: 0.6;
 }
 
-.payment-loyalty {
-  margin: 3px 0;
-}
-
-.loyalty-row {
-  display: flex;
-  gap: 3px;
-  align-items: flex-start;
-}
-
-.loyalty-field-large {
-  flex: 1.4;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.loyalty-field-small {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.loyalty-field-large label,
-.loyalty-field-small label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  padding: 0 2px;
-  line-height: 1;
-}
-
-/* Customer Credit Section */
-.payment-credit {
-  margin: 3px 0;
-}
-
-.credit-row {
-  display: flex;
-  gap: 3px;
-  align-items: flex-start;
-}
-
-.credit-field-large {
-  flex: 1.4;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.credit-field-small {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.credit-field-large label,
-.credit-field-small label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  padding: 0 2px;
-  line-height: 1;
-}
-
-/* Payment Options (Switches) Section */
-.payment-options {
-  display: flex;
-  gap: 4px;
-  margin: 3px 0;
-  padding: 4px;
-  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
-  border-radius: 4px;
-}
-
+/* SWITCHES AND OPTIONS */
 .option-switch {
   flex: 1 1 calc(50% - 2px);
   min-width: 130px;
@@ -1557,17 +1455,6 @@ export default {
   gap: 2px;
 }
 
-.option-date label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  padding: 0 2px;
-  line-height: 1;
-}
-
-/* Compact Switch Styling */
 .compact-switch :deep(.v-label) {
   font-size: 0.65rem !important;
   color: #666 !important;
@@ -1592,16 +1479,18 @@ export default {
   min-height: 22px !important;
 }
 
-/* Credit Details Section */
-.credit-details {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin: 3px 0;
-  padding: 4px;
-  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  border-radius: 4px;
-  border: 1px solid #ff9800;
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* CREDIT DETAILS */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.credit-details label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #e65100;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0 2px;
+  line-height: 1;
 }
 
 .credit-detail-row {
@@ -1638,18 +1527,10 @@ export default {
   gap: 2px;
 }
 
-.credit-available label,
-.credit-redeem label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #e65100;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  padding: 0 2px;
-  line-height: 1;
-}
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* RESPONSIVE DESIGN */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .summary-row,
   .loyalty-row,
