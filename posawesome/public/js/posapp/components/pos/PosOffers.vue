@@ -1,7 +1,5 @@
 <template>
-  <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
-    <!-- ===== TEMPLATE SECTION 2: OFFERS CARD ===== -->
     <v-card
       class="selection mx-auto grey lighten-5"
       style="max-height: 80vh; height: 80vh"
@@ -112,11 +110,45 @@
 // ===== SECTION 1: IMPORTS =====
 import { evntBus } from '../../bus';
 import format from '../../format';
+
+// CONSTANTS
+const EVENT_NAMES = {
+  SHOW_OFFERS: 'show_offers',
+  SHOW_MESSAGE: 'show_mesage',
+  UPDATE_INVOICE_OFFERS: 'update_invoice_offers',
+  UPDATE_OFFERS_COUNTERS: 'update_offers_counters',
+  UPDATE_POS_COUPONS: 'update_pos_coupons',
+  REGISTER_POS_PROFILE: 'register_pos_profile',
+  UPDATE_CUSTOMER: 'update_customer',
+  SET_OFFERS: 'set_offers',
+  UPDATE_POS_OFFERS: 'update_pos_offers',
+  UPDATE_DISCOUNT_PERCENTAGE_OFFER_NAME: 'update_discount_percentage_offer_name',
+  SET_ALL_ITEMS: 'set_all_items'
+};
+
+const OFFER_TYPES = {
+  GRAND_TOTAL: 'Grand Total',
+  GIVE_PRODUCT: 'Give Product'
+};
+
+const APPLY_TYPES = {
+  ITEM_CODE: 'Item Code',
+  ITEM_GROUP: 'Item Group'
+};
+
+const ITEMS_HEADERS = [
+  { title: 'Name', key: 'name', align: 'start' },
+  { title: 'Apply On', key: 'apply_on', align: 'start' },
+  { title: 'Offer', key: 'offer', align: 'start' },
+  { title: 'Applied', key: 'offer_applied', align: 'start' }
+];
+
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
   mixins: [format],
+
   // ===== SECTION 3: DATA =====
-  data: () => {
+  data() {
     return {
       loading: false,
       pos_profile: '',
@@ -126,12 +158,7 @@ export default {
       itemsPerPage: 1000,
       expanded: [],
       singleExpand: true,
-      items_headers: [
-        { title: 'Name', key: 'name', align: 'start' },
-        { title: 'Apply On', key: 'apply_on', align: 'start' },
-        { title: 'Offer', key: 'offer', align: 'start' },
-        { title: 'Applied', key: 'offer_applied', align: 'start' },
-      ]
+      items_headers: ITEMS_HEADERS
     };
   },
 
@@ -141,221 +168,165 @@ export default {
       return this.pos_offers.length;
     },
     appliedOffersCount() {
-      return this.pos_offers.filter((el) => !!el.offer_applied).length;
+      return this.pos_offers.filter(el => el.offer_applied).length;
     }
   },
 
   // ===== SECTION 5: METHODS =====
   methods: {
     back_to_invoice() {
-      evntBus.emit('show_offers', 'false');
+      evntBus.emit(EVENT_NAMES.SHOW_OFFERS, 'false');
     },
+
     forceUpdateItem() {
-      let list_offers = [];
-      list_offers = [...this.pos_offers];
-      this.pos_offers = list_offers;
-      // Check for overlapping offers during manual changes
+      this.pos_offers = [...this.pos_offers];
       this.handleManualOfferChange();
     },
+
     handleManualOfferChange() {
       try {
-        // Find applied Grand Total offers
         const appliedGrandTotalOffers = this.pos_offers.filter(
-          (offer) => offer.offer === 'Grand Total' && offer.offer_applied
+          offer => offer.offer === OFFER_TYPES.GRAND_TOTAL && offer.offer_applied
         );
+
         if (appliedGrandTotalOffers.length > 1) {
-          // If more than one offer is applied, apply only the best one
           this.applyBestGrandTotalOffer();
         } else if (appliedGrandTotalOffers.length === 1) {
-          // Update the applied offer name
           this.discount_percentage_offer_name = appliedGrandTotalOffers[0].name;
-          // Cancel remaining Grand Total offers
-          this.pos_offers.forEach((offer) => {
-            if (offer.offer === 'Grand Total' && offer.name !== appliedGrandTotalOffers[0].name) {
+          this.pos_offers.forEach(offer => {
+            if (offer.offer === OFFER_TYPES.GRAND_TOTAL && offer.name !== appliedGrandTotalOffers[0].name) {
               offer.offer_applied = false;
             }
           });
         } else {
-          // No offers applied
           this.discount_percentage_offer_name = null;
         }
       } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error processing offer change',
-          color: 'error'
-        });
+        this.showMessage('Error processing offer change', 'error');
       }
     },
+
     makeid(length) {
-      try {
-        let result = '';
-        const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        const charactersLength = characters.length;
-        for (var i = 0; i < length; i++) {
-          result += characters.charAt(
-            Math.floor(Math.random() * charactersLength)
-          );
-        }
-        return result;
-      } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error creating ID',
-          color: 'error'
-        });
-        return '';
-      }
+      const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      return Array.from({ length }, () => 
+        characters.charAt(Math.floor(Math.random() * characters.length))
+      ).join('');
     },
+
     updatePosOffers(appliedOffers) {
       try {
-        // Update application status for existing offers
-        this.pos_offers.forEach((pos_offer) => {
-          const appliedOffer = appliedOffers.find((offer) => 
-            offer.name === pos_offer.name || 
+        this.pos_offers.forEach(pos_offer => {
+          pos_offer.offer_applied = appliedOffers.some(offer =>
+            offer.name === pos_offer.name ||
             offer.offer_name === pos_offer.name ||
             offer.name === pos_offer.title
           );
-          if (appliedOffer) {
-            pos_offer.offer_applied = true;
-          } else {
-            pos_offer.offer_applied = false;
-          }
         });
       } catch (error) {
         console.error('[PosOffers] error updating applied offers:', error);
       }
     },
+
     applyBestGrandTotalOffer() {
       try {
-        // Find all available Grand Total offers (applied or not)
         const grandTotalOffers = this.pos_offers.filter(
-          (offer) => offer.offer === 'Grand Total'
+          offer => offer.offer === OFFER_TYPES.GRAND_TOTAL
         );
+
+        if (grandTotalOffers.length === 0) return;
+
         if (grandTotalOffers.length > 1) {
-          // Sort offers by discount percentage (highest to lowest)
           grandTotalOffers.sort((a, b) => {
             const discountA = parseFloat(a.discount_percentage || 0);
             const discountB = parseFloat(b.discount_percentage || 0);
             return discountB - discountA;
           });
-          // Cancel all offers first
-          grandTotalOffers.forEach((offer) => {
-            offer.offer_applied = false;
-          });
-          // Apply only the best offer
-          if (grandTotalOffers.length > 0) {
-            grandTotalOffers[0].offer_applied = true;
-            this.discount_percentage_offer_name = grandTotalOffers[0].name;
-            evntBus.emit('show_mesage', {
-              text: 'Best offer applied: ' + grandTotalOffers[0].name,
-              color: 'success',
-            });
-          }
-        } else if (grandTotalOffers.length === 1) {
-          // Single offer only - apply it
+
+          grandTotalOffers.forEach(offer => offer.offer_applied = false);
+          grandTotalOffers[0].offer_applied = true;
+          this.discount_percentage_offer_name = grandTotalOffers[0].name;
+          this.showMessage('Best offer applied: ' + grandTotalOffers[0].name, 'success');
+        } else {
           grandTotalOffers[0].offer_applied = true;
           this.discount_percentage_offer_name = grandTotalOffers[0].name;
         }
       } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error applying best offer',
-          color: 'error'
-        });
+        this.showMessage('Error applying best offer', 'error');
       }
     },
+
     removeOffers(offers_id_list) {
       try {
         this.pos_offers = this.pos_offers.filter(
-          (offer) => !offers_id_list.includes(offer.row_id)
+          offer => !offers_id_list.includes(offer.row_id)
         );
       } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error removing offers',
-          color: 'error'
-        });
+        this.showMessage('Error removing offers', 'error');
       }
     },
+
     handelOffers() {
       try {
-        const applyedOffers = this.pos_offers.filter(
-          (offer) => offer.offer_applied
-        );
-        evntBus.emit('update_invoice_offers', applyedOffers);
+        const applyedOffers = this.pos_offers.filter(offer => offer.offer_applied);
+        evntBus.emit(EVENT_NAMES.UPDATE_INVOICE_OFFERS, applyedOffers);
       } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error processing offers',
-          color: 'error'
-        });
+        this.showMessage('Error processing offers', 'error');
       }
     },
+
     handleNewLine(str) {
-      try {
-        if (str) {
-          return str.replace(/(?:\r\n|\r|\n)/g, '<br />');
-        } else {
-          return '';
-        }
-      } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error processing text',
-          color: 'error'
-        });
-        return '';
-      }
+      return str ? str.replace(/(?:\r\n|\r|\n)/g, '<br />') : '';
     },
+
     get_give_items(offer) {
       try {
-        if (offer.apply_type == 'Item Code') {
+        if (offer.apply_type === APPLY_TYPES.ITEM_CODE) {
           return [offer.apply_item_code];
-        } else if (offer.apply_type == 'Item Group') {
-          const items = this.allItems;
-          let filterd_items = [];
-          const filterd_items_1 = items.filter(
-            (item) => item.item_group == offer.apply_item_group
-          );
-          if (offer.less_then > 0) {
-            filterd_items = filterd_items_1.filter(
-              (item) => item.rate < offer.less_then
-            );
-          } else {
-            filterd_items = filterd_items_1;
-          }
-          return filterd_items;
-        } else {
-          return [];
         }
+
+        if (offer.apply_type === APPLY_TYPES.ITEM_GROUP) {
+          let filterd_items = this.allItems.filter(
+            item => item.item_group === offer.apply_item_group
+          );
+
+          if (offer.less_then > 0) {
+            filterd_items = filterd_items.filter(item => item.rate < offer.less_then);
+          }
+
+          return filterd_items;
+        }
+
+        return [];
       } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error getting free items',
-          color: 'error'
-        });
+        this.showMessage('Error getting free items', 'error');
         return [];
       }
     },
+
     updateCounters() {
       try {
-        evntBus.emit('update_offers_counters', {
+        evntBus.emit(EVENT_NAMES.UPDATE_OFFERS_COUNTERS, {
           offersCount: this.offersCount,
-          appliedOffersCount: this.appliedOffersCount,
+          appliedOffersCount: this.appliedOffersCount
         });
       } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error updating counters',
-          color: 'error'
-        });
+        this.showMessage('Error updating counters', 'error');
       }
     },
+
     updatePosCoupuns() {
       try {
         const applyedOffers = this.pos_offers.filter(
-          (offer) => offer.offer_applied && offer.coupon_based
+          offer => offer.offer_applied && offer.coupon_based
         );
-        evntBus.emit('update_pos_coupons', applyedOffers);
+        evntBus.emit(EVENT_NAMES.UPDATE_POS_COUPONS, applyedOffers);
       } catch (error) {
-        evntBus.emit('show_mesage', {
-          text: 'Error updating coupons',
-          color: 'error'
-        });
+        this.showMessage('Error updating coupons', 'error');
       }
+    },
+
+    showMessage(text, color) {
+      evntBus.emit(EVENT_NAMES.SHOW_MESSAGE, { text, color });
     }
   },
 
@@ -363,7 +334,7 @@ export default {
   watch: {
     pos_offers: {
       deep: true,
-      handler(pos_offers) {
+      handler() {
         this.handelOffers();
         this.updateCounters();
         this.updatePosCoupuns();
@@ -372,40 +343,38 @@ export default {
   },
 
   // ===== SECTION 7: CREATED =====
-  created: function () {
-    try {
-      this.$nextTick(function () {
-        evntBus.on('register_pos_profile', (data) => {
-          this.pos_profile = data.pos_profile;
-        });
+  created() {
+    this.$nextTick(() => {
+      evntBus.on(EVENT_NAMES.REGISTER_POS_PROFILE, (data) => {
+        this.pos_profile = data.pos_profile;
       });
-      evntBus.on('update_customer', (customer) => {
-        if (this.customer != customer) {
+
+      evntBus.on(EVENT_NAMES.UPDATE_CUSTOMER, (customer) => {
+        if (this.customer !== customer) {
           this.offers = [];
         }
       });
-      evntBus.on('set_offers', (data) => {
+
+      evntBus.on(EVENT_NAMES.SET_OFFERS, (data) => {
         this.pos_offers = data.map(offer => ({
           ...offer,
           row_id: offer.row_id || this.makeid(20),
           offer_applied: !!offer.offer_applied
         }));
       });
-      evntBus.on('update_pos_offers', (data) => {
+
+      evntBus.on(EVENT_NAMES.UPDATE_POS_OFFERS, (data) => {
         this.updatePosOffers(data);
       });
-      evntBus.on('update_discount_percentage_offer_name', (data) => {
+
+      evntBus.on(EVENT_NAMES.UPDATE_DISCOUNT_PERCENTAGE_OFFER_NAME, (data) => {
         this.discount_percentage_offer_name = data.value;
       });
-      evntBus.on('set_all_items', (data) => {
+
+      evntBus.on(EVENT_NAMES.SET_ALL_ITEMS, (data) => {
         this.allItems = data;
       });
-    } catch (error) {
-      evntBus.emit('show_mesage', {
-        text: 'Error initializing offers',
-        color: 'error'
-      });
-    }
+    });
   }
 };
 </script>
