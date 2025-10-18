@@ -97,22 +97,23 @@ export default {
     search_invoices() {
       // Set company from latest pos_profile or pos_opening_shift if available
       this.company = this.pos_profile?.company || this.pos_opening_shift?.company || this.company;
-      if (!this.company && !this.invoice_name) {
-        evntBus.emit('show_mesage', {
-          text: 'Please enter invoice number or select company first',
-          color: 'error'
-        });
-        return;
-      }
+      
+      console.log("Searching invoices with:", {
+        invoice_name: this.invoice_name,
+        company: this.company
+      });
+      
       this.isLoading = true;
         frappe.call({
           method: 'posawesome.posawesome.api.sales_invoice.get_return.get_invoices_for_return',
           args: {
-          invoice_name: this.invoice_name,
-          company: this.company
+          invoice_name: this.invoice_name || '',  // Send empty string instead of undefined
+          company: this.company || 'Khaleej Women'  // Default company
         },
         callback: (r) => {
           this.isLoading = false;
+          console.log("API Response:", r.message);
+          
           if (r.message && r.message.length > 0) {
             this.dialog_data = r.message.map(item => ({
               name: item.name,
@@ -135,10 +136,15 @@ export default {
               });
             } else {
               evntBus.emit('show_mesage', {
-                text: 'No invoices available for return in this company',
+                text: `No submitted invoices available for return in company: ${this.company}`,
                 color: 'info'
               });
             }
+          } else {
+            evntBus.emit('show_mesage', {
+              text: `Found ${this.dialog_data.length} invoices available for return`,
+              color: 'success'
+            });
           }
         },
         error: (err) => {
@@ -201,21 +207,47 @@ export default {
         });
         return;
       }
-      // Save complete objects in document
+      // Create return invoice with items keeping original pricing and discounts
       const invoice_doc = {
         items: return_doc.items.map(item => ({
+          // Keep all original item data
           ...item,
-          qty: item.qty * -1,
-          stock_qty: item.stock_qty * -1,
-          amount: item.amount * -1
+          
+          // Make quantities negative for return
+          qty: Math.abs(item.qty) * -1,
+          stock_qty: Math.abs(item.stock_qty || item.qty) * -1,
+          amount: Math.abs(item.amount) * -1,
+          
+          // Add POS-specific fields
+          posa_row_id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+          posa_offers: "[]",
+          posa_offer_applied: 0,
+          posa_is_offer: 0,
+          posa_is_replace: 0,
+          is_free_item: 0,
+          
+          // Reference to original sales invoice item
+          sales_invoice_item: item.name,
+          
+          // Clear name to create new return item
+          name: null
         })),
         is_return: 1,
+        return_against: return_doc.name,
         company: (this.pos_opening_shift && this.pos_opening_shift.company) || (this.pos_profile && this.pos_profile.company) || '',
         customer: return_doc.customer,
         posa_pos_opening_shift: this.pos_opening_shift?.name,
-        pos_opening_shift: this.pos_opening_shift || null, // Save complete object
-        pos_profile: this.pos_profile || null // Save complete object
+        pos_opening_shift: this.pos_opening_shift || null,
+        pos_profile: this.pos_profile || null
       };
+      
+      console.log("Returns.vue emitting load_return_invoice with data:", {
+        invoice_doc_customer: invoice_doc.customer,
+        return_doc_customer: return_doc.customer,
+        invoice_doc,
+        return_doc
+      });
+      
       evntBus.emit('load_return_invoice', { invoice_doc, return_doc });
       this.invoicesDialog = false;
     }

@@ -1,5 +1,4 @@
 <template>
-  <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
     <v-card
       class="cards py-0 grey lighten-5 d-flex flex-column flex-grow-1"
@@ -1133,9 +1132,14 @@ create_invoice(doc) {
           this.invoiceTypes = ["Return"];
         }
         this.invoice_doc = data;
-        this.items = data.items;
+        this.items = data.items || [];
 
-        this.update_items_details(this.items);
+        // Update items with POS-specific fields if needed
+        this.items.forEach((item) => {
+          if (!item.posa_row_id) {
+            item.posa_row_id = this.makeid(20);
+          }
+        });
 
         this.posa_offers = data.posa_offers || [];
         this.items.forEach((item) => {
@@ -1359,8 +1363,19 @@ create_invoice(doc) {
     },
 
     async show_payment() {
-      if (this.readonly) return;
+      console.log("show_payment called with:", {
+        readonly: this.readonly,
+        customer: this.customer,
+        itemsLength: this.items.length,
+        hasItems: this.hasItems
+      });
+      
+      if (this.readonly) {
+        console.log("show_payment blocked: readonly mode");
+        return;
+      }
       if (!this.customer) {
+        console.log("show_payment blocked: no customer");
         evntBus.emit("show_mesage", {
           text: "No customer!",
           color: "error",
@@ -1368,12 +1383,15 @@ create_invoice(doc) {
         return;
       }
       if (!this.items.length) {
+        console.log("show_payment blocked: no items");
         evntBus.emit("show_mesage", {
           text: "No items in invoice!",
           color: "error",
         });
         return;
       }
+      
+      console.log("show_payment proceeding to payment screen...");
 
       evntBus.emit("show_loading", {
         text: "Preparing payment screen...",
@@ -2221,11 +2239,32 @@ create_invoice(doc) {
       });
     });
     evntBus.on("load_return_invoice", (data) => {
+      console.log("Loading return invoice:", data);
       this.new_invoice(data.invoice_doc);
-      this.discount_amount = -data.return_doc.discount_amount;
-      this.additional_discount_percentage =
-        -data.return_doc.additional_discount_percentage;
-      this.return_doc = data.return_doc;
+      
+      // Handle return_doc data only if it exists (for returns against specific invoices)
+      if (data.return_doc) {
+        this.discount_amount = -data.return_doc.discount_amount || 0;
+        this.additional_discount_percentage = -data.return_doc.additional_discount_percentage || 0;
+        this.return_doc = data.return_doc;
+      } else {
+        // Free return without reference invoice
+        this.discount_amount = 0;
+        this.additional_discount_percentage = 0;
+        this.return_doc = null;
+      }
+      
+      // Force update to ensure computed properties are recalculated
+      this.$nextTick(() => {
+        console.log("After loading return invoice:");
+        console.log("- Items count:", this.items?.length);
+        console.log("- Has items:", this.hasItems);
+        console.log("- Is payment:", this.is_payment);
+        console.log("- Customer:", this.customer);
+        console.log("- Readonly:", this.readonly);
+        console.log("- Items array:", this.items);
+        this.$forceUpdate();
+      });
     });
 
     // Event-driven approach for items changes
@@ -2528,7 +2567,6 @@ create_invoice(doc) {
 /* Global compact styling to match 75% zoom appearance */
 .v-application {
   font-size: 0.75rem !important;
-  /* More aggressive reduction */
 }
 
 .v-btn {

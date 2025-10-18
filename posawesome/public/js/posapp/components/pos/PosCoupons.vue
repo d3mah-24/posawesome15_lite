@@ -1,5 +1,4 @@
 <template>
-  <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div>
     <v-card
       class="selection mx-auto grey lighten-5"
@@ -79,27 +78,57 @@
 </template>
 
 <script>
-// ===== SECTION 1: IMPORTS =====
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// IMPORTS & CONSTANTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 import { evntBus } from '../../bus';
-// ===== SECTION 2: EXPORT DEFAULT =====
+
+const API_METHODS = {
+  GET_COUPON: 'posawesome.posawesome.api.customer.get_customer_coupons.get_pos_coupon',
+  GET_CUSTOMER_COUPONS: 'posawesome.posawesome.api.customer.get_customer_coupons.get_customer_coupons',
+};
+
+const EVENT_NAMES = {
+  SHOW_COUPONS: 'show_coupons',
+  SHOW_MESSAGE: 'show_mesage',
+  UPDATE_INVOICE_COUPONS: 'update_invoice_coupons',
+  UPDATE_COUPONS_COUNTERS: 'update_coupons_counters',
+  REGISTER_POS_PROFILE: 'register_pos_profile',
+  UPDATE_CUSTOMER: 'update_customer',
+  UPDATE_POS_COUPONS: 'update_pos_coupons',
+  SET_POS_COUPONS: 'set_pos_coupons',
+};
+
+const COUPON_TYPE = {
+  PROMOTIONAL: 'Promotional',
+};
+
+const TABLE_HEADERS = [
+  { title: 'Coupon', key: 'coupon_code', align: 'start' },
+  { title: 'Type', key: 'type', align: 'start' },
+  { title: 'POS Offer', key: 'pos_offer', align: 'start' },
+  { title: 'Applied', key: 'applied', align: 'start' },
+];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// COMPONENT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 export default {
-  // ===== SECTION 3: DATA =====
-  data: () => {
+  name: 'PosCoupons',
+  
+  data() {
     return {
-    loading: false,
-    pos_profile: '',
-    customer: '',
-    posa_coupons: [],
-    new_coupon: null,
-    itemsPerPage: 1000,
-    singleExpand: true,
-    expanded: [],
-    items_headers: [
-      { title: 'Coupon', key: 'coupon_code', align: 'start' },
-      { title: 'Type', key: 'type', align: 'start' },
-      { title: 'POS Offer', key: 'pos_offer', align: 'start' },
-      { title: 'Applied', key: 'applied', align: 'start' },
-      ],
+      loading: false,
+      pos_profile: null,
+      customer: '',
+      posa_coupons: [],
+      new_coupon: null,
+      itemsPerPage: 1000,
+      singleExpand: true,
+      expanded: [],
+      items_headers: TABLE_HEADERS,
     };
   },
 
@@ -108,124 +137,7 @@ export default {
       return this.posa_coupons.length;
     },
     appliedCouponsCount() {
-      return this.posa_coupons.filter((el) => !!el.applied).length;
-    },
-  },
-
-  methods: {
-    back_to_invoice() {
-      evntBus.emit('show_coupons', 'false');
-    },
-    add_coupon(new_coupon) {
-      if (!this.customer || !new_coupon) {
-        evntBus.emit('show_mesage', {
-          text: 'Customer or coupon code is missing',
-          color: 'error'
-        });
-        return;
-      }
-      const exist = this.posa_coupons.find(
-        (el) => el.coupon_code == new_coupon
-      );
-      if (exist) {
-        evntBus.emit('show_mesage', {
-          text: 'This coupon is already used!',
-          color: 'error',
-        });
-        return;
-      }
-      const vm = this;
-      frappe.call({
-        method: 'posawesome.posawesome.api.customer.get_customer_coupons.get_pos_coupon',
-        args: {
-          coupon: new_coupon,
-          customer: vm.customer,
-          company: vm.pos_profile.company,
-        },
-        callback: function (r) {
-          if (r.message) {
-            const res = r.message;
-            if (res.msg != 'Apply' || !res.coupon) {
-              evntBus.emit('show_mesage', {
-                text: res.msg,
-                color: 'error',
-              });
-            } else {
-              // Coupon added
-              vm.new_coupon = null;
-              const coupon = res.coupon;
-              vm.posa_coupons.push({
-                coupon: coupon.name,
-                coupon_code: coupon.coupon_code,
-                type: coupon.coupon_type,
-                applied: 0,
-                pos_offer: coupon.pos_offer,
-                customer: coupon.customer || vm.customer,
-              });
-            }
-          } else {
-            evntBus.emit('show_mesage', {
-              text: 'Failed to get coupon from server',
-              color: 'error'
-            });
-          }
-        },
-      });
-    },
-    setActiveGiftCoupons() {
-      if (!this.customer || !this.customer.trim || this.customer.trim() === '') {
-        // Silent return - no error message needed during customer switching
-        return;
-      }
-      const vm = this;
-      frappe.call({
-        method: 'posawesome.posawesome.api.customer.get_customer_coupons.get_customer_coupons',
-        args: {
-          customer_id: vm.customer,
-          company: vm.pos_profile.company,
-        },
-        callback: function (r) {
-          if (r.message) {
-            const coupons = r.message;
-            coupons.forEach((coupon_code) => {
-              vm.add_coupon(coupon_code);
-            });
-          } else {
-            evntBus.emit('show_mesage', {
-              text: 'Failed to get active gift coupons',
-              color: 'error'
-            });
-          }
-        },
-      });
-    },
-
-    updatePosCoupons(offers) {
-      this.posa_coupons.forEach((coupon) => {
-        const offer = offers.find(
-          (el) => el.offer_applied && el.coupon == coupon.coupon
-        );
-        if (offer) {
-          coupon.applied = 1;
-        } else {
-          coupon.applied = 0;
-        }
-      });
-    },
-
-    removeCoupon(reomove_list) {
-      this.posa_coupons = this.posa_coupons.filter(
-        (coupon) => !reomove_list.includes(coupon.coupon)
-      );
-    },
-    updateInvoice() {
-      evntBus.emit('update_invoice_coupons', this.posa_coupons);
-    },
-    updateCounters() {
-      evntBus.emit('update_coupons_counters', {
-        couponsCount: this.couponsCount,
-        appliedCouponsCount: this.appliedCouponsCount,
-      });
+      return this.posa_coupons.filter((el) => el.applied).length;
     },
   },
 
@@ -239,38 +151,135 @@ export default {
     },
   },
 
-  created: function () {
-    this.$nextTick(function () {
-      evntBus.on('register_pos_profile', (data) => {
+  methods: {
+    back_to_invoice() {
+      evntBus.emit(EVENT_NAMES.SHOW_COUPONS, 'false');
+    },
+
+    showMessage(text, color) {
+      evntBus.emit(EVENT_NAMES.SHOW_MESSAGE, { text, color });
+    },
+
+    add_coupon(coupon_code) {
+      if (!this.customer || !coupon_code) {
+        this.showMessage('Customer or coupon code is missing', 'error');
+        return;
+      }
+
+      if (this.posa_coupons.some((el) => el.coupon_code === coupon_code)) {
+        this.showMessage('This coupon is already used!', 'error');
+        return;
+      }
+
+      frappe.call({
+        method: API_METHODS.GET_COUPON,
+        args: {
+          coupon: coupon_code,
+          customer: this.customer,
+          company: this.pos_profile.company,
+        },
+        callback: (r) => {
+          if (r.message) {
+            const { msg, coupon } = r.message;
+            if (msg !== 'Apply' || !coupon) {
+              this.showMessage(msg, 'error');
+            } else {
+              this.new_coupon = null;
+              this.posa_coupons.push({
+                coupon: coupon.name,
+                coupon_code: coupon.coupon_code,
+                type: coupon.coupon_type,
+                applied: 0,
+                pos_offer: coupon.pos_offer,
+                customer: coupon.customer || this.customer,
+              });
+            }
+          } else {
+            this.showMessage('Failed to get coupon from server', 'error');
+          }
+        },
+      });
+    },
+
+    setActiveGiftCoupons() {
+      if (!this.customer?.trim()) return;
+
+      frappe.call({
+        method: API_METHODS.GET_CUSTOMER_COUPONS,
+        args: {
+          customer_id: this.customer,
+          company: this.pos_profile.company,
+        },
+        callback: (r) => {
+          if (r.message) {
+            r.message.forEach((coupon_code) => this.add_coupon(coupon_code));
+          } else {
+            this.showMessage('Failed to get active gift coupons', 'error');
+          }
+        },
+      });
+    },
+
+    updatePosCoupons(offers) {
+      this.posa_coupons.forEach((coupon) => {
+        const offer = offers.find(
+          (el) => el.offer_applied && el.coupon === coupon.coupon
+        );
+        coupon.applied = offer ? 1 : 0;
+      });
+    },
+
+    removeCoupon(remove_list) {
+      this.posa_coupons = this.posa_coupons.filter(
+        (coupon) => !remove_list.includes(coupon.coupon)
+      );
+    },
+
+    updateInvoice() {
+      evntBus.emit(EVENT_NAMES.UPDATE_INVOICE_COUPONS, this.posa_coupons);
+    },
+
+    updateCounters() {
+      evntBus.emit(EVENT_NAMES.UPDATE_COUPONS_COUNTERS, {
+        couponsCount: this.couponsCount,
+        appliedCouponsCount: this.appliedCouponsCount,
+      });
+    },
+
+    handleUpdateCustomer(customer) {
+      if (this.customer === customer) return;
+
+      const to_remove = [];
+      this.posa_coupons.forEach((el) => {
+        if (el.type === COUPON_TYPE.PROMOTIONAL) {
+          el.customer = customer;
+        } else {
+          to_remove.push(el.coupon);
+        }
+      });
+
+      this.customer = customer;
+
+      if (to_remove.length) {
+        this.removeCoupon(to_remove);
+      }
+
+      if (this.customer?.trim()) {
+        this.setActiveGiftCoupons();
+      }
+    },
+  },
+
+  created() {
+    this.$nextTick(() => {
+      evntBus.on(EVENT_NAMES.REGISTER_POS_PROFILE, (data) => {
         this.pos_profile = data.pos_profile;
       });
-    });
-    evntBus.on('update_customer', (customer) => {
-      if (this.customer != customer) {
-        const to_remove = [];
-        this.posa_coupons.forEach((el) => {
-          if (el.type == 'Promotional') {
-            el.customer = customer;
-          } else {
-            to_remove.push(el.coupon);
-          }
-        });
-        // Update customer BEFORE calling setActiveGiftCoupons
-        this.customer = customer;
-        if (to_remove.length) {
-          this.removeCoupon(to_remove);
-        }
-        // Only call setActiveGiftCoupons when customer is valid and has a value
-        if (this.customer && this.customer.trim && this.customer.trim() !== '') {
-          this.setActiveGiftCoupons();
-        }
-      }
-    });
-    evntBus.on('update_pos_coupons', (data) => {
-      this.updatePosCoupons(data);
-    });
-    evntBus.on('set_pos_coupons', (data) => {
-      this.posa_coupons = data;
+      evntBus.on(EVENT_NAMES.UPDATE_CUSTOMER, this.handleUpdateCustomer);
+      evntBus.on(EVENT_NAMES.UPDATE_POS_COUPONS, this.updatePosCoupons);
+      evntBus.on(EVENT_NAMES.SET_POS_COUPONS, (data) => {
+        this.posa_coupons = data;
+      });
     });
   },
 };

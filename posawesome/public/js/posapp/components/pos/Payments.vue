@@ -492,23 +492,40 @@ export default {
     submit_invoice(print, autoMode, retrying = false) {
       // existing logic continues
     if (this.quick_return) {
-      this.invoice_doc.is_return = true;
+      this.invoice_doc.is_return = 1;
+      // For quick return without reference, don't set return_against
+      // ERPNext allows return invoices without return_against for standalone returns
+      
       let total = 0;
       this.invoice_doc.items.forEach(item => {
-        item.qty = -1 * item.qty;
-        item.amount = -1 * item.amount;
+        // Ensure quantities and amounts are negative for returns
+        item.qty = -1 * Math.abs(item.qty);
+        item.stock_qty = -1 * Math.abs(item.stock_qty || item.qty);
+        item.amount = -1 * Math.abs(item.amount);
+        item.net_amount = -1 * Math.abs(item.net_amount || item.amount);
         total += item.amount;
       });
+      
+      // Update all totals for return invoice
       this.invoice_doc.total = total;
+      this.invoice_doc.net_total = total;
+      this.invoice_doc.grand_total = total;
+      this.invoice_doc.rounded_total = total;
+      this.invoice_doc.base_total = total;
+      this.invoice_doc.base_net_total = total;
+      this.invoice_doc.base_grand_total = total;
+      
+      // Update payments to match the negative total
       if (typeof this.selected_return_payment_idx === 'number') {
         this.invoice_doc.payments.forEach((payment) => {
-          payment.amount = payment.idx === this.selected_return_payment_idx ? this.invoice_doc.total : 0;
+          payment.amount = payment.idx === this.selected_return_payment_idx ? total : 0;
         });
       } else {
-        if (this.invoice_doc.payments.length > 0) {
-            this.invoice_doc.payments[0].amount = this.invoice_doc.total;
+        if (this.invoice_doc.payments && this.invoice_doc.payments.length > 0) {
+          this.invoice_doc.payments[0].amount = total;
         }
       }
+      
       this.quick_return = false;
     }
       let totalPayedAmount = 0;
