@@ -463,11 +463,6 @@ export default {
       evntBus.emit(EVENT_NAMES.SET_CUSTOMER_READONLY, false);
     },
 
-    back_to_invoice() {
-      evntBus.emit(EVENT_NAMES.SHOW_PAYMENT, "false");
-      evntBus.emit(EVENT_NAMES.SET_CUSTOMER_READONLY, false);
-    },
-
     async submit(event, autoMode = false, print = false) {
       if (event && typeof event.preventDefault === "function") {
         event.preventDefault();

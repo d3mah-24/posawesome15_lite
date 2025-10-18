@@ -5,11 +5,11 @@ import time
 import frappe
 from frappe import _
 from frappe.utils import flt
-from frappe import logger
 from frappe.exceptions import ValidationError
 
 @frappe.whitelist()
 def update_invoice(data):
+    log = frappe.logger()
     try:
         data = json.loads(data) if isinstance(data, str) else data
     except (json.JSONDecodeError, ValueError) as e:
@@ -20,7 +20,7 @@ def update_invoice(data):
             frappe.log_error("update_invoice: No name in data", "Invoice Update Error")
             frappe.throw(_("Invoice name is required for update operations"))
 
-        logger.info(f"[update_invoice] start: {data.get('name')}")
+        log.info(f"[update_invoice] start: {data.get('name')}")
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -38,7 +38,7 @@ def update_invoice(data):
             try:
                 frappe.delete_doc("Sales Invoice", doc.name, ignore_permissions=True, force=True)
                 frappe.db.commit()
-                logger.info(f"[update_invoice] deleted invoice {doc.name}")
+                log.info(f"[update_invoice] deleted invoice {doc.name}")
                 return {"message": "Invoice deleted successfully"}
             except frappe.QueryTimeoutError:
                 frappe.log_error("Delete timeout - marking as cancelled", "Invoice Delete Timeout")
@@ -55,33 +55,33 @@ def update_invoice(data):
                 doc.save(ignore_version=True)
                 frappe.db.commit()
                 saved = True
-                logger.info(f"[update_invoice] saved invoice {doc.name} on attempt {save_attempt+1}")
+                log.info(f"[update_invoice] saved invoice {doc.name} on attempt {save_attempt+1}")
                 break
             except ValidationError as ve:
                 msg = str(ve)
-                logger.warning(f"[update_invoice] ValidationError: {msg}")
+                log.warning(f"[update_invoice] ValidationError: {msg}")
                 if "POS Opening Shift is required" in msg or "POS Opening Shift is required for POS Invoice" in msg:
                     if data.get("pos_opening_shift"):
                         doc.pos_opening_shift = data.get("pos_opening_shift")
-                        logger.info(f"[update_invoice] set pos_opening_shift from payload: {doc.pos_opening_shift}")
+                        log.info(f"[update_invoice] set pos_opening_shift from payload: {doc.pos_opening_shift}")
                     else:
-                        open_shift = frappe.get_all("POS Opening Shift", filters={"status":"Open"}, limit=1)
+                        open_shift = frappe.get_all("POS Opening Shift", filters={"status": "Open"}, limit=1)
                         if open_shift:
                             doc.pos_opening_shift = open_shift[0].get("name")
-                            logger.info(f"[update_invoice] set pos_opening_shift to open shift: {doc.pos_opening_shift}")
+                            log.info(f"[update_invoice] set pos_opening_shift to open shift: {doc.pos_opening_shift}")
                         else:
                             recent = frappe.get_all("POS Opening Shift", order_by="creation desc", limit=1)
                             if recent:
                                 doc.pos_opening_shift = recent[0].get("name")
-                                logger.info(f"[update_invoice] set pos_opening_shift to recent shift: {doc.pos_opening_shift}")
+                                log.info(f"[update_invoice] set pos_opening_shift to recent shift: {doc.pos_opening_shift}")
                     try:
                         doc.save(ignore_version=True)
                         frappe.db.commit()
                         saved = True
-                        logger.info(f"[update_invoice] saved invoice after setting pos_opening_shift: {doc.name}")
+                        log.info(f"[update_invoice] saved invoice after setting pos_opening_shift: {doc.name}")
                         break
                     except Exception as retry_exc:
-                        logger.error(f"[update_invoice] retry save after setting shift failed: {str(retry_exc)[:200]}")
+                        log.error(f"[update_invoice] retry save after setting shift failed: {str(retry_exc)[:200]}")
                         raise
                 else:
                     raise
@@ -90,7 +90,7 @@ def update_invoice(data):
                     raise
                 time.sleep(0.05 * (save_attempt + 1))
             except Exception as e:
-                logger.error(f"[update_invoice] save failed: {str(e)[:200]}")
+                log.error(f"[update_invoice] save failed: {str(e)[:200]}")
                 raise
 
         if not saved:
@@ -133,7 +133,7 @@ def update_invoice(data):
                     if hasattr(doc, "outstanding_amount"):
                         doc.db_set("outstanding_amount", 0.0, update_modified=False)
                     frappe.db.commit()
-                    logger.info(f"[update_invoice] rounded match: set paid_amount={paid_amount_to_set}, outstanding=0 for {doc.name}")
+                    log.info(f"[update_invoice] rounded match: set paid_amount={paid_amount_to_set}, outstanding=0 for {doc.name}")
                     doc = frappe.get_doc("Sales Invoice", doc.name)
                 else:
                     paid_amount_to_set = round(total_from_payments, precision)
@@ -144,15 +144,15 @@ def update_invoice(data):
                     if hasattr(doc, "outstanding_amount"):
                         doc.db_set("outstanding_amount", outstanding, update_modified=False)
                     frappe.db.commit()
-                    logger.info(f"[update_invoice] set paid_amount={paid_amount_to_set}, outstanding={outstanding} for {doc.name}")
+                    log.info(f"[update_invoice] set paid_amount={paid_amount_to_set}, outstanding={outstanding} for {doc.name}")
                     doc = frappe.get_doc("Sales Invoice", doc.name)
         except Exception as paid_exc:
             frappe.log_error(f"Paid amount recalculation failed: {str(paid_exc)[:200]}", "Invoice Paid Amount Recalc")
-            logger.error(f"[update_invoice] Paid amount recalculation failed: {str(paid_exc)[:200]}")
+            log.error(f"[update_invoice] Paid amount recalculation failed: {str(paid_exc)[:200]}")
 
         from .invoice_response import get_minimal_invoice_response
         resp = get_minimal_invoice_response(doc)
-        logger.info(f"[update_invoice] finished: {doc.name}")
+        log.info(f"[update_invoice] finished: {doc.name}")
         return resp
 
     except frappe.exceptions.QueryTimeoutError:
@@ -174,5 +174,5 @@ def update_invoice(data):
 
     except Exception as e:
         frappe.log_error(f"Update error: {str(e)[:100]}", "Invoice Update Error")
-        logger.error(f"[update_invoice] fatal error: {str(e)[:200]}")
+        log.error(f"[update_invoice] fatal error: {str(e)[:200]}")
         raise
