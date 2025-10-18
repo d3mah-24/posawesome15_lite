@@ -78,10 +78,7 @@
 </template>
 
 <script>
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // IMPORTS & CONSTANTS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 import { evntBus } from '../../bus';
 
 const API_METHODS = {
@@ -110,10 +107,6 @@ const TABLE_HEADERS = [
   { title: 'POS Offer', key: 'pos_offer', align: 'start' },
   { title: 'Applied', key: 'applied', align: 'start' },
 ];
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// COMPONENT
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export default {
   name: 'PosCoupons',
