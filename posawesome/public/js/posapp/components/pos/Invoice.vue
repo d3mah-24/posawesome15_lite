@@ -2020,6 +2020,7 @@ get_payments() {
               color: "warning",
             });
             evntBus.emit("show_payment", "true");
+            evntBus.emit("hide_loading");
             throw new Error("No payment chosen");
           }
 
@@ -2043,6 +2044,7 @@ get_payments() {
             callback: (r) => {
               // Callback received
               evntBus.emit("unfreeze");
+              evntBus.emit("hide_loading");
 
               if (r.message) {
                 // Submit successful
@@ -2096,6 +2098,29 @@ get_payments() {
                 evntBus.emit("show_mesage", {
                   text: "Failed to submit invoice",
                   color: "error",
+                });
+              }
+            },
+            error: (err) => {
+              console.error("Invoice(submit): error", err);
+              evntBus.emit("unfreeze");
+              evntBus.emit("hide_loading");
+              evntBus.emit("show_mesage", {
+                text: err?.message || "Failed to submit invoice",
+                color: "error",
+              });
+            },
+          });
+        })
+        .catch((error) => {
+          // Process error occurred
+          evntBus.emit("unfreeze");
+          evntBus.emit("hide_loading");
+          evntBus.emit("show_mesage", {
+            text: "Failed to prepare invoice for printing: " + error.message,
+            color: "error",
+          });
+        });
                 });
               }
             },
