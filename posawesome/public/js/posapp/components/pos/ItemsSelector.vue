@@ -200,15 +200,7 @@
 import { evntBus } from "../../bus";
 import format from "../../format";
 import _ from "lodash";
-
-// ===== CONSTANTS =====
-const API_METHODS = {
-  GET_ITEMS: "posawesome.posawesome.api.item.get_items",
-  GET_ITEMS_GROUPS: "posawesome.posawesome.api.item.get_items_groups",
-  SEARCH_ITEMS_BARCODE: "posawesome.posawesome.api.item.get_items_barcode",
-  SEARCH_SCALE_BARCODE: "posawesome.posawesome.api.item.get_scale_barcode",
-  SEARCH_PRIVATE_BARCODE: "posawesome.posawesome.api.item.get_private_barcode",
-};
+import { API_MAP } from "../../api_mapper.js";
 
 const EVENT_NAMES = {
   // Item Events
@@ -451,7 +443,7 @@ export default {
         barcode_value.length === posa_scale_barcode_lenth
       ) {
         frappe.call({
-          method: "posawesome.posawesome.api.item.get_scale_barcode.get_scale_barcode",
+          method: API_MAP.ITEM.GET_SCALE_BARCODE,
           args: { 
             pos_profile: this.pos_profile, 
             barcode_value: barcode_value 
@@ -484,7 +476,7 @@ export default {
         barcode_value.length === posa_private_barcode_lenth
       ) {
         frappe.call({
-          method: "posawesome.posawesome.api.item.get_private_barcode.get_private_barcode",
+          method: API_MAP.ITEM.GET_PRIVATE_BARCODE,
           args: { 
             pos_profile: this.pos_profile, 
             barcode_value: barcode_value 
@@ -505,7 +497,7 @@ export default {
 
     process_normal_barcode(barcode_value) {
       frappe.call({
-        method: "posawesome.posawesome.api.item.get_items_barcode.get_items_barcode",
+        method: API_MAP.ITEM.GET_ITEMS_BARCODE,
         args: { 
           pos_profile: this.pos_profile, 
           barcode_value: barcode_value 
@@ -564,7 +556,7 @@ export default {
       }
 
       frappe.call({
-        method: "posawesome.posawesome.api.item.get_items.get_items",
+        method: API_MAP.ITEM.GET_ITEMS,
         args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
@@ -626,7 +618,7 @@ export default {
       } else {
         const vm = this;
         frappe.call({
-          method: "posawesome.posawesome.api.item.get_items_groups.get_items_groups",
+          method: API_MAP.ITEM.GET_ITEMS_GROUPS,
           args: {},
           callback: function (r) {
             if (r.message) {
@@ -825,7 +817,7 @@ export default {
 
       // Perform live search using get_items
       frappe.call({
-        method: "posawesome.posawesome.api.item.get_items.get_items",
+        method: API_MAP.ITEM.GET_ITEMS,
         args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
@@ -877,7 +869,7 @@ export default {
 
       // Search by name/code/batch/serial using get_items
       frappe.call({
-        method: "posawesome.posawesome.api.item.get_items.get_items",
+        method: API_MAP.ITEM.GET_ITEMS,
         args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
@@ -960,7 +952,7 @@ export default {
       const item_codes = items.map((item) => item.item_code);
 
       frappe.call({
-        method: "posawesome.posawesome.api.item.get_items.get_items",
+        method: API_MAP.ITEM.GET_ITEMS,
         args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
@@ -1035,7 +1027,7 @@ export default {
 
       // Use get_items to search by barcode
       frappe.call({
-        method: "posawesome.posawesome.api.item.get_items.get_items",
+        method: API_MAP.ITEM.GET_ITEMS,
         args: {
           pos_profile: vm.pos_profile,
           price_list: vm.customer_price_list,
