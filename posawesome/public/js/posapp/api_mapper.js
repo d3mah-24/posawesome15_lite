@@ -1,0 +1,70 @@
+/**
+ * POS Awesome API Mapper
+ * 
+ * خريطة مركزية لجميع API endpoints المستخدمة فعلاً في ملفات الواجهة
+ * بدون اختراع أو إضافة - فقط تجميع ما هو موجود
+ */
+
+const API_MAP = {
+  // Sales Invoice APIs (من Invoice.vue)
+  SALES_INVOICE: {
+    CREATE: "posawesome.posawesome.api.sales_invoice.create.create_invoice",
+    UPDATE: "posawesome.posawesome.api.sales_invoice.update.update_invoice", 
+    SUBMIT: "posawesome.posawesome.api.sales_invoice.submit.submit_invoice",
+    DELETE: "posawesome.posawesome.api.sales_invoice.delete.delete_invoice",
+    GET_INVOICES_FOR_RETURN: "posawesome.posawesome.api.sales_invoice.get_return.get_invoices_for_return"
+  },
+
+  // Customer APIs (من Customer.vue, UpdateCustomer.vue, Payments.vue, PosCoupons.vue)
+  CUSTOMER: {
+    GET_CUSTOMER: "posawesome.posawesome.api.customer.get_customer.get_customer",
+    GET_MANY_CUSTOMERS: "posawesome.posawesome.api.customer.get_many_customers.get_many_customers",
+    GET_CUSTOMERS_COUNT: "posawesome.posawesome.api.customer.get_many_customers.get_customers_count",
+    CREATE_CUSTOMER: "posawesome.posawesome.api.customer.create_customer.create_customer",
+    UPDATE_CUSTOMER: "posawesome.posawesome.api.customer.update_customer.update_customer",
+    CREATE_CUSTOMER_ADDRESS: "posawesome.posawesome.api.customer.create_customer_address.create_customer_address",
+    GET_CUSTOMER_CREDIT: "posawesome.posawesome.api.customer.get_customer_credit.get_customer_credit",
+    GET_MANY_CUSTOMER_ADDRESSES: "posawesome.posawesome.api.customer.get_many_customer_addresses.get_many_customer_addresses",
+    GET_POS_COUPON: "posawesome.posawesome.api.customer.get_customer_coupons.get_pos_coupon",
+    GET_CUSTOMER_COUPONS: "posawesome.posawesome.api.customer.get_customer_coupons.get_customer_coupons"
+  },
+
+  // POS Profile APIs (من Invoice.vue, OpeningDialog.vue)
+  POS_PROFILE: {
+    GET_DEFAULT_PAYMENT: "posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile.get_default_payment_from_pos_profile",
+    GET_OPENING_DIALOG_DATA: "posawesome.posawesome.api.pos_profile.get_opening_dialog_data.get_opening_dialog_data"
+  },
+
+  // Item APIs (من ItemsSelector.vue, Invoice.vue)
+  ITEM: {
+    GET_ITEMS: "posawesome.posawesome.api.item.get_items.get_items",
+    GET_ITEMS_GROUPS: "posawesome.posawesome.api.item.get_items_groups.get_items_groups",
+    GET_ITEMS_BARCODE: "posawesome.posawesome.api.item.get_items_barcode.get_items_barcode",  
+    GET_SCALE_BARCODE: "posawesome.posawesome.api.item.get_scale_barcode.get_scale_barcode",
+    GET_PRIVATE_BARCODE: "posawesome.posawesome.api.item.get_private_barcode.get_private_barcode",
+    PROCESS_BATCH_SELECTION: "posawesome.posawesome.api.item.batch.process_batch_selection"
+  },
+
+  // POS Offer APIs (من Invoice.vue, Pos.vue)
+  POS_OFFER: {
+    GET_APPLICABLE_OFFERS: "posawesome.posawesome.api.pos_offer.get_applicable_offers.get_applicable_offers",
+    GET_OFFERS_FOR_PROFILE: "posawesome.posawesome.api.pos_offer.get_offers_for_profile.get_offers_for_profile"
+  },
+
+  // POS Opening Shift APIs (من OpeningDialog.vue, Pos.vue, Navbar.vue)
+  POS_OPENING_SHIFT: {
+    CREATE_OPENING_VOUCHER: "posawesome.posawesome.api.pos_opening_shift.create_opening_voucher.create_opening_voucher",
+    GET_CURRENT_SHIFT_NAME: "posawesome.posawesome.api.pos_opening_shift.get_current_shift_name.get_current_shift_name",
+    GET_USER_SHIFT_INVOICE_COUNT: "posawesome.posawesome.api.pos_opening_shift.get_user_shift_invoice_count.get_user_shift_invoice_count"
+  },
+
+  // ERPNext Standard APIs (من Invoice.vue, Returns.vue, Payments.vue, Pos.vue)
+  FRAPPE: {
+    CLIENT_GET: "frappe.client.get",
+    CLIENT_DELETE: "frappe.client.delete",
+    PING: "frappe.ping"
+  }
+};
+
+// تصدير الخريطة
+export default API_MAP;
