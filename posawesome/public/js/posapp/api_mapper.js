@@ -69,4 +69,4 @@ const API_MAP = {
 };
 
 // تصدير الخريطة
-export default API_MAP;
+export { API_MAP };

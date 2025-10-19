@@ -2523,6 +2523,7 @@ get_payments() {
 .invoice-number-text {
   flex: 1;
   font-weight: bold;
+  line-height: 1.2;
 }
 
 /* Regular invoice styling - dark blue */
@@ -2542,28 +2543,6 @@ get_payments() {
   color: #757575 !important;
   font-weight: normal !important;
   font-style: italic !important;
-}
-
-/* Document type buttons styling */
-.document-type-btn {
-  min-width: 100px !important;
-  height: 36px !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
-  border-radius: 8px !important;
-  text-transform: none !important;
-  transition: all 0.3s ease !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-}
-
-.document-type-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-}
-
-/* Compact tweaks for small screens */
-.invoice-number-text {
-  line-height: 1.2;
 }
 
 /* Global compact styling to match 75% zoom appearance */
@@ -3245,10 +3224,6 @@ get_payments() {
   }
 }
 
-@media (max-width: 1024px) {
-  /* No height restrictions */
-}
-
 /* ===== PAYMENT CONTROLS CARD - COMPACT & PROFESSIONAL ===== */
 .payment-controls-card {
   position: fixed !important;
@@ -3507,24 +3482,4 @@ get_payments() {
   }
 }
 
-@media (max-width: 1024px) {
-  .summary-field {
-    flex: 1 1 calc(33.333% - 3px);
-  }
-
-  .action-btn {
-    flex: 1 1 calc(50% - 2px);
-  }
-}
-
-@media (max-width: 768px) {
-  .summary-field {
-    flex: 1 1 calc(50% - 2px);
-    min-width: calc(50% - 2px);
-  }
-
-  .action-btn {
-    flex: 1 1 100%;
-  }
-}
 </style>
