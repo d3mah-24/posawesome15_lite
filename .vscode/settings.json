@@ -1,3 +1,12 @@
 {
-    "gitdoc.enabled": true
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true
+    },
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "never"
+    }
 }
