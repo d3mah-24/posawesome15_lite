@@ -2123,25 +2123,6 @@ get_payments() {
         });
     },
     getPaymentsComponent() {
-                text: err?.message || "Failed to submit invoice",
-                color: "error",
-              });
-            },
-          });
-        })
-        .catch((error) => {
-          // Process error occurred
-          evntBus.emit("unfreeze");
-          evntBus.emit("show_mesage", {
-            text: "Failed to prepare invoice for printing: " + error.message,
-            color: "error",
-          });
-        })
-        .finally(() => {
-          evntBus.emit("hide_loading");
-        });
-    },
-    getPaymentsComponent() {
       let parent = this.$parent;
       while (parent) {
         if (parent.$refs && parent.$refs.payments) {
