@@ -2121,13 +2121,8 @@ get_payments() {
             color: "error",
           });
         });
-                });
-              }
-            },
-            error: (err) => {
-              console.error("Invoice(submit): error", err);
-              evntBus.emit("unfreeze");
-              evntBus.emit("show_mesage", {
+    },
+    getPaymentsComponent() {
                 text: err?.message || "Failed to submit invoice",
                 color: "error",
               });
