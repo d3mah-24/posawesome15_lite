@@ -80,11 +80,7 @@
 <script>
 // IMPORTS & CONSTANTS
 import { evntBus } from '../../bus';
-
-const API_METHODS = {
-  GET_COUPON: 'posawesome.posawesome.api.customer.get_customer_coupons.get_pos_coupon',
-  GET_CUSTOMER_COUPONS: 'posawesome.posawesome.api.customer.get_customer_coupons.get_customer_coupons',
-};
+import { API_MAP } from "../../api_mapper.js";
 
 const EVENT_NAMES = {
   SHOW_COUPONS: 'show_coupons',
@@ -165,7 +161,7 @@ export default {
       }
 
       frappe.call({
-        method: API_METHODS.GET_COUPON,
+        method: API_MAP.POS_OFFER.GET_COUPON,
         args: {
           coupon: coupon_code,
           customer: this.customer,
@@ -198,7 +194,7 @@ export default {
       if (!this.customer?.trim()) return;
 
       frappe.call({
-        method: API_METHODS.GET_CUSTOMER_COUPONS,
+        method: API_MAP.POS_OFFER.GET_CUSTOMER_COUPONS,
         args: {
           customer_id: this.customer,
           company: this.pos_profile.company,
