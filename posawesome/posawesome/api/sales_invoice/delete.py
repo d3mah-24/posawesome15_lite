@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Delete Invoice Function
-Handles invoice deletion
+Updated to use ERPNext Sales Invoice native deletion methods only.
+Uses ERPNext's standard delete workflow with proper permission checks.
 """
-
 from __future__ import unicode_literals
-
 import frappe
 from frappe import _
 
@@ -13,44 +11,41 @@ from frappe import _
 @frappe.whitelist()
 def delete_invoice(invoice_name):
     """
-    DELETE - Delete draft invoice
-    Handles lock timeouts gracefully when invoice is being modified
+    Delete Sales Invoice using ERPNext native methods only.
+    Uses ERPNext's standard deletion workflow.
     """
     try:
-        # Try to get document with for_update=False to avoid locks
+        if not invoice_name:
+            frappe.throw(_("Invoice name is required"))
+
+        # Get document using ERPNext
         doc = frappe.get_doc("Sales Invoice", invoice_name)
         
+        # Check permissions using ERPNext
+        if not doc.has_permission("delete"):
+            frappe.throw(_("Not permitted to delete this invoice"))
+        
+        # Only allow deletion of draft documents
         if doc.docstatus != 0:
-            frappe.throw(_("Cannot delete submitted invoice"))
+            frappe.throw(_("Cannot delete submitted invoice. Use cancel instead."))
         
-        # Use non-blocking delete with retry mechanism
-        try:
-            doc.flags.ignore_permissions = True
-            doc.delete()
-            frappe.db.commit()
-            return {"message": "Invoice deleted successfully"}
-            
-        except frappe.QueryTimeoutError:
-            # If delete fails due to lock, try alternative approach
-            frappe.log_error("Delete timeout - trying alternative", "Invoice Delete Timeout")
-            
-            # Try to mark as cancelled instead of deleting
-            try:
-                doc.workflow_state = "Cancelled" 
-                doc.save(ignore_version=True)
-                frappe.db.commit()
-                return {"message": "Invoice cancelled due to lock timeout"}
-            except Exception:
-                # If even cancellation fails, just return success to avoid blocking UI
-                return {"message": "Invoice deletion queued for processing"}
+        # Use ERPNext native delete method
+        doc.delete()
         
-    except frappe.QueryTimeoutError:
-        # Document is locked by another transaction (update_invoice in progress)
-        # This is expected in POS with rapid operations
-        frappe.clear_last_message()
-        return {"message": "Invoice is being updated, deletion skipped"}
+        return {
+            "success": True,
+            "message": "Invoice deleted successfully"
+        }
+        
+    except frappe.exceptions.DoesNotExistError:
+        frappe.throw(_("Invoice {0} does not exist").format(invoice_name))
+        
+    except frappe.exceptions.PermissionError as pe:
+        frappe.throw(_("Permission denied: {0}").format(str(pe)))
+        
+    except frappe.exceptions.ValidationError as ve:
+        frappe.throw(_("Validation error: {0}").format(str(ve)))
         
     except Exception as e:
-        # Shorten error message to avoid CharacterLengthExceededError
-        error_msg = str(e)[:100]  # Limit to 100 chars
-        frappe.throw(_("Error deleting invoice: {0}").format(error_msg))
+        frappe.log_error(f"Error in delete_invoice: {str(e)}", "Invoice Delete Error")
+        frappe.throw(_("Error deleting invoice: {0}").format(str(e)))
