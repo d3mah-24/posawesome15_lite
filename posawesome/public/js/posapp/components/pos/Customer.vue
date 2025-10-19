@@ -58,11 +58,7 @@
 <script>
 import { evntBus } from "../../bus";
 import UpdateCustomer from "./UpdateCustomer.vue";
-
-const API_METHODS = {
-  GET_MANY_CUSTOMERS: 'posawesome.posawesome.api.customer.get_many_customers.get_many_customers',
-  GET_CUSTOMERS_COUNT: 'posawesome.posawesome.api.customer.get_many_customers.get_customers_count',
-};
+import { API_MAP } from "../../api_mapper.js";
 
 const EVENT_NAMES = {
   UPDATE_CUSTOMER: 'update_customer',
@@ -182,7 +178,7 @@ export default {
       }
 
       frappe.call({
-        method: API_METHODS.GET_MANY_CUSTOMERS,
+        method: API_MAP.CUSTOMER.GET_MANY_CUSTOMERS,
         args: args,
         callback: (r) => {
           console.log("✅ API Response:", r);
@@ -197,7 +193,7 @@ export default {
           // Fallback to legacy wrapper function
           console.log("🔄 Falling back to legacy wrapper...");
           frappe.call({
-            method: 'posawesome.posawesome.api.customer.get_many_customers.get_many_customers',
+            method: API_MAP.CUSTOMER.GET_MANY_CUSTOMERS,
             args: {
               pos_profile: this.pos_profile.pos_profile,
             },
