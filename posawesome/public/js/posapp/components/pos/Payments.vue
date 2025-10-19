@@ -309,14 +309,7 @@
 // ===== SECTION 1: IMPORTS =====
 import { evntBus } from "../../bus";
 import format from "../../format";
-
-// CONSTANTS
-const API_METHODS = {
-  SUBMIT_INVOICE: 'posawesome.posawesome.api.sales_invoice.submit.submit_invoice',
-  GET_INVOICE: 'frappe.client.get',
-  GET_CUSTOMER_CREDIT: 'posawesome.posawesome.api.customer.get_customer_credit.get_customer_credit',
-  GET_ADDRESSES: 'posawesome.posawesome.api.customer.get_many_customer_addresses.get_many_customer_addresses'
-};
+import { API_MAP } from "../../api_mapper.js";
 
 const EVENT_NAMES = {
   SHOW_PAYMENT: 'show_payment',
@@ -572,7 +565,7 @@ export default {
       }
 
       frappe.call({
-        method: API_METHODS.SUBMIT_INVOICE,
+        method: API_MAP.SALES_INVOICE.SUBMIT,
         args: {
           data: data,
           invoice: {
@@ -646,7 +639,7 @@ export default {
 
       return new Promise((resolve, reject) => {
         frappe.call({
-          method: API_METHODS.GET_INVOICE,
+          method: API_MAP.FRAPPE.CLIENT_GET,
           args: {
             doctype: "Sales Invoice",
             name: this.invoice_doc.name
@@ -800,10 +793,13 @@ export default {
         return;
       }
 
-      frappe.call(API_METHODS.GET_CUSTOMER_CREDIT, {
-        customer_id: this.invoice_doc.customer,
-        company: this.pos_profile.company
-      }).then((r) => {
+      frappe.call({
+        method: API_MAP.CUSTOMER.GET_CUSTOMER_CREDIT,
+        args: {
+          customer_id: this.invoice_doc.customer,
+          company: this.pos_profile.company
+        },
+        callback: (r) => {
         const data = r.message;
         
         if (!data?.length) {
@@ -836,7 +832,7 @@ export default {
       }
       
       frappe.call({
-        method: API_METHODS.GET_ADDRESSES,
+        method: API_MAP.CUSTOMER.GET_ADDRESSES,
         args: { customer_id: customer },
         async: true,
         callback: (r) => {
