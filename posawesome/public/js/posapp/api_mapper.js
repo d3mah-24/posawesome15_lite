@@ -15,24 +15,23 @@ const API_MAP = {
     GET_INVOICES_FOR_RETURN: "posawesome.posawesome.api.sales_invoice.get_return.get_invoices_for_return"
   },
 
-  // Customer APIs (من Customer.vue, UpdateCustomer.vue, Payments.vue, PosCoupons.vue)
+  // Customer APIs (من Customer.vue, UpdateCustomer.vue, Payments.vue, NewAddress.vue, PosCoupons.vue)
   CUSTOMER: {
     GET_CUSTOMER: "posawesome.posawesome.api.customer.get_customer.get_customer",
     GET_MANY_CUSTOMERS: "posawesome.posawesome.api.customer.get_many_customers.get_many_customers",
     GET_CUSTOMERS_COUNT: "posawesome.posawesome.api.customer.get_many_customers.get_customers_count",
-    CREATE_CUSTOMER: "posawesome.posawesome.api.customer.create_customer.create_customer",
+    POST_CUSTOMER: "posawesome.posawesome.api.customer.create_customer.create_customer",
     UPDATE_CUSTOMER: "posawesome.posawesome.api.customer.update_customer.update_customer",
     CREATE_CUSTOMER_ADDRESS: "posawesome.posawesome.api.customer.create_customer_address.create_customer_address",
     GET_CUSTOMER_CREDIT: "posawesome.posawesome.api.customer.get_customer_credit.get_customer_credit",
-    GET_MANY_CUSTOMER_ADDRESSES: "posawesome.posawesome.api.customer.get_many_customer_addresses.get_many_customer_addresses",
-    GET_POS_COUPON: "posawesome.posawesome.api.customer.get_customer_coupons.get_pos_coupon",
-    GET_CUSTOMER_COUPONS: "posawesome.posawesome.api.customer.get_customer_coupons.get_customer_coupons"
+    GET_ADDRESSES: "posawesome.posawesome.api.customer.get_many_customer_addresses.get_many_customer_addresses",
+    GET_CUSTOMER_COUPONS: "posawesome.posawesome.api.customer.get_customer_coupons.get_customer_coupons",
+    GET_POS_COUPON: "posawesome.posawesome.api.customer.get_customer_coupons.get_pos_coupon"
   },
 
-  // POS Profile APIs (من Invoice.vue, OpeningDialog.vue)
+  // POS Profile APIs (من Invoice.vue)
   POS_PROFILE: {
-    GET_DEFAULT_PAYMENT: "posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile.get_default_payment_from_pos_profile",
-    GET_OPENING_DIALOG_DATA: "posawesome.posawesome.api.pos_profile.get_opening_dialog_data.get_opening_dialog_data"
+    GET_DEFAULT_PAYMENT: "posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile.get_default_payment_from_pos_profile"
   },
 
   // Item APIs (من ItemsSelector.vue, Invoice.vue)
@@ -53,9 +52,12 @@ const API_MAP = {
 
   // POS Opening Shift APIs (من OpeningDialog.vue, Pos.vue, Navbar.vue)
   POS_OPENING_SHIFT: {
-    CREATE_OPENING_VOUCHER: "posawesome.posawesome.api.pos_opening_shift.create_opening_voucher.create_opening_voucher",
-    GET_CURRENT_SHIFT_NAME: "posawesome.posawesome.api.pos_opening_shift.get_current_shift_name.get_current_shift_name",
-    GET_USER_SHIFT_INVOICE_COUNT: "posawesome.posawesome.api.pos_opening_shift.get_user_shift_invoice_count.get_user_shift_invoice_count"
+    GET_OPENING_DATA: "posawesome.posawesome.api.pos_profile.get_opening_dialog_data.get_opening_dialog_data",
+    CREATE_OPENING_VOUCHER: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.create_opening_voucher",
+    GET_CURRENT_SHIFT_NAME: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.get_current_shift_name",
+    GET_USER_SHIFT_INVOICE_COUNT: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.get_user_shift_invoice_count",
+    MAKE_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening",
+    SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift"
   },
 
   // ERPNext Standard APIs (من Invoice.vue, Returns.vue, Payments.vue, Pos.vue)

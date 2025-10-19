@@ -206,3 +206,117 @@ def get_profile_users(doctype, txt, searchfield, start, page_len, filters):
     except Exception as e:
         print(f"[ERROR] Exception in get_profile_users: {e}")
         raise
+
+
+# ===== API FUNCTIONS =====
+
+def update_opening_shift_data(data, pos_profile):
+    """
+    Helper function to update opening shift data
+    """
+    try:
+        data["pos_profile"] = frappe.get_doc("POS Profile", pos_profile)
+        data["company"] = frappe.get_doc("Company", data["pos_profile"].company)
+        allow_negative_stock = frappe.get_value(
+            "Stock Settings", None, "allow_negative_stock"
+        )
+        data["stock_settings"] = {}
+        data["stock_settings"].update({"allow_negative_stock": allow_negative_stock})
+    except Exception as e:
+        pass
+
+
+@frappe.whitelist()
+def create_opening_voucher(pos_profile, company, balance_details):
+    """
+    POST - Create new POS Opening Shift
+    """
+    import json
+    
+    try:
+        balance_details = json.loads(balance_details)
+
+        new_pos_opening = frappe.get_doc(
+            {
+                "doctype": "POS Opening Shift",
+                "period_start_date": frappe.utils.get_datetime(),
+                "posting_date": frappe.utils.getdate(),
+                "user": frappe.session.user,
+                "pos_profile": pos_profile,
+                "company": company,
+                "docstatus": 1,
+            }
+        )
+        new_pos_opening.set("balance_details", balance_details)
+        new_pos_opening.insert(ignore_permissions=True)
+
+        data = {}
+        data["pos_opening_shift"] = new_pos_opening.as_dict()
+        update_opening_shift_data(data, new_pos_opening.pos_profile)
+        return data
+        
+    except Exception as e:
+        frappe.throw(f"Error creating opening voucher: {str(e)}")
+
+
+@frappe.whitelist()
+def get_current_shift_name():
+    """
+    GET - Get current user's open POS Opening Shift basic info
+    """
+    try:
+        user = frappe.session.user
+
+        # Find latest open shift for this user
+        rows = frappe.get_all(
+            "POS Opening Shift",
+            filters={
+                "user": user,
+                "docstatus": 1,
+                "status": "Open",
+            },
+            fields=["name", "company", "period_start_date", "pos_profile", "user"],
+            order_by="period_start_date desc",
+            limit=1,
+        )
+
+        if not rows:
+            return {
+                "success": False,
+                "message": "No active shift found",
+                "data": None,
+            }
+
+        row = rows[0]
+        # Ensure period_start_date is serializable
+        if row.get("period_start_date"):
+            row["period_start_date"] = str(row["period_start_date"])
+
+        result = {
+            "success": True,
+            "data": row,
+        }
+        return result
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error getting current shift: {str(e)}",
+            "data": None,
+        }
+
+
+@frappe.whitelist()
+def get_user_shift_invoice_count(pos_profile, pos_opening_shift):
+    """
+    GET - Get user shift invoice count
+    """
+    try:
+        count = frappe.db.count("Sales Invoice", {
+            "posa_pos_opening_shift": pos_opening_shift,
+            "docstatus": 1
+        })
+        return count
+        
+    except Exception as e:
+        return 0

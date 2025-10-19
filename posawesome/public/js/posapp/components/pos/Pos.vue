@@ -42,14 +42,7 @@ import PosCoupons from "./PosCoupons.vue";
 import ClosingDialog from "./ClosingDialog.vue";
 import NewAddress from "./NewAddress.vue";
 import Returns from "./Returns.vue";
-
-// ===== API CONSTANTS =====
-const API_METHODS = {
-  GET_CURRENT_SHIFT: "posawesome.posawesome.api.pos_opening_shift.get_current_shift_name.get_current_shift_name",
-  MAKE_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening",
-  SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
-  GET_OFFERS: "posawesome.posawesome.api.pos_offer.get_offers_for_profile.get_offers_for_profile",
-};
+import { API_MAP } from "../../api_mapper.js";
 
 // ===== EVENT BUS EVENTS =====
 const EVENTS = {
@@ -107,7 +100,9 @@ export default {
      */
     async check_opening_entry() {
       try {
-        const response = await frappe.call(API_METHODS.GET_CURRENT_SHIFT);
+        const response = await frappe.call({
+          method: API_MAP.POS_OPENING_SHIFT.GET_CURRENT_SHIFT_NAME
+        });
         
         if (response.message.success && response.message.data) {
           // Active shift exists - load full profile data
@@ -148,7 +143,9 @@ export default {
         const pos_profile = profileResponse.message;
 
         // Fetch current shift data
-        const shiftResponse = await frappe.call(API_METHODS.GET_CURRENT_SHIFT);
+        const shiftResponse = await frappe.call({
+          method: API_MAP.POS_OPENING_SHIFT.GET_CURRENT_SHIFT_NAME
+        });
         
         const pos_opening_shift = shiftResponse.message.success 
           ? shiftResponse.message.data 
@@ -207,8 +204,11 @@ export default {
      */
     async get_offers(pos_profile) {
       try {
-        const response = await frappe.call(API_METHODS.GET_OFFERS, {
-          profile: pos_profile,
+        const response = await frappe.call({
+          method: API_MAP.POS_OFFER.GET_OFFERS_FOR_PROFILE,
+          args: {
+            profile: pos_profile,
+          }
         });
 
         if (response.message) {
@@ -229,8 +229,11 @@ export default {
      */
     async get_closing_data() {
       try {
-        const response = await frappe.call(API_METHODS.MAKE_CLOSING_SHIFT, {
-          opening_shift: this.pos_opening_shift,
+        const response = await frappe.call({
+          method: API_MAP.POS_OPENING_SHIFT.MAKE_CLOSING_SHIFT,
+          args: {
+            opening_shift: this.pos_opening_shift,
+          }
         });
 
         if (response.message) {
@@ -251,8 +254,11 @@ export default {
      */
     async submit_closing_pos(data) {
       try {
-        const response = await frappe.call(API_METHODS.SUBMIT_CLOSING_SHIFT, {
-          closing_shift: data,
+        const response = await frappe.call({
+          method: API_MAP.POS_OPENING_SHIFT.SUBMIT_CLOSING_SHIFT,
+          args: {
+            closing_shift: data,
+          }
         });
 
         if (response.message) {

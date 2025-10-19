@@ -99,6 +99,7 @@
 
 <script>
 import { evntBus } from '../../bus';
+import { API_MAP } from "../../api_mapper.js";
 export default {
   data: () => ({
     addressDialog: false,
@@ -116,7 +117,7 @@ export default {
       this.address.customer = this.customer;
       this.address.doctype = 'Customer';
       frappe.call({
-        method: 'posawesome.posawesome.api.customer.create_customer_address.create_customer_address',
+        method: API_MAP.CUSTOMER.CREATE_CUSTOMER_ADDRESS,
         args: {
           args: this.address,
         },

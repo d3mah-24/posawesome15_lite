@@ -102,6 +102,7 @@
 import { evntBus } from '../bus';
 // Import cache manager utility
 import '../../utils/clearAllCaches.js';
+import { API_MAP } from "../api_mapper.js";
 
 // ===== SECTION 2: EXPORT DEFAULT =====
 export default {
@@ -358,7 +359,7 @@ export default {
 
       try {
         const response = await frappe.call({
-          method: 'posawesome.posawesome.api.pos_opening_shift.get_user_shift_invoice_count.get_user_shift_invoice_count',
+          method: API_MAP.POS_OPENING_SHIFT.GET_USER_SHIFT_INVOICE_COUNT,
           args: {
             pos_profile: this.pos_profile.name,
             pos_opening_shift: this.pos_opening_shift.name

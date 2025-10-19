@@ -161,7 +161,7 @@ export default {
       }
 
       frappe.call({
-        method: API_MAP.POS_OFFER.GET_COUPON,
+        method: API_MAP.CUSTOMER.GET_POS_COUPON,
         args: {
           coupon: coupon_code,
           customer: this.customer,
@@ -194,7 +194,7 @@ export default {
       if (!this.customer?.trim()) return;
 
       frappe.call({
-        method: API_MAP.POS_OFFER.GET_CUSTOMER_COUPONS,
+        method: API_MAP.CUSTOMER.GET_CUSTOMER_COUPONS,
         args: {
           customer_id: this.customer,
           company: this.pos_profile.company,
