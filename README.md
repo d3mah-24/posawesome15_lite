@@ -13,10 +13,13 @@
 
 ## 🎯 Goal
 
-**Lite Web POS**
-- Fast, responsive interface (+ 30 BarcodeScan/s)
-- Server Side Batch Operations (Maximum durability & security)
-- Based On official Sales Invoice Doctype (No Calculations in Frontend)
+**POS Awesome Lite** = Modern Interface + Original ERPNext Engine
+
+Just a lightweight web interface built on top of ERPNext's proven foundation:
+- 🎨 **Interface:** Fast, responsive Vue.js UI (+ 30 BarcodeScan/s)
+- 🔧 **Frontend:** Uses original ERPNext methods (sales_invoice.js patterns)
+- ⚙️ **Backend:** Uses original ERPNext def's & imports (ERPNext controllers)
+- 📦 **No Reinventing:** Zero custom calculations, all framework-powered
 
 ---
 
