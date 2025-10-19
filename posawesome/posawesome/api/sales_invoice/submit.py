@@ -1,77 +1,68 @@
 # -*- coding: utf-8 -*-
 """
-Submit Invoice Function - ERPNext Natural Operations
-Handles invoice submission using ERPNext's official submit method
+Updated to use ERPNext Sales Invoice native methods only.
+Uses ERPNext's standard submit workflow.
 """
-
 from __future__ import unicode_literals
-
 import json
 import frappe
 from frappe import _
 
 
 @frappe.whitelist()
-def submit_invoice(name=None, data=None, invoice=None, invoice_data=None, print_invoice=False):
+def submit_invoice(data=None, name=None, invoice=None, invoice_data=None):
     """
-    Submit a Sales Invoice using ERPNext natural operations.
-    This replaces complex retry mechanisms with simple ERPNext patterns.
+    Submit Sales Invoice using ERPNext native methods only.
+    Uses ERPNext's standard submission workflow.
     """
     try:
-        # Debug logging
-        frappe.log_error(f"submit_invoice called: name={bool(name)}, data={bool(data)}, invoice={bool(invoice)}, invoice_data={bool(invoice_data)}", "Submit Debug Params")
-        
-        # Handle different parameter formats for backward compatibility
-        invoice_name = None
-        
-        if name:
-            invoice_name = name
-        elif invoice:
-            # The frontend passes the whole invoice document here
-            try:
-                invoice_dict = json.loads(invoice) if isinstance(invoice, str) else invoice  
-                invoice_name = invoice_dict.get("name")
-                frappe.log_error(f"submit_invoice: Parsed invoice name = {invoice_name}", "Submit Debug")
-            except Exception as parse_error:
-                frappe.log_error(f"submit_invoice: Failed to parse invoice: {str(parse_error)}", "Submit Parse Error")
-        elif invoice_data:
-            invoice_data_dict = json.loads(invoice_data) if isinstance(invoice_data, str) else invoice_data
-            invoice_name = invoice_data_dict.get("name")
-        elif data:
-            # Check if data contains invoice name (fallback)
-            data_dict = json.loads(data) if isinstance(data, str) else data
-            invoice_name = data_dict.get("name")
-        
+        # Determine invoice name from any parameter
+        invoice_name = name or (
+            (json.loads(data) if isinstance(data, str) else data or {}).get("name") if data else None
+        ) or (
+            (json.loads(invoice) if isinstance(invoice, str) else invoice or {}).get("name") if invoice else None
+        ) or (
+            (json.loads(invoice_data) if isinstance(invoice_data, str) else invoice_data or {}).get("name") if invoice_data else None
+        )
+
         if not invoice_name:
-            # Log what parameters we received to help debug
-            frappe.log_error(f"submit_invoice: Missing name. name={name}", "Submit Invoice Missing Name")
             frappe.throw(_("Invoice name is required for submission"))
 
-        # ERPNext Natural Submission
+        # Get Sales Invoice document
         doc = frappe.get_doc("Sales Invoice", invoice_name)
-        
-        # Use ERPNext's official submit method
-        # This will automatically call all hooks:
-        # - validate() 
-        # - before_submit() (where offers and payments are handled)
-        # - All ERPNext standard validations and calculations
+
+        # Check if already submitted
+        if doc.docstatus == 1:
+            frappe.throw(_("Invoice is already submitted"))
+        elif doc.docstatus == 2:
+            frappe.throw(_("Cannot submit cancelled invoice"))
+
+        # Update with any new data if provided
+        if data:
+            data_dict = json.loads(data) if isinstance(data, str) else data
+            doc.update(data_dict)
+
+        # Ensure POS settings are maintained
+        doc.is_pos = 1
+        doc.update_stock = 1
+
+        # Use ERPNext native methods for calculation and submission
+        doc.calculate_taxes_and_totals()
+        doc.validate()
+        doc.save()
         doc.submit()
-        
-        # Return success response using existing formatter
-        from .invoice_response import get_minimal_invoice_response
-        invoice_data = get_minimal_invoice_response(doc)
-        
-        # Return in the format expected by frontend
-        result = {
-            "success": True,
-            "invoice": invoice_data,
-            "print_invoice": print_invoice
-        }
-        return result
-        
-    except Exception as e:
-        frappe.log_error(f"Error in submit_invoice: {str(e)}")
+
+        # Return submitted document
         return {
-            "success": False,
-            "error": str(e)
+            "success": True,
+            "message": "Invoice submitted successfully",
+            "invoice": doc.as_dict()
         }
+
+    except frappe.exceptions.ValidationError as ve:
+        frappe.log_error(f"Validation error in submit_invoice: {str(ve)}", "Invoice Submit Validation")
+        frappe.throw(_("Validation error: {0}").format(str(ve)))
+
+    except Exception as e:
+        frappe.log_error(f"Error in submit_invoice: {str(e)}", "Invoice Submit Error")
+        frappe.throw(_("Error submitting invoice: {0}").format(str(e)))
