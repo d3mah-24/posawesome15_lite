@@ -110,13 +110,8 @@ import format from '../../format';
 // CONSTANTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-/**
- * API methods for POS opening operations
- */
-const API_METHODS = {
-  GET_OPENING_DATA: 'posawesome.posawesome.api.pos_profile.get_opening_dialog_data.get_opening_dialog_data',
-  CREATE_OPENING_VOUCHER: 'posawesome.posawesome.api.pos_opening_shift.create_opening_voucher.create_opening_voucher',
-};
+// Import API mapper
+import { API_MAP } from "../../api_mapper.js";
 
 /**
  * Event names for bus communication
@@ -230,7 +225,7 @@ export default {
      */
     const get_opening_dialog_data = () => {
       frappe.call({
-        method: API_METHODS.GET_OPENING_DATA,
+        method: API_MAP.POS_OPENING_SHIFT.GET_OPENING_DATA,
         args: {},
         callback: function (r) {
           if (r.message) {
@@ -286,7 +281,9 @@ export default {
       is_loading.value = true;
       
       frappe
-        .call(API_METHODS.CREATE_OPENING_VOUCHER, {
+        .call({
+          method: API_MAP.POS_OPENING_SHIFT.CREATE_OPENING_VOUCHER,
+          args: {
           pos_profile: pos_profile.value,
           company: company.value,
           balance_details: payments_methods.value,
