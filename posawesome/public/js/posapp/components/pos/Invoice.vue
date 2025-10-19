@@ -1233,45 +1233,47 @@ create_invoice(doc) {
       }));
     },
 
-    get_payments() {
-      // Prefer current invoice payments (e.g., chosen in Payments dialog)
-      if (
-        this.invoice_doc &&
-        Array.isArray(this.invoice_doc?.payments) &&
-        this.invoice_doc?.payments.length
-      ) {
-        return this.invoice_doc?.payments.map((p) => ({
-          amount: this.flt(p.amount),
-          mode_of_payment: p.mode_of_payment,
-          default: p.default,
-          account: p.account || "",
-          idx: p.idx,
-        }));
-      }
-      // Fallback to POS Profile payments with zero amounts
-      const payments = [];
-      if (this.pos_profile && Array.isArray(this.pos_profile?.payments)) {
-        let hasDefault = false;
+get_payments() {
+  let payments = [];
 
-        // First pass: add all payments and check if any is default
-        this.pos_profile?.payments.forEach((payment, index) => {
-          if (payment.default) hasDefault = true;
-          payments.push({
-            amount: 0,
-            mode_of_payment: payment.mode_of_payment,
-            default: payment.default,
-            account: "",
-            idx: index + 1, // Add idx for payment method identification
-          });
-        });
+  // إذا كانت هناك مدفوعات موجودة في الفاتورة الحالية
+  if (this.invoice_doc && Array.isArray(this.invoice_doc?.payments) && this.invoice_doc?.payments.length) {
+    payments = this.invoice_doc.payments.map((p) => ({
+      amount: this.flt(p.amount),
+      mode_of_payment: p.mode_of_payment,
+      default: p.default,
+      account: p.account || "",
+      idx: p.idx,
+    }));
+  } else if (this.pos_profile && Array.isArray(this.pos_profile?.payments)) {
+    let hasDefault = false;
 
-        // If no default payment is set, make the first one default
-        if (!hasDefault && payments.length > 0) {
-          payments[0].default = 1;
-        }
-      }
-      return payments;
-    },
+    this.pos_profile?.payments.forEach((payment, index) => {
+      if (payment.default) hasDefault = true;
+      payments.push({
+        amount: 0,
+        mode_of_payment: payment.mode_of_payment,
+        default: payment.default,
+        account: payment.account || "",
+        idx: index + 1,
+      });
+    });
+
+    if (!hasDefault && payments.length > 0) payments[0].default = 1;
+  }
+
+  // --- إضافة معالجة التقريب ---
+  const totalTarget = this.rounded_total || this.grand_total;
+  let totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
+  let diff = totalPayments - totalTarget;
+
+  if (Math.abs(diff) >= 0.01 && Math.abs(diff) <= 1.0 && payments.length > 0) {
+    payments[0].amount = this.flt(payments[0].amount - diff);
+  }
+
+  return payments;
+},
+
 
     update_invoice(doc) {
   const vm = this;
