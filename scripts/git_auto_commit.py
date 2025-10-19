@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Git Auto Commit Script
-Automates: git status, git add ., git commit, git push
+Commits each changed file separately with its filename as commit message
 """
 
 import subprocess
@@ -28,7 +28,7 @@ def run_command(command, cwd=None, capture_output=True):
 
 
 def get_changed_files(repo_path):
-    """Get list of changed files"""
+    """Get list of changed files with their status"""
     code, stdout, stderr = run_command("git status --short", cwd=repo_path)
     if code != 0:
         return []
@@ -36,20 +36,87 @@ def get_changed_files(repo_path):
     files = []
     for line in stdout.strip().split('\n'):
         if line.strip():
-            # Extract filename from git status output
+            # Extract status and filename from git status output
             parts = line.strip().split(maxsplit=1)
             if len(parts) == 2:
-                files.append(parts[1])
+                status = parts[0]
+                filename = parts[1]
+                files.append({'status': status, 'file': filename})
     return files
 
 
-def git_auto_commit(repo_path=None, commit_message=None, branch="main"):
+def commit_single_file(repo_path, file_info, branch="main"):
     """
-    Automate git operations
+    Commit a single file and push
+    
+    Args:
+        repo_path: Path to git repository
+        file_info: Dict with 'status' and 'file' keys
+        branch: Git branch to push to
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    filename = file_info['file']
+    status = file_info['status']
+    
+    # Determine action based on status
+    if 'D' in status:
+        action = "Delete"
+    elif 'M' in status:
+        action = "Update"
+    elif 'A' in status or '?' in status:
+        action = "Add"
+    else:
+        action = "Update"
+    
+    # Generate commit message from filename
+    commit_message = f"{action}: {filename}"
+    
+    print(f"\n� Processing: {filename}")
+    print(f"   Status: {status}")
+    print(f"   Message: {commit_message}")
+    
+    # Step 1: Add this specific file
+    print(f"   ➕ Adding file...")
+    code, stdout, stderr = run_command(f'git add "{filename}"', cwd=repo_path)
+    
+    if code != 0:
+        print(f"   ❌ Error adding file: {stderr}")
+        return False
+    
+    # Step 2: Commit this file
+    print(f"   💾 Committing...")
+    code, stdout, stderr = run_command(
+        f'git commit -m "{commit_message}"',
+        cwd=repo_path
+    )
+    
+    if code != 0:
+        print(f"   ❌ Error committing: {stderr}")
+        return False
+    
+    # Step 3: Push this commit
+    print(f"   🚀 Pushing to {branch}...")
+    code, stdout, stderr = run_command(
+        f"git push origin {branch}",
+        cwd=repo_path
+    )
+    
+    if code != 0:
+        print(f"   ❌ Error pushing: {stderr}")
+        return False
+    
+    print(f"   ✅ Success!")
+    return True
+
+
+def git_auto_commit(repo_path=None, branch="main"):
+    """
+    Automate git operations - commit each file separately
     
     Args:
         repo_path: Path to git repository (default: current directory)
-        commit_message: Custom commit message (default: auto-generated from files)
         branch: Git branch to push to (default: main)
     """
     
@@ -57,22 +124,20 @@ def git_auto_commit(repo_path=None, commit_message=None, branch="main"):
     if repo_path is None:
         repo_path = os.getcwd()
     
-    print("=" * 60)
-    print("🚀 Git Auto Commit Script")
-    print("=" * 60)
+    print("=" * 70)
+    print("🚀 Git Auto Commit Script (One File Per Commit)")
+    print("=" * 70)
     print(f"📁 Repository: {repo_path}")
     print(f"🌿 Branch: {branch}")
     print()
     
     # Step 1: Git Status
-    print("📊 Step 1: Checking git status...")
+    print("� Checking git status...")
     code, stdout, stderr = run_command("git status", cwd=repo_path, capture_output=True)
     
     if code != 0:
         print(f"❌ Error: {stderr}")
         return False
-    
-    print(stdout)
     
     # Check if there are changes
     if "nothing to commit" in stdout:
@@ -81,91 +146,49 @@ def git_auto_commit(repo_path=None, commit_message=None, branch="main"):
     
     # Get changed files
     changed_files = get_changed_files(repo_path)
-    print(f"📝 Changed files: {len(changed_files)}")
-    for f in changed_files[:10]:  # Show first 10
-        print(f"   - {f}")
-    if len(changed_files) > 10:
-        print(f"   ... and {len(changed_files) - 10} more files")
+    
+    if not changed_files:
+        print("✅ No changed files found!")
+        return True
+    
+    print(f"\n📝 Found {len(changed_files)} changed file(s):")
+    for i, f in enumerate(changed_files, 1):
+        print(f"   {i}. [{f['status']}] {f['file']}")
     print()
     
-    # Step 2: Git Add
-    print("➕ Step 2: Adding files (git add .)...")
-    code, stdout, stderr = run_command("git add .", cwd=repo_path)
+    # Process each file separately
+    success_count = 0
+    failed_count = 0
+    failed_files = []
     
-    if code != 0:
-        print(f"❌ Error adding files: {stderr}")
-        return False
+    print("=" * 70)
+    print("🔄 Starting individual commits...")
+    print("=" * 70)
     
-    print("✅ Files added successfully!")
-    print()
-    
-    # Step 3: Generate commit message
-    if commit_message is None:
-        # Auto-generate commit message based on changed files
-        if len(changed_files) == 1:
-            commit_message = f"Update {changed_files[0]}"
-        elif len(changed_files) <= 5:
-            commit_message = f"Update {', '.join(changed_files)}"
-        else:
-            # Get file extensions
-            extensions = set()
-            for f in changed_files:
-                ext = os.path.splitext(f)[1]
-                if ext:
-                    extensions.add(ext)
-            
-            if extensions:
-                commit_message = f"Update {len(changed_files)} files ({', '.join(sorted(extensions))})"
-            else:
-                commit_message = f"Update {len(changed_files)} files"
+    for i, file_info in enumerate(changed_files, 1):
+        print(f"\n[{i}/{len(changed_files)}]", end=" ")
         
-        # Add timestamp
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-        commit_message = f"{commit_message} - {timestamp}"
+        if commit_single_file(repo_path, file_info, branch):
+            success_count += 1
+        else:
+            failed_count += 1
+            failed_files.append(file_info['file'])
     
-    print(f"💬 Commit message: {commit_message}")
-    print()
+    # Summary
+    print("\n" + "=" * 70)
+    print("📊 Summary")
+    print("=" * 70)
+    print(f"✅ Successful commits: {success_count}")
+    print(f"❌ Failed commits: {failed_count}")
     
-    # Step 4: Git Commit
-    print("💾 Step 3: Committing changes...")
-    code, stdout, stderr = run_command(
-        f'git commit -m "{commit_message}"',
-        cwd=repo_path
-    )
+    if failed_files:
+        print("\n❌ Failed files:")
+        for f in failed_files:
+            print(f"   - {f}")
     
-    if code != 0:
-        print(f"❌ Error committing: {stderr}")
-        return False
+    print("=" * 70)
     
-    print("✅ Commit successful!")
-    print(stdout)
-    print()
-    
-    # Step 5: Git Push
-    print(f"🚀 Step 4: Pushing to origin {branch}...")
-    code, stdout, stderr = run_command(
-        f"git push origin {branch}",
-        cwd=repo_path
-    )
-    
-    if code != 0:
-        print(f"❌ Error pushing: {stderr}")
-        # Check if it's authentication issue
-        if "authentication" in stderr.lower() or "permission" in stderr.lower():
-            print("\n💡 Tip: Make sure your Git credentials are configured:")
-            print("   git config --global user.name 'Your Name'")
-            print("   git config --global user.email 'your@email.com'")
-        return False
-    
-    print("✅ Push successful!")
-    print(stdout)
-    print()
-    
-    print("=" * 60)
-    print("✅ All operations completed successfully!")
-    print("=" * 60)
-    
-    return True
+    return failed_count == 0
 
 
 def main():
