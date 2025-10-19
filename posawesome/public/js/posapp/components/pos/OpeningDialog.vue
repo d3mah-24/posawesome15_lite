@@ -284,9 +284,10 @@ export default {
         .call({
           method: API_MAP.POS_OPENING_SHIFT.CREATE_OPENING_VOUCHER,
           args: {
-          pos_profile: pos_profile.value,
-          company: company.value,
-          balance_details: payments_methods.value,
+            pos_profile: pos_profile.value,
+            company: company.value,
+            balance_details: payments_methods.value,
+          },
         })
         .then((r) => {
           if (r.message) {
