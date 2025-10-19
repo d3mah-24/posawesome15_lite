@@ -59,12 +59,7 @@
 // ===== SECTION 1: IMPORTS =====
 import { evntBus } from '../../bus';
 import format from '../../format';
-
-// CONSTANTS
-const API_METHODS = {
-  GET_INVOICES_FOR_RETURN: 'posawesome.posawesome.api.sales_invoice.get_return.get_invoices_for_return',
-  GET_INVOICE: 'frappe.client.get'
-};
+import { API_MAP } from "../../api_mapper.js";
 
 const EVENT_NAMES = {
   OPEN_RETURNS: 'open_returns',
@@ -148,7 +143,7 @@ export default {
       this.isLoading = true;
 
       frappe.call({
-        method: API_METHODS.GET_INVOICES_FOR_RETURN,
+        method: API_MAP.SALES_INVOICE.GET_INVOICES_FOR_RETURN,
         args: {
           invoice_name: this.invoice_name || '',
           company: this.company
@@ -192,7 +187,7 @@ export default {
     async fetchOriginalInvoice(invoice_name) {
       try {
         const response = await frappe.call({
-          method: API_METHODS.GET_INVOICE,
+          method: API_MAP.FRAPPE.CLIENT_GET,
           args: {
             doctype: "Sales Invoice",
             name: invoice_name
