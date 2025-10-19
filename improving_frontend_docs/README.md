@@ -208,20 +208,7 @@ This is the lowest-risk, highest-impact first step:
 
 ---
 
-## 🗂️ Old Files (Superseded)
-
-These files have been consolidated into COMPARISON.md and PLAN.md:
-
-- ❌ `SIMPLIFICATION_PLAN_EN.md` → Use `PLAN.md` instead
-- ❌ `compare_analysis_plan.md` → Use `COMPARISON.md` instead
-- ❌ `detailed_code_reduction_comparison.md` → Use `COMPARISON.md` instead
-- ❌ `examples_compares.md` → Integrated into `COMPARISON.md`
-
-**You can archive or delete these old files.**
-
----
-
-## 📞 Questions?
+##  Questions?
 
 Review the documents in this order:
 1. **COMPARISON.md** - Understand what can be reduced
