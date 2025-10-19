@@ -800,26 +800,27 @@ export default {
           company: this.pos_profile.company
         },
         callback: (r) => {
-        const data = r.message;
-        
-        if (!data?.length) {
-          this.customer_credit_dict = [];
-          return;
-        }
-
-        const amount = this.invoice_doc.grand_total;
-        let remainAmount = amount;
-
-        data.forEach(row => {
-          if (remainAmount > 0) {
-            row.credit_to_redeem = remainAmount >= row.total_credit ? row.total_credit : remainAmount;
-            remainAmount -= row.credit_to_redeem;
-          } else {
-            row.credit_to_redeem = 0;
+          const data = r.message;
+          
+          if (!data?.length) {
+            this.customer_credit_dict = [];
+            return;
           }
-        });
 
-        this.customer_credit_dict = data;
+          const amount = this.invoice_doc.grand_total;
+          let remainAmount = amount;
+
+          data.forEach(row => {
+            if (remainAmount > 0) {
+              row.credit_to_redeem = remainAmount >= row.total_credit ? row.total_credit : remainAmount;
+              remainAmount -= row.credit_to_redeem;
+            } else {
+              row.credit_to_redeem = 0;
+            }
+          });
+
+          this.customer_credit_dict = data;
+        }
       });
     },
 
