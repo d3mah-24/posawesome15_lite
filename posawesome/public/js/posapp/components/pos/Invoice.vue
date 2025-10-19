@@ -280,6 +280,7 @@
 import { evntBus } from "../../bus";
 import format from "../../format";
 import Customer from "./Customer.vue";
+import { API_MAP } from "../../api_mapper.js";
 
 // ===== COMPONENT =====
 export default {
@@ -760,7 +761,7 @@ create_invoice(doc) {
   const vm = this;
   return new Promise((resolve, reject) => {
     frappe.call({
-      method: "posawesome.posawesome.api.sales_invoice.create.create_invoice",
+      method: API_MAP.SALES_INVOICE.CREATE,
       args: {
         data: doc,
       },
@@ -1078,7 +1079,7 @@ create_invoice(doc) {
 
       frappe
         .call({
-          method: "posawesome.posawesome.api.sales_invoice.delete.delete_invoice",
+          method: API_MAP.SALES_INVOICE.DELETE,
           args: { invoice_name: name },
         })
         .then(reset)
@@ -1285,7 +1286,7 @@ get_payments() {
     }
 
     frappe.call({
-      method: "posawesome.posawesome.api.sales_invoice.update.update_invoice",
+      method: API_MAP.SALES_INVOICE.UPDATE,
       args: {
         data: doc,
       },
@@ -1408,8 +1409,7 @@ get_payments() {
           // Adding default payment
           try {
             const defaultPayment = await frappe.call({
-              method:
-                "posawesome.posawesome.api.pos_profile.get_default_payment_from_pos_profile.get_default_payment_from_pos_profile",
+              method: API_MAP.POS_PROFILE.GET_DEFAULT_PAYMENT,
               args: {
                 pos_profile: this.pos_profile?.name,
                 company:
@@ -1432,8 +1432,7 @@ get_payments() {
               // Save default payment to server
               try {
                 await frappe.call({
-                  method:
-                    "posawesome.posawesome.api.sales_invoice.update.update_invoice",
+                  method: API_MAP.SALES_INVOICE.UPDATE,
                   args: {
                     invoice_data: invoice_doc,
                   },
@@ -1499,7 +1498,7 @@ get_payments() {
       const vm = this;
       if (this.customer) {
         frappe.call({
-          method: "posawesome.posawesome.api.customer.get_customer.get_customer",
+          method: API_MAP.CUSTOMER.GET_CUSTOMER,
           args: {
             customer_id: vm.customer,
           },
@@ -1675,7 +1674,7 @@ get_payments() {
 
       const vm = this;
       frappe.call({
-        method: "posawesome.posawesome.api.item.batch.process_batch_selection",
+        method: API_MAP.ITEM.PROCESS_BATCH_SELECTION,
         args: {
           item_code: item.item_code,
           current_item_row_id: item.posa_row_id,
@@ -1869,7 +1868,7 @@ get_payments() {
       this._offersProcessing = true;
 
       frappe.call({
-        method: "posawesome.posawesome.api.pos_offer.get_applicable_offers.get_applicable_offers",
+        method: API_MAP.POS_OFFER.GET_APPLICABLE_OFFERS,
         args: {
           invoice_name: this.invoice_doc?.name,
         },
@@ -2028,7 +2027,7 @@ get_payments() {
           
           // Submit and print the invoice
           frappe.call({
-            method: "posawesome.posawesome.api.sales_invoice.submit.submit_invoice",
+            method: API_MAP.SALES_INVOICE.SUBMIT,
             args: {
               data: {
                 total_change: 0,
