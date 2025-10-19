@@ -191,6 +191,57 @@ def git_auto_commit(repo_path=None, branch="main"):
     return failed_count == 0
 
 
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Automate git operations: commit each file separately with its filename",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Commit all changed files separately (each with its filename as message)
+  python git_auto_commit.py
+
+  # Specify repository path
+  python git_auto_commit.py -p /path/to/repo
+
+  # Push to different branch
+  python git_auto_commit.py -b develop
+
+  # Combine options
+  python git_auto_commit.py -p /path/to/repo -b feature/new-ui
+  
+Note: Each file will be committed separately with format: "Action: filename"
+      Actions: Add, Update, or Delete based on git status
+        """
+    )
+    
+    parser.add_argument(
+        '-p', '--path',
+        type=str,
+        default=None,
+        help='Path to git repository (default: current directory)'
+    )
+    
+    parser.add_argument(
+        '-b', '--branch',
+        type=str,
+        default='main',
+        help='Git branch to push to (default: main)'
+    )
+    
+    args = parser.parse_args()
+    
+    # Run git automation
+    success = git_auto_commit(
+        repo_path=args.path,
+        branch=args.branch
+    )
+    
+    # Exit with appropriate code
+    sys.exit(0 if success else 1)
+
+
 def main():
     """Main entry point"""
     import argparse
