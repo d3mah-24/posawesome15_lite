@@ -1420,35 +1420,33 @@ get_payments() {
     },
 
     setDiscountPercentage(item, event) {
-      let value = parseFloat(event.target.value) || 0;
+      let dis_percent = parseFloat(event.target.value) || 0;
 
       // Apply max discount limit
-      const maxDiscount =
-        item.max_discount ||
-        this.pos_profile?.posa_item_max_discount_allowed ||
-        100;
+      const maxDiscount = this.pos_profile?.posa_item_max_discount_allowed || 100;
 
-      if (value < 0) value = 0;
-      if (value > maxDiscount) {
-        value = maxDiscount;
+      if (dis_percent < 0) dis_percent = 0;
+      if (dis_percent > maxDiscount) {
+        dis_percent = maxDiscount;
         evntBus.emit("show_mesage", {
           text: `Maximum discount applied: ${maxDiscount}%`,
           color: "info",
         });
       }
 
-      item.discount_percentage = value;
+      // Update dis_%
+      item.discount_percentage = dis_percent;
 
-      // Calculate rate immediately for visual feedback
-      const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || 0;
-      if (basePrice > 0) {
-        if (value > 0) {
-          const discountAmount = (basePrice * value) / 100;
-          item.rate = flt(basePrice - discountAmount, this.currency_precision);
+      // Calculate dis_price based on list_price
+      const list_price = flt(item.price_list_rate) || 0;
+      if (list_price > 0) {
+        if (dis_percent > 0) {
+          const dis_amount = (list_price * dis_percent) / 100;
+          item.rate = flt(list_price - dis_amount, this.currency_precision); // dis_price
         } else {
-          item.rate = basePrice;
+          item.rate = list_price; // dis_price = list_price when no discount
         }
-        // Calculate amount for immediate display
+        // Calculate total amount
         item.amount = flt(item.rate * flt(item.qty), this.currency_precision);
       }
 
@@ -1456,22 +1454,44 @@ get_payments() {
     },
 
     setItemRate(item, event) {
-      const value = parseFloat(event.target.value) || 0;
-      item.rate = flt(value >= 0 ? value : 0, this.currency_precision);
+      let dis_price = parseFloat(event.target.value) || 0;
+      const list_price = flt(item.price_list_rate) || 0;
 
-      // Recalculate discount percentage for visual feedback
-      const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || 0;
-      if (basePrice > 0 && item.rate < basePrice) {
-        const discountAmount = basePrice - item.rate;
-        item.discount_percentage = flt(
-          (discountAmount / basePrice) * 100,
-          this.float_precision
-        );
-      } else {
-        item.discount_percentage = 0;
+      if (dis_price < 0) dis_price = 0;
+
+      // Don't allow dis_price higher than list_price
+      if (dis_price > list_price) {
+        dis_price = list_price;
+        evntBus.emit("show_mesage", {
+          text: "Discounted price cannot exceed list price",
+          color: "error",
+        });
       }
 
-      // Calculate amount for immediate display
+      // Calculate dis_% from price difference
+      let dis_percent = 0;
+      if (list_price > 0) {
+        dis_percent = ((list_price - dis_price) / list_price) * 100;
+      }
+
+      // Apply max discount limit
+      const maxDiscount = this.pos_profile?.posa_item_max_discount_allowed || 100;
+
+      if (dis_percent > maxDiscount) {
+        // Adjust dis_price to respect max discount
+        const max_dis_amount = (list_price * maxDiscount) / 100;
+        dis_price = flt(list_price - max_dis_amount, this.currency_precision);
+        dis_percent = maxDiscount;
+        
+        evntBus.emit("show_mesage", {
+          text: `Maximum discount applied: ${maxDiscount}%`,
+          color: "info",
+        });
+      }
+
+      // Update item fields
+      item.rate = dis_price; // dis_price
+      item.discount_percentage = flt(dis_percent, 2); // dis_%
       item.amount = flt(item.rate * flt(item.qty), this.currency_precision);
 
       this.debouncedItemOperation("rate-change");
