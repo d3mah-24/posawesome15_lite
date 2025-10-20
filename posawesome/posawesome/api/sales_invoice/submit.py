@@ -60,9 +60,9 @@ def submit_invoice(data=None, name=None, invoice=None, invoice_data=None):
         }
 
     except frappe.exceptions.ValidationError as ve:
-        frappe.log_error(f"Validation error in submit_invoice: {str(ve)}", "Invoice Submit Validation")
+        frappe.logger().error(f"Validation error in submit_invoice: {str(ve)}")
         frappe.throw(_("Validation error: {0}").format(str(ve)))
 
     except Exception as e:
-        frappe.log_error(f"Error in submit_invoice: {str(e)}", "Invoice Submit Error")
+        frappe.logger().error(f"Error in submit_invoice: {str(e)}")
         frappe.throw(_("Error submitting invoice: {0}").format(str(e)))
