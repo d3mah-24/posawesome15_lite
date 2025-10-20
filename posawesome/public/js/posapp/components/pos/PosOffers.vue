@@ -375,6 +375,16 @@ export default {
         this.allItems = data;
       });
     });
+  },
+
+  beforeDestroy() {
+    // Clean up all event listeners
+    evntBus.$off(EVENT_NAMES.REGISTER_POS_PROFILE);
+    evntBus.$off(EVENT_NAMES.UPDATE_CUSTOMER);
+    evntBus.$off(EVENT_NAMES.SET_OFFERS);
+    evntBus.$off(EVENT_NAMES.UPDATE_POS_OFFERS);
+    evntBus.$off(EVENT_NAMES.UPDATE_DISCOUNT_PERCENTAGE_OFFER_NAME);
+    evntBus.$off(EVENT_NAMES.SET_ALL_ITEMS);
   }
 };
 </script>
