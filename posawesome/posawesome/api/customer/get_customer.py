@@ -85,7 +85,7 @@ def get_customer(customer_id):
                 result["loyalty_points"] = lp_details.get("loyalty_points", 0)
                 result["conversion_factor"] = lp_details.get("conversion_factor", 1)
             except Exception as loyalty_error:
-                frappe.logger().warning(f"Could not get loyalty details: {loyalty_error}")
+                # Silent fallback for loyalty details
                 result["loyalty_points"] = 0
                 result["conversion_factor"] = 1
         
