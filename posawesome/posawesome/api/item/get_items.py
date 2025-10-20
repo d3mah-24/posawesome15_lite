@@ -46,19 +46,27 @@ def get_items(pos_profile, price_list=None, item_group="", search_value="", cust
             "`tabItem`.has_variants = 0"
         ]
         
+        # Build parameters dictionary
+        params = {
+            "price_list": price_list,
+            "warehouse": warehouse
+        }
+        
         # Add item_group filter if provided (case-insensitive)
-        # Frontend sends lowercase (e.g., "electronics")
         if item_group and item_group.strip():
-            where_conditions.append("`tabItem`.item_group LIKE %s")
+            where_conditions.append("`tabItem`.item_group LIKE %(item_group)s")
+            params["item_group"] = f"%{item_group}%"
         
         # Add search filter (item_code OR item_name)
-        search_pattern = f"%{search_value}%" if search_value else "%%"
-        where_conditions.append("(`tabItem`.name LIKE %s OR `tabItem`.item_name LIKE %s)")
+        if search_value:
+            where_conditions.append("(`tabItem`.name LIKE %(search)s OR `tabItem`.item_name LIKE %(search)s)")
+            params["search"] = f"%{search_value}%"
         
         where_clause = " AND ".join(where_conditions)
         
         # Single optimized query with JOINs for price and stock
-        query = f"""
+        items = frappe.db.sql(
+            f"""
             SELECT 
                 `tabItem`.name as item_code,
                 `tabItem`.item_name,
@@ -73,33 +81,19 @@ def get_items(pos_profile, price_list=None, item_group="", search_value="", cust
             LEFT JOIN `tabItem Price` 
                 ON `tabItem`.name = `tabItem Price`.item_code 
                 AND `tabItem Price`.selling = 1 
-                AND `tabItem Price`.price_list = %s
+                AND `tabItem Price`.price_list = %(price_list)s
                 AND (`tabItem Price`.valid_from IS NULL OR `tabItem Price`.valid_from <= CURDATE())
                 AND (`tabItem Price`.valid_upto IS NULL OR `tabItem Price`.valid_upto >= CURDATE())
             LEFT JOIN `tabBin`
                 ON `tabItem`.name = `tabBin`.item_code
-                AND `tabBin`.warehouse = %s
+                AND `tabBin`.warehouse = %(warehouse)s
             WHERE {where_clause}
             ORDER BY `tabItem`.item_name ASC
             LIMIT 50
-        """
-        
-        # Build parameters list
-        params = [
-            pos_profile.get("currency", "USD"),
-            price_list,
-            warehouse
-        ]
-        
-        # Add item_group parameter if provided
-        if item_group and item_group.strip():
-            params.append(f"%{item_group}%")  # Case-insensitive LIKE
-        
-        # Add search parameters
-        params.extend([search_pattern, search_pattern])
-        
-        # Execute query with parameters
-        items = frappe.db.sql(query, tuple(params), as_dict=True)
+            """,
+            params,
+            as_dict=True
+        )
         
         return items
         
