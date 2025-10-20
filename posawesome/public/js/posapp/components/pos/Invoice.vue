@@ -471,18 +471,18 @@ export default {
     onQtyChange(item) {
       const newQty = Number(item.qty) || 0;
       item.qty = newQty;
-      item.amount = flt(item.rate * item.qty, this.currency_precision);
+      item.amount = this.calculateItemAmount(item);
       this.debouncedItemOperation("qty-change");
     },
     
     onQtyInput(item) {
-      item.qty = Number(item.qty) || 0;
-      item.amount = flt(item.rate * item.qty, this.currency_precision);
+      // Handle input events - use same logic as onQtyChange but without debounce
+      this.onQtyChange(item);
     },
 
     increaseQuantity(item) {
       item.qty = (Number(item.qty) || 0) + 1;
-      item.amount = flt(item.rate * item.qty, this.currency_precision);
+      item.amount = this.calculateItemAmount(item);
       evntBus.emit("item_updated", item);
     },
 
@@ -492,50 +492,22 @@ export default {
         this.remove_item(item);
       } else {
         item.qty = newQty;
-        item.amount = flt(item.rate * item.qty, this.currency_precision);
+        item.amount = this.calculateItemAmount(item);
         evntBus.emit("item_updated", item);
       }
     },
 
     getDiscountAmount(item) {
       if (!item) return 0;
-
-      if (item.discount_amount) {
-        return flt(item.discount_amount) || 0;
-      }
-
+      if (item.discount_amount) return flt(item.discount_amount) || 0;
+      
       const basePrice = flt(item.price_list_rate) || flt(item.rate) || 0;
       const discountPercentage = flt(item.discount_percentage) || 0;
-
-      if (discountPercentage > 0 && basePrice > 0) {
-        return flt((basePrice * discountPercentage) / 100) || 0;
-      }
-
-      return 0;
-    },
-
-    logPriceDisplay(item) {
-      return ""; // Return empty string so it doesn't show in UI
+      return (discountPercentage > 0 && basePrice > 0) ? flt((basePrice * discountPercentage) / 100) || 0 : 0;
     },
 
     quick_return() {
-      if (!this.pos_profile?.posa_allow_quick_return) {
-        evntBus.emit("show_mesage", {text: "Quick return disabled", color: "error"});
-        return;
-      }
-
-      if (!this.customer) {
-        evntBus.emit("show_mesage", {
-          text: "No customer!",
-          color: "error",
-        });
-        return;
-      }
-      if (!this.items.length) {
-        evntBus.emit("show_mesage", {text: "No items!", color: "error"});
-        return;
-      }
-      if (!this.validate()) {
+      if (!this.pos_profile?.posa_allow_quick_return || !this.customer || !this.items.length || !this.validate()) {
         return;
       }
       this.quick_return_value = !this.quick_return_value;
@@ -543,17 +515,10 @@ export default {
     },
     
     remove_item(item) {
-      const index = this.items.findIndex(
-        (el) => el.posa_row_id == item.posa_row_id
-      );
+      const index = this.items.findIndex(el => el.posa_row_id == item.posa_row_id);
       if (index >= 0) {
         this.items.splice(index, 1);
-
-        if (
-          this.items.length === 0 &&
-          this.invoice_doc &&
-          this.invoice_doc?.name
-        ) {
+        if (this.items.length === 0 && this.invoice_doc?.name) {
           this.delete_draft_invoice();
         } else {
           evntBus.emit("item_removed", item);
@@ -562,30 +527,18 @@ export default {
     },
 
     async add_item(item) {
-      if (!item || !item.item_code) {
-        evntBus.emit("show_mesage", {text: "Invalid item", color: "error"});
-        return;
-      }
+      if (!item?.item_code) return;
 
       const new_item = Object.assign({}, item);
-
-      if (!new_item.uom) {
-        new_item.uom = new_item.stock_uom || "Nos";
-      }
+      new_item.uom = new_item.uom || new_item.stock_uom || "Nos";
 
       const existing_item = this.items.find(
-        (existing) =>
-          existing.item_code === new_item.item_code &&
-          existing.uom === new_item.uom
+        (existing) => existing.item_code === new_item.item_code && existing.uom === new_item.uom
       );
-
-      let reason = "item-added";
 
       if (existing_item) {
         existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
-        // Recalculate amount when qty changes
-        existing_item.amount = flt(existing_item.rate * existing_item.qty, this.currency_precision);
-        reason = "item-updated";
+        existing_item.amount = this.calculateItemAmount(existing_item);
       } else {
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
@@ -593,20 +546,22 @@ export default {
         new_item.posa_is_offer = 0;
         new_item.posa_is_replace = 0;
         new_item.is_free_item = 0;
-        new_item.amount = flt(new_item.rate * flt(new_item.qty || 1), this.currency_precision);
-
+        new_item.amount = this.calculateItemAmount(new_item);
         this.items.push(new_item);
       }
 
       if (this.items.length === 1 && !this.invoice_doc?.name) {
         this.create_draft_invoice();
-        return;
       } else {
         evntBus.emit("item_added", existing_item || new_item);
       }
     },
     generateRowId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    },
+
+    calculateItemAmount(item) {
+      return flt(item.rate * item.qty, this.currency_precision);
     },
 
    async create_draft_invoice() {
@@ -741,10 +696,7 @@ create_invoice(doc) {
       try {
         await this.reload_invoice();
       } catch (reloadError) {
-        console.error(
-          "Failed to reload invoice after modification conflict",
-          reloadError
-        );
+        // Invoice reload failed after conflict - continue with current data
       }
       return;
     }
@@ -1321,7 +1273,7 @@ get_payments() {
           item.rate = list_price; // dis_price = list_price when no discount
         }
         // Calculate total amount
-        item.amount = flt(item.rate * flt(item.qty), this.currency_precision);
+        item.amount = this.calculateItemAmount(item);
       }
 
       this.debouncedItemOperation("discount-change");
@@ -1362,7 +1314,7 @@ get_payments() {
 
       item.rate = dis_price;
       item.discount_percentage = flt(dis_percent, 2);
-      item.amount = flt(item.rate * flt(item.qty), this.currency_precision);
+      item.amount = this.calculateItemAmount(item);
 
       this.debouncedItemOperation("rate-change");
     },
@@ -1533,7 +1485,6 @@ get_payments() {
           }
         }
       } catch (error) {
-        console.error("Invoice(offers): parse error", error);
         return false;
       }
 
@@ -1658,7 +1609,6 @@ get_payments() {
         },
         error: (r) => {
           this._offersProcessing = false;
-          console.error("Invoice(offers): fetch error", r);
         },
       });
     },
@@ -1839,7 +1789,7 @@ get_payments() {
           item._detailSynced = true;
         }
       } catch (error) {
-        console.error("Error updating item detail:", error);
+        // Item detail update failed - continue with current data  
       }
     },
   },
