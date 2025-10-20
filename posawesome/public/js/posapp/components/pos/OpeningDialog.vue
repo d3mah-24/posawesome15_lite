@@ -301,8 +301,11 @@ export default {
           } else {
             showMessage('Failed to create opening document', 'error');
           }
+          is_loading.value = false;
         })
-        .finally(() => {
+        .catch((error) => {
+          console.error('Error creating opening voucher:', error);
+          showMessage('Failed to create opening document', 'error');
           is_loading.value = false;
         });
     };
