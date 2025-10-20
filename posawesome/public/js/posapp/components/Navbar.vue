@@ -466,6 +466,18 @@ export default {
   beforeDestroy() {
     // Clean up ping monitoring
     this.stopPingMonitoring();
+    
+    // Clean up all event listeners
+    evntBus.$off('show_mesage');
+    evntBus.$off('set_company');
+    evntBus.$off('register_pos_profile');
+    evntBus.$off('set_last_invoice');
+    evntBus.$off('update_invoice_doc');
+    evntBus.$off('set_pos_opening_shift');
+    evntBus.$off('register_pos_data');
+    evntBus.$off('invoice_submitted');
+    evntBus.$off('freeze');
+    evntBus.$off('unfreeze');
   }
 };
 </script>
