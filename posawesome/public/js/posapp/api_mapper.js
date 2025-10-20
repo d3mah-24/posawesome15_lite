@@ -38,9 +38,7 @@ const API_MAP = {
   ITEM: {
     GET_ITEMS: "posawesome.posawesome.api.item.get_items.get_items",
     GET_ITEMS_GROUPS: "posawesome.posawesome.api.item.get_items_groups.get_items_groups",
-    GET_ITEMS_BARCODE: "posawesome.posawesome.api.item.get_items_barcode.get_items_barcode",  
-    GET_SCALE_BARCODE: "posawesome.posawesome.api.item.get_scale_barcode.get_scale_barcode",
-    GET_PRIVATE_BARCODE: "posawesome.posawesome.api.item.get_private_barcode.get_private_barcode",
+    GET_BARCODE_ITEM: "posawesome.posawesome.api.item.get_barcode_item.get_barcode_item",  // Central unified barcode handler
     PROCESS_BATCH_SELECTION: "posawesome.posawesome.api.item.batch.process_batch_selection"
   },
 
