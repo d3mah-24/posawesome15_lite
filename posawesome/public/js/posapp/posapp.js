@@ -3,6 +3,14 @@ import Home from './Home.vue';
 import { createVuetify } from 'vuetify';
 import 'vuetify/styles';
 import './components/assets/style.css'
+
+// Define Vue 3 feature flags for better tree-shaking and performance
+// See: https://link.vuejs.org/feature-flags
+if (typeof window !== 'undefined') {
+    window.__VUE_OPTIONS_API__ = true;
+    window.__VUE_PROD_DEVTOOLS__ = false;
+    window.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false;
+}
 import {
     // Layout
     VApp,
