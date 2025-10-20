@@ -198,7 +198,7 @@ def check_closing_time_allowed(pos_profile):
                 end_str += " (next day)"
             return {
                 "allowed": False, 
-                "message": f"Closing allowed only between {start_str} and {end_str}"
+                "message": f"{start_str} : {end_str}"
             }
             
     except Exception as e:
