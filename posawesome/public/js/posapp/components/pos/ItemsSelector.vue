@@ -177,7 +177,7 @@
               item-key="item_code"
               class="elevation-1"
               hide-default-footer
-              :items-per-page="-1"
+              :items-per-page="50"
               @click:row="add_item_table"
             >
               <template v-slot:item.rate="{ item }">
@@ -199,8 +199,22 @@
 // ===== IMPORTS =====
 import { evntBus } from "../../bus";
 import format from "../../format";
-import _ from "lodash";
 import { API_MAP } from "../../api_mapper.js";
+
+// Lightweight debounce function (replaces lodash)
+// CRITICAL: Preserve 'this' context for Vue component methods
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const context = this; // ✅ Capture the Vue component context
+    const later = () => {
+      clearTimeout(timeout);
+      func.apply(context, args); // ✅ Apply with correct context
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
 const EVENT_NAMES = {
   // Item Events
@@ -327,31 +341,37 @@ export default {
     filtred_items() {
       this.search = this.get_search(this.first_search);
 
+      // Cache expensive operations
+      const groupFilter = this.item_group !== "ALL";
+      const hasSearch = this.search && this.search.length >= UI_CONFIG.SEARCH_MIN_LENGTH;
+      
       let filtred_list = [];
       let filtred_group_list = [];
 
-      // Filter by group
-      if (this.item_group !== "ALL") {
+      // Filter by group - cache toLowerCase results
+      if (groupFilter) {
+        const lowerGroup = this.item_group.toLowerCase();
         filtred_group_list = this.items.filter((item) =>
-          item.item_group.toLowerCase().includes(this.item_group.toLowerCase())
+          item.item_group.toLowerCase().includes(lowerGroup)
         );
       } else {
         filtred_group_list = this.items;
       }
 
       // Filter by search term
-      if (!this.search || this.search.length < UI_CONFIG.SEARCH_MIN_LENGTH) {
+      if (!hasSearch) {
         filtred_list = filtred_group_list.slice(0, UI_CONFIG.MAX_DISPLAYED_ITEMS);
       } else {
-        // Search in item_code
+        // Search in item_code - cache toLowerCase result
+        const lowerSearch = this.search.toLowerCase();
         filtred_list = filtred_group_list.filter((item) =>
-          item.item_code.toLowerCase().includes(this.search.toLowerCase())
+          item.item_code.toLowerCase().includes(lowerSearch)
         );
 
         // Search in item_name if no results
         if (filtred_list.length === 0) {
           filtred_list = filtred_group_list.filter((item) =>
-            item.item_name.toLowerCase().includes(this.search.toLowerCase())
+            item.item_name.toLowerCase().includes(lowerSearch)
           );
         }
       }
@@ -372,7 +392,7 @@ export default {
       get() {
         return this.first_search;
       },
-      set: _.debounce(function (newValue) {
+      set: debounce(function (newValue) {
         this.first_search = newValue;
         this.performLiveSearch(newValue);
       }, UI_CONFIG.DEBOUNCE_DELAY),
