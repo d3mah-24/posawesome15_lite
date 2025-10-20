@@ -1070,12 +1070,25 @@ export default {
 
   // Add beforeDestroy to clean up memory
   beforeDestroy() {
+    // Clean up caches
     this._searchCache.clear();
     this._filteredItemsCache.clear();
     this._itemsMap.clear();
+    
+    // Clear timer
     if (this._searchDebounceTimer) {
       clearTimeout(this._searchDebounceTimer);
     }
+    
+    // Clean up event listeners
+    evntBus.$off("register_pos_profile");
+    evntBus.$off("update_cur_items_details");
+    evntBus.$off("update_offers_counters");
+    evntBus.$off("update_coupons_counters");
+    evntBus.$off("update_customer_price_list");
+    evntBus.$off("update_customer");
+    
+    // Remove window listener
     window.removeEventListener("resize", this.scheduleScrollHeightUpdate);
   },
 };
