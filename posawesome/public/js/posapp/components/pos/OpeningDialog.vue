@@ -86,6 +86,7 @@
             Cancel
           </button>
           <button 
+            v-if="isOpeningAllowed"
             class="action-btn submit-btn" 
             @click="submit_dialog"
             :disabled="is_loading"
@@ -95,6 +96,9 @@
             <v-icon size="14" v-else class="rotating">mdi-loading</v-icon>
             {{ is_loading ? 'Creating...' : 'Confirm' }}
           </button>
+          <div v-else class="time-restriction-message">
+            {{ openingTimeMessage }}
+          </div>
         </div>
       </div>
     </v-dialog>
@@ -214,6 +218,12 @@ export default {
     const payments_methods = ref([]);
     const payments_methods_headers = ref(TABLE_HEADERS);
     const itemsPerPage = ref(UI_CONFIG.ITEMS_PER_PAGE);
+
+    // Time control
+    const isOpeningAllowed = ref(true);
+    const openingTimeStart = ref('');
+    const openingTimeEnd = ref('');
+    const openingTimeMessage = ref('');
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // DATA LOADING
@@ -337,6 +347,32 @@ export default {
     };
 
     /**
+     * Check if opening is allowed based on POS Profile time settings
+     */
+    const checkOpeningTimeAllowed = () => {
+      if (!pos_profile.value) {
+        isOpeningAllowed.value = true;
+        return;
+      }
+
+      // Call server-side whitelist function
+      frappe.call({
+        method: API_MAP.POS_OPENING_SHIFT.CHECK_OPENING_TIME_ALLOWED,
+        args: {
+          pos_profile: pos_profile.value
+        },
+        callback: function(r) {
+          if (r.message) {
+            isOpeningAllowed.value = r.message.allowed;
+            if (!r.message.allowed) {
+              openingTimeMessage.value = r.message.message;
+            }
+          } else {
+            isOpeningAllowed.value = true;
+          }
+        }
+      });
+    };    /**
      * Show message to user via event bus
      * @param {string} text - Message text
      * @param {string} color - Message color (success, error, warning, info)
@@ -378,6 +414,8 @@ export default {
           });
         }
       });
+      // Check if opening is allowed for this profile
+      checkOpeningTimeAllowed();
     });
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -407,6 +445,12 @@ export default {
       payments_methods_headers,
       itemsPerPage,
       
+      // Time control
+      isOpeningAllowed,
+      openingTimeStart,
+      openingTimeEnd,
+      openingTimeMessage,
+      
       // Validation
       max25chars: VALIDATION_RULES.MAX_CHARS,
       
@@ -414,6 +458,7 @@ export default {
       close_opening_dialog,
       submit_dialog,
       go_desk,
+      checkOpeningTimeAllowed,
       
       // Helpers
       getPaymentIcon,
@@ -701,6 +746,19 @@ export default {
 
 .submit-btn.loading {
   background: #6b7280;
+}
+
+/* Time Restriction Message */
+.time-restriction-message {
+  font-size: 11px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
 }
 
 /* Loading Animation */
