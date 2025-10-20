@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import Home from './Home.vue';
 import { createVuetify } from 'vuetify';
-import 'vuetify/styles';
+// import 'vuetify/styles'; // COMMENTED: Testing if redundant due to HTML link in page/posapp.js
 
 // Define Vue 3 feature flags for better tree-shaking and performance
 // See: https://link.vuejs.org/feature-flags
