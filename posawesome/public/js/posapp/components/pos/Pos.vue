@@ -11,7 +11,10 @@
           <ItemsSelector></ItemsSelector>
         </div>
         <div v-show="offers" class="panel-content">
-          <PosOffers></PosOffers>
+          <PosOffers
+            @offerApplied="handleOfferApplied"
+            @offerRemoved="handleOfferRemoved"
+          ></PosOffers>
         </div>
         <div v-show="coupons" class="panel-content">
           <PosCoupons></PosCoupons>
@@ -88,29 +91,39 @@ export default {
       payment: false,
       offers: false,
       coupons: false,
+      offerApplied: null,
+      offerRemoved: false,
     };
   },
 
   methods: {
-    // ===== INITIALIZATION METHODS =====
-    
-    /**
-     * Check if there's an active opening shift
-     * If yes, load profile data; if no, create new opening voucher
-     */
+    // ===== OFFER EVENT HANDLERS =====
+    handleOfferApplied(offer) {
+      console.log("[Pos.vue] Offer applied:", offer);
+      this.offerApplied = offer;
+      this.offerRemoved = false;
+    },
+
+    handleOfferRemoved() {
+      console.log("[Pos.vue] Offer removed");
+      this.offerApplied = null;
+      this.offerRemoved = true;
+    },
+
     async check_opening_entry() {
       try {
         const response = await frappe.call({
-          method: API_MAP.POS_OPENING_SHIFT.GET_CURRENT_SHIFT_NAME
+          method: API_MAP.POS_OPENING_SHIFT.GET_CURRENT_SHIFT_NAME,
         });
-        
+
         if (response.message.success && response.message.data) {
           // Active shift exists - load full profile data
           await this.get_full_profile_data(response.message.data.pos_profile);
         } else {
           // No active shift - show message and create new opening voucher
           this.show_message(
-            response.message.message || "No opening shift found, a new opening entry will be created.",
+            response.message.message ||
+              "No opening shift found, a new opening entry will be created.",
             "info"
           );
           this.create_opening_voucher();
@@ -121,10 +134,6 @@ export default {
       }
     },
 
-    /**
-     * Load complete POS profile data and initialize the system
-     * @param {string} pos_profile_name - Name of the POS profile
-     */
     async get_full_profile_data(pos_profile_name) {
       try {
         // Fetch POS profile
@@ -144,11 +153,11 @@ export default {
 
         // Fetch current shift data
         const shiftResponse = await frappe.call({
-          method: API_MAP.POS_OPENING_SHIFT.GET_CURRENT_SHIFT_NAME
+          method: API_MAP.POS_OPENING_SHIFT.GET_CURRENT_SHIFT_NAME,
         });
-        
-        const pos_opening_shift = shiftResponse.message.success 
-          ? shiftResponse.message.data 
+
+        const pos_opening_shift = shiftResponse.message.success
+          ? shiftResponse.message.data
           : null;
 
         // Update component state
@@ -197,18 +206,13 @@ export default {
     },
 
     // ===== OFFERS METHODS =====
-
-    /**
-     * Fetch available offers for the current POS profile
-     * @param {string} pos_profile - POS profile name
-     */
     async get_offers(pos_profile) {
       try {
         const response = await frappe.call({
           method: API_MAP.POS_OFFER.GET_OFFERS_FOR_PROFILE,
           args: {
             profile: pos_profile,
-          }
+          },
         });
 
         if (response.message) {
@@ -223,17 +227,13 @@ export default {
     },
 
     // ===== CLOSING SHIFT METHODS =====
-
-    /**
-     * Fetch closing shift data from current opening shift
-     */
     async get_closing_data() {
       try {
         const response = await frappe.call({
           method: API_MAP.POS_OPENING_SHIFT.MAKE_CLOSING_SHIFT,
           args: {
             opening_shift: this.pos_opening_shift,
-          }
+          },
         });
 
         if (response.message) {
@@ -248,17 +248,13 @@ export default {
       }
     },
 
-    /**
-     * Submit closing shift to backend
-     * @param {Object} data - Closing shift data
-     */
     async submit_closing_pos(data) {
       try {
         const response = await frappe.call({
           method: API_MAP.POS_OPENING_SHIFT.SUBMIT_CLOSING_SHIFT,
           args: {
             closing_shift: data,
-          }
+          },
         });
 
         if (response.message) {
@@ -275,43 +271,25 @@ export default {
     },
 
     // ===== PANEL SWITCHING METHODS =====
-
-    /**
-     * Switch between different panels (items, payment, offers, coupons)
-     * @param {string} panelType - Type of panel to show
-     * @param {boolean} show - Whether to show or hide the panel
-     */
     switchPanel(panelType, show) {
       const isActive = show === "true";
-      
+
       this.payment = panelType === "payment" && isActive;
       this.offers = panelType === "offers" && isActive;
       this.coupons = panelType === "coupons" && isActive;
     },
 
     // ===== UTILITY METHODS =====
-
-    /**
-     * Show message to user via event bus
-     * @param {string} text - Message text
-     * @param {string} color - Message color (success, error, info, warning)
-     */
     show_message(text, color) {
       evntBus.emit(EVENTS.SHOW_MESSAGE, { text, color });
     },
 
-    /**
-     * Handle print request from Payments component
-     */
     onPrintRequest() {
       evntBus.emit(EVENTS.REQUEST_INVOICE_PRINT);
     },
 
     // ===== EVENT BUS HANDLERS =====
 
-    /**
-     * Register all event bus listeners
-     */
     registerEventListeners() {
       // Opening dialog events
       evntBus.on(EVENTS.CLOSE_OPENING_DIALOG, this.handleCloseOpeningDialog);
@@ -327,9 +305,6 @@ export default {
       evntBus.on(EVENTS.SUBMIT_CLOSING_POS, this.handleSubmitClosingPos);
     },
 
-    /**
-     * Unregister all event bus listeners
-     */
     unregisterEventListeners() {
       evntBus.$off(EVENTS.CLOSE_OPENING_DIALOG, this.handleCloseOpeningDialog);
       evntBus.$off(EVENTS.REGISTER_POS_DATA, this.handleRegisterPosData);
