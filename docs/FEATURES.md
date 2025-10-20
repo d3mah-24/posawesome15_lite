@@ -104,6 +104,19 @@
 
 ---
 
+## 📱 Barcode Scanner Compatibility
+
+- **Auto-Focus Free Scanning:** Scan barcodes anywhere in POS interface without focusing search field
+- **Instant Item Addition:** Scanned items automatically added to invoice cart
+- **Multiple Barcode Support:** EAN-13, Code 128, UPC-A, and custom barcodes
+- **Hardware Scanner Compatible:** Works with USB and Bluetooth barcode scanners
+- **Speed Optimized:** Handles 30+ scans per second for high-volume operations
+- **Error Handling:** Clear feedback for invalid or unrecognized barcodes
+- **OnScan.js Integration:** Advanced barcode detection with configurable timing
+- **No Manual Input Required:** Seamless scanning workflow without keyboard interaction
+
+---
+
 ## 🎨 User Interface
 
 - **Frontend:** Vue 3.4.21 + Vuetify 3.6.9
@@ -111,7 +124,6 @@
 - Split view (items selector + invoice)
 - Compact table layouts
 - Real-time calculations
-- Hardware barcode scanner support (onScan.js)
 - Keyboard shortcuts (Ctrl+S, Ctrl+X, Ctrl+D, ESC)
 - Touch-friendly controls
 - Dark/Light theme support
