@@ -6,7 +6,7 @@
 
 - **Summary**: Use `frappe.log_error()` at the end of each function to summarize results.
 - **Details**: Include the filename, function name, and results in the log.
-
+- **tracking**: [Use unique identifiers for tracking specific requests or operations.](http://localhost/app/error-log)
 ### Backend Apply Changes
 
 ```bash
