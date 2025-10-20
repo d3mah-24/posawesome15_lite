@@ -47,8 +47,6 @@ def get_customer_coupons(customer_id, coupon_type=None, active_only=True):
         # Sort by creation date (newest first)
         all_coupons.sort(key=lambda x: x.get("creation_date", ""), reverse=True)
         
-        frappe.logger().debug(f"Found {len(all_coupons)} coupons for customer {customer_id}")
-        
         return all_coupons
         
     except Exception as e:
@@ -209,7 +207,7 @@ def _get_gift_coupons(customer_id, active_only=True):
         return gift_coupons
         
     except Exception as e:
-        frappe.logger().warning(f"Error getting gift coupons: {e}")
+        # Silent fallback for gift coupon errors
         return []
 
 
@@ -277,7 +275,7 @@ def _get_loyalty_coupons(customer_id, active_only=True):
         return loyalty_coupons
         
     except Exception as e:
-        frappe.logger().warning(f"Error getting loyalty coupons: {e}")
+        # Silent fallback for loyalty coupon errors
         return []
 
 
