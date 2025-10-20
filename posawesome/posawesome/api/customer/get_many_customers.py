@@ -32,15 +32,12 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
         limit = min(int(limit or 50), 200)  # Cap at 200 for performance
         offset = int(offset or 0)
         
-        frappe.logger().debug(f"get_many_customers: pos_profile={pos_profile}, search_term='{search_term}', limit={limit}, offset={offset}")
-        
         # Redis caching for POS Profile data (Backend Improvement Policy)
         cache_key = None
         if pos_profile and not search_term:
             cache_key = f"pos_customers_{pos_profile}_{limit}_{offset}"
             cached_result = frappe.cache().get_value(cache_key)
             if cached_result:
-                frappe.logger().debug("Returning cached customer data")
                 return cached_result
         
         # Base query filters
@@ -60,7 +57,6 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
                     profile_doc = frappe.get_cached_doc("POS Profile", pos_profile)
                     if hasattr(profile_doc, 'customer_group') and profile_doc.customer_group:
                         query_filters["customer_group"] = profile_doc.customer_group
-                        frappe.logger().debug(f"Filtering by customer_group: {profile_doc.customer_group}")
                 else:
                     # It's JSON data - parse customer groups
                     pos_profile_data = frappe.parse_json(pos_profile)
@@ -72,9 +68,9 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
                         
                         if customer_groups:
                             query_filters["customer_group"] = ["in", customer_groups]
-                            frappe.logger().debug(f"Filtering by customer_groups: {customer_groups}")
             except Exception as profile_error:
-                frappe.logger().warning(f"Could not process pos_profile: {profile_error}")
+                # Silent fallback for POS profile processing
+                pass
         
         # Add search term filtering (POSNext ORM-only approach)
         search_filters = []
@@ -88,7 +84,6 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
                 ["email_id", "like", f"%{search_term}%"],       # Email search
                 ["tax_id", "like", f"%{search_term}%"]          # Tax ID search
             ]
-            frappe.logger().debug(f"ORM-based search for: '{search_term}'")
         
         # Use Frappe ORM with optimized field selection (Backend Policy Compliance)
         fields_to_fetch = [
@@ -100,7 +95,6 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
         if search_filters:
             # For search functionality, use multiple separate queries and merge results
             # This follows POSNext pattern of client-side filtering when needed
-            frappe.logger().debug("Using ORM-only search approach")
             
             search_results = []
             processed_names = set()
@@ -131,7 +125,7 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
                         break
                         
                 except Exception as field_error:
-                    frappe.logger().warning(f"Search in field {field_name} failed: {field_error}")
+                    # Silent fallback for field search errors
                     continue
             
             customers = search_results[:limit]  # Ensure we don't exceed limit
@@ -149,9 +143,7 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
         # Cache results for better performance (Backend Improvement Policy)
         if cache_key and customers:
             frappe.cache().set_value(cache_key, customers, expires_in_sec=300)  # 5-minute cache
-            frappe.logger().debug("Cached customer data for future requests")
         
-        frappe.logger().debug(f"get_many_customers returned {len(customers)} customers")
         return customers
         
     except Exception as e:
