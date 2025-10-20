@@ -61,12 +61,12 @@ def update_invoice(data):
 
     except frappe.exceptions.ValidationError as ve:
         # Handle validation errors gracefully
-        frappe.log_error(f"Validation error in update_invoice: {str(ve)}", "Invoice Update Validation")
+        frappe.logger().error(f"Validation error in update_invoice: {str(ve)}")
         frappe.throw(_("Validation error: {0}").format(str(ve)))
 
     except Exception as e:
         # Log and re-raise any other errors
-        frappe.log_error(f"Error in update_invoice: {str(e)}", "Invoice Update Error")
+        frappe.logger().error(f"Error in update_invoice: {str(e)}")
         frappe.throw(_("Error updating invoice: {0}").format(str(e)))
 
 
