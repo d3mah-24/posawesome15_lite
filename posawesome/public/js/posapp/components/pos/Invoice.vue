@@ -163,7 +163,7 @@
       <div class="financial-summary">
         <div class="summary-field readonly-field">
           <label>Total Qty</label>
-          <div class="field-value">{{ formatFloat(total_qty) }}</div>
+          <div class="field-value">{{ formatFloat(invoice_doc?.total_qty || 0) }}</div>
         </div>
 
         <div class="summary-field editable-field">
@@ -190,7 +190,7 @@
           <label>Items Disc</label>
           <div class="field-value">
             {{ currencySymbol(pos_profile?.currency)
-            }}{{ formatCurrency(total_items_discount_amount) }}
+            }}{{ formatCurrency(invoice_doc?.total_items_discount || 0) }}
           </div>
         </div>
 
@@ -198,7 +198,7 @@
           <label>Before Disc</label>
           <div class="field-value">
             {{ currencySymbol(pos_profile?.currency)
-            }}{{ formatCurrency(total_before_discount) }}
+            }}{{ formatCurrency(invoice_doc?.total || 0) }}
           </div>
         </div>
 
@@ -427,46 +427,6 @@ export default {
     readonly() {
       return this.invoice_doc?.is_return || false;
     },
-    total_qty() {
-      if (!this.invoice_doc?.items) return 0;
-      return this.invoice_doc?.items.reduce(
-        (sum, item) => sum + (item.qty || 0),
-        0
-      );
-    },
-    Total() {
-      return this.invoice_doc?.total || 0;
-    },
-    subtotal() {
-      this.close_payments();
-      return this.invoice_doc?.net_total || 0;
-    },
-    total_before_discount() {
-      // Calculate total using price_list_rate (before any item discounts)
-      if (!this.items || this.items.length === 0) return 0;
-
-      return this.items.reduce((sum, item) => {
-        const qty = flt(item.qty, this.float_precision) || 0;
-        const basePrice =
-          flt(item.price_list_rate) ||
-          flt(item.base_rate) ||
-          flt(item.rate) ||
-          0;
-        return sum + qty * basePrice;
-      }, 0);
-    },
-    total_items_discount_amount() {
-      return this.invoice_doc?.total_items_discount || 0;
-    },
-    TaxAmount() {
-      return this.invoice_doc?.total_taxes_and_charges || 0;
-    },
-    DiscountAmount() {
-      return this.invoice_doc?.discount_amount || 0;
-    },
-    GrandTotal() {
-      return this.invoice_doc?.grand_total || 0;
-    },
     defaultPaymentMode() {
       const invoicePayments =
         this.invoice_doc && Array.isArray(this.invoice_doc?.payments)
@@ -542,45 +502,19 @@ export default {
     },
 
     increaseQuantity(item) {
-      try {
-        const currentQty = Number(item.qty) || 0;
-        const newQty = currentQty + 1;
-
-        item.qty = newQty;
-
-        this.$forceUpdate();
-
-        // Emit event for Event-driven approach
-        evntBus.emit("item_updated", item);
-      } catch (error) {
-        evntBus.emit("show_mesage", {
-          text: "Error increasing quantity",
-          color: "error",
-        });
-      }
+      // Simplified: just update qty and let batch update handle server sync
+      item.qty = (Number(item.qty) || 0) + 1;
+      evntBus.emit("item_updated", item);
     },
 
     decreaseQuantity(item) {
-      try {
-        const currentQty = Number(item.qty) || 0;
-        const newQty = Math.max(0, currentQty - 1);
-
+      // Simplified: just update qty and let batch update handle server sync
+      const newQty = Math.max(0, (Number(item.qty) || 0) - 1);
+      if (newQty === 0) {
+        this.remove_item(item);
+      } else {
         item.qty = newQty;
-
-        if (newQty === 0) {
-          this.remove_item(item);
-          return;
-        }
-
-        this.$forceUpdate();
-
-        // Emit event for Event-driven approach
         evntBus.emit("item_updated", item);
-      } catch (error) {
-        evntBus.emit("show_mesage", {
-          text: "Error decreasing quantity",
-          color: "error",
-        });
       }
     },
 
@@ -653,29 +587,6 @@ export default {
           // Emit event for Event-driven approach
           evntBus.emit("item_removed", item);
         }
-      }
-    },
-
-    add_one(item) {
-      item.qty++;
-      if (item.qty == 0) {
-        this.remove_item(item);
-      } else {
-        this.$forceUpdate();
-
-        // Emit event for Event-driven approach
-        evntBus.emit("item_updated", item);
-      }
-    },
-    subtract_one(item) {
-      item.qty--;
-      if (item.qty == 0) {
-        this.remove_item(item);
-      } else {
-        this.$forceUpdate();
-
-        // Emit event for Event-driven approach
-        evntBus.emit("item_updated", item);
       }
     },
 
