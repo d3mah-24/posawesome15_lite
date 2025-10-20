@@ -47,11 +47,11 @@ def create_invoice(data):
         return doc.as_dict()
 
     except frappe.exceptions.ValidationError as ve:
-        frappe.log_error(f"Validation error in create_invoice: {str(ve)}", "Invoice Create Validation")
+        frappe.logger().error(f"Validation error in create_invoice: {str(ve)}")
         frappe.throw(_("Validation error: {0}").format(str(ve)))
 
     except Exception as e:
-        frappe.log_error(f"Error in create_invoice: {str(e)}", "Invoice Create Error")
+        frappe.logger().error(f"Error in create_invoice: {str(e)}")
         frappe.throw(_("Error creating invoice: {0}").format(str(e)))
 
 
@@ -76,7 +76,7 @@ def add_item_to_invoice(item_code, qty=1, customer=None, pos_profile=None):
             return _create_new_invoice_with_item(item_code, qty, customer, pos_profile)
             
     except Exception as e:
-        frappe.log_error(f"Error in add_item_to_invoice: {str(e)}", "Add Item Error")
+        frappe.logger().error(f"Error in add_item_to_invoice: {str(e)}")
         frappe.throw(_("Error adding item: {0}").format(str(e)))
 
 
@@ -146,7 +146,7 @@ def _add_item_to_existing_invoice(invoice_name, item_code, qty):
         return doc.as_dict()
         
     except Exception as e:
-        frappe.log_error(f"Error adding item to existing invoice: {str(e)}", "Add Item to Existing Error")
+        frappe.logger().error(f"Error adding item to existing invoice: {str(e)}")
         frappe.throw(_("Error adding item to invoice: {0}").format(str(e)))
 
 
@@ -187,6 +187,6 @@ def _create_new_invoice_with_item(item_code, qty, customer=None, pos_profile=Non
         return doc.as_dict()
         
     except Exception as e:
-        frappe.log_error(f"Error creating new invoice with item: {str(e)}", "Create New With Item Error")
+        frappe.logger().error(f"Error creating new invoice with item: {str(e)}")
         frappe.throw(_("Error creating invoice with item: {0}").format(str(e)))
 
