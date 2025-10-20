@@ -11,6 +11,7 @@
       item-value="name"
       :filter="customFilter"
       :disabled="readonly"
+      :loading="loading"
       append-icon="mdi-plus"
       @click:append="new_customer"
       prepend-inner-icon="mdi-account-edit"
@@ -102,6 +103,7 @@ export default {
       customer_info: {},
       quick_return: false,
       searchTimeout: null,
+      loading: false, // Loading state for customer search
     };
   },
 
@@ -177,6 +179,8 @@ export default {
         console.log("🔎 Server-side search for:", args.search_term);
       }
 
+      this.loading = true; // Start loading
+
       frappe.call({
         method: API_MAP.CUSTOMER.GET_MANY_CUSTOMERS,
         args: args,
@@ -187,6 +191,7 @@ export default {
             console.log("📋 First few customers:", r.message.slice(0, 3));
             this.customers = r.message;
           }
+          this.loading = false; // End loading
         },
         error: (err) => {
           console.error("❌ API Error:", err);
@@ -202,10 +207,12 @@ export default {
                 console.log("✅ Fallback successful:", r.message.length, "customers");
                 this.customers = r.message;
               }
+              this.loading = false; // End loading
             },
             error: (fallbackErr) => {
               console.error("❌ Fallback API Error:", fallbackErr);
               this.showMessage(ERROR_MESSAGES.FAILED_TO_FETCH, 'error');
+              this.loading = false; // End loading even on error
             },
           });
         },
