@@ -601,13 +601,6 @@ export default {
       }
 
       const new_item = Object.assign({}, item);
-      
-      console.log("📦 ADD_ITEM - Initial item data:", {
-        item_code: new_item.item_code,
-        price_list_rate: new_item.price_list_rate,
-        rate: new_item.rate,
-        base_rate: new_item.base_rate
-      });
 
       if (!new_item.uom) {
         new_item.uom = new_item.stock_uom || "Nos";
@@ -626,11 +619,6 @@ export default {
         // Recalculate amount when qty changes
         existing_item.amount = flt(existing_item.rate * existing_item.qty, this.currency_precision);
         reason = "item-updated";
-        console.log("📦 ADD_ITEM - Existing item updated:", {
-          item_code: existing_item.item_code,
-          price_list_rate: existing_item.price_list_rate,
-          qty: existing_item.qty
-        });
       } else {
         // Item added - set required tracking fields
         new_item.posa_row_id = this.generateRowId();
@@ -641,22 +629,7 @@ export default {
         new_item.is_free_item = 0;
         new_item.amount = flt(new_item.rate * flt(new_item.qty || 1), this.currency_precision);
 
-        console.log("📦 ADD_ITEM - New item before push:", {
-          item_code: new_item.item_code,
-          price_list_rate: new_item.price_list_rate,
-          rate: new_item.rate,
-          posa_row_id: new_item.posa_row_id
-        });
-
         this.items.push(new_item);
-        
-        console.log("📦 ADD_ITEM - Items array after push:", 
-          this.items.map(i => ({
-            item_code: i.item_code,
-            price_list_rate: i.price_list_rate,
-            posa_row_id: i.posa_row_id
-          }))
-        );
       }
 
       // Check if this is the first item and no invoice exists
@@ -745,66 +718,40 @@ create_invoice(doc) {
 },
 
     async auto_update_invoice(doc = null, reason = "auto") {
-  console.log(`🌐 AUTO_UPDATE - Starting (reason: ${reason})`);
-  
   if (this.invoice_doc?.submitted_for_payment) {
-    console.log("🌐 AUTO_UPDATE - Skipped: submitted for payment");
     return;
   }
 
   // Skip auto-update if no items and no invoice doc
   if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
-    console.log("🌐 AUTO_UPDATE - Skipped: no items and no invoice");
     return;
   }
 
   const payload = doc || this.get_invoice_doc(reason);
-  
-  console.log("🌐 AUTO_UPDATE - Payload items:", 
-    payload.items ? payload.items.map(i => ({
-      item_code: i.item_code,
-      rate: i.rate,
-      qty: i.qty
-    })) : []
-  );
 
   try {
     let result;
     
     // Decide whether to create or update based on invoice_doc.name
     if (!this.invoice_doc?.name && this.items.length > 0) {
-      console.log("🌐 AUTO_UPDATE - Creating new invoice");
       // Create new invoice
       result = await this.create_invoice(payload);
     } else if (this.invoice_doc?.name) {
-      console.log("🌐 AUTO_UPDATE - Updating existing invoice:", this.invoice_doc?.name);
       // Update existing invoice
       result = await this.update_invoice(payload);
     } else {
-      console.log("🌐 AUTO_UPDATE - No action needed");
       // No items and no invoice - do nothing
       return null;
     }
 
-    console.log("🌐 AUTO_UPDATE - API Response items:", 
-      result?.items ? result.items.map(i => ({
-        item_code: i.item_code,
-        price_list_rate: i.price_list_rate,
-        rate: i.rate,
-        posa_row_id: i.posa_row_id
-      })) : null
-    );
-
     // Handle case when API returns null (no items)
     if (!result) {
-      console.log("🌐 AUTO_UPDATE - API returned null, clearing items");
       this.invoice_doc = null;
       this.items = [];
       return null;
     }
 
     if (result && Array.isArray(result.items)) {
-      console.log("🌐 AUTO_UPDATE - Merging API items with local items");
       // Set flag to prevent watcher loop
       this._updatingFromAPI = true;
 
@@ -814,7 +761,6 @@ create_invoice(doc) {
       // Reset flag after update
       this.$nextTick(() => {
         this._updatingFromAPI = false;
-        console.log("🌐 AUTO_UPDATE - Merge complete, flag reset");
       });
     }
 
@@ -1251,19 +1197,10 @@ get_payments() {
     },
 
     async show_payment() {
-      console.log("show_payment called with:", {
-        readonly: this.readonly,
-        customer: this.customer,
-        itemsLength: this.items.length,
-        hasItems: this.hasItems
-      });
-      
       if (this.readonly) {
-        console.log("show_payment blocked: readonly mode");
         return;
       }
       if (!this.customer) {
-        console.log("show_payment blocked: no customer");
         evntBus.emit("show_mesage", {
           text: "No customer!",
           color: "error",
@@ -1271,15 +1208,12 @@ get_payments() {
         return;
       }
       if (!this.items.length) {
-        console.log("show_payment blocked: no items");
         evntBus.emit("show_mesage", {
           text: "No items in invoice!",
           color: "error",
         });
         return;
       }
-      
-      console.log("show_payment proceeding to payment screen...");
 
       evntBus.emit("show_loading", {
         text: "Preparing payment screen...",
@@ -1671,21 +1605,6 @@ get_payments() {
     },
 
     mergeItemsFromAPI(apiItems) {
-      console.log("🔄 MERGE_ITEMS - Starting merge");
-      console.log("🔄 MERGE_ITEMS - Current local items:", 
-        this.items.map(i => ({
-          item_code: i.item_code,
-          price_list_rate: i.price_list_rate,
-          posa_row_id: i.posa_row_id
-        }))
-      );
-      console.log("🔄 MERGE_ITEMS - API items received:", 
-        apiItems ? apiItems.map(i => ({
-          item_code: i.item_code,
-          price_list_rate: i.price_list_rate,
-          posa_row_id: i.posa_row_id
-        })) : null
-      );
 
       // Preserve price_list_rate and other display fields when merging API response
       if (apiItems && Array.isArray(apiItems) && apiItems.length > 0) {
@@ -1696,23 +1615,13 @@ get_payments() {
           localItemsByCode.set(item.item_code, item);
         });
 
-        console.log("🔄 MERGE_ITEMS - Local items map size:", localItemsByCode.size);
-
         // Merge API items with local items, preserving price_list_rate
         this.items = apiItems.map(apiItem => {
           // Find local item by item_code (simple & reliable)
           const localItem = localItemsByCode.get(apiItem.item_code);
           
-          console.log(`🔄 MERGE_ITEMS - Processing ${apiItem.item_code}:`, {
-            has_local: !!localItem,
-            local_price_list_rate: localItem?.price_list_rate,
-            api_price_list_rate: apiItem.price_list_rate,
-            will_preserve: !!(localItem?.price_list_rate && !apiItem.price_list_rate)
-          });
-          
           // If local item exists, preserve price_list_rate from it
           if (localItem?.price_list_rate && !apiItem.price_list_rate) {
-            console.log(`✅ MERGE_ITEMS - Preserving price_list_rate ${localItem.price_list_rate} for ${apiItem.item_code}`);
             apiItem.price_list_rate = localItem.price_list_rate;
           }
           
@@ -1728,14 +1637,6 @@ get_payments() {
           
           return apiItem;
         });
-
-        console.log("🔄 MERGE_ITEMS - Final merged items:", 
-          this.items.map(i => ({
-            item_code: i.item_code,
-            price_list_rate: i.price_list_rate,
-            posa_row_id: i.posa_row_id
-          }))
-        );
       }
     },
 
@@ -2179,7 +2080,6 @@ get_payments() {
       });
     });
     evntBus.on("load_return_invoice", (data) => {
-      console.log("Loading return invoice:", data);
       this.new_invoice(data.invoice_doc);
       
       // Handle return_doc data only if it exists (for returns against specific invoices)
@@ -2196,13 +2096,6 @@ get_payments() {
       
       // Force update to ensure computed properties are recalculated
       this.$nextTick(() => {
-        console.log("After loading return invoice:");
-        console.log("- Items count:", this.items?.length);
-        console.log("- Has items:", this.hasItems);
-        console.log("- Is payment:", this.is_payment);
-        console.log("- Customer:", this.customer);
-        console.log("- Readonly:", this.readonly);
-        console.log("- Items array:", this.items);
         this.$forceUpdate();
       });
     });
