@@ -31,54 +31,28 @@ def get_barcode_item(pos_profile, barcode_value):
         if isinstance(pos_profile, str):
             pos_profile = json.loads(pos_profile)
         
-        # Log input
-        frappe.log_error(
-            f"=== BARCODE SCAN ===\n"
-            f"Barcode: {barcode_value}\n"
-            f"Length: {len(barcode_value)}\n"
-            f"POS Profile: {pos_profile.get('name')}",
-            "Barcode Input"
-        )
+        # Process barcode scan - no logging needed for normal operations
         
         # Try scale barcode first (highest priority - specific format)
         result = _get_scale_barcode(pos_profile, barcode_value)
         if result:
-            frappe.log_error(
-                f"✓ Scale barcode matched\nItem: {result.get('item_code')}\nQty: {result.get('qty')}",
-                "Barcode Success - Scale"
-            )
             return result
         
         # Try private barcode second (medium priority - specific prefixes)
         result = _get_private_barcode(pos_profile, barcode_value)
         if result:
-            frappe.log_error(
-                f"✓ Private barcode matched\nItem: {result.get('item_code')}",
-                "Barcode Success - Private"
-            )
             return result
         
         # Try normal barcode last (fallback - search Item Barcode table)
         result = _get_normal_barcode(pos_profile, barcode_value)
         if result:
-            frappe.log_error(
-                f"✓ Normal barcode matched\nItem: {result.get('item_code')}",
-                "Barcode Success - Normal"
-            )
             return result
         
-        # Not found in any category
-        frappe.log_error(
-            f"✗ Barcode not found: {barcode_value}",
-            "Barcode Not Found"
-        )
+        # Not found - return empty dict
         return {}
         
     except Exception as e:
-        frappe.log_error(
-            f"Barcode processing error: {str(e)}\nBarcode: {barcode_value}",
-            "Barcode Error"
-        )
+        frappe.logger().error(f"Barcode processing error: {str(e)} - Barcode: {barcode_value}")
         return {}
 
 
@@ -115,14 +89,7 @@ def _get_scale_barcode(profile, barcode):
         item_code_part = barcode[prefix_len:prefix_len + item_code_length]
         weight_part = barcode[prefix_len + item_code_length:prefix_len + item_code_length + weight_length]
         
-        # Log extraction
-        frappe.log_error(
-            f"Scale barcode extraction:\n"
-            f"Prefix: {prefix} (len={prefix_len})\n"
-            f"Item Code: {item_code_part}\n"
-            f"Weight Raw: {weight_part}",
-            "Scale Barcode Parse"
-        )
+        # Extract scale barcode components
         
         # Fetch item with price using ORM
         item_data = _fetch_item_with_price(item_code_part, profile.get("selling_price_list"))
@@ -140,7 +107,7 @@ def _get_scale_barcode(profile, barcode):
         return item_data
         
     except Exception as e:
-        frappe.log_error(f"Scale barcode error: {str(e)}", "Scale Barcode Error")
+        frappe.logger().error(f"Scale barcode error: {str(e)}")
         return None
 
 
@@ -189,13 +156,7 @@ def _get_private_barcode(profile, barcode):
         prefix_len = len(matched_prefix)
         item_code_part = barcode[prefix_len:prefix_len + item_code_length]
         
-        # Log extraction
-        frappe.log_error(
-            f"Private barcode extraction:\n"
-            f"Prefix: {matched_prefix}\n"
-            f"Item Code: {item_code_part}",
-            "Private Barcode Parse"
-        )
+        # Extract private barcode components
         
         # Fetch item with price using ORM
         item_data = _fetch_item_with_price(item_code_part, profile.get("selling_price_list"))
@@ -208,7 +169,7 @@ def _get_private_barcode(profile, barcode):
         return item_data
         
     except Exception as e:
-        frappe.log_error(f"Private barcode error: {str(e)}", "Private Barcode Error")
+        frappe.logger().error(f"Private barcode error: {str(e)}")
         return None
 
 
@@ -230,13 +191,7 @@ def _get_normal_barcode(profile, barcode):
         if not barcode_entry:
             return None
         
-        # Log found item
-        frappe.log_error(
-            f"Normal barcode found:\n"
-            f"Barcode: {barcode}\n"
-            f"Item Code: {barcode_entry}",
-            "Normal Barcode Parse"
-        )
+        # Process normal barcode
         
         # Fetch item with price using ORM
         item_data = _fetch_item_with_price(barcode_entry, profile.get("selling_price_list"))
@@ -249,7 +204,7 @@ def _get_normal_barcode(profile, barcode):
         return item_data
         
     except Exception as e:
-        frappe.log_error(f"Normal barcode error: {str(e)}", "Normal Barcode Error")
+        frappe.logger().error(f"Normal barcode error: {str(e)}")
         return None
 
 
@@ -290,20 +245,9 @@ def _fetch_item_with_price(item_code, price_list):
         )
         
         if not result:
-            frappe.log_error(
-                f"Item not found or not sellable: {item_code}",
-                "Item Fetch Error"
-            )
             return None
         
         item = result[0]
-        
-        # Log if no price found
-        if not item.get("price_list_rate"):
-            frappe.log_error(
-                f"No price found for item: {item_code} in price list: {price_list}",
-                "Price Not Found"
-            )
         
         # Return clean response
         return {
@@ -318,8 +262,5 @@ def _fetch_item_with_price(item_code, price_list):
         }
         
     except Exception as e:
-        frappe.log_error(
-            f"Error fetching item: {item_code}\nError: {str(e)}",
-            "Item Fetch Error"
-        )
+        frappe.logger().error(f"Error fetching item: {item_code} - Error: {str(e)}")
         return None
