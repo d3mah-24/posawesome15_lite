@@ -277,6 +277,11 @@ export default {
       evntBus.emit(EVENT_NAMES.LOAD_RETURN_INVOICE, { invoice_doc, return_doc });
       this.invoicesDialog = false;
     }
+  },
+
+  beforeDestroy() {
+    // Clean up event listener
+    evntBus.$off(EVENT_NAMES.OPEN_RETURNS);
   }
 };
 </script>
