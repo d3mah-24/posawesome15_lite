@@ -223,6 +223,27 @@ frappe.PosApp.posapp = class {
 
         const app = createApp(Home);
 
+        // Add global error handler to catch unhandled errors
+        app.config.errorHandler = (err, instance, info) => {
+            console.error('Vue Error:', err);
+            console.error('Component:', instance);
+            console.error('Error Info:', info);
+            
+            // Show user-friendly error message
+            frappe.show_alert({
+                message: __('An error occurred. Please refresh the page or contact support if the problem persists.'),
+                indicator: 'red'
+            }, 10); // Show for 10 seconds
+            
+            // Log to server for debugging (optional)
+            if (frappe.boot.developer_mode) {
+                frappe.msgprint({
+                    title: __('Error Details'),
+                    indicator: 'red',
+                    message: `<pre>${err.stack || err.message}</pre>`
+                });
+            }
+        };
 
         app.use(vuetify);
         SetVueGlobals(app);
