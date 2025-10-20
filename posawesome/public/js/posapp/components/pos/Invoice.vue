@@ -1135,10 +1135,8 @@ get_payments() {
 
       try {
         const result = await this.update_invoice(doc);
-        // Process completed successfully
         return result;
       } catch (error) {
-        // Error processing invoice
         evntBus.emit("show_mesage", {text: "Processing failed", color: "error"});
         throw error;
       }
@@ -1304,10 +1302,8 @@ get_payments() {
         });
       }
 
-      // Update dis_%
       item.discount_percentage = dis_percent;
 
-      // Calculate dis_price based on list_price
       const list_price = flt(item.price_list_rate) || 0;
       if (list_price > 0) {
         if (dis_percent > 0) {
@@ -1356,9 +1352,8 @@ get_payments() {
         });
       }
 
-      // Update item fields
-      item.rate = dis_price; // dis_price
-      item.discount_percentage = flt(dis_percent, 2); // dis_%
+      item.rate = dis_price;
+      item.discount_percentage = flt(dis_percent, 2);
       item.amount = flt(item.rate * flt(item.qty), this.currency_precision);
 
       this.debouncedItemOperation("rate-change");
@@ -1593,17 +1588,12 @@ get_payments() {
       const doc = this.get_invoice_doc("item-update");
       
       this.auto_update_invoice(doc, "item-update")
-        .then(() => {
-          // Update sent successfully
-        })
-        .catch((error) => {
-          // Error handling
-        });
+        .then(() => {})
+        .catch((error) => {});
     },
 
 
     handelOffers() {
-      // Simple offers handling - no complex debouncing
       if (this.invoice_doc?.name && this.items && this.items.length > 1) {
         this._processOffers();
       }
@@ -1771,14 +1761,11 @@ get_payments() {
 
       evntBus.emit("show_loading", {text: "Processing...", color: "info"});
 
-      // Starting submit process
       this.process_invoice()
         .then((invoice_doc) => {
-          // Process completed
           const hasChosen = (invoice_doc?.payments || []).some(
             (p) => this.flt(p.amount) > 0
           );
-          // Payment check completed
           
           if (!hasChosen) {
             evntBus.emit("show_mesage", {text: "Choose payment first", color: "warning"});
@@ -1787,9 +1774,6 @@ get_payments() {
             throw new Error("No payment chosen");
           }
 
-          // Calling submit API
-          
-          // Submit and print the invoice
           frappe.call({
             method: API_MAP.SALES_INVOICE.SUBMIT,
             args: {
@@ -1829,18 +1813,14 @@ get_payments() {
                 }
 
                 if (invoice_data && invoice_data.name) {
-                  // Invoice submitted successfully
-
                   this.load_print_page(invoice_data.name);
                   evntBus.emit("set_last_invoice", invoice_data.name);
                   evntBus.emit("show_mesage", {
-                    text: `Invoice ${invoice_data.name} submitted and printed successfully`,
+                    text: `Invoice ${invoice_data.name} submitted successfully`,
                     color: "success",
                   });
                   frappe.utils.play_sound("submit");
 
-                  // Clear local data after successful submission to prevent auto-save errors
-                  // Clearing local data
                   this.items = [];
                   this.invoice_doc = null;
 
