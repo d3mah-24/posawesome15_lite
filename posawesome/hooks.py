@@ -15,7 +15,6 @@ app_license = "GPLv3"
 
 
 app_include_js = [
-    # Removed global Vue.js loading - now bundled efficiently
     "posawesome.bundle.js",
 ]
 
