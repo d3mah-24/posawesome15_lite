@@ -84,7 +84,8 @@ def create_customer(
                 if hasattr(pos_doc, 'territory') and pos_doc.territory:
                     pos_defaults["territory"] = pos_doc.territory
             except Exception as pos_error:
-                frappe.logger().warning(f"Could not get POS Profile defaults: {pos_error}")
+                # Silent fallback - no logging needed for optional POS defaults
+                pass
         
         # Create customer document
         customer_doc = frappe.get_doc({
@@ -112,7 +113,7 @@ def create_customer(
         # Create gift coupon if applicable
         _create_gift_coupon(customer_doc)
         
-        frappe.logger().info(f"Created new customer: {customer_doc.name} - {customer_name}")
+        frappe.db.commit()
         
         # Return the created customer with all details
         return customer_doc.as_dict()
@@ -178,11 +179,10 @@ def _parse_birthday(birthday_input):
             dt = datetime.strptime(birthday_input[:10], '%d-%m-%Y')
             return dt.strftime('%Y-%m-%d')
             
-        frappe.logger().warning(f"Could not parse birthday format: {birthday_input}")
+        # Invalid format - return None silently
         return None
         
-    except ValueError as ve:
-        frappe.logger().warning(f"Invalid birthday date: {birthday_input} - {ve}")
+    except ValueError:
         return None
     except Exception as e:
         frappe.logger().error(f"Error parsing birthday: {e}")
@@ -219,11 +219,12 @@ def _create_gift_coupon(customer_doc):
                     
                     try:
                         coupon.insert(ignore_permissions=True)
-                        frappe.logger().info(f"Created gift coupon for customer: {customer_doc.name}")
+                        # Gift coupon created successfully - no logging needed
                     except Exception as coupon_error:
-                        frappe.logger().warning(f"Could not create gift coupon: {coupon_error}")
+                        # Silent fallback - gift coupon is optional
+                        pass
                         
     except Exception as e:
-        frappe.logger().warning(f"Error in _create_gift_coupon: {e}")
-        # Don't throw error - gift coupon creation is optional
+        # Silent fallback - gift coupon creation is optional
+        pass
     
