@@ -1844,17 +1844,33 @@ get_payments() {
     });
   },
   beforeDestroy() {
+    // Clean up ALL event listeners to prevent memory leaks
     evntBus.$off("register_pos_profile");
     evntBus.$off("add_item");
     evntBus.$off("update_customer");
     evntBus.$off("fetch_customer_details");
     evntBus.$off("new_invoice");
+    evntBus.$off("load_invoice");
     evntBus.$off("set_offers");
     evntBus.$off("update_invoice_offers");
     evntBus.$off("update_invoice_coupons");
     evntBus.$off("set_all_items");
+    evntBus.$off("load_return_invoice");
+    evntBus.$off("item_added");
+    evntBus.$off("item_removed");
+    evntBus.$off("item_updated");
+    evntBus.$off("send_invoice_doc_payment");
+    evntBus.$off("payments_updated");
+    evntBus.$off("request_invoice_print");
+    
+    // Clear ALL timers to prevent memory leaks
     if (this._itemOperationTimer) {
       clearTimeout(this._itemOperationTimer);
+      this._itemOperationTimer = null;
+    }
+    if (this._autoUpdateTimer) {
+      clearTimeout(this._autoUpdateTimer);
+      this._autoUpdateTimer = null;
     }
   },
   created() {
