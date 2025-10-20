@@ -451,17 +451,9 @@ export default {
       return defaultRow ? defaultRow.mode_of_payment : null;
     },
     canPrintInvoice() {
-      if (this.readonly) return false;
-      if (!this.items || !this.items.length) return false;
-      const payments =
-        this.invoice_doc && Array.isArray(this.invoice_doc?.payments)
-          ? this.invoice_doc?.payments
-          : [];
-      const hasPositive = payments.some(
-        (payment) => this.flt(payment.amount) > 0
-      );
-      if (hasPositive) return true;
-      return !!this.defaultPaymentMode;
+      if (this.readonly || !this.items?.length) return false;
+      const hasPayment = this.invoice_doc?.payments?.some(p => this.flt(p.amount) > 0);
+      return hasPayment || !!this.defaultPaymentMode;
     },
     hasItems() {
       return this.items && this.items.length > 0;
@@ -1736,41 +1728,13 @@ get_payments() {
       this.posa_offers.push(newOffer);
     },
 
-    load_print_page(invoice_name) {
-      const print_format =
-        this.pos_profile?.print_format_for_online ||
-        this.pos_profile?.print_format;
-      const letter_head = this.pos_profile?.letter_head || 0;
-      const url =
-        frappe.urllib.get_base_url() +
-        "/printview?doctype=Sales%20Invoice&name=" +
-        invoice_name +
-        "&trigger_print=1" +
-        "&format=" +
-        print_format +
-        "&no_letterhead=" +
-        letter_head;
-      const printWindow = window.open(url, "Print");
-      printWindow.addEventListener(
-        "load",
-        function () {
-          printWindow.print();
-        },
-        true
-      );
-    },
-
     printInvoice() {
-      if (!this.invoice_doc || !this.items || !this.items.length) {
-        evntBus.emit("show_mesage", {
-          text: "No invoice to print",
-          color: "error",
-        });
+      if (!this.invoice_doc || !this.items?.length) {
+        evntBus.emit("show_mesage", {text: "No invoice to print", color: "error"});
         return;
       }
 
-      const defaultMode = this.defaultPaymentMode;
-      if (!defaultMode) {
+      if (!this.defaultPaymentMode) {
         evntBus.emit("show_mesage", {text: "No payment method", color: "error"});
         return;
       }
@@ -1779,117 +1743,62 @@ get_payments() {
 
       this.process_invoice()
         .then((invoice_doc) => {
-          const hasChosen = (invoice_doc?.payments || []).some(
-            (p) => this.flt(p.amount) > 0
-          );
+          const hasPayment = invoice_doc?.payments?.some(p => this.flt(p.amount) > 0);
           
-          if (!hasChosen) {
+          if (!hasPayment) {
             evntBus.emit("show_mesage", {text: "Choose payment first", color: "warning"});
             evntBus.emit("show_payment", "true");
             evntBus.emit("hide_loading");
-            throw new Error("No payment chosen");
+            return;
           }
 
+          // Use Frappe's built-in submit
           frappe.call({
-            method: API_MAP.SALES_INVOICE.SUBMIT,
+            method: 'frappe.client.submit',
             args: {
-              data: {
-                total_change: 0,
-                paid_change: 0,
-                credit_change: 0,
-                redeemed_customer_credit: 0,
-                customer_credit_dict: [],
-                is_cashback: false,
-              },
-              invoice: invoice_doc,
+              doc: invoice_doc
             },
-            async: true,
             callback: (r) => {
-              // Callback received
-              evntBus.emit("unfreeze");
               evntBus.emit("hide_loading");
+              
+              if (r.message?.name) {
+                const print_format = this.pos_profile?.print_format;
+                
+                // Open print window directly
+                const print_url = frappe.urllib.get_full_url(
+                  `/printview?doctype=Sales%20Invoice&name=${r.message.name}&format=${print_format}&trigger_print=1&no_letterhead=0`
+                );
+                
+                window.open(print_url);
 
-              if (r.message) {
-                // Submit successful
+                evntBus.emit("set_last_invoice", r.message.name);
+                evntBus.emit("show_mesage", {text: `Invoice ${r.message.name} submitted`, color: "success"});
+                frappe.utils.play_sound("submit");
 
-                // Handle different response formats
-                let invoice_data = null;
-                if (r.message.success && r.message.invoice) {
-                  // New format: { success: true, invoice: {...} }
-                  invoice_data = r.message.invoice;
-                  // Using success response format
-                } else if (r.message.name) {
-                  // Old format: direct invoice object
-                  invoice_data = r.message;
-                  // Using direct object format
-                } else {
-                  // Unexpected response format
-                  evntBus.emit("show_mesage", {text: "Invalid response", color: "error"});
-                  return;
-                }
-
-                if (invoice_data && invoice_data.name) {
-                  this.load_print_page(invoice_data.name);
-                  evntBus.emit("set_last_invoice", invoice_data.name);
-                  evntBus.emit("show_mesage", {
-                    text: `Invoice ${invoice_data.name} submitted successfully`,
-                    color: "success",
-                  });
-                  frappe.utils.play_sound("submit");
-
-                  this.items = [];
-                  this.invoice_doc = null;
-
-                  evntBus.emit("new_invoice", "false");
-                  evntBus.emit("invoice_submitted");
-                } else {
-                  // No name in response
-                  evntBus.emit("show_mesage", {text: "No invoice name", color: "warning"});
-                }
+                this.items = [];
+                this.invoice_doc = null;
+                evntBus.emit("new_invoice", "false");
+                evntBus.emit("invoice_submitted");
               } else {
-                // No message in response
                 evntBus.emit("show_mesage", {text: "Submit failed", color: "error"});
               }
             },
             error: (err) => {
-              console.error("Invoice(submit): error", err);
-              evntBus.emit("unfreeze");
               evntBus.emit("hide_loading");
               evntBus.emit("show_mesage", {
-                text: err?.message || "Failed to submit invoice",
-                color: "error",
+                text: err?.message || "Failed to submit",
+                color: "error"
               });
-            },
+            }
           });
         })
         .catch((error) => {
-          // Process error occurred
-          evntBus.emit("unfreeze");
           evntBus.emit("hide_loading");
           evntBus.emit("show_mesage", {
-            text: "Failed to prepare invoice for printing: " + error.message,
-            color: "error",
+            text: "Failed to prepare invoice: " + error.message,
+            color: "error"
           });
         });
-    },
-    getPaymentsComponent() {
-      let parent = this.$parent;
-      while (parent) {
-        if (parent.$refs && parent.$refs.payments) {
-          return parent.$refs.payments;
-        }
-        parent = parent.$parent;
-      }
-      return null;
-    },
-    hasManualPayments(paymentsComponent) {
-      const invoiceDoc = paymentsComponent && paymentsComponent.invoice_doc;
-      if (!invoiceDoc || !invoiceDoc.payments) {
-        return false;
-      }
-      return invoiceDoc.payments.some(
-        (payment) => this.flt(payment.amount) > 0
-      );
     },
 
     update_item_detail(item) {
