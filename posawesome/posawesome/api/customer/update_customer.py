@@ -143,9 +143,7 @@ def update_customer(
         # Save the document if any fields were updated
         if updated_fields:
             customer_doc.save()
-            frappe.logger().info(f"Updated customer {customer_id} - fields: {', '.join(updated_fields)}")
-        else:
-            frappe.logger().info(f"No fields updated for customer {customer_id}")
+            frappe.db.commit()
         
         # Return the updated customer document
         return customer_doc.as_dict()
