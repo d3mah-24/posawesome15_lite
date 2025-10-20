@@ -85,10 +85,18 @@
             <v-icon size="14">mdi-close</v-icon>
             Cancel
           </button>
-          <button class="action-btn submit-btn" @click="submit_dialog">
+          <button 
+            v-if="isClosingAllowed"
+            class="action-btn submit-btn" 
+            @click="submit_dialog"
+          >
             <v-icon size="14">mdi-check</v-icon>
             Submit
           </button>
+          <div v-if="!isClosingAllowed && closingTimeMessage" class="time-restriction-message">
+            <v-icon size="14" color="orange">mdi-clock-alert-outline</v-icon>
+            {{ closingTimeMessage }}
+          </div>
         </div>
       </div>
     </v-dialog>
@@ -99,6 +107,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { evntBus } from '../../bus';
 import format from '../../format';
+import { API_MAP } from "../../api_mapper.js";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CONSTANTS
@@ -200,6 +209,10 @@ export default {
       TABLE_HEADERS.ACTUAL_COUNT,
     ]);
 
+    // Time control
+    const isClosingAllowed = ref(true);
+    const closingTimeMessage = ref('');
+
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // DIALOG ACTIONS
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -249,7 +262,35 @@ export default {
       return 'zero-diff';
     };
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    /**
+     * Check if closing POS is allowed based on time controls
+     * Validates against configured closing time window if enabled
+     */
+    const checkClosingTimeAllowed = () => {
+      if (!pos_profile.value?.name) {
+        isClosingAllowed.value = true;
+        return;
+      }
+
+      // Call server-side whitelist function
+      frappe.call({
+        method: API_MAP.POS_CLOSING_SHIFT.CHECK_CLOSING_TIME_ALLOWED,
+        args: {
+          pos_profile: pos_profile.value.name
+        },
+        callback: function(r) {
+          if (r.message) {
+            isClosingAllowed.value = r.message.allowed;
+            if (!r.message.allowed) {
+              closingTimeMessage.value = r.message.message;
+            }
+          } else {
+            isClosingAllowed.value = false;
+            closingTimeMessage.value = 'Error checking closing time permissions';
+          }
+        }
+      });
+    };    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // EVENT HANDLERS
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -260,6 +301,7 @@ export default {
     const openClosingDialogHandler = (data) => {
       closingDialog.value = true;
       dialog_data.value = data;
+      checkClosingTimeAllowed();
     };
 
     /**
@@ -301,6 +343,10 @@ export default {
       dialog_data,
       pos_profile,
       headers,
+      
+      // Time control
+      isClosingAllowed,
+      closingTimeMessage,
       
       // Validation
       max25chars: VALIDATION_RULES.MAX_CHARS,
@@ -553,6 +599,24 @@ export default {
 .submit-btn:hover {
   background: #059669;
   transform: translateY(-1px);
+}
+
+.time-restriction-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f59e0b;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  margin-left: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 /* Mobile Responsive */
