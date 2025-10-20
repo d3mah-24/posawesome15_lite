@@ -947,8 +947,9 @@ export default {
     },
 
     trigger_onscan(sCode) {
-      // Direct barcode processing
-      this.analyze_barcode_type(sCode);
+      // Direct barcode processing using existing working method
+      console.log("🔍 Auto-scan detected:", sCode);
+      this.process_barcode(sCode);
     },
 
     search_barcode_from_server(barcode) {
