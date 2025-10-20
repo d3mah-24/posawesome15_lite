@@ -19,7 +19,35 @@
 
 ---
 
-## 🎯 Offers & Coupons
+## �️ Easy Item Discount Control
+
+Complete discount management system with flexible UI controls and validation:
+
+### Display Control Settings
+- **`posa_display_discount_percentage`** - Show/hide discount % column in POS interface
+- **`posa_display_discount_amount`** - Show/hide discount amount column in POS interface
+- **`posa_item_discount_settings`** - Master toggle for all discount features
+
+### User Permission Settings  
+- **`posa_allow_user_to_edit_item_discount`** - Allow cashiers to modify item discounts
+- **`posa_item_max_discount_allowed`** - Maximum discount percentage limit (prevents over-discounting)
+
+### Key Features
+- **Dual Input Methods:** Edit discount by percentage OR by discounted price
+- **Smart Validation:** Both input methods respect the maximum discount limit
+- **Real-time Calculation:** Automatic conversion between percentage and amount
+- **Invoice Integration:** `posa_item_discount_total` field shows total discount amount
+- **Print Format Ready:** Easily display total discounts in invoice templates
+
+### How It Works
+1. **Show/Hide Columns:** Control which discount columns appear in the POS interface
+2. **Input Validation:** Whether editing discount % or price, system enforces max limit
+3. **Automatic Sync:** Change discount % → price updates, change price → % updates  
+4. **Total Tracking:** All item discounts sum to `posa_item_discount_total` for reporting
+
+---
+
+## �🎯 Offers & Coupons
 
 - **POS Offers** - Apply on: Item, Item Group, Brand, Transaction
 - **Offer Types:** Product/Give Product, Discount (%), Discount (Amount)
