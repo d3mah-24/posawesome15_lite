@@ -39,7 +39,7 @@ def update_invoice(data):
             frappe.db.commit()
             return {"message": "Invoice deleted successfully"}
 
-        # Update document with new data
+        # Update document with new data (client now sends all required fields including price_list_rate)
         doc.update(data)
         
         # Ensure POS settings are maintained
@@ -48,6 +48,9 @@ def update_invoice(data):
 
         # Let ERPNext handle all calculations using native methods
         doc.calculate_taxes_and_totals()
+        
+        # Calculate total item discounts (for live display in POS)
+        _calculate_item_discount_total(doc)
 
         # Save using ERPNext native save
         doc.save()
@@ -65,3 +68,24 @@ def update_invoice(data):
         # Log and re-raise any other errors
         frappe.log_error(f"Error in update_invoice: {str(e)}", "Invoice Update Error")
         frappe.throw(_("Error updating invoice: {0}").format(str(e)))
+
+
+def _calculate_item_discount_total(doc):
+    """
+    Calculate total item-level discounts and store in posa_item_discount_total.
+    
+    Simply sum the discount_amount field from each item.
+    ERPNext already calculates this per item in Sales Invoice Item table.
+    
+    Only calculates when:
+    - Invoice is POS (is_pos = 1)
+    """
+    # Check if this is a POS invoice
+    if not getattr(doc, 'is_pos', False):
+        return
+    
+    # Simply sum discount_amount from all items
+    total_item_discount = sum(flt(item.discount_amount) for item in doc.items)
+    
+    # Store in custom field
+    doc.posa_item_discount_total = flt(total_item_discount, doc.precision("posa_item_discount_total"))
