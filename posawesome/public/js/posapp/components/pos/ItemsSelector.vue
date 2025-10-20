@@ -1123,7 +1123,6 @@ export default {
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
-  transition: all 0.2s ease;
   position: relative;
 }
 
@@ -1131,7 +1130,6 @@ export default {
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   border-color: #1976d2;
   box-shadow: 0 2px 6px rgba(25, 118, 210, 0.15);
-  transform: translateY(-1px);
 }
 
 .group-select-wrapper .group-icon {
@@ -1183,14 +1181,12 @@ export default {
   font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
   background: white;
   border: 1px solid #e0e0e0;
   color: #1976d2;
 }
 
 .header-btn:hover {
-  transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
@@ -1255,7 +1251,6 @@ export default {
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   height: 28px;
-  transition: all 0.2s ease;
   overflow: hidden;
 }
 
@@ -1326,7 +1321,6 @@ export default {
   cursor: pointer;
   margin-right: 2px;
   border-radius: 50%;
-  transition: all 0.2s ease;
   padding: 0;
   line-height: 1;
 }
@@ -1379,12 +1373,10 @@ export default {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: all 0.2s ease;
   border-radius: 6px !important;
 }
 
 .item-card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -1453,7 +1445,6 @@ export default {
 
 .v-data-table .v-data-table__wrapper table tr {
   cursor: pointer;
-  transition: background 0.2s ease;
 }
 
 .v-data-table .v-data-table__wrapper table tr:hover {
