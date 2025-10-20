@@ -15,8 +15,7 @@ app_license = "GPLv3"
 
 
 app_include_js = [
-    "/assets/posawesome/node_modules/vue/dist/vue.global.prod.js",
-    "/assets/posawesome/node_modules/vuetify/dist/vuetify.min.js",
+    # Removed global Vue.js loading - now bundled efficiently
     "posawesome.bundle.js",
 ]
 
