@@ -52,7 +52,7 @@
               class="custom-search-input barcode-input"
               placeholder="Scan Barcode"
               v-model="barcode_search"
-              @input="handle_barcode_input"
+              @keyup.enter="handle_barcode_input"
               ref="barcode_search"
             />
             <button
@@ -415,101 +415,57 @@ export default {
     handle_barcode_input() {
       if (!this.barcode_search.trim()) return;
 
-      this.analyze_barcode_type(this.barcode_search.trim());
+      this.process_barcode(this.barcode_search.trim());
       this.barcode_search = "";
       
       const barcodeInput = document.querySelector('input[placeholder*="Barcode"]');
       if (barcodeInput) barcodeInput.value = "";
     },
 
-    analyze_barcode_type(barcode_value) {
-      if (this.process_scale_barcode(barcode_value)) return;
-      if (this.process_private_barcode(barcode_value)) return;
-      this.process_normal_barcode(barcode_value);
-    },
-
-    process_scale_barcode(barcode_value) {
-      const {
-        posa_enable_scale_barcode,
-        posa_scale_barcode_start,
-        posa_scale_barcode_lenth,
-      } = this.pos_profile || {};
-
-      if (
-        posa_enable_scale_barcode === 1 &&
-        posa_scale_barcode_start &&
-        posa_scale_barcode_lenth &&
-        barcode_value.startsWith(posa_scale_barcode_start) &&
-        barcode_value.length === posa_scale_barcode_lenth
-      ) {
-        frappe.call({
-          method: API_MAP.ITEM.GET_SCALE_BARCODE,
-          args: { 
-            pos_profile: this.pos_profile, 
-            barcode_value: barcode_value 
-          },
-          callback: (response) => {
-            if (response?.message?.item_code) {
-              this.add_item_to_cart(response.message);
-              this.showMessage(`Added ${response.message.item_name} to cart (weight)`, "success");
-            } else {
-              this.showMessage("Item not found with weight barcode", "error");
-            }
-          },
-        });
-        return true;
-      }
-      return false;
-    },
-
-    process_private_barcode(barcode_value) {
-      const {
-        posa_enable_private_barcode,
-        posa_private_barcode_lenth,
-        posa_private_item_code_length,
-      } = this.pos_profile || {};
-
-      if (
-        posa_enable_private_barcode === 1 &&
-        posa_private_barcode_lenth &&
-        posa_private_item_code_length &&
-        barcode_value.length === posa_private_barcode_lenth
-      ) {
-        frappe.call({
-          method: API_MAP.ITEM.GET_PRIVATE_BARCODE,
-          args: { 
-            pos_profile: this.pos_profile, 
-            barcode_value: barcode_value 
-          },
-          callback: (response) => {
-            if (response?.message?.item_code) {
-              this.add_item_to_cart(response.message);
-              this.showMessage(`Added ${response.message.item_name} to cart (private)`, "success");
-            } else {
-              this.showMessage("Item not found with private barcode", "error");
-            }
-          },
-        });
-        return true;
-      }
-      return false;
-    },
-
-    process_normal_barcode(barcode_value) {
+    process_barcode(barcode_value) {
+      // Single unified method - backend determines barcode type
+      console.log("=== BARCODE SCAN ===");
+      console.log("Barcode:", barcode_value);
+      console.log("Calling unified API...");
+      
       frappe.call({
-        method: API_MAP.ITEM.GET_ITEMS_BARCODE,
+        method: API_MAP.ITEM.GET_BARCODE_ITEM,
         args: { 
           pos_profile: this.pos_profile, 
           barcode_value: barcode_value 
         },
         callback: (response) => {
+          console.log("Barcode API Response:", response);
+          
           if (response?.message?.item_code) {
+            console.log("✓ Item found:", response.message);
+            
+            // Add item to cart
             this.add_item_to_cart(response.message);
-            this.showMessage(`Added ${response.message.item_name} to cart (normal)`, "success");
+            
+            // Show success message with quantity info
+            const qty = response.message.qty || 1;
+            const qtyText = qty !== 1 ? ` (qty: ${qty})` : '';
+            
+            evntBus.emit("show_mesage", {
+              text: `Added ${response.message.item_name}${qtyText} to cart`,
+              color: "success"
+            });
           } else {
-            this.showMessage("Item not found with barcode", "error");
+            console.error("✗ Item not found for barcode:", barcode_value);
+            evntBus.emit("show_mesage", {
+              text: "Item not found with this barcode",
+              color: "error"
+            });
           }
         },
+        error: (error) => {
+          console.error("Barcode API Error:", error);
+          evntBus.emit("show_mesage", {
+            text: "Error processing barcode",
+            color: "error"
+          });
+        }
       });
     },
 
