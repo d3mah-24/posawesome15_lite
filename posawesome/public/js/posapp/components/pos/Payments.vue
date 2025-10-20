@@ -976,16 +976,18 @@ export default {
   },
 
   beforeDestroy() {
+    // Clean up all event listeners
     const events = [
+      EVENT_NAMES.TOGGLE_QUICK_RETURN,
       EVENT_NAMES.SEND_INVOICE_DOC_PAYMENT,
       EVENT_NAMES.REGISTER_POS_PROFILE,
       EVENT_NAMES.ADD_THE_NEW_ADDRESS,
       EVENT_NAMES.UPDATE_CUSTOMER,
       EVENT_NAMES.SET_POS_SETTINGS,
       EVENT_NAMES.SET_CUSTOMER_INFO_TO_EDIT,
+      EVENT_NAMES.UPDATE_DUE_DATE,
       'update_invoice_coupons',
-      'update_delivery_date',
-      EVENT_NAMES.UPDATE_DUE_DATE
+      'update_delivery_date'
     ];
 
     events.forEach(event => evntBus.$off(event));
