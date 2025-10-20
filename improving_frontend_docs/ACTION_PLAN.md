@@ -9,198 +9,381 @@
 ## 🎯 CURRENT STATUS
 
 **Starting Point:** Invoice.vue = 2,394 lines (after CSS extraction)
+**Current:** Invoice.vue = 3,283 lines  
 **Target:** Reduce Methods (1,670→200) & Computed (111→30)
-**Timeline:** 10 weeks
-**Status:** 🔄 **WEEK 1 IN PROGRESS**
+**Status:** 🔄 **PHASE 1 IN PROGRESS**
 
-### 🔄 Week 1 Progress: Remove Calculations
-- [x] Located computed properties (lines 407-516)
-- [x] Found 8 calculation computed properties to remove
-- [ ] Replace template references with invoice_doc fields
-- [ ] Delete computed properties
-- [ ] Test changes
-- [ ] Build and verify
+## ⚠️ CRITICAL LESSONS LEARNED
 
-**Computed properties found:**
-- `total_qty()` - line 430 (7 lines) → Use `invoice_doc.total_qty`
-- `Total()` - line 437 (3 lines) → Use `invoice_doc.total`
-- `subtotal()` - line 440 (4 lines) → Use `invoice_doc.net_total`
-- `total_before_discount()` - line 444 (13 lines) → Use `invoice_doc.total`
-- `total_items_discount_amount()` - line 458 (3 lines) → Use `invoice_doc.total_items_discount`
-- `TaxAmount()` - line 461 (3 lines) → Use `invoice_doc.total_taxes_and_charges`
-- `DiscountAmount()` - line 464 (3 lines) → Use `invoice_doc.discount_amount`
-- `GrandTotal()` - line 467 (3 lines) → Use `invoice_doc.grand_total`
+### **Async/Debouncing Logic is ESSENTIAL - DO NOT REMOVE!**
 
-**Total to remove:** 39 lines of calculation computed properties
+**Problem:** Removing debouncing/async logic causes:
+- ❌ **Document timestamp conflicts:** "Document has been modified after you have opened it"
+- ❌ **Race conditions** from rapid saves to same document
+- ❌ **Server overload** from too frequent API calls
+- ❌ **UX degradation** from validation errors and conflicts
+
+**Solution:** Keep async/debouncing architecture but optimize AROUND it:
+- ✅ **Preserve timers and queuing** - Critical for preventing conflicts
+- ✅ **Keep Promise-based error handling** - Handles modification conflicts
+- ✅ **Maintain auto-save patterns** - Essential for real-time POS
+- ✅ **Focus on code cleanup** instead of logic removal
+
+**Key Insight:** POS systems need robust async handling due to:
+- Multiple users potentially editing invoices
+- Real-time inventory updates
+- High-frequency item operations
+- Network latency considerations
 
 ---
 
-## 📋 10-WEEK EXECUTION PLAN
+### ✅ Phase 1a COMPLETED: Remove Calculations (-41 lines)
+- [x] Located computed properties (lines 407-516)
+- [x] Found 8 calculation computed properties to remove
+- [x] Replaced template references with invoice_doc fields
+- [x] Deleted 8 computed properties (41 lines removed)
+- [x] Build successful ✅
+- [x] Test passed ✅
+
+**Changes made:**
+1. **Template updates (3 changes):**
+   - Line 166: `{{ formatFloat(total_qty) }}` → `{{ formatFloat(invoice_doc?.total_qty || 0) }}`
+   - Line 193: `{{ formatCurrency(total_items_discount_amount) }}` → `{{ formatCurrency(invoice_doc?.total_items_discount || 0) }}`
+   - Line 201: `{{ formatCurrency(total_before_discount) }}` → `{{ formatCurrency(invoice_doc?.total || 0) }}`
+
+2. **Computed properties deleted (41 lines):**
+   - `total_qty()` - 7 lines → Now using `invoice_doc.total_qty`
+   - `Total()` - 3 lines → Now using `invoice_doc.total`
+   - `subtotal()` - 4 lines → Now using `invoice_doc.net_total`
+   - `total_before_discount()` - 13 lines → Now using `invoice_doc.total`
+   - `total_items_discount_amount()` - 3 lines → Now using `invoice_doc.total_items_discount`
+   - `TaxAmount()` - 3 lines → Now using `invoice_doc.total_taxes_and_charges`
+   - `DiscountAmount()` - 3 lines → Now using `invoice_doc.discount_amount`
+   - `GrandTotal()` - 3 lines → Now using `invoice_doc.grand_total`
+
+**Results:**
+- **Before:** 3,486 lines
+- **After:** 3,445 lines
+- **Removed:** 41 lines ✅
+- **Build:** Successful ✅ (posawesome.bundle: 1732.49 Kb JS + 403.08 Kb CSS)
+
+### 🔄 Phase 1b PROGRESS: Simplify Item Methods (-197 lines total)
+
+**Part 1: Simplified quantity methods (-49 lines) ✅**
+- [x] Simplified `increaseQuantity()` - 19 → 3 lines (-16 lines)
+- [x] Simplified `decreaseQuantity()` - 19 → 7 lines (-12 lines)
+- [x] Deleted `add_one()` duplicate - 11 lines removed
+- [x] Deleted `subtract_one()` duplicate - 11 lines removed
+
+**Part 2: Removed dead code & wrappers (-97 lines) ✅**
+- [x] Deleted `get_new_item()` - 82 lines (never called - dead code!)
+- [x] Deleted `refreshTotals()` wrapper - 3 lines
+- [x] Removed 4 `refreshTotals()` calls - 4 lines
+- [x] Cleaned up comments - 8 lines
+
+**Part 3: Fixed discount functionality & calculations (MAJOR SUCCESS) ✅**
+
+**Issue Resolution:**
+- [x] **FIXED: "items_dis now working but only the first item"** - Root cause: Client wasn't sending `price_list_rate` in payload for items 2,3,4+
+- [x] **FIXED: "dis_price limit not working"** - Added discount limit enforcement to `setItemRate()` function
+- [x] **CONFIRMED: "dis_% limit working"** - `setDiscountPercentage()` already had proper limit validation
+- [x] **SIMPLIFIED: Clean field naming** - Used UI labels (list_price, dis_price, dis_%) instead of database field names
+
+**Technical Changes:**
+- [x] **get_invoice_items_minimal()** - Added `price_list_rate: item.price_list_rate || 0` to payload
+- [x] **setDiscountPercentage()** - Simplified variable names: `dis_percent`, `list_price`, `dis_amount`
+- [x] **setItemRate()** - Added discount limit enforcement + simplified naming: `dis_price`, `dis_percent`
+- [x] **Server-side update.py** - Simplified to use ERPNext's native `discount_amount` calculation
+- [x] **Code cleanup** - Removed unnecessary `base_rate` fallbacks from discount calculations
+
+**Key Insights Discovered:**
+- ✅ **ERPNext native calculations:** `discount_amount = (price_list_rate × discount_percentage / 100) × qty`
+- ✅ **Field relationships:** `price_list_rate` (read-only original) vs `rate` (editable discounted price)
+- ✅ **Simple approach wins:** Send required data in payload, let ERPNext calculate, sum the results
+- ✅ **Bidirectional sync:** Change `dis_%` → `dis_price` updates, change `dis_price` → `dis_%` updates
+- ✅ **Limit enforcement:** Both input methods now respect `posa_item_max_discount_allowed`
+
+**Results:**
+- ✅ **ALL items save discount data** (not just first item)
+- ✅ **Both dis_% AND dis_price respect discount limits**
+- ✅ **Clean variable naming** using UI labels instead of database field names
+- ✅ **Sales Invoice field:** `posa_item_discount_total` shows total discount for print formats
+- ✅ **Documentation:** Added "💸 Easy Item Discount Control" section to FEATURES.md
+
+**Still to do:**
+- [ ] Clean up console debug logs from discount functions (~30 lines)
+- [ ] Simplify other item operations (~100 lines)
+- [ ] Phase 1 remaining: ~197 lines to complete Invoice.vue cleanup
+
+**Key strategies applied:**
+- ✅ **Batch updates > Individual APIs:** Existing `update_invoice()` sends entire document
+- ✅ **Server calculates:** `calculate_taxes_and_totals()` handles all math server-side
+- ✅ **Thin client:** Methods just modify local data, batch update syncs to server
+- ✅ **Remove dead code:** `get_new_item()` was never called (82 lines wasted!)
+- ✅ **Vue reactivity:** No need for `refreshTotals()` - Vue handles updates automatically
+- ✅ **No manual math:** Let server recalculate rates, discounts, totals
+
+**Changes made:**
+
+1. **Simplified increaseQuantity()** (19 → 3 lines):
+   ```javascript
+   increaseQuantity(item) {
+     item.qty = (Number(item.qty) || 0) + 1;
+     evntBus.emit("item_updated", item);
+   }
+   ```
+
+2. **Simplified decreaseQuantity()** (19 → 7 lines):
+   ```javascript
+   decreaseQuantity(item) {
+     const newQty = Math.max(0, (Number(item.qty) || 0) - 1);
+     if (newQty === 0) {
+       this.remove_item(item);
+     } else {
+       item.qty = newQty;
+       evntBus.emit("item_updated", item);
+     }
+   }
+   ```
+
+3. **Deleted duplicate methods** (22 lines):
+   - `add_one()` - 11 lines (same as increaseQuantity)
+   - `subtract_one()` - 11 lines (same as decreaseQuantity)
+
+4. **Deleted dead code** (82 lines):
+   - `get_new_item()` - Never called anywhere!
+
+5. **Removed unnecessary wrapper** (7 lines):
+   - `refreshTotals()` method and all calls
+
+6. **Simplified setDiscountPercentage()** (50 → 34 lines):
+   ```javascript
+   // BEFORE: 50 lines
+   // AFTER: 34 lines - validates, calculates rate & amount for immediate feedback
+   setDiscountPercentage(item, event) {
+     let value = parseFloat(event.target.value) || 0;
+     const maxDiscount = item.max_discount || 
+       this.pos_profile?.posa_item_max_discount_allowed || 100;
+     if (value < 0) value = 0;
+     if (value > maxDiscount) value = maxDiscount;
+     
+     item.discount_percentage = value;
+     
+     // Calculate rate immediately for visual feedback
+     const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || 0;
+     if (basePrice > 0) {
+       if (value > 0) {
+         const discountAmount = (basePrice * value) / 100;
+         item.rate = flt(basePrice - discountAmount, this.currency_precision);
+       } else {
+         item.rate = basePrice;
+       }
+       item.amount = flt(item.rate * flt(item.qty), this.currency_precision);
+     }
+     
+     this.debouncedItemOperation("discount-change");
+   }
+   ```
+
+7. **Simplified setItemRate()** (38 → 20 lines):
+   ```javascript
+   // BEFORE: 38 lines with try-catch
+   // AFTER: 20 lines - sets rate, recalculates discount % & amount
+   setItemRate(item, event) {
+     const value = parseFloat(event.target.value) || 0;
+     item.rate = flt(value >= 0 ? value : 0, this.currency_precision);
+     
+     // Recalculate discount percentage for visual feedback
+     const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || 0;
+     if (basePrice > 0 && item.rate < basePrice) {
+       const discountAmount = basePrice - item.rate;
+       item.discount_percentage = flt(
+         (discountAmount / basePrice) * 100,
+         this.float_precision
+       );
+     } else {
+       item.discount_percentage = 0;
+     }
+     
+     item.amount = flt(item.rate * flt(item.qty), this.currency_precision);
+     this.debouncedItemOperation("rate-change");
+   }
+   ```
+
+8. **Fixed amount calculations everywhere:**
+   - `increaseQuantity()`, `decreaseQuantity()`: Now calculate `item.amount`
+   - `onQtyChange()`, `onQtyInput()`: Now calculate `item.amount`
+   - **Result:** Price, discount, and total always visible and accurate!
+
+**Cumulative Results:**
+- **Before Week 1:** 3,486 lines
+- **After Week 1:** 3,445 lines (-41)
+- **After Week 2-3 Part 1:** 3,396 lines (-49)
+- **After Week 2-3 Part 2:** 3,299 lines (-97)
+- **After Week 2-3 Part 3:** 3,283 lines (-16 net, but MAJOR functionality fixes)
+- **Total removed so far:** 203 lines ✅
+- **Build:** Successful ✅ (posawesome.bundle: 1728.41 Kb JS + 403.08 Kb CSS)
+- **Progress Phase 1:** 203/400 lines (51% of target)
+
+**✨ MAJOR WIN:** Fixed critical discount functionality while maintaining line reduction goals!
+
+**Next:** Complete Phase 1 - Clean up debug logs + simplify remaining operations (~197 more lines to finish Invoice.vue)
+
+**Part 1: Simplified quantity methods (-49 lines)**
+- [x] Simplified `increaseQuantity()` - 19 → 3 lines (-16 lines)
+- [x] Simplified `decreaseQuantity()` - 19 → 7 lines (-12 lines)
+- [x] Deleted `add_one()` duplicate - 11 lines removed
+- [x] Deleted `subtract_one()` duplicate - 11 lines removed
+
+**Part 2: Removed dead code & wrappers (-97 lines)**
+- [x] Deleted `get_new_item()` - 82 lines (never called - dead code!)
+- [x] Deleted `refreshTotals()` wrapper - 3 lines
+- [x] Removed 4 `refreshTotals()` calls - 4 lines
+- [x] Cleaned up comments - 8 lines
+
+**Still to do:**
+- [ ] Simplify discount/rate handling (~150 lines)
+- [ ] Simplify other item operations (~100 lines)
+
+**Strategy discovered:**
+- ✅ **Batch updates > Individual APIs:** Existing `update_invoice()` sends entire document to server
+- ✅ **Server calculates:** `calculate_taxes_and_totals()` handles all math server-side
+- ✅ **Thin client:** Methods just modify local data, batch update syncs to server
+- ✅ **Remove dead code:** `get_new_item()` was never called (82 lines wasted!)
+- ✅ **Vue reactivity:** No need for `refreshTotals()` - Vue handles updates automatically
+
+**Changes made:**
+1. **Simplified increaseQuantity()** (19 → 3 lines):
+   ```javascript
+   // BEFORE: 19 lines with try-catch, manual handling
+   // AFTER: 3 lines - just update qty, emit event
+   increaseQuantity(item) {
+     item.qty = (Number(item.qty) || 0) + 1;
+     evntBus.emit("item_updated", item);
+   }
+   ```
+
+2. **Simplified decreaseQuantity()** (19 → 7 lines):
+   ```javascript
+   // BEFORE: 19 lines with try-catch, manual handling
+   // AFTER: 7 lines - update qty or remove if 0
+   decreaseQuantity(item) {
+     const newQty = Math.max(0, (Number(item.qty) || 0) - 1);
+     if (newQty === 0) {
+       this.remove_item(item);
+     } else {
+       item.qty = newQty;
+       evntBus.emit("item_updated", item);
+     }
+   }
+   ```
+
+3. **Deleted duplicate methods** (22 lines):
+   - `add_one()` - 11 lines (same as increaseQuantity)
+   - `subtract_one()` - 11 lines (same as decreaseQuantity)
+
+4. **Deleted dead code** (82 lines):
+   - `get_new_item()` - Never called anywhere in the codebase!
+   - Entire method was preparing item defaults that are now handled server-side
+
+5. **Removed unnecessary wrapper** (7 lines):
+   - `refreshTotals()` method - just called `$forceUpdate()`
+   - All 4 calls to `refreshTotals()` removed
+   - Vue's reactivity handles updates automatically
+
+**Results:**
+- **Before Week 1:** 3,486 lines
+- **After Week 1:** 3,445 lines (-41)
+- **After Week 2-3 Part 1:** 3,396 lines (-49)
+- **After Week 2-3 Part 2:** 3,299 lines (-97)
+- **Total removed so far:** 187 lines ✅
+- **Build:** Successful ✅ (posawesome.bundle: 1728.65 Kb JS + 403.08 Kb CSS)
+- **Progress Week 2-3:** 146/400 lines (37% of target)
+
+**Next:** Continue Week 2-3 - Simplify discount/rate handling (~250 more lines)
+
+---
+
+## 📋 SIMPLE PHASE EXECUTION PLAN
 
 **Focus:** Remove Methods & Computed, use Frappe framework patterns only
 
-### Week 1: Invoice.vue - Remove Calculations (-300 lines)
-**What to remove:**
-- `total_qty()` computed → Use `invoice_doc.total_qty`
-- `GrandTotal()` computed → Use `invoice_doc.grand_total`
-- `TaxAmount()` computed → Use `invoice_doc.total_taxes_and_charges`
-- 5 more calculation computed properties
-- Manual calculation logic in methods
+### Phase 1: Clean Up Invoice.vue (-612 lines total)
+**Target:** Make Invoice.vue simple and clean
 
-**Framework solution:**
-```javascript
-// DELETE all computed calculations
-// USE framework fields in template:
-{{ invoice_doc.total_qty }}
-{{ invoice_doc.grand_total }}
-```
+**Phase 1a: Remove Calculations** ✅ DONE (-41 lines)
+- Deleted computed properties: `total_qty()`, `GrandTotal()`, etc.
+- Use framework fields: `{{ invoice_doc.total_qty }}`
 
----
+**Phase 1b: Simplify Item Methods** 🔄 IN PROGRESS (-203 lines so far, target -400)
+- ✅ Removed dead code: `get_new_item()` (82 lines)
+- ✅ Simplified quantity methods (49 lines)
+- ✅ Fixed discount functionality (major win!)
+- 🔄 Clean up debug logs (30 lines)
+- 🔄 Simplify remaining operations (167 lines)
 
-### Week 2-3: Invoice.vue - Simplify Items (-400 lines)
-**What to remove:**
-- `get_new_item()` - 82 lines
-- `increaseQuantity()`, `decreaseQuantity()`, `add_one()`, `subtract_one()` - 145 lines duplicates
-- `updateItemInInvoice()` - 50 lines
-- Manual item handling - 123 lines
+**Phase 1c: Smart Save/Submit Optimization** (-200 lines)
 
-**Framework solution:**
-```javascript
-// DELETE 400 lines of client code
-// CREATE server method:
-@frappe.whitelist()
-def add_pos_item(invoice_name, item_code, qty=1):
-    doc = frappe.get_doc("Sales Invoice", invoice_name)
-    doc.append("items", {"item_code": item_code, "qty": qty})
-    doc.calculate_taxes_and_totals()
-    doc.save()
-    return doc.as_dict()
+**⚠️ CRITICAL LESSON LEARNED:**
+**DO NOT remove async/debouncing logic!** It prevents:
+- Document timestamp conflicts: "Document has been modified after you have opened it"
+- Race conditions from rapid saves
+- Server overload from frequent API calls
 
-// USE in client (10 lines):
-add_item(item_code) {
-  frappe.call({
-    method: 'posawesome.api.add_pos_item',
-    args: { invoice_name: this.invoice_doc.name, item_code },
-    callback: (r) => this.invoice_doc = r.message
-  });
-}
-```
+**REVISED STRATEGY - What to KEEP:**
+- ✅ Keep debouncing timers (prevents timestamp conflicts)
+- ✅ Keep complex async error handling (handles "Document modified" errors)  
+- ✅ Keep Promise-based architecture (prevents race conditions)
+- ✅ Keep auto-save queuing (critical for UX)
+
+**What we CAN safely optimize:**
+- Remove redundant validation functions (~30-40 lines)
+- Remove overly verbose error messages (~20-30 lines)
+- Remove dead code and excessive comments (~50+ lines)
+- Remove duplicate conditional checks (~30-40 lines)
+- Convert callback hell to async/await (cleaner, same functionality)
+- Consolidate similar error handling patterns
+- Remove verbose logging/debugging code
+
+**Phase 1d: Remove Vue Watchers** (-200 lines)
+- Remove: All Vue `watch` properties + Event bus calls
+- Use: Framework reactivity instead
+
+**Phase 1e: Remove Print Logic** (-162 lines)
+- Remove: `printInvoice()`, `generatePrintHTML()`
+- Replace with: `frappe.utils.print_format` calls
 
 ---
 
-### Week 4: Invoice.vue - Replace Save/Submit (-250 lines)
-**What to remove:**
-- `queue_auto_save()` - 36 lines
-- `update_invoice()` - 50 lines
-- `submit_invoice()` - 35 lines
-- `validate_invoice()` - 50 lines
-- Manual debouncing - 79 lines
+### Phase 2: Simplify Other Components (-2,700 lines total)
+**Target:** Make all components use Frappe patterns
 
-**Framework solution:**
-```javascript
-// DELETE 250 lines
-// USE framework (10 lines):
-save_invoice() {
-  frappe.call({
-    method: 'frappe.client.save',
-    args: { doc: this.invoice_doc },
-    callback: (r) => this.invoice_doc = r.message
-  });
-}
-```
+**Phase 2a: ItemsSelector.vue** (-700 lines)
+- Remove: Custom search logic, manual pagination, custom filtering
+- Replace with: `frappe.client.get_list()`
 
----
+**Phase 2b: Payments.vue** (-900 lines)
+- Remove: Payment calculations computed, manual payment methods
+- Use: `invoice_doc` fields + server methods
 
-### Week 5: Invoice.vue - Remove Watchers (-200 lines)
-**What to remove:**
-- All Vue watchers (150 lines)
-- Event bus calls (50 lines)
+**Phase 2c: Navigation Components** (-900 lines)
+- Files: Navbar, Pos, UpdateCustomer
+- Remove: Custom navigation, state management, custom form logic
+- Use: `frappe.set_route()`, `frappe.client.save()`
 
-**Framework solution:**
-```javascript
-// DELETE entire watch section
-// Framework handles reactivity automatically
-```
+**Phase 2d: Dialog Components** (-1,100 lines)
+- Files: Customer, Returns, PosOffers, PosCoupons, NewAddress, OpeningDialog, ClosingDialog
+- Replace: All custom logic with `frappe.client.*` methods
 
 ---
 
-### Week 6: Invoice.vue - Remove Print (-162 lines)
-**What to remove:**
-- `printInvoice()` - 139 lines
-- `generatePrintHTML()` - 23 lines
+### Phase 3: Create Server Methods
+**Target:** Replace client logic with server methods
 
-**Framework solution:**
-```javascript
-// DELETE 162 lines
-// USE framework (5 lines):
-print_invoice() {
-  frappe.call({
-    method: 'frappe.utils.print_format.download_pdf',
-    args: { doctype: 'Sales Invoice', name: this.invoice_doc.name, format: 'POS Invoice' },
-    callback: (r) => window.open(URL.createObjectURL(new Blob([r.message])))
-  });
-}
-```
-
----
-
-### Week 7: ItemsSelector.vue (-700 lines)
-**What to remove:**
-- Custom search logic - 300 lines
-- Manual pagination - 200 lines
-- Custom filtering - 200 lines
-
-**Framework solution:**
-```javascript
-// USE frappe.client.get_list
-search_items(query) {
-  frappe.call({
-    method: 'frappe.client.get_list',
-    args: {
-      doctype: 'Item',
-      filters: [['item_name', 'like', `%${query}%`]],
-      limit_page_length: 20
-    },
-    callback: (r) => this.items = r.message
-  });
-}
-```
-
----
-
-### Week 8: Payments.vue (-900 lines)
-**What to remove:**
-- Payment calculations computed - 400 lines
-- Manual payment methods - 500 lines
-
-**Framework solution:**
-```javascript
-// USE invoice_doc.paid_amount, invoice_doc.change_amount
-// CREATE server method for add_payment()
-```
-
----
-
-### Week 9: Navbar, Pos, UpdateCustomer (-900 lines)
-**What to remove:**
-- Custom navigation - 300 lines
-- State management - 400 lines
-- Custom form logic - 200 lines
-
-**Framework solution:**
-```javascript
-// USE frappe.set_route(), frappe.client.save()
-```
-
----
-
-### Week 10: 7 Remaining Components (-1,100 lines)
-**Components:** Customer, Returns, PosOffers, PosCoupons, NewAddress, OpeningDialog, ClosingDialog
-
-**Framework solution:**
-- Replace all custom logic with frappe.client.* methods
-- Use server-side validation
-- Remove duplicates
+- Create `item_operations.py` (handles add/remove/update items)
+- Create `payment_operations.py` (handles payment logic)
+- Create `search_operations.py` (handles smart search)
+- Total: ~400 lines server code replaces ~2,000 lines client code
 
 ---
 
@@ -290,15 +473,10 @@ def search_items(query, pos_profile=None, limit=20):
 
 ## 📊 EXPECTED RESULTS
 
-### By Week (No CSS, only Methods & Computed):
-- Week 1: 2,394 → 2,094 lines (-300)
-- Week 3: 2,094 → 1,694 lines (-400)
-- Week 4: 1,694 → 1,444 lines (-250)
-- Week 5: 1,444 → 1,244 lines (-200)
-- Week 6: 1,244 → 1,082 lines (-162)
-- Week 7: ItemsSelector 1,563 → 863 (-700)
-- Week 8: Payments 1,559 → 659 (-900)
-- Week 10: All remaining simplified
+### By Phase (No CSS, only Methods & Computed):
+- Phase 1: Invoice.vue cleanup → Remove 1,012 lines total
+- Phase 2: Other components → Remove 2,700 lines total  
+- Phase 3: Server methods → Create ~400 lines, remove ~2,000 client lines
 
 ### Final Results:
 ```
@@ -311,25 +489,22 @@ Computed:       ~111 → ~30    (-81   | 73%) ✅ TARGET
 
 ## 🚀 HOW TO START
 
-### Step 1: Start Week 1 (Remove Calculations)
+### Step 1: Complete Phase 1 (Invoice.vue cleanup)
 ```bash
 cd /home/frappe/frappe-bench-15/apps/posawesome
-git checkout -b week1-remove-calculations
 
-# Edit Invoice.vue:
-# 1. Delete computed: { total_qty(), GrandTotal(), etc }
-# 2. Update template: {{ total_qty }} → {{ invoice_doc.total_qty }}
-# 3. Test thoroughly
+# Current: Phase 1b in progress (203/400 lines done)
+# Next: Clean debug logs + simplify remaining operations
+# Goal: Complete all of Phase 1 (-1,012 lines total)
 
 bench build --app posawesome
 # Test in browser
 ```
 
-### Step 2: Continue Week by Week
-- Follow the plan above
-- Test after each week
-- Commit changes
-- Move to next week
+### Step 2: Move to Phase 2
+- Start with ItemsSelector.vue (biggest win: -700 lines)
+- Then Payments.vue (-900 lines)
+- Continue with other components
 
 ---
 
@@ -345,7 +520,7 @@ bench build --app posawesome
 
 **NO CSS work needed - already done!**
 
-**Next action:** Start Week 1 - Remove calculations!
+**Next action:** Complete Phase 1b - Clean up remaining Invoice.vue methods!
 
 ---
 
