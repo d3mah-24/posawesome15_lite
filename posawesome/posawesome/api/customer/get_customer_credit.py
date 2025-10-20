@@ -59,8 +59,6 @@ def get_customer_credit(customer_id, company=None):
         result["summary"]["total_credits"] = invoice_total + advance_total
         result["total_available_credit"] = invoice_total + advance_total
         
-        frappe.logger().debug(f"Customer {customer_id} has total credit: {result['total_available_credit']}")
-        
         return result
         
     except Exception as e:
