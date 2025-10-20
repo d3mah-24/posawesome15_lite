@@ -64,16 +64,11 @@ def get_items(pos_profile, price_list=None, item_group="", search_value="", cust
                 `tabItem`.item_name,
                 `tabItem`.item_group,
                 `tabItem`.stock_uom,
-                COALESCE(`tabItem Price`.price_list_rate, 0.01) as rate,
-                COALESCE(`tabItem Price`.price_list_rate, 0.01) as price_list_rate,
-                COALESCE(`tabItem Price`.price_list_rate, 0.01) as base_rate,
-                COALESCE(`tabItem Price`.currency, %s) as currency,
-                COALESCE(`tabBin`.actual_qty, 0) as actual_qty,
-                CASE 
-                    WHEN `tabItem Price`.price_list_rate = 0 AND `tabItem Price`.selling = 1 
-                    THEN 1 
-                    ELSE 0 
-                END as has_zero_price
+                `tabItem Price`.price_list_rate,
+                `tabItem Price`.price_list_rate as rate,
+                `tabItem Price`.price_list_rate as base_rate,
+                `tabItem Price`.currency,
+                COALESCE(`tabBin`.actual_qty, 0) as actual_qty
             FROM `tabItem`
             LEFT JOIN `tabItem Price` 
                 ON `tabItem`.name = `tabItem Price`.item_code 
