@@ -479,34 +479,27 @@ export default {
     onQtyChange(item) {
       const newQty = Number(item.qty) || 0;
       item.qty = newQty;
-      // Calculate amount immediately for visual feedback
       item.amount = flt(item.rate * item.qty, this.currency_precision);
-      // Use unified debounce for all item operations
       this.debouncedItemOperation("qty-change");
     },
     
     onQtyInput(item) {
       item.qty = Number(item.qty) || 0;
-      // Calculate amount immediately for visual feedback
       item.amount = flt(item.rate * item.qty, this.currency_precision);
     },
 
     increaseQuantity(item) {
-      // Simplified: just update qty and let batch update handle server sync
       item.qty = (Number(item.qty) || 0) + 1;
-      // Calculate amount immediately for visual feedback
       item.amount = flt(item.rate * item.qty, this.currency_precision);
       evntBus.emit("item_updated", item);
     },
 
     decreaseQuantity(item) {
-      // Simplified: just update qty and let batch update handle server sync
       const newQty = Math.max(0, (Number(item.qty) || 0) - 1);
       if (newQty === 0) {
         this.remove_item(item);
       } else {
         item.qty = newQty;
-        // Calculate amount immediately for visual feedback
         item.amount = flt(item.rate * item.qty, this.currency_precision);
         evntBus.emit("item_updated", item);
       }
@@ -523,7 +516,6 @@ export default {
       const discountPercentage = flt(item.discount_percentage) || 0;
 
       if (discountPercentage > 0 && basePrice > 0) {
-        // Compute locally instead of backend call
         return flt((basePrice * discountPercentage) / 100) || 0;
       }
 
@@ -536,10 +528,7 @@ export default {
 
     quick_return() {
       if (!this.pos_profile?.posa_allow_quick_return) {
-        evntBus.emit("show_mesage", {
-          text: "Quick return is not enabled in POS profile",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "Quick return disabled", color: "error"});
         return;
       }
 
@@ -551,10 +540,7 @@ export default {
         return;
       }
       if (!this.items.length) {
-        evntBus.emit("show_mesage", {
-          text: "No items!",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "No items!", color: "error"});
         return;
       }
       if (!this.validate()) {
@@ -586,10 +572,7 @@ export default {
 
     async add_item(item) {
       if (!item || !item.item_code) {
-        evntBus.emit("show_mesage", {
-          text: "Item data is incorrect or missing",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "Invalid item", color: "error"});
         return;
       }
 
@@ -648,19 +631,13 @@ export default {
 
     if (result) {
       this.invoice_doc = result;
-      evntBus.emit("show_mesage", {
-        text: "Draft invoice created",
-        color: "success",
-      });
+      evntBus.emit("show_mesage", {text: "Draft created", color: "success"});
     } else {
       this.invoice_doc = null;
       this.items = [];
     }
   } catch (error) {
-    evntBus.emit("show_mesage", {
-      text: "Error creating draft invoice",
-      color: "error",
-    });
+    evntBus.emit("show_mesage", {text: "Draft failed", color: "error"});
   }
 },
 create_invoice(doc) {
@@ -700,10 +677,7 @@ create_invoice(doc) {
         }
       },
       error: function (err) {
-        evntBus.emit("show_mesage", {
-          text: "Error creating invoice",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "Create failed", color: "error"});
         reject(err);
       },
     });
@@ -760,10 +734,7 @@ create_invoice(doc) {
     // Always update invoice_doc with API response
     if (result) {
       if (result.name && !this.invoice_doc?.name) {
-        evntBus.emit("show_mesage", {
-          text: "Draft invoice created",
-          color: "success",
-        });
+        evntBus.emit("show_mesage", {text: "Draft created", color: "success"});
       }
 
       // Update invoice_doc with latest totals from server
@@ -863,10 +834,7 @@ create_invoice(doc) {
           },
           callback: (r) => {
             if (r.message) {
-              evntBus.emit("show_mesage", {
-                text: "Draft invoice cancelled",
-                color: "success",
-              });
+              evntBus.emit("show_mesage", {text: "Draft cancelled", color: "success"});
             }
           },
         });
@@ -1181,10 +1149,7 @@ get_payments() {
         return result;
       } catch (error) {
         // Error processing invoice
-        evntBus.emit("show_mesage", {
-          text: "Error processing invoice",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "Processing failed", color: "error"});
         throw error;
       }
     },
@@ -1194,24 +1159,15 @@ get_payments() {
         return;
       }
       if (!this.customer) {
-        evntBus.emit("show_mesage", {
-          text: "No customer!",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "No customer!", color: "error"});
         return;
       }
       if (!this.items.length) {
-        evntBus.emit("show_mesage", {
-          text: "No items in invoice!",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "No items!", color: "error"});
         return;
       }
 
-      evntBus.emit("show_loading", {
-        text: "Preparing payment screen...",
-        color: "info",
-      });
+      evntBus.emit("show_loading", {text: "Loading...", color: "info"});
 
       try {
         const invoice_doc = await this.process_invoice();
@@ -1289,10 +1245,7 @@ get_payments() {
 
     open_returns() {
       if (!this.pos_profile?.posa_allow_return) {
-        evntBus.emit("show_mesage", {
-          text: "Returns are not enabled in POS profile",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "Returns disabled", color: "error"});
         return;
       }
 
@@ -1389,10 +1342,7 @@ get_payments() {
       // Don't allow dis_price higher than list_price
       if (dis_price > list_price) {
         dis_price = list_price;
-        evntBus.emit("show_mesage", {
-          text: "Discounted price cannot exceed list price",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "Price exceeds limit", color: "error"});
       }
 
       // Calculate dis_% from price difference
@@ -1825,17 +1775,11 @@ get_payments() {
 
       const defaultMode = this.defaultPaymentMode;
       if (!defaultMode) {
-        evntBus.emit("show_mesage", {
-          text: "No default payment method in POS profile",
-          color: "error",
-        });
+        evntBus.emit("show_mesage", {text: "No payment method", color: "error"});
         return;
       }
 
-      evntBus.emit("show_loading", {
-        text: "Processing invoice for printing...",
-        color: "info",
-      });
+      evntBus.emit("show_loading", {text: "Processing...", color: "info"});
 
       // Starting submit process
       this.process_invoice()
@@ -1847,10 +1791,7 @@ get_payments() {
           // Payment check completed
           
           if (!hasChosen) {
-            evntBus.emit("show_mesage", {
-              text: "Choose a payment method amount first",
-              color: "warning",
-            });
+            evntBus.emit("show_mesage", {text: "Choose payment first", color: "warning"});
             evntBus.emit("show_payment", "true");
             evntBus.emit("hide_loading");
             throw new Error("No payment chosen");
@@ -1893,10 +1834,7 @@ get_payments() {
                   // Using direct object format
                 } else {
                   // Unexpected response format
-                  evntBus.emit("show_mesage", {
-                    text: "Unexpected response format from server",
-                    color: "error",
-                  });
+                  evntBus.emit("show_mesage", {text: "Invalid response", color: "error"});
                   return;
                 }
 
@@ -1920,17 +1858,11 @@ get_payments() {
                   evntBus.emit("invoice_submitted");
                 } else {
                   // No name in response
-                  evntBus.emit("show_mesage", {
-                    text: "Invoice submitted but no name received",
-                    color: "warning",
-                  });
+                  evntBus.emit("show_mesage", {text: "No invoice name", color: "warning"});
                 }
               } else {
                 // No message in response
-                evntBus.emit("show_mesage", {
-                  text: "Failed to submit invoice",
-                  color: "error",
-                });
+                evntBus.emit("show_mesage", {text: "Submit failed", color: "error"});
               }
             },
             error: (err) => {
