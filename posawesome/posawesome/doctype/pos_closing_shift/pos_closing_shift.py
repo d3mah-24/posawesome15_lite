@@ -43,106 +43,87 @@ class POSClosingShift(Document):
         self.update_payment_reconciliation()
 
     def _parse_time(self, value):
-		"""Parse a value to datetime.time supporting str and time inputs."""
-		if not value:
-			return None
-		if isinstance(value, dtime):
-			return value
-		# Support formats with microseconds
-		for fmt in ("%H:%M:%S.%f", "%H:%M:%S", "%H:%M"):
-			try:
-				return datetime.strptime(str(value), fmt).time()
-			except Exception:
-				continue
-		return None
+        """Parse a value to datetime.time supporting str and time inputs."""
+        if not value:
+            return None
+        if isinstance(value, dtime):
+            return value
+        # Support formats with microseconds
+        for fmt in ("%H:%M:%S.%f", "%H:%M:%S", "%H:%M"):
+            try:
+                return datetime.strptime(str(value), fmt).time()
+            except Exception:
+                continue
+        return None
 
-	def _validate_shift_closing_window(self):
-		"""Validate if period_end_date is within allowed closing window for POS Profile."""
-		if not self.pos_profile or not self.period_end_date:
-			return
+    def _validate_shift_closing_window(self):
+        """Validate if period_end_date is within allowed closing window for POS Profile."""
+        if not self.pos_profile or not self.period_end_date:
+            return
 
-		profile = frappe.get_doc("POS Profile", self.pos_profile)
-		
-		# Check if closing time control is enabled
-		if not profile.get("posa_closing_time_control"):
-			return  # Skip validation if time control is not enabled
+        profile = frappe.get_doc("POS Profile", self.pos_profile)
+        
+        # Check if closing time control is enabled
+        if not profile.get("posa_closing_time_control"):
+            return  # Skip validation if time control is not enabled
 
-		shift_opening_time = profile.get("posa_closing_time_start")
-		shift_closing_time = profile.get("posa_closing_time_end")
+        shift_opening_time = profile.get("posa_closing_time_start")
+        shift_closing_time = profile.get("posa_closing_time_end")
 
-		if not shift_opening_time or not shift_closing_time:
-			return  # No restriction if not configured
+        if not shift_opening_time or not shift_closing_time:
+            return  # No restriction if not configured
 
-		# Parse times
-		start_time = self._parse_time(shift_opening_time)
-		end_time = self._parse_time(shift_closing_time)
+        # Parse times
+        start_time = self._parse_time(shift_opening_time)
+        end_time = self._parse_time(shift_closing_time)
 
-		if not start_time or not end_time:
-			return
+        if not start_time or not end_time:
+            return
 
-		# Get period_end_date as datetime
-		period_end_dt = frappe.utils.get_datetime(self.period_end_date)
+        # Get period_end_date as datetime
+        period_end_dt = frappe.utils.get_datetime(self.period_end_date)
 
-		# Create datetime objects for comparison
-		start_dt = period_end_dt.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=start_time.microsecond)
-		end_dt = period_end_dt.replace(hour=end_time.hour, minute=end_time.minute, second=end_time.second, microsecond=end_time.microsecond)
+        # Create datetime objects for comparison
+        start_dt = period_end_dt.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=start_time.microsecond)
+        end_dt = period_end_dt.replace(hour=end_time.hour, minute=end_time.minute, second=end_time.second, microsecond=end_time.microsecond)
 
-		# If start_time > end_time, assume end_time is next day
-		if start_time > end_time:
-			end_dt = end_dt + timedelta(days=1)
+        # If start_time > end_time, assume end_time is next day
+        if start_time > end_time:
+            end_dt = end_dt + timedelta(days=1)
 
-		# Check if period_end_dt is within [start_dt, end_dt]
-		allowed = start_dt <= period_end_dt <= end_dt
+        # Check if period_end_dt is within [start_dt, end_dt]
+        allowed = start_dt <= period_end_dt <= end_dt
 
-		if not allowed:
-			start_str = start_time.strftime("%H:%M")
-			end_str = end_time.strftime("%H:%M")
-			if start_time > end_time:
-				end_str += " (next day)"
-			frappe.throw(
-				_("Closing shift is not allowed at this time. Closing is allowed only between {0} and {1}").format(start_str, end_str),
-				title=_("Closing Time Not Allowed")
-			)
+        if not allowed:
+            start_str = start_time.strftime("%H:%M")
+            end_str = end_time.strftime("%H:%M")
+            if start_time > end_time:
+                end_str += " (next day)"
+            frappe.throw(
+                _("Closing shift is not allowed at this time. Closing is allowed only between {0} and {1}").format(start_str, end_str),
+                title=_("Closing Time Not Allowed")
+            )
 
     def update_payment_reconciliation(self):
-		# update the difference values in Payment Reconciliation child table
-		# get default precision for site
-		precision = frappe.get_cached_value("System Settings", None, "currency_precision") or 3
-            for d in self.payment_reconciliation:
-			d.difference = +flt(d.closing_amount, precision) - flt(d.expected_amount, precision)
+        # update the difference values in Payment Reconciliation child table
+        # get default precision for site
+        precision = frappe.get_cached_value("System Settings", None, "currency_precision") or 3
+        for d in self.payment_reconciliation:
+            d.difference = +flt(d.closing_amount, precision) - flt(d.expected_amount, precision)
 
     def on_submit(self):
+        opening_entry = frappe.get_doc("POS Opening Shift", self.pos_opening_shift)
+        opening_entry.pos_closing_shift = self.name
+        opening_entry.set_status()
+        opening_entry.save()
+
+    def on_cancel(self):
+        if frappe.db.exists("POS Opening Shift", self.pos_opening_shift):
             opening_entry = frappe.get_doc("POS Opening Shift", self.pos_opening_shift)
-            opening_entry.pos_closing_shift = self.name
-            opening_entry.set_status()
-		self.delete_draft_invoices()
-		opening_entry.save()
-
-	def on_cancel(self):
-		if frappe.db.exists("POS Opening Shift", self.pos_opening_shift):
-			opening_entry = frappe.get_doc("POS Opening Shift", self.pos_opening_shift)
-			if opening_entry.pos_closing_shift == self.name:
-				opening_entry.pos_closing_shift = ""
-				opening_entry.set_status()
+            if opening_entry.pos_closing_shift == self.name:
+                opening_entry.pos_closing_shift = ""
+                opening_entry.set_status()
             opening_entry.save()
-
-	def delete_draft_invoices(self):
-		if frappe.get_value("POS Profile", self.pos_profile, "posa_allow_delete"):
-			data = frappe.db.sql(
-				"""
-                select
-                    name
-                from
-                    `tabSales Invoice`
-                where
-                    docstatus = 0 and posa_is_printed = 0 and posa_pos_opening_shift = %s
-                """,
-				(self.pos_opening_shift),
-				as_dict=1,
-			)
-
-			for invoice in data:
-				frappe.delete_doc("Sales Invoice", invoice.name, force=1)
 
     @frappe.whitelist()
     def get_payment_reconciliation_details(self):
@@ -155,14 +136,14 @@ class POSClosingShift(Document):
 
 @frappe.whitelist()
 def get_cashiers(doctype, txt, searchfield, start, page_len, filters):
-	cashiers_list = frappe.get_all("POS Profile User", filters=filters, fields=["user"])
-	result = []
-	for cashier in cashiers_list:
-		user_email = frappe.get_value("User", cashier.user, "email")
-		if user_email:
-			# Return list of tuples in format (value, label) where value is user ID and label shows both ID and email
-			result.append([cashier.user, f"{cashier.user} ({user_email})"])
-	return result
+    cashiers_list = frappe.get_all("POS Profile User", filters=filters, fields=["user"])
+    result = []
+    for cashier in cashiers_list:
+        user_email = frappe.get_value("User", cashier.user, "email")
+        if user_email:
+            # Return list of tuples in format (value, label) where value is user ID and label shows both ID and email
+            result.append([cashier.user, f"{cashier.user} ({user_email})"])
+    return result
 
 
 @frappe.whitelist()
@@ -227,7 +208,10 @@ def make_closing_shift_from_opening(opening_shift):
     taxes = []
     payments = []
     pos_payments_table = []
-	for detail in opening_shift.get("balance_details"):
+    
+    # Check if balance_details exists and is not None
+    balance_details = opening_shift.get("balance_details") or []
+    for detail in balance_details:
         payments.append(
             frappe._dict(
                 {
@@ -254,7 +238,7 @@ def make_closing_shift_from_opening(opening_shift):
         closing_shift.total_quantity += flt(d.total_qty)
 
         for t in d.taxes:
-			existing_tax = [tx for tx in taxes if tx.account_head == t.account_head and tx.rate == t.rate]
+            existing_tax = [tx for tx in taxes if tx.account_head == t.account_head and tx.rate == t.rate]
             if existing_tax:
                 existing_tax[0].amount += flt(t.tax_amount)
             else:
@@ -269,7 +253,7 @@ def make_closing_shift_from_opening(opening_shift):
                 )
 
         for p in d.payments:
-			existing_pay = [pay for pay in payments if pay.mode_of_payment == p.mode_of_payment]
+            existing_pay = [pay for pay in payments if pay.mode_of_payment == p.mode_of_payment]
             if existing_pay:
                 cash_mode_of_payment = frappe.get_value(
                     "POS Profile",
@@ -308,7 +292,7 @@ def make_closing_shift_from_opening(opening_shift):
                 }
             )
         )
-		existing_pay = [pay for pay in payments if pay.mode_of_payment == py.mode_of_payment]
+        existing_pay = [pay for pay in payments if pay.mode_of_payment == py.mode_of_payment]
         if existing_pay:
             existing_pay[0].expected_amount += flt(py.paid_amount)
         else:
