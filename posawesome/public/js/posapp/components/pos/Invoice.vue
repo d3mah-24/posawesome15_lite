@@ -564,7 +564,6 @@ export default {
         ) {
           this.delete_draft_invoice();
         } else {
-          // Emit event for Event-driven approach
           evntBus.emit("item_removed", item);
         }
       }
@@ -596,7 +595,6 @@ export default {
         existing_item.amount = flt(existing_item.rate * existing_item.qty, this.currency_precision);
         reason = "item-updated";
       } else {
-        // Item added - set required tracking fields
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
         new_item.posa_offer_applied = 0;
@@ -608,13 +606,10 @@ export default {
         this.items.push(new_item);
       }
 
-      // Check if this is the first item and no invoice exists
       if (this.items.length === 1 && !this.invoice_doc?.name) {
-        // Creating new draft
         this.create_draft_invoice();
         return;
       } else {
-        // Emit event for Event-driven approach
         evntBus.emit("item_added", existing_item || new_item);
       }
     },
@@ -699,19 +694,14 @@ create_invoice(doc) {
   try {
     let result;
     
-    // Decide whether to create or update based on invoice_doc.name
     if (!this.invoice_doc?.name && this.items.length > 0) {
-      // Create new invoice
       result = await this.create_invoice(payload);
     } else if (this.invoice_doc?.name) {
-      // Update existing invoice
       result = await this.update_invoice(payload);
     } else {
-      // No items and no invoice - do nothing
       return null;
     }
 
-    // Handle case when API returns null (no items)
     if (!result) {
       this.invoice_doc = null;
       this.items = [];
