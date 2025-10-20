@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import json
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 
 @frappe.whitelist()
@@ -188,3 +189,4 @@ def _create_new_invoice_with_item(item_code, qty, customer=None, pos_profile=Non
     except Exception as e:
         frappe.log_error(f"Error creating new invoice with item: {str(e)}", "Create New With Item Error")
         frappe.throw(_("Error creating invoice with item: {0}").format(str(e)))
+
