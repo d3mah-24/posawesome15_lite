@@ -8,6 +8,7 @@ from frappe import _
 from frappe.utils import cint, comma_or, nowdate, getdate
 from frappe.model.document import Document
 import sys
+from datetime import datetime, timedelta
 
 
 class OverAllowanceError(frappe.ValidationError):
@@ -96,6 +97,7 @@ class POSOpeningShift(StatusUpdater):
         try:
             self.validate_pos_profile_and_cashier()
             self.validate_pos_shift()
+            self._validate_shift_opening_window()
             self.set_status()
         except Exception as e:
             print(f"[ERROR] Exception in validate: {e}", file=sys.stderr)
@@ -172,6 +174,69 @@ class POSOpeningShift(StatusUpdater):
         except Exception as e:
             print(f"[ERROR] Exception in validate_pos_shift: {e}", file=sys.stderr)
             raise
+
+    def _validate_shift_opening_window(self):
+        """Validate if shift can be opened at current time based on POS Profile settings."""
+        if not self.pos_profile:
+            return
+
+        profile = frappe.get_doc("POS Profile", self.pos_profile)
+        
+        # Check if opening time control is enabled
+        if not profile.get("posa_opening_time_control"):
+            return  # Skip validation if time control is not enabled
+
+        opening_start_time = profile.get("posa_opening_time_start")
+        opening_end_time = profile.get("posa_opening_time_end")
+
+        if not opening_start_time or not opening_end_time:
+            return  # No restriction if not configured
+
+        # Parse times
+        start_time = self._parse_time(opening_start_time)
+        end_time = self._parse_time(opening_end_time)
+
+        if not start_time or not end_time:
+            return
+
+        # Get current datetime
+        current_dt = frappe.utils.now_datetime()
+
+        # Create datetime objects for comparison
+        start_dt = current_dt.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=start_time.microsecond)
+        end_dt = current_dt.replace(hour=end_time.hour, minute=end_time.minute, second=end_time.second, microsecond=end_time.microsecond)
+
+        # If start_time > end_time, assume end_time is next day
+        if start_time > end_time:
+            end_dt = end_dt + timedelta(days=1)
+
+        # Check if current time is within [start_dt, end_dt]
+        allowed = start_dt <= current_dt <= end_dt
+
+        if not allowed:
+            start_str = start_time.strftime("%H:%M")
+            end_str = end_time.strftime("%H:%M")
+            if start_time > end_time:
+                end_str += " (next day)"
+            frappe.throw(
+                _("Opening shift is not allowed at this time. Opening is allowed only between {0} and {1}").format(start_str, end_str),
+                title=_("Opening Time Not Allowed")
+            )
+
+    def _parse_time(self, time_value):
+        """Parse time value to datetime.time object."""
+        if not time_value:
+            return None
+        
+        try:
+            if isinstance(time_value, str):
+                return datetime.strptime(time_value, "%H:%M:%S").time()
+            elif hasattr(time_value, 'hour'):  # datetime.time object
+                return time_value
+            else:
+                return None
+        except (ValueError, TypeError):
+            return None
 
     def on_submit(self):
         print(f"[INFO] on_submit called for POSOpeningShift: {self.name if hasattr(self, 'name') else ''}", file=sys.stdout)
