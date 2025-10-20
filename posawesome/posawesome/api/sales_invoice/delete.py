@@ -47,5 +47,5 @@ def delete_invoice(invoice_name):
         frappe.throw(_("Validation error: {0}").format(str(ve)))
         
     except Exception as e:
-        frappe.log_error(f"Error in delete_invoice: {str(e)}", "Invoice Delete Error")
+        frappe.logger().error(f"Error in delete_invoice: {str(e)}")
         frappe.throw(_("Error deleting invoice: {0}").format(str(e)))
