@@ -477,19 +477,12 @@ export default {
 
   methods: {
     onQtyChange(item) {
-      try {
-        const newQty = Number(item.qty) || 0;
-        item.qty = newQty;
-        // Calculate amount immediately for visual feedback
-        item.amount = flt(item.rate * item.qty, this.currency_precision);
-        // Use unified debounce for all item operations
-        this.debouncedItemOperation("qty-change");
-      } catch (error) {
-        evntBus.emit("show_mesage", {
-          text: "Error updating quantity",
-          color: "error",
-        });
-      }
+      const newQty = Number(item.qty) || 0;
+      item.qty = newQty;
+      // Calculate amount immediately for visual feedback
+      item.amount = flt(item.rate * item.qty, this.currency_precision);
+      // Use unified debounce for all item operations
+      this.debouncedItemOperation("qty-change");
     },
     
     onQtyInput(item) {
