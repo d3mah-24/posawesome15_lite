@@ -9,7 +9,7 @@
         <Customer></Customer>
       </div>
 
-        <div class="my-0 py-0 invoice-items-scrollable">
+      <div class="my-0 py-0 invoice-items-scrollable">
         <v-data-table
           :headers="dynamicHeaders"
           :items="items"
@@ -22,8 +22,8 @@
           density="compact"
         >
           <template v-slot:item.item_name="{ item }">
-            <div style="width: 120px;">
-              <p>{{ item.item_name }}</p>
+            <div style="width: 120px">
+              <p class="mb-0">{{ item.item_name }}</p>
             </div>
           </template>
           <template v-slot:item.qty="{ item }">
@@ -63,12 +63,14 @@
                 @change="setItemRate(item, $event)"
                 @blur="setItemRate(item, $event)"
                 @keyup.enter="setItemRate(item, $event)"
-                :disabled="Boolean(
-                  item.posa_is_offer ||
-                  item.posa_is_replace ||
-                  item.posa_offer_applied ||
-                  invoice_doc?.is_return
-                )"
+                :disabled="
+                  Boolean(
+                    item.posa_is_offer ||
+                      item.posa_is_replace ||
+                      item.posa_offer_applied ||
+                      invoice_doc?.is_return
+                  )
+                "
                 class="compact-rate-input"
                 placeholder="0.00"
               />
@@ -86,13 +88,15 @@
                 @change="setDiscountPercentage(item, $event)"
                 @blur="setDiscountPercentage(item, $event)"
                 @keyup.enter="setDiscountPercentage(item, $event)"
-                :disabled="Boolean(
-                  item.posa_is_offer ||
-                  item.posa_is_replace ||
-                  item.posa_offer_applied ||
-                  !pos_profile?.posa_allow_user_to_edit_item_discount ||
-                  invoice_doc?.is_return
-                )"
+                :disabled="
+                  Boolean(
+                    item.posa_is_offer ||
+                      item.posa_is_replace ||
+                      item.posa_offer_applied ||
+                      !pos_profile?.posa_allow_user_to_edit_item_discount ||
+                      invoice_doc?.is_return
+                  )
+                "
                 class="compact-discount-input"
                 placeholder="0"
                 min="0"
@@ -163,7 +167,9 @@
       <div class="financial-summary">
         <div class="summary-field readonly-field">
           <label>Total Qty</label>
-          <div class="field-value">{{ formatFloat(invoice_doc?.total_qty || 0) }}</div>
+          <div class="field-value">
+            {{ formatFloat(invoice_doc?.total_qty || 0) }}
+          </div>
         </div>
 
         <div class="summary-field editable-field">
@@ -176,11 +182,13 @@
             step="0.01"
             min="0"
             :max="pos_profile?.posa_invoice_max_discount_allowed || 100"
-            :disabled="Boolean(
-              !pos_profile ||
-              !pos_profile?.posa_allow_user_to_edit_additional_discount ||
-              invoice_doc?.is_return
-            )"
+            :disabled="
+              Boolean(
+                !pos_profile ||
+                  !pos_profile?.posa_allow_user_to_edit_additional_discount ||
+                  invoice_doc?.is_return
+              )
+            "
             class="field-input discount-input"
             placeholder="0.00"
           />
@@ -285,13 +293,13 @@ import { API_MAP } from "../../api_mapper.js";
 // ===== COMPONENT =====
 export default {
   name: "Invoice",
-  
+
   mixins: [format],
-  
-  components: { 
-    Customer 
+
+  components: {
+    Customer,
   },
-  
+
   props: {
     is_payment: {
       type: Boolean,
@@ -321,11 +329,11 @@ export default {
       invoice_posting_date: false,
       posting_date: frappe.datetime.nowdate(),
       quick_return_value: false,
-      
+
       // Simple State Management
       _itemOperationTimer: null,
       _updatingFromAPI: false,
-      
+
       // Table Headers Configuration
       items_headers: [
         {
@@ -335,17 +343,17 @@ export default {
           key: "item_name",
           width: "25%",
         },
-        { 
-          title: "Qty", 
-          key: "qty", 
-          align: "center", 
-          width: "8%" 
+        {
+          title: "Qty",
+          key: "qty",
+          align: "center",
+          width: "8%",
         },
-        { 
-          title: "Uom", 
-          key: "uom", 
-          align: "center", 
-          width: "8%" 
+        {
+          title: "Uom",
+          key: "uom",
+          align: "center",
+          width: "8%",
         },
         {
           title: "list_price",
@@ -353,11 +361,11 @@ export default {
           align: "center",
           width: "10%",
         },
-        { 
-          title: "dis_price", 
-          key: "rate", 
-          align: "center", 
-          width: "10%" 
+        {
+          title: "dis_price",
+          key: "rate",
+          align: "center",
+          width: "10%",
         },
         {
           title: "dis_%",
@@ -371,11 +379,11 @@ export default {
           align: "center",
           width: "10%",
         },
-        { 
-          title: "Total", 
-          key: "amount", 
-          align: "center", 
-          width: "11%" 
+        {
+          title: "Total",
+          key: "amount",
+          align: "center",
+          width: "11%",
         },
         {
           title: "Delete",
@@ -454,7 +462,7 @@ export default {
       item.amount = this.calculateItemAmount(item);
       this.debouncedItemOperation("qty-change");
     },
-    
+
     onQtyInput(item) {
       // Handle input events - use same logic as onQtyChange but without debounce
       this.onQtyChange(item);
@@ -480,22 +488,30 @@ export default {
     getDiscountAmount(item) {
       if (!item) return 0;
       if (item.discount_amount) return flt(item.discount_amount) || 0;
-      
+
       const basePrice = flt(item.price_list_rate) || flt(item.rate) || 0;
       const discountPercentage = flt(item.discount_percentage) || 0;
-      return (discountPercentage > 0 && basePrice > 0) ? flt((basePrice * discountPercentage) / 100) || 0 : 0;
+      return discountPercentage > 0 && basePrice > 0
+        ? flt((basePrice * discountPercentage) / 100) || 0
+        : 0;
     },
 
     quick_return() {
-      if (!this.pos_profile?.posa_allow_quick_return || !this.customer || !this.items.length) {
+      if (
+        !this.pos_profile?.posa_allow_quick_return ||
+        !this.customer ||
+        !this.items.length
+      ) {
         return;
       }
       this.quick_return_value = !this.quick_return_value;
       evntBus.emit("toggle_quick_return", this.quick_return_value);
     },
-    
+
     remove_item(item) {
-      const index = this.items.findIndex(el => el.posa_row_id == item.posa_row_id);
+      const index = this.items.findIndex(
+        (el) => el.posa_row_id == item.posa_row_id
+      );
       if (index >= 0) {
         this.items.splice(index, 1);
         if (this.items.length === 0 && this.invoice_doc?.name) {
@@ -513,7 +529,9 @@ export default {
       new_item.uom = new_item.uom || new_item.stock_uom || "Nos";
 
       const existing_item = this.items.find(
-        (existing) => existing.item_code === new_item.item_code && existing.uom === new_item.uom
+        (existing) =>
+          existing.item_code === new_item.item_code &&
+          existing.uom === new_item.uom
       );
 
       if (existing_item) {
@@ -561,153 +579,155 @@ export default {
 
     hasValidPayments(invoice_doc = null) {
       const doc = invoice_doc || this.invoice_doc;
-      return doc?.payments?.some(p => this.flt(p.amount) > 0) || false;
+      return doc?.payments?.some((p) => this.flt(p.amount) > 0) || false;
     },
 
-   async create_draft_invoice() {
-  try {
-    const doc = this.get_invoice_doc("draft");
-    const result = await this.create_invoice(doc);
-    
-    if (result) {
-      this.invoice_doc = result;
-    } else {
-      this.invoice_doc = null;
-      this.items = [];
-    }
-  } catch (error) {
-    // Draft creation failed - continue with current state
-  }
-},
-create_invoice(doc) {
-  const vm = this;
-  return new Promise((resolve, reject) => {
-    frappe.call({
-      method: API_MAP.SALES_INVOICE.CREATE,
-      args: {
-        data: doc,
-      },
-      async: true,
-      callback: function (r) {
-        if (r.message !== undefined) {
-          if (r.message === null) {
-            vm.invoice_doc = null;
-            vm.items = [];
-            resolve(null);
-          } else {
-            vm.invoice_doc = r.message;
+    async create_draft_invoice() {
+      try {
+        const doc = this.get_invoice_doc("draft");
+        const result = await this.create_invoice(doc);
 
-            // Emit event for navbar to update invoice display
-            evntBus.emit("update_invoice_doc", vm.invoice_doc);
-
-            // Update posa_offers from backend response
-            if (r.message.posa_offers) {
-              vm.posa_offers = r.message.posa_offers;
-
-              const appliedOffers = vm.posa_offers.filter(
-                (offer) => offer.offer_applied
-              );
-              if (appliedOffers.length > 0) {
-                evntBus.emit("update_pos_offers", appliedOffers);
-              }
-            }
-
-            resolve(vm.invoice_doc);
-          }
+        if (result) {
+          this.invoice_doc = result;
         } else {
-          reject(new Error("Failed to create invoice"));
+          this.invoice_doc = null;
+          this.items = [];
         }
-      },
-      error: function (err) {
-        reject(err);
-      },
-    });
-  });
-},
+      } catch (error) {
+        // Draft creation failed - continue with current state
+      }
+    },
+    create_invoice(doc) {
+      const vm = this;
+      return new Promise((resolve, reject) => {
+        frappe.call({
+          method: API_MAP.SALES_INVOICE.CREATE,
+          args: {
+            data: doc,
+          },
+          async: true,
+          callback: function (r) {
+            if (r.message !== undefined) {
+              if (r.message === null) {
+                vm.invoice_doc = null;
+                vm.items = [];
+                resolve(null);
+              } else {
+                vm.invoice_doc = r.message;
+
+                // Emit event for navbar to update invoice display
+                evntBus.emit("update_invoice_doc", vm.invoice_doc);
+
+                // Update posa_offers from backend response
+                if (r.message.posa_offers) {
+                  vm.posa_offers = r.message.posa_offers;
+
+                  const appliedOffers = vm.posa_offers.filter(
+                    (offer) => offer.offer_applied
+                  );
+                  if (appliedOffers.length > 0) {
+                    evntBus.emit("update_pos_offers", appliedOffers);
+                  }
+                }
+
+                resolve(vm.invoice_doc);
+              }
+            } else {
+              reject(new Error("Failed to create invoice"));
+            }
+          },
+          error: function (err) {
+            reject(err);
+          },
+        });
+      });
+    },
 
     async auto_update_invoice(doc = null, reason = "auto") {
-  if (this.invoice_doc?.submitted_for_payment) {
-    return;
-  }
-
-  if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
-    return;
-  }
-
-  const payload = doc || this.get_invoice_doc(reason);
-
-  try {
-    let result;
-    
-    if (!this.invoice_doc?.name && this.items.length > 0) {
-      result = await this.create_invoice(payload);
-    } else if (this.invoice_doc?.name) {
-      result = await this.update_invoice(payload);
-    } else {
-      return null;
-    }
-
-    if (!result) {
-      this.invoice_doc = null;
-      this.items = [];
-      return null;
-    }
-
-    if (result && Array.isArray(result.items)) {
-      // Set flag to prevent watcher loop
-      this._updatingFromAPI = true;
-
-      // Merge API items with local items
-      this.mergeItemsFromAPI(result.items);
-
-      // Reset flag after update
-      this.$nextTick(() => {
-        this._updatingFromAPI = false;
-      });
-    }
-
-    // Always update invoice_doc with API response
-    if (result) {
-      if (result.name && !this.invoice_doc?.name) {
-        evntBus.emit("show_mesage", {text: "Draft created", color: "success"});
+      if (this.invoice_doc?.submitted_for_payment) {
+        return;
       }
 
-      // Update invoice_doc with latest totals from server
-      this.invoice_doc = {
-        ...this.invoice_doc,
-        ...result,
-        items:
-          this.items.length > (result.items?.length || 0)
-            ? this.items
-            : result.items || [],
-      };
-    }
+      if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
+        return;
+      }
 
-    this._updatingFromAPI = false;
-    return result;
-    
-  } catch (error) {
-    if (
-      error?.message &&
-      error.message.includes("Document has been modified")
-    ) {
+      const payload = doc || this.get_invoice_doc(reason);
+
       try {
-        await this.reload_invoice();
-      } catch (reloadError) {
-        // Invoice reload failed after conflict - continue with current data
+        let result;
+
+        if (!this.invoice_doc?.name && this.items.length > 0) {
+          result = await this.create_invoice(payload);
+        } else if (this.invoice_doc?.name) {
+          result = await this.update_invoice(payload);
+        } else {
+          return null;
+        }
+
+        if (!result) {
+          this.invoice_doc = null;
+          this.items = [];
+          return null;
+        }
+
+        if (result && Array.isArray(result.items)) {
+          // Set flag to prevent watcher loop
+          this._updatingFromAPI = true;
+
+          // Merge API items with local items
+          this.mergeItemsFromAPI(result.items);
+
+          // Reset flag after update
+          this.$nextTick(() => {
+            this._updatingFromAPI = false;
+          });
+        }
+
+        // Always update invoice_doc with API response
+        if (result) {
+          if (result.name && !this.invoice_doc?.name) {
+            evntBus.emit("show_mesage", {
+              text: "Draft created",
+              color: "success",
+            });
+          }
+
+          // Update invoice_doc with latest totals from server
+          this.invoice_doc = {
+            ...this.invoice_doc,
+            ...result,
+            items:
+              this.items.length > (result.items?.length || 0)
+                ? this.items
+                : result.items || [],
+          };
+        }
+
+        this._updatingFromAPI = false;
+        return result;
+      } catch (error) {
+        if (
+          error?.message &&
+          error.message.includes("Document has been modified")
+        ) {
+          try {
+            await this.reload_invoice();
+          } catch (reloadError) {
+            // Invoice reload failed after conflict - continue with current data
+          }
+          return;
+        }
+
+        evntBus.emit("show_mesage", {
+          text: "Auto-saving draft failed",
+          color: "error",
+        });
+
+        this._updatingFromAPI = false;
+        throw error;
       }
-      return;
-    }
-
-    evntBus.emit("show_mesage", {
-      text: "Auto-saving draft failed",
-      color: "error",
-    });
-
-    this._updatingFromAPI = false;
-    throw error;
-  }
-},
+    },
 
     queue_auto_save(reason = "auto") {
       if (this.invoice_doc?.submitted_for_payment) {
@@ -723,7 +743,6 @@ create_invoice(doc) {
       const doc = this.get_invoice_doc(reason);
       return this.auto_update_invoice(doc, reason);
     },
-
 
     async reload_invoice() {
       if (this.invoice_doc && this.invoice_doc?.name) {
@@ -766,7 +785,10 @@ create_invoice(doc) {
           },
           callback: (r) => {
             if (r.message) {
-              evntBus.emit("show_mesage", {text: "Draft cancelled", color: "success"});
+              evntBus.emit("show_mesage", {
+                text: "Draft cancelled",
+                color: "success",
+              });
             }
           },
         });
@@ -815,7 +837,7 @@ create_invoice(doc) {
       this.posa_coupons = [];
       this.return_doc = "";
       evntBus.emit("set_pos_coupons", []);
-      
+
       const doc = this.get_invoice_doc();
       if (doc.name) {
         old_invoice = this.update_invoice(doc);
@@ -943,103 +965,115 @@ create_invoice(doc) {
       }));
     },
 
-get_payments() {
-  let payments = [];
+    get_payments() {
+      let payments = [];
 
-  // إذا كانت هناك مدفوعات موجودة في الفاتورة الحالية
-  if (this.invoice_doc && Array.isArray(this.invoice_doc?.payments) && this.invoice_doc?.payments.length) {
-    payments = this.invoice_doc.payments.map((p) => ({
-      amount: this.flt(p.amount),
-      mode_of_payment: p.mode_of_payment,
-      default: p.default,
-      account: p.account || "",
-      idx: p.idx,
-    }));
-  } else if (this.pos_profile && Array.isArray(this.pos_profile?.payments)) {
-    let hasDefault = false;
+      // إذا كانت هناك مدفوعات موجودة في الفاتورة الحالية
+      if (
+        this.invoice_doc &&
+        Array.isArray(this.invoice_doc?.payments) &&
+        this.invoice_doc?.payments.length
+      ) {
+        payments = this.invoice_doc.payments.map((p) => ({
+          amount: this.flt(p.amount),
+          mode_of_payment: p.mode_of_payment,
+          default: p.default,
+          account: p.account || "",
+          idx: p.idx,
+        }));
+      } else if (
+        this.pos_profile &&
+        Array.isArray(this.pos_profile?.payments)
+      ) {
+        let hasDefault = false;
 
-    this.pos_profile?.payments.forEach((payment, index) => {
-      if (payment.default) hasDefault = true;
-      payments.push({
-        amount: 0,
-        mode_of_payment: payment.mode_of_payment,
-        default: payment.default,
-        account: payment.account || "",
-        idx: index + 1,
-      });
-    });
+        this.pos_profile?.payments.forEach((payment, index) => {
+          if (payment.default) hasDefault = true;
+          payments.push({
+            amount: 0,
+            mode_of_payment: payment.mode_of_payment,
+            default: payment.default,
+            account: payment.account || "",
+            idx: index + 1,
+          });
+        });
 
-    if (!hasDefault && payments.length > 0) payments[0].default = 1;
-  }
+        if (!hasDefault && payments.length > 0) payments[0].default = 1;
+      }
 
-  // --- إضافة معالجة التقريب ---
-  const totalTarget = this.rounded_total || this.grand_total;
-  let totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
-  let diff = totalPayments - totalTarget;
+      // --- إضافة معالجة التقريب ---
+      const totalTarget = this.rounded_total || this.grand_total;
+      let totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
+      let diff = totalPayments - totalTarget;
 
-  if (Math.abs(diff) >= 0.01 && Math.abs(diff) <= 1.0 && payments.length > 0) {
-    payments[0].amount = this.flt(payments[0].amount - diff);
-  }
+      if (
+        Math.abs(diff) >= 0.01 &&
+        Math.abs(diff) <= 1.0 &&
+        payments.length > 0
+      ) {
+        payments[0].amount = this.flt(payments[0].amount - diff);
+      }
 
-  return payments;
-},
-
+      return payments;
+    },
 
     update_invoice(doc) {
-  const vm = this;
-  return new Promise((resolve, reject) => {
-    // Ensure we have an invoice name for updates
-    if (!doc.name) {
-      reject(new Error("Invoice name required for updates"));
-      return;
-    }
+      const vm = this;
+      return new Promise((resolve, reject) => {
+        // Ensure we have an invoice name for updates
+        if (!doc.name) {
+          reject(new Error("Invoice name required for updates"));
+          return;
+        }
 
-    frappe.call({
-      method: API_MAP.SALES_INVOICE.UPDATE,
-      args: {
-        data: doc,
-      },
-      async: true,
-      callback: function (r) {
-        if (r.message !== undefined) {
-          if (r.message === null) {
-            vm.invoice_doc = null;
-            vm.items = [];
-            resolve(null);
-          } else {
-            vm.invoice_doc = r.message;
+        frappe.call({
+          method: API_MAP.SALES_INVOICE.UPDATE,
+          args: {
+            data: doc,
+          },
+          async: true,
+          callback: function (r) {
+            if (r.message !== undefined) {
+              if (r.message === null) {
+                vm.invoice_doc = null;
+                vm.items = [];
+                resolve(null);
+              } else {
+                vm.invoice_doc = r.message;
 
-            // Update posa_offers from backend response
-            if (r.message.posa_offers) {
-              vm.posa_offers = r.message.posa_offers;
+                // Update posa_offers from backend response
+                if (r.message.posa_offers) {
+                  vm.posa_offers = r.message.posa_offers;
 
-              const appliedOffers = vm.posa_offers.filter(
-                (offer) => offer.offer_applied
-              );
-              if (appliedOffers.length > 0) {
-                evntBus.emit("update_pos_offers", appliedOffers);
+                  const appliedOffers = vm.posa_offers.filter(
+                    (offer) => offer.offer_applied
+                  );
+                  if (appliedOffers.length > 0) {
+                    evntBus.emit("update_pos_offers", appliedOffers);
+                  }
+                }
+
+                resolve(vm.invoice_doc);
               }
+            } else {
+              reject(new Error("Failed to update invoice"));
             }
-
-            resolve(vm.invoice_doc);
-          }
-        } else {
-          reject(new Error("Failed to update invoice"));
-        }
-      },
-      error: function (err) {
-        if (err.message && err.message.includes("Document has been modified")) {
-          vm.reload_invoice()
-            .then(() => resolve(vm.invoice_doc))
-            .catch((reloadError) => reject(reloadError));
-        } else {
-          reject(err);
-        }
-      },
-    });
-  });
-},
-
+          },
+          error: function (err) {
+            if (
+              err.message &&
+              err.message.includes("Document has been modified")
+            ) {
+              vm.reload_invoice()
+                .then(() => resolve(vm.invoice_doc))
+                .catch((reloadError) => reject(reloadError));
+            } else {
+              reject(err);
+            }
+          },
+        });
+      });
+    },
 
     async process_invoice() {
       const doc = this.get_invoice_doc("payment");
@@ -1048,7 +1082,10 @@ get_payments() {
         const result = await this.update_invoice(doc);
         return result;
       } catch (error) {
-        evntBus.emit("show_mesage", {text: "Processing failed", color: "error"});
+        evntBus.emit("show_mesage", {
+          text: "Processing failed",
+          color: "error",
+        });
         throw error;
       }
     },
@@ -1056,7 +1093,7 @@ get_payments() {
     async show_payment() {
       if (this.readonly) return;
 
-      evntBus.emit("show_loading", {text: "Loading...", color: "info"});
+      evntBus.emit("show_loading", { text: "Loading...", color: "info" });
 
       try {
         const invoice_doc = await this.process_invoice();
@@ -1085,7 +1122,7 @@ get_payments() {
                 },
               ];
               // Default payment added
-              
+
               // Save default payment to server
               try {
                 await frappe.call({
@@ -1107,8 +1144,8 @@ get_payments() {
         evntBus.emit("send_invoice_doc_payment", invoice_doc);
         evntBus.emit("show_payment", "true");
 
-    this.posa_offers = [];
-    this.posa_coupons = [];
+        this.posa_offers = [];
+        this.posa_coupons = [];
 
         if (this.pos_profile?.posa_clear_customer_after_payment) {
           this.setCustomer(this.pos_profile?.customer);
@@ -1195,7 +1232,8 @@ get_payments() {
       let dis_percent = parseFloat(event.target.value) || 0;
 
       // Apply max discount limit
-      const maxDiscount = this.pos_profile?.posa_item_max_discount_allowed || 100;
+      const maxDiscount =
+        this.pos_profile?.posa_item_max_discount_allowed || 100;
 
       if (dis_percent < 0) dis_percent = 0;
       if (dis_percent > maxDiscount) {
@@ -1232,7 +1270,10 @@ get_payments() {
       // Don't allow dis_price higher than list_price
       if (dis_price > list_price) {
         dis_price = list_price;
-        evntBus.emit("show_mesage", {text: "Price exceeds limit", color: "error"});
+        evntBus.emit("show_mesage", {
+          text: "Price exceeds limit",
+          color: "error",
+        });
       }
 
       // Calculate dis_% from price difference
@@ -1242,14 +1283,15 @@ get_payments() {
       }
 
       // Apply max discount limit
-      const maxDiscount = this.pos_profile?.posa_item_max_discount_allowed || 100;
+      const maxDiscount =
+        this.pos_profile?.posa_item_max_discount_allowed || 100;
 
       if (dis_percent > maxDiscount) {
         // Adjust dis_price to respect max discount
         const max_dis_amount = (list_price * maxDiscount) / 100;
         dis_price = flt(list_price - max_dis_amount, this.currency_precision);
         dis_percent = maxDiscount;
-        
+
         evntBus.emit("show_mesage", {
           text: `Maximum discount applied: ${maxDiscount}%`,
           color: "info",
@@ -1401,8 +1443,11 @@ get_payments() {
     },
 
     makeid(length) {
-      return crypto.randomUUID ? crypto.randomUUID().substring(0, length) : 
-             Math.random().toString(36).substring(2, 2 + length);
+      return crypto.randomUUID
+        ? crypto.randomUUID().substring(0, length)
+        : Math.random()
+            .toString(36)
+            .substring(2, 2 + length);
     },
 
     checkOfferIsAppley(item, offer) {
@@ -1436,36 +1481,35 @@ get_payments() {
     },
 
     mergeItemsFromAPI(apiItems) {
-
       // Preserve price_list_rate and other display fields when merging API response
       if (apiItems && Array.isArray(apiItems) && apiItems.length > 0) {
         // Create a simple map by item_code (since item_code never repeats in invoice)
         const localItemsByCode = new Map();
-        
-        this.items.forEach(item => {
+
+        this.items.forEach((item) => {
           localItemsByCode.set(item.item_code, item);
         });
 
         // Merge API items with local items, preserving price_list_rate
-        this.items = apiItems.map(apiItem => {
+        this.items = apiItems.map((apiItem) => {
           // Find local item by item_code (simple & reliable)
           const localItem = localItemsByCode.get(apiItem.item_code);
-          
+
           // If local item exists, preserve price_list_rate from it
           if (localItem?.price_list_rate && !apiItem.price_list_rate) {
             apiItem.price_list_rate = localItem.price_list_rate;
           }
-          
+
           // Also preserve base_rate if needed
           if (localItem?.base_rate && !apiItem.base_rate) {
             apiItem.base_rate = localItem.base_rate;
           }
-          
+
           // Preserve posa_row_id from local if API doesn't have it
           if (localItem?.posa_row_id && !apiItem.posa_row_id) {
             apiItem.posa_row_id = localItem.posa_row_id;
           }
-          
+
           return apiItem;
         });
       }
@@ -1485,16 +1529,15 @@ get_payments() {
 
     sendInvoiceUpdate() {
       if (!this.invoice_doc?.name) return;
-      
+
       // Sending update to server
-      
+
       const doc = this.get_invoice_doc("item-update");
-      
+
       this.auto_update_invoice(doc, "item-update")
         .then(() => {})
         .catch((error) => {});
     },
-
 
     handelOffers() {
       if (this.invoice_doc?.name && this.items && this.items.length > 1) {
@@ -1625,7 +1668,7 @@ get_payments() {
     printInvoice() {
       if (!this.invoice_doc || !this.defaultPaymentMode) return;
 
-      evntBus.emit("show_loading", {text: "Processing...", color: "info"});
+      evntBus.emit("show_loading", { text: "Processing...", color: "info" });
 
       this.process_invoice()
         .then((invoice_doc) => {
@@ -1637,25 +1680,28 @@ get_payments() {
 
           // Use Frappe's built-in submit
           frappe.call({
-            method: 'frappe.client.submit',
+            method: "frappe.client.submit",
             args: {
-              doc: invoice_doc
+              doc: invoice_doc,
             },
             callback: (r) => {
               evntBus.emit("hide_loading");
-              
+
               if (r.message?.name) {
                 const print_format = this.pos_profile?.print_format;
-                
+
                 // Open print window directly
                 const print_url = frappe.urllib.get_full_url(
                   `/printview?doctype=Sales%20Invoice&name=${r.message.name}&format=${print_format}&trigger_print=1&no_letterhead=0`
                 );
-                
+
                 window.open(print_url);
 
                 evntBus.emit("set_last_invoice", r.message.name);
-                evntBus.emit("show_mesage", {text: `Invoice ${r.message.name} submitted`, color: "success"});
+                evntBus.emit("show_mesage", {
+                  text: `Invoice ${r.message.name} submitted`,
+                  color: "success",
+                });
                 frappe.utils.play_sound("submit");
 
                 this.resetInvoiceState();
@@ -1663,23 +1709,26 @@ get_payments() {
                 evntBus.emit("new_invoice", "false");
                 evntBus.emit("invoice_submitted");
               } else {
-                evntBus.emit("show_mesage", {text: "Submit failed", color: "error"});
+                evntBus.emit("show_mesage", {
+                  text: "Submit failed",
+                  color: "error",
+                });
               }
             },
             error: (err) => {
               evntBus.emit("hide_loading");
               evntBus.emit("show_mesage", {
                 text: err?.message || "Failed to submit",
-                color: "error"
+                color: "error",
               });
-            }
+            },
           });
         })
         .catch((error) => {
           evntBus.emit("hide_loading");
           evntBus.emit("show_mesage", {
             text: "Failed to prepare invoice: " + error.message,
-            color: "error"
+            color: "error",
           });
         });
     },
@@ -1699,20 +1748,20 @@ get_payments() {
         if (updatedItem) {
           // Update relevant fields while preserving POS-specific data
           const fieldsToUpdate = [
-            'price_list_rate',
-            'rate', 
-            'base_rate',
-            'currency',
-            'actual_qty',
-            'item_name',
-            'stock_uom',
-            'item_group',
-            'serial_no_data',
-            'batch_no_data',
-            'item_uoms'
+            "price_list_rate",
+            "rate",
+            "base_rate",
+            "currency",
+            "actual_qty",
+            "item_name",
+            "stock_uom",
+            "item_group",
+            "serial_no_data",
+            "batch_no_data",
+            "item_uoms",
           ];
 
-          fieldsToUpdate.forEach(field => {
+          fieldsToUpdate.forEach((field) => {
             if (updatedItem.hasOwnProperty(field)) {
               item[field] = updatedItem[field];
             }
@@ -1722,13 +1771,12 @@ get_payments() {
           item._detailSynced = true;
         }
       } catch (error) {
-        // Item detail update failed - continue with current data  
+        // Item detail update failed - continue with current data
       }
     },
   },
 
   mounted() {
-
     evntBus.on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
       this.setCustomer(data.pos_profile?.customer);
@@ -1785,11 +1833,12 @@ get_payments() {
     });
     evntBus.on("load_return_invoice", (data) => {
       this.new_invoice(data.invoice_doc);
-      
+
       // Handle return_doc data only if it exists (for returns against specific invoices)
       if (data.return_doc) {
         this.discount_amount = -data.return_doc.discount_amount || 0;
-        this.additional_discount_percentage = -data.return_doc.additional_discount_percentage || 0;
+        this.additional_discount_percentage =
+          -data.return_doc.additional_discount_percentage || 0;
         this.return_doc = data.return_doc;
       } else {
         // Free return without reference invoice
@@ -1797,7 +1846,7 @@ get_payments() {
         this.additional_discount_percentage = 0;
         this.return_doc = null;
       }
-      
+
       // Force update to ensure computed properties are recalculated
       this.$nextTick(() => {
         this.$forceUpdate();
@@ -1862,7 +1911,7 @@ get_payments() {
     evntBus.$off("send_invoice_doc_payment");
     evntBus.$off("payments_updated");
     evntBus.$off("request_invoice_print");
-    
+
     // Clear ALL timers to prevent memory leaks
     if (this._itemOperationTimer) {
       clearTimeout(this._itemOperationTimer);
@@ -1897,9 +1946,9 @@ get_payments() {
 </script>
 
 <style scoped>
-.border_line_bottom {
+/* .border_line_bottom {
   border-bottom: 1px solid lightgray;
-}
+} */
 
 .disable-events {
   pointer-events: none;
@@ -1908,99 +1957,8 @@ get_payments() {
 /* ===== COMPACT CUSTOMER SECTION ===== */
 .compact-customer-section {
   padding: 4px 6px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   border-bottom: 1px solid #e0e0e0;
-  margin: 0;
-}
-
-/* Override Customer.vue v-autocomplete styling for compact design */
-.compact-customer-section :deep(.v-autocomplete) {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.compact-customer-section :deep(.v-field) {
-  min-height: 32px !important;
-  max-height: 32px !important;
-  border-radius: 4px !important;
-  background: white !important;
-  border: 1px solid #1976d2 !important;
-  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.1) !important;
-  transition: all 0.2s ease !important;
-}
-
-.compact-customer-section :deep(.v-field:hover) {
-  border-color: #1565c0 !important;
-  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.15) !important;
-  transform: translateY(-1px);
-}
-
-.compact-customer-section :deep(.v-field--focused) {
-  border-color: #0d47a1 !important;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1) !important;
-}
-
-.compact-customer-section :deep(.v-field__input) {
-  padding: 4px 8px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
-  font-size: 0.8rem !important;
-  font-weight: 600 !important;
-  color: #1976d2 !important;
-  line-height: 1.2 !important;
-}
-
-.compact-customer-section :deep(.v-field__prepend-inner),
-.compact-customer-section :deep(.v-field__append-inner) {
-  padding: 0 4px !important;
-  align-items: center !important;
-}
-
-.compact-customer-section :deep(.v-field__prepend-inner .v-icon),
-.compact-customer-section :deep(.v-field__append-inner .v-icon) {
-  font-size: 18px !important;
-  color: #1976d2 !important;
-  transition: all 0.2s ease !important;
-}
-
-.compact-customer-section :deep(.v-field__prepend-inner .v-icon:hover),
-.compact-customer-section :deep(.v-field__append-inner .v-icon:hover) {
-  color: #0d47a1 !important;
-  transform: scale(1.1);
-}
-
-.compact-customer-section :deep(.v-label) {
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  color: #666 !important;
-  top: 6px !important;
-}
-
-.compact-customer-section :deep(.v-field--active .v-label) {
-  transform: translateY(-16px) scale(0.85) !important;
-}
-
-/* Customer autocomplete dropdown styling */
-.compact-customer-section :deep(.v-list-item) {
-  min-height: 36px !important;
-  padding: 4px 8px !important;
-}
-
-.compact-customer-section :deep(.v-list-item-title) {
-  font-size: 0.8rem !important;
-  font-weight: 600 !important;
-  line-height: 1.2 !important;
-}
-
-.compact-customer-section :deep(.v-list-item-subtitle) {
-  font-size: 0.7rem !important;
-  line-height: 1.1 !important;
-  margin-top: 2px !important;
-}
-
-/* UpdateCustomer dialog trigger */
-.compact-customer-section :deep(.mb-2) {
-  margin-bottom: 0 !important;
+  margin-bottom: 0;
 }
 
 /* Old customer container - keep for compatibility */
@@ -2128,21 +2086,21 @@ get_payments() {
   overflow: auto;
 }
 
-/* Zero spacing table cells */
+/* Zero spacing table cells with borders */
 .invoice-items-scrollable .v-data-table__wrapper table th,
 .invoice-items-scrollable .v-data-table__wrapper table td {
   white-space: normal !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   box-sizing: border-box !important;
-  padding: 1px 2px !important;
   font-size: 0.7rem !important;
   margin: 0 !important;
-  border-spacing: 0 !important;
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
   line-height: 1.1 !important;
+  padding: 2px 4px !important;
+  border-collapse: collapse !important;
 }
 
 /* Item name column takes remaining space */
@@ -2169,44 +2127,6 @@ get_payments() {
   min-height: 0 !important;
 }
 
-/* Professional scrollbar styling - matching ItemsSelector */
-.invoice-items-scrollable .v-data-table__wrapper::-webkit-scrollbar,
-.invoice-items-scrollable::-webkit-scrollbar {
-  width: 5px !important;
-  height: 5px !important;
-}
-
-.invoice-items-scrollable .v-data-table__wrapper::-webkit-scrollbar-track,
-.invoice-items-scrollable::-webkit-scrollbar-track {
-  background: #f1f1f1 !important;
-  border-radius: 3px !important;
-}
-
-.invoice-items-scrollable .v-data-table__wrapper::-webkit-scrollbar-thumb,
-.invoice-items-scrollable::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
-  border-radius: 3px !important;
-}
-
-.invoice-items-scrollable .v-data-table__wrapper::-webkit-scrollbar-thumb:hover,
-.invoice-items-scrollable::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%) !important;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.invoice-items-scrollable .v-data-table__wrapper,
-.invoice-items-scrollable {
-  -ms-overflow-style: auto !important;
-  scrollbar-width: thin !important;
-  scrollbar-color: #1976d2 #f1f1f1 !important;
-}
-
-/* Force table to use exact column widths */
-.invoice-items-scrollable .v-data-table__wrapper table th[style*="width"],
-.invoice-items-scrollable .v-data-table__wrapper table td[style*="width"] {
-  width: inherit !important;
-}
-
 /* Ultra-compact spacing - Professional */
 .invoice-items-scrollable .v-data-table__wrapper table {
   border-spacing: 0 !important;
@@ -2215,11 +2135,6 @@ get_payments() {
   padding: 0 !important;
   width: 100% !important;
   table-layout: auto !important;
-}
-
-.invoice-items-scrollable .v-data-table__wrapper table tr {
-  margin: 0 !important;
-  padding: 0 !important;
 }
 
 .invoice-items-scrollable .v-data-table__wrapper table tr td,
@@ -2246,12 +2161,12 @@ get_payments() {
   display: flex !important;
   flex-direction: column !important;
   min-height: 0 !important;
+  border: 1px solid #ccc !important;
 }
 
-/* Remove any borders from table */
+/* Remove any borders from table wrapper only - NOT from cells */
 .invoice-items-scrollable .v-data-table,
-.invoice-items-scrollable .v-data-table__wrapper,
-.invoice-items-scrollable .v-data-table__wrapper table {
+.invoice-items-scrollable .v-data-table__wrapper {
   border: none !important;
   outline: none !important;
 }
@@ -2276,8 +2191,6 @@ get_payments() {
   max-width: none !important;
   flex: 1 !important;
 }
-
-/* ===== COMPACT QUANTITY CONTROLS - BEAUTIFUL & OPTIMIZED ===== */
 
 /* Compact Quantity Controls Container */
 .compact-qty-controls {
@@ -2376,7 +2289,6 @@ get_payments() {
 
 .qty-btn.minus-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
-  transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(245, 124, 0, 0.4);
 }
 
@@ -2401,7 +2313,6 @@ get_payments() {
 
 .qty-btn.plus-btn:hover {
   background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
-  transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(56, 142, 60, 0.4);
 }
 
@@ -2429,8 +2340,6 @@ get_payments() {
   font-size: 12px !important;
 }
 
-/* ===== COMPACT TABLE COLUMN INPUTS - BEAUTIFUL & OPTIMIZED ===== */
-
 /* Compact Rate Input Field */
 .compact-rate-wrapper {
   display: flex;
@@ -2449,7 +2358,6 @@ get_payments() {
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   border-color: #1565c0;
   box-shadow: 0 1px 4px rgba(25, 118, 210, 0.2);
-  transform: translateY(-1px);
 }
 
 .compact-rate-wrapper:focus-within {
@@ -2513,7 +2421,6 @@ get_payments() {
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   border-color: #1565c0;
   box-shadow: 0 1px 4px rgba(25, 118, 210, 0.2);
-  transform: translateY(-1px);
 }
 
 .compact-discount-wrapper.has-discount:hover {
@@ -2721,12 +2628,6 @@ get_payments() {
     height: 18px !important;
     font-size: 0.7rem !important;
   }
-
-  .invoice-items-scrollable .v-data-table__wrapper table th,
-  .invoice-items-scrollable .v-data-table__wrapper table td {
-    padding: 2px !important;
-    font-size: 0.7rem !important;
-  }
 }
 
 /* ===== PAYMENT CONTROLS CARD - COMPACT & PROFESSIONAL ===== */
@@ -2899,7 +2800,6 @@ get_payments() {
 }
 
 .action-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -2986,5 +2886,4 @@ get_payments() {
     font-size: 14px !important;
   }
 }
-
 </style>
