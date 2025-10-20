@@ -28,7 +28,15 @@
 
 ---
 
-## �🎯 Offers & Coupons
+## 💰 Easy Invoice Discount Control
+
+- Control show/hide Invoice discount percentage
+- Insert discount percentage (limited to allowed max percentage)
+- Sales invoice shows total Invoice discount amount & Percentage (simplified for invoice print format)
+
+---
+
+## 🎯 Offers & Coupons
 
 - **POS Offers** - Apply on: Item, Item Group, Brand, Transaction
 - **Offer Types:** Product/Give Product, Discount (%), Discount (Amount)
