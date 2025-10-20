@@ -24,7 +24,9 @@
         </div>
 
         <div class="badge" :class="shiftStartClass">
-          <v-icon size="12" :color="shiftStartIconColor">mdi-clock-start</v-icon>
+          <v-icon size="12" :color="shiftStartIconColor"
+            >mdi-clock-start</v-icon
+          >
           <span>{{ shiftStartText }}</span>
         </div>
 
@@ -46,12 +48,23 @@
 
       <!-- Action Buttons -->
       <div class="nav-actions">
-        <button class="action-btn" :class="{ disabled: !last_invoice }" :disabled="!last_invoice"
-          @click="print_last_invoice" :title="last_invoice ? 'Print Last Receipt' : 'No last receipt'">
-          <v-icon size="14" :color="last_invoice ? 'primary' : 'grey'">mdi-printer</v-icon>
+        <button
+          class="action-btn"
+          :class="{ disabled: !last_invoice }"
+          :disabled="!last_invoice"
+          @click="print_last_invoice"
+          :title="last_invoice ? 'Print Last Receipt' : 'No last receipt'"
+        >
+          <v-icon size="14" :color="last_invoice ? 'primary' : 'grey'"
+            >mdi-printer</v-icon
+          >
         </button>
 
-        <button class="action-btn cache-btn" @click="clearCache" title="Clear Cache">
+        <button
+          class="action-btn cache-btn"
+          @click="clearCache"
+          title="Clear Cache"
+        >
           <v-icon size="14" color="warning">mdi-cached</v-icon>
         </button>
 
@@ -63,29 +76,58 @@
                 <span>Menu</span>
               </button>
             </template>
-            <v-card class="mx-auto" max-width="300" tile>
-              <v-list density="compact" v-model="menu_item">
-                <v-list-item @click="close_shift_dialog" v-if="!pos_profile.posa_hide_closing_shift && menu_item == 0">
-                  <v-icon class="mr-2">mdi-content-save-move-outline</v-icon>
-                  <span>Close Shift</span>
+            <v-card class="dropdown-menu" elevation="8">
+              <v-list class="menu-list" density="compact" v-model="menu_item">
+                <v-list-item
+                  class="menu-item"
+                  @click="close_shift_dialog"
+                  v-if="!pos_profile.posa_hide_closing_shift && menu_item == 0"
+                >
+                  <template v-slot:prepend>
+                    <div class="menu-icon close-shift-icon">
+                      <v-icon size="16">mdi-content-save-move-outline</v-icon>
+                    </div>
+                  </template>
+                  <v-list-item-title class="menu-text"
+                    >Close Shift</v-list-item-title
+                  >
                 </v-list-item>
-                <v-divider class="my-0"></v-divider>
-                <v-list-item @click="logOut">
-                  <v-icon class="mr-2">mdi-logout</v-icon>
-                  <span>Logout</span>
+
+                <v-list-item class="menu-item" @click="logOut">
+                  <template v-slot:prepend>
+                    <div class="menu-icon logout-icon">
+                      <v-icon size="16">mdi-logout</v-icon>
+                    </div>
+                  </template>
+                  <v-list-item-title class="menu-text"
+                    >Logout</v-list-item-title
+                  >
                 </v-list-item>
-                <v-list-item @click="go_about">
-                  <v-icon class="mr-2">mdi-information-outline</v-icon>
-                  <span>About System</span>
+
+                <v-list-item class="menu-item" @click="go_about">
+                  <template v-slot:prepend>
+                    <div class="menu-icon about-icon">
+                      <v-icon size="16">mdi-information-outline</v-icon>
+                    </div>
+                  </template>
+                  <v-list-item-title class="menu-text"
+                    >About System</v-list-item-title
+                  >
                 </v-list-item>
-                <v-divider class="my-0"></v-divider>
               </v-list>
             </v-card>
           </v-menu>
         </div>
       </div>
     </div>
-    <v-snackbar v-model="snack" :timeout="5000" :color="snackColor" top right @click="snack = false">
+    <v-snackbar
+      v-model="snack"
+      :timeout="5000"
+      :color="snackColor"
+      top
+      right
+      @click="snack = false"
+    >
       {{ snackText }}
     </v-snackbar>
     <v-dialog v-model="freeze" persistent max-width="290">
@@ -99,9 +141,9 @@
 
 <script>
 // ===== SECTION 1: IMPORTS =====
-import { evntBus } from '../bus';
+import { evntBus } from "../bus";
 // Import cache manager utility
-import '../../utils/clearAllCaches.js';
+import "../../utils/clearAllCaches.js";
 import { API_MAP } from "../api_mapper.js";
 
 // ===== SECTION 2: EXPORT DEFAULT =====
@@ -113,140 +155,143 @@ export default {
       drawer: false,
       mini: true,
       item: 0,
-      items: [
-        { text: 'POS', icon: 'mdi-network-pos' }
-      ],
-      page: '',
+      items: [{ text: "POS", icon: "mdi-network-pos" }],
+      page: "",
       fav: true,
       menu: false,
       message: false,
       hints: true,
       menu_item: 0,
       snack: false,
-      snackColor: '',
-      snackText: '',
-      company_name: '',
-      pos_profile: '',
+      snackColor: "",
+      snackText: "",
+      company_name: "",
+      pos_profile: "",
       freeze: false,
-      freezeTitle: '',
-      freezeMsg: '',
-      last_invoice: '',
+      freezeTitle: "",
+      freezeMsg: "",
+      last_invoice: "",
       invoice_doc: null,
       pos_opening_shift: null,
       shift_invoice_count: 0,
       // Ping variables
-      pingTime: '000',
+      pingTime: "000",
       pingInterval: null,
     };
   },
   computed: {
     invoiceNumberText() {
       if (!this.invoice_doc || !this.invoice_doc.name) {
-        return 'Invoice not created yet';
+        return "Invoice not created yet";
       }
       return this.invoice_doc.name;
     },
     invoiceNumberClass() {
       if (!this.invoice_doc || !this.invoice_doc.name) {
-        return 'no-invoice';
+        return "no-invoice";
       }
-      return this.invoice_doc.is_return ? 'return-invoice' : 'regular-invoice';
+      return this.invoice_doc.is_return ? "return-invoice" : "regular-invoice";
     },
     invoiceIconColor() {
       if (!this.invoice_doc || !this.invoice_doc.name) {
-        return 'grey';
+        return "grey";
       }
-      return this.invoice_doc.is_return ? 'error' : 'primary';
+      return this.invoice_doc.is_return ? "error" : "primary";
     },
     shiftNumberText() {
       if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
-        return 'Shift not opened yet';
+        return "Shift not opened yet";
       }
       return this.pos_opening_shift.name;
     },
     shiftNumberClass() {
       if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
-        return 'no-shift';
+        return "no-shift";
       }
-      return this.pos_opening_shift.status === 'Open' ? 'open-shift' : 'closed-shift';
+      return this.pos_opening_shift.status === "Open"
+        ? "open-shift"
+        : "closed-shift";
     },
     shiftIconColor() {
       if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
-        return 'grey';
+        return "grey";
       }
-      return this.pos_opening_shift.status === 'Open' ? 'success' : 'warning';
+      return this.pos_opening_shift.status === "Open" ? "success" : "warning";
     },
     currentUserName() {
-      return frappe.session.user || 'Unknown User';
+      return frappe.session.user || "Unknown User";
     },
     shiftStartText() {
       if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
-        return 'Not opened';
+        return "Not opened";
       }
       if (!this.pos_opening_shift.period_start_date) {
-        return 'Unknown';
+        return "Unknown";
       }
       const startDate = new Date(this.pos_opening_shift.period_start_date);
-      const timeString = startDate.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+      const timeString = startDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       });
       return `${timeString}`;
     },
     shiftStartClass() {
       if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
-        return 'no-shift-start';
+        return "no-shift-start";
       }
-      return this.pos_opening_shift.status === 'Open' ? 'open-shift-start' : 'closed-shift-start';
+      return this.pos_opening_shift.status === "Open"
+        ? "open-shift-start"
+        : "closed-shift-start";
     },
     shiftStartIconColor() {
       if (!this.pos_opening_shift || !this.pos_opening_shift.name) {
-        return 'grey';
+        return "grey";
       }
-      return this.pos_opening_shift.status === 'Open' ? 'success' : 'warning';
+      return this.pos_opening_shift.status === "Open" ? "success" : "warning";
     },
     totalInvoicesQty() {
       // Get total invoices count for current shift
-      if (!this.pos_opening_shift || !this.pos_opening_shift.name || !this.pos_profile) {
-        return '000';
+      if (
+        !this.pos_opening_shift ||
+        !this.pos_opening_shift.name ||
+        !this.pos_profile
+      ) {
+        return "000";
       }
-      return this.shift_invoice_count || '000';
+      return this.shift_invoice_count || "000";
     },
     // Ping computed properties
     pingClass() {
       const ping = parseInt(this.pingTime);
-      if (ping < 100) return 'ping-excellent';
-      if (ping < 300) return 'ping-good';
-      if (ping < 500) return 'ping-fair';
-      return 'ping-poor';
+      if (ping < 100) return "ping-excellent";
+      if (ping < 300) return "ping-good";
+      if (ping < 500) return "ping-fair";
+      return "ping-poor";
     },
     pingIconColor() {
       const ping = parseInt(this.pingTime);
-      if (ping < 100) return 'success';
-      if (ping < 300) return 'primary';
-      if (ping < 500) return 'warning';
-      return 'error';
-    }
+      if (ping < 100) return "success";
+      if (ping < 300) return "primary";
+      if (ping < 500) return "warning";
+      return "error";
+    },
   },
   // ===== SECTION 4: METHODS =====
   methods: {
     changePage(key) {
-      this.$emit('changePage', key);
+      this.$emit("changePage", key);
     },
     go_desk() {
-      frappe.set_route('/');
+      frappe.set_route("/");
       location.reload();
     },
     go_about() {
-      const win = window.open(
-        'https://github.com/abdopcnet',
-        '_blank'
-      );
+      const win = window.open("https://github.com/abdopcnet", "_blank");
       win.focus();
     },
     close_shift_dialog() {
-      evntBus.emit('open_closing_dialog');
+      evntBus.emit("open_closing_dialog");
     },
     show_mesage(data) {
       this.snack = true;
@@ -257,12 +302,12 @@ export default {
       var me = this;
       me.logged_out = true;
       return frappe.call({
-        method: 'logout',
+        method: "logout",
         callback: function (r) {
           if (r.exc) {
             return;
           }
-          frappe.set_route('/login');
+          frappe.set_route("/login");
           location.reload();
         },
       });
@@ -277,16 +322,16 @@ export default {
       const letter_head = this.pos_profile.letter_head || 0;
       const url =
         frappe.urllib.get_base_url() +
-        '/printview?doctype=Sales%20Invoice&name=' +
+        "/printview?doctype=Sales%20Invoice&name=" +
         this.last_invoice +
-        '&trigger_print=1' +
-        '&format=' +
+        "&trigger_print=1" +
+        "&format=" +
         print_format +
-        '&no_letterhead=' +
+        "&no_letterhead=" +
         letter_head;
-      const printWindow = window.open(url, 'Print');
+      const printWindow = window.open(url, "Print");
       printWindow.addEventListener(
-        'load',
+        "load",
         function () {
           printWindow.print();
         },
@@ -295,19 +340,22 @@ export default {
     },
     fetch_company_info() {
       if (this.pos_profile && this.pos_profile.company) {
-        frappe.db.get_doc('Company', this.pos_profile.company).then((company_doc) => {
-          this.company_name = company_doc.company_name;
-        }).catch(() => {
-          // Error fetching company info
-        });
+        frappe.db
+          .get_doc("Company", this.pos_profile.company)
+          .then((company_doc) => {
+            this.company_name = company_doc.company_name;
+          })
+          .catch(() => {
+            // Error fetching company info
+          });
       }
     },
     async clearCache() {
       try {
         // Show loading message
         this.show_mesage({
-          color: 'info',
-          text: 'Clearing cache...'
+          color: "info",
+          text: "Clearing cache...",
         });
 
         // Use the comprehensive cache manager
@@ -316,8 +364,8 @@ export default {
 
           if (success) {
             this.show_mesage({
-              color: 'success',
-              text: 'Cache cleared successfully. Reloading...'
+              color: "success",
+              text: "Cache cleared successfully. Reloading...",
             });
 
             // Reload page after short delay
@@ -326,8 +374,8 @@ export default {
             }, 1000);
           } else {
             this.show_mesage({
-              color: 'error',
-              text: 'Error clearing cache'
+              color: "error",
+              text: "Error clearing cache",
             });
           }
         } else {
@@ -336,19 +384,18 @@ export default {
           sessionStorage.clear();
 
           this.show_mesage({
-            color: 'success',
-            text: 'Basic cache cleared. Reloading...'
+            color: "success",
+            text: "Basic cache cleared. Reloading...",
           });
 
           setTimeout(() => {
             location.reload();
           }, 1000);
         }
-
       } catch (error) {
         this.show_mesage({
-          color: 'error',
-          text: 'Error clearing cache: ' + error.message
+          color: "error",
+          text: "Error clearing cache: " + error.message,
         });
       }
     },
@@ -362,8 +409,8 @@ export default {
           method: API_MAP.POS_OPENING_SHIFT.GET_USER_SHIFT_INVOICE_COUNT,
           args: {
             pos_profile: this.pos_profile.name,
-            pos_opening_shift: this.pos_opening_shift.name
-          }
+            pos_opening_shift: this.pos_opening_shift.name,
+          },
         });
 
         if (response.message !== undefined) {
@@ -378,16 +425,16 @@ export default {
       const startTime = performance.now();
       try {
         await frappe.call({
-          method: 'frappe.ping',
+          method: "frappe.ping",
           args: {},
           callback: () => {
             const endTime = performance.now();
             const ping = Math.round(endTime - startTime);
-            this.pingTime = ping.toString().padStart(3, '0');
-          }
+            this.pingTime = ping.toString().padStart(3, "0");
+          },
         });
       } catch (error) {
-        this.pingTime = '999';
+        this.pingTime = "999";
       }
     },
     startPingMonitoring() {
@@ -412,53 +459,53 @@ export default {
         // Start ping monitoring
         this.startPingMonitoring();
 
-        evntBus.on('show_mesage', (data) => {
+        evntBus.on("show_mesage", (data) => {
           this.show_mesage(data);
         });
-        evntBus.on('set_company', (data) => {
+        evntBus.on("set_company", (data) => {
           this.company_name = data.name;
         });
-        evntBus.on('register_pos_profile', (data) => {
+        evntBus.on("register_pos_profile", (data) => {
           this.pos_profile = data.pos_profile;
           this.pos_opening_shift = data.pos_opening_shift;
           this.fetch_company_info();
           this.fetchShiftInvoiceCount();
           // External payments screen disabled - removed payments option
         });
-        evntBus.on('set_last_invoice', (data) => {
+        evntBus.on("set_last_invoice", (data) => {
           this.last_invoice = data;
         });
-        evntBus.on('update_invoice_doc', (data) => {
+        evntBus.on("update_invoice_doc", (data) => {
           this.invoice_doc = data;
         });
-        evntBus.on('set_pos_opening_shift', (data) => {
+        evntBus.on("set_pos_opening_shift", (data) => {
           this.pos_opening_shift = data;
           this.fetchShiftInvoiceCount();
         });
-        evntBus.on('register_pos_data', (data) => {
+        evntBus.on("register_pos_data", (data) => {
           this.pos_opening_shift = data.pos_opening_shift;
         });
-        evntBus.on('invoice_submitted', () => {
+        evntBus.on("invoice_submitted", () => {
           // Refresh invoice count when a new invoice is submitted
           // Add delay to wait for background job to complete
           setTimeout(() => {
             this.fetchShiftInvoiceCount();
           }, 2000); // Wait 2 seconds for background job
         });
-        evntBus.on('freeze', (data) => {
+        evntBus.on("freeze", (data) => {
           this.freeze = true;
           this.freezeTitle = data.title;
           this.freezeMsg = data.msg;
         });
-        evntBus.on('unfreeze', () => {
+        evntBus.on("unfreeze", () => {
           this.freeze = false;
-          this.freezTitle = '';
-          this.freezeMsg = '';
+          this.freezTitle = "";
+          this.freezeMsg = "";
         });
       } catch (error) {
         this.show_mesage({
-          color: 'error',
-          text: 'An error occurred while loading the menu.'
+          color: "error",
+          text: "An error occurred while loading the menu.",
         });
       }
     });
@@ -466,19 +513,19 @@ export default {
   beforeDestroy() {
     // Clean up ping monitoring
     this.stopPingMonitoring();
-    
+
     // Clean up all event listeners
-    evntBus.$off('show_mesage');
-    evntBus.$off('set_company');
-    evntBus.$off('register_pos_profile');
-    evntBus.$off('set_last_invoice');
-    evntBus.$off('update_invoice_doc');
-    evntBus.$off('set_pos_opening_shift');
-    evntBus.$off('register_pos_data');
-    evntBus.$off('invoice_submitted');
-    evntBus.$off('freeze');
-    evntBus.$off('unfreeze');
-  }
+    evntBus.$off("show_mesage");
+    evntBus.$off("set_company");
+    evntBus.$off("register_pos_profile");
+    evntBus.$off("set_last_invoice");
+    evntBus.$off("update_invoice_doc");
+    evntBus.$off("set_pos_opening_shift");
+    evntBus.$off("register_pos_data");
+    evntBus.$off("invoice_submitted");
+    evntBus.$off("freeze");
+    evntBus.$off("unfreeze");
+  },
 };
 </script>
 
@@ -674,7 +721,6 @@ export default {
 }
 
 .action-btn:active:not(.disabled) {
-  transform: translateY(0);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
@@ -720,6 +766,75 @@ export default {
   to {
     transform: rotate(180deg);
   }
+}
+
+/* ===== DROPDOWN MENU STYLES ===== */
+.dropdown-menu {
+  min-width: 200px;
+  border-radius: 8px !important;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.menu-list {
+  padding: 4px !important;
+  background: white;
+}
+
+.menu-item {
+  border-radius: 6px !important;
+  margin: 2px 0 !important;
+  min-height: 40px !important;
+  padding: 8px 12px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%) !important;
+}
+
+.menu-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  transition: all 0.2s ease;
+}
+
+.close-shift-icon {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+}
+
+.logout-icon {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  color: white;
+}
+
+.about-icon {
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  color: white;
+}
+
+.menu-item:hover .menu-icon {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.menu-text {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  letter-spacing: 0.2px;
+}
+
+.menu-divider {
+  margin: 4px 0 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Responsive - tighter at small screens */
