@@ -480,7 +480,6 @@ export default {
       try {
         const newQty = Number(item.qty) || 0;
         item.qty = newQty;
-        this.refreshTotals();
         // Use unified debounce for all item operations
         this.debouncedItemOperation("qty-change");
       } catch (error) {
@@ -494,11 +493,6 @@ export default {
     onQtyInput(item) {
       item.qty = Number(item.qty) || 0;
       // Just update the display, no need to recalculate discount
-      this.refreshTotals();
-    },
-    
-    refreshTotals() {
-      this.$forceUpdate();
     },
 
     increaseQuantity(item) {
@@ -627,8 +621,6 @@ export default {
 
         this.items.push(new_item);
       }
-
-      this.refreshTotals();
 
       // Check if this is the first item and no invoice exists
       if (this.items.length === 1 && !this.invoice_doc?.name) {
@@ -856,89 +848,6 @@ create_invoice(doc) {
       this._autoUpdateTimer = setTimeout(() => {
         this.queue_auto_save(reason);
       }, 500);
-    },
-
-    get_new_item(item) {
-      const new_item = { ...item };
-      if (!item.qty) {
-        item.qty = 1;
-      }
-      if (!item.posa_is_offer) {
-        item.posa_is_offer = 0;
-      }
-      if (!item.posa_is_replace) {
-        item.posa_is_replace = "";
-      }
-      new_item.stock_qty = item.qty;
-      new_item.discount_amount = 0;
-      new_item.discount_percentage = 0;
-      new_item.discount_amount_per_item = 0;
-      new_item.price_list_rate = item.rate;
-      new_item.base_rate = item.rate || item.price_list_rate || 0; // Save the base rate for reference
-      new_item.qty = item.qty;
-      new_item.uom = item.uom ? item.uom : item.stock_uom;
-      new_item.uom =
-        typeof new_item.uom === "object" &&
-        new_item.uom !== null &&
-        new_item.uom.uom
-          ? new_item.uom.uom
-          : new_item.uom;
-      new_item.actual_batch_qty = "";
-      new_item.conversion_factor = 1;
-
-      new_item.item_uoms = item.item_uoms || [];
-
-      if (
-        new_item.item_uoms.length === 0 ||
-        !new_item.item_uoms.some((uom) => uom.uom === item.stock_uom)
-      ) {
-        new_item.item_uoms.unshift({
-          uom: item.stock_uom,
-          conversion_factor: 1,
-        });
-      }
-
-      new_item.item_uoms = new_item.item_uoms
-        .map((uom) => {
-          if (typeof uom === "string") {
-            return { uom: uom, conversion_factor: 1 };
-          } else if (typeof uom === "object" && uom !== null) {
-            return {
-              uom: uom.uom || uom.name || uom.toString(),
-              conversion_factor: parseFloat(uom.conversion_factor) || 1,
-            };
-          } else {
-            return { uom: item.stock_uom || "Nos", conversion_factor: 1 };
-          }
-        })
-        .filter((uom) => uom && uom.uom); // Exclude invalid units
-
-      if (new_item.item_uoms && Array.isArray(new_item.item_uoms)) {
-        const selected_uom_obj = new_item.item_uoms.find(
-          (uom) => uom.uom === new_item.uom
-        );
-        if (selected_uom_obj) {
-          new_item.conversion_factor = parseFloat(
-            selected_uom_obj.conversion_factor
-          );
-        }
-      }
-
-      new_item.posa_offers = JSON.stringify([]);
-      new_item.posa_offer_applied = 0;
-      new_item.posa_is_offer = item.posa_is_offer;
-      new_item.posa_is_replace = item.posa_is_replace || null;
-      new_item.is_free_item = 0;
-      new_item.posa_notes = "";
-      new_item.posa_row_id = this.makeid(20);
-
-      if (
-        (!this.pos_profile?.posa_auto_set_batch && new_item.has_batch_no) ||
-        new_item.has_serial_no
-      ) {
-        this.expanded.push(new_item);
-      }
-      return new_item;
     },
 
     cancel_invoice() {
@@ -1485,9 +1394,6 @@ get_payments() {
         item.rate = flt(item.price_list_rate) || flt(item.base_rate) || 0;
       }
 
-      // Recalculate item with new discount for immediate visual feedback
-      this.refreshTotals();
-
       // Use unified debounce for all item operations
       this.debouncedItemOperation("discount-change");
 
@@ -1522,9 +1428,6 @@ get_payments() {
         // No discount if rate equals or exceeds base price
         item.discount_percentage = 0;
       }
-
-      // Recalculate totals for immediate visual feedback
-      this.refreshTotals();
 
       // Use unified debounce for all item operations
       this.debouncedItemOperation("rate-change");
