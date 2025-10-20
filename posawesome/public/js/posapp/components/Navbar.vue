@@ -56,7 +56,7 @@
         </button>
 
         <div class="menu-wrapper">
-          <v-menu offset="y">
+          <v-menu>
             <template v-slot:activator="{ props }">
               <button class="action-btn menu-btn" v-bind="props">
                 <v-icon size="14">mdi-menu</v-icon>
@@ -670,7 +670,6 @@ export default {
 .action-btn:hover:not(.disabled) {
   background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
   border-color: #bdbdbd;
-  transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
