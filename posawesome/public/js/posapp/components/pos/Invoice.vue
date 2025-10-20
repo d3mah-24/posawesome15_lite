@@ -437,18 +437,13 @@ export default {
     },
     canPrintInvoice() {
       if (this.readonly || !this.items?.length) return false;
-      const hasPayment = this.invoice_doc?.payments?.some(p => this.flt(p.amount) > 0);
-      return hasPayment || !!this.defaultPaymentMode;
+      return this.hasValidPayments() || !!this.defaultPaymentMode;
     },
     hasItems() {
       return this.items && this.items.length > 0;
     },
     hasChosenPayment() {
-      const payments =
-        this.invoice_doc && Array.isArray(this.invoice_doc?.payments)
-          ? this.invoice_doc?.payments
-          : [];
-      return payments.some((p) => this.flt(p.amount) > 0);
+      return this.hasValidPayments();
     },
   },
 
@@ -492,7 +487,7 @@ export default {
     },
 
     quick_return() {
-      if (!this.pos_profile?.posa_allow_quick_return || !this.customer || !this.items.length || !this.validate()) {
+      if (!this.pos_profile?.posa_allow_quick_return || !this.customer || !this.items.length) {
         return;
       }
       this.quick_return_value = !this.quick_return_value;
@@ -549,6 +544,26 @@ export default {
       return flt(item.rate * item.qty, this.currency_precision);
     },
 
+    resetInvoiceState() {
+      this.invoiceType = "Invoice";
+      this.invoiceTypes = ["Invoice"];
+      this.posting_date = frappe.datetime.nowdate();
+      this.items = [];
+      this.posa_offers = [];
+      this.posa_coupons = [];
+      this.discount_amount = 0;
+      this.additional_discount_percentage = 0;
+      evntBus.emit("update_invoice_type", this.invoiceType);
+      evntBus.emit("set_pos_coupons", []);
+      // Clear invoice doc display in navbar
+      evntBus.emit("update_invoice_doc", null);
+    },
+
+    hasValidPayments(invoice_doc = null) {
+      const doc = invoice_doc || this.invoice_doc;
+      return doc?.payments?.some(p => this.flt(p.amount) > 0) || false;
+    },
+
    async create_draft_invoice() {
   try {
     const doc = this.get_invoice_doc("draft");
@@ -581,6 +596,9 @@ create_invoice(doc) {
             resolve(null);
           } else {
             vm.invoice_doc = r.message;
+
+            // Emit event for navbar to update invoice display
+            evntBus.emit("update_invoice_doc", vm.invoice_doc);
 
             // Update posa_offers from backend response
             if (r.message.posa_offers) {
@@ -754,21 +772,11 @@ create_invoice(doc) {
         });
       }
 
-      this.invoiceType = "Invoice";
-      this.invoiceTypes = ["Invoice"];
-      evntBus.emit("update_invoice_type", this.invoiceType);
-      this.posting_date = frappe.datetime.nowdate();
-      this.items = [];
-      this.posa_offers = [];
-      evntBus.emit("set_pos_coupons", []);
-      this.posa_coupons = [];
+      this.resetInvoiceState();
       this.customer = this.pos_profile?.customer;
       this.invoice_doc = "";
       this.return_doc = "";
-      this.discount_amount = 0;
-      this.additional_discount_percentage = 0;
       evntBus.emit("set_customer_readonly", false);
-
       evntBus.emit("show_payment", "false");
     },
 
@@ -793,20 +801,10 @@ create_invoice(doc) {
     },
 
     reset_invoice_session() {
-      this.invoiceType = "Invoice";
-      this.invoiceTypes = ["Invoice"];
-      evntBus.emit("update_invoice_type", this.invoiceType);
-      this.posting_date = frappe.datetime.nowdate();
-      this.items = [];
-      this.posa_offers = [];
-      evntBus.emit("set_pos_coupons", []);
-      this.posa_coupons = [];
-      this.discount_amount = 0;
-      this.additional_discount_percentage = 0;
+      this.resetInvoiceState();
       this.return_doc = null;
       this.invoice_doc = "";
       this.customer = this.pos_profile?.customer || this.customer;
-      this.refreshTotals?.();
       evntBus.emit("new_invoice", "false");
     },
 
@@ -814,9 +812,10 @@ create_invoice(doc) {
       let old_invoice = null;
       evntBus.emit("set_customer_readonly", false);
       this.posa_offers = [];
-      evntBus.emit("set_pos_coupons", []);
       this.posa_coupons = [];
       this.return_doc = "";
+      evntBus.emit("set_pos_coupons", []);
+      
       const doc = this.get_invoice_doc();
       if (doc.name) {
         old_invoice = this.update_invoice(doc);
@@ -1124,10 +1123,6 @@ get_payments() {
           color: "error",
         });
       }
-    },
-
-    validate() {
-      return true; // Server validates
     },
 
     open_returns() {
@@ -1634,9 +1629,7 @@ get_payments() {
 
       this.process_invoice()
         .then((invoice_doc) => {
-          const hasPayment = invoice_doc?.payments?.some(p => this.flt(p.amount) > 0);
-          
-          if (!hasPayment) {
+          if (!this.hasValidPayments(invoice_doc)) {
             evntBus.emit("show_payment", "true");
             evntBus.emit("hide_loading");
             return;
@@ -1665,7 +1658,7 @@ get_payments() {
                 evntBus.emit("show_mesage", {text: `Invoice ${r.message.name} submitted`, color: "success"});
                 frappe.utils.play_sound("submit");
 
-                this.items = [];
+                this.resetInvoiceState();
                 this.invoice_doc = null;
                 evntBus.emit("new_invoice", "false");
                 evntBus.emit("invoice_submitted");
@@ -1839,24 +1832,15 @@ get_payments() {
         this.$forceUpdate();
       }
     });
-    evntBus.on("request_invoice_print", async () => {
-      try {
-        if (!this.canPrintInvoice()) {
-          evntBus.emit("show_mesage", {
-            text: "Please select a payment method before printing",
-            color: "warning",
-          });
-          return;
-        }
-        const invoice_doc = await this.process_invoice();
-        evntBus.emit("send_invoice_doc_payment", invoice_doc);
-        this.printInvoice();
-      } catch (error) {
+    evntBus.on("request_invoice_print", () => {
+      if (!this.canPrintInvoice()) {
         evntBus.emit("show_mesage", {
-          text: "Failed to prepare invoice for printing: " + error.message,
-          color: "error",
+          text: "Please select a payment method before printing",
+          color: "warning",
         });
+        return;
       }
+      this.printInvoice();
     });
   },
   beforeDestroy() {
@@ -1892,11 +1876,6 @@ get_payments() {
         this.debouncedItemOperation("discount-amount-change");
       }
     },
-  },
-  updated() {
-    this.$nextTick(() => {
-      // Component mounted
-    });
   },
 };
 </script>
