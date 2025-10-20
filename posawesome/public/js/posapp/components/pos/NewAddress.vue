@@ -142,6 +142,11 @@ export default {
       this.customer = data;
     });
   },
+
+  beforeDestroy() {
+    // Clean up event listener
+    evntBus.$off('open_new_address');
+  }
 };
 </script>
 
