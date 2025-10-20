@@ -832,6 +832,7 @@ create_invoice(doc) {
 
       this.invoiceType = "Invoice";
       this.invoiceTypes = ["Invoice"];
+      evntBus.emit("update_invoice_type", this.invoiceType);
       this.posting_date = frappe.datetime.nowdate();
       this.items = [];
       this.posa_offers = [];
@@ -870,6 +871,7 @@ create_invoice(doc) {
     reset_invoice_session() {
       this.invoiceType = "Invoice";
       this.invoiceTypes = ["Invoice"];
+      evntBus.emit("update_invoice_type", this.invoiceType);
       this.posting_date = frappe.datetime.nowdate();
       this.items = [];
       this.posa_offers = [];
@@ -907,11 +909,13 @@ create_invoice(doc) {
         this.additional_discount_percentage = 0;
         this.invoiceType = "Invoice";
         this.invoiceTypes = ["Invoice"];
+        evntBus.emit("update_invoice_type", this.invoiceType);
       } else {
         if (data.is_return) {
           evntBus.emit("set_customer_readonly", true);
           this.invoiceType = "Return";
           this.invoiceTypes = ["Return"];
+          evntBus.emit("update_invoice_type", this.invoiceType);
         }
         this.invoice_doc = data;
         this.items = data.items || [];
@@ -933,7 +937,7 @@ create_invoice(doc) {
             this.set_batch_qty(item, item.batch_no);
           }
         });
-        this.customer = data.customer;
+        this.setCustomer(data.customer);
         this.posting_date = data.posting_date || frappe.datetime.nowdate();
         this.discount_amount = data.discount_amount;
         this.additional_discount_percentage =
@@ -1210,8 +1214,7 @@ get_payments() {
     this.posa_coupons = [];
 
         if (this.pos_profile?.posa_clear_customer_after_payment) {
-          this.customer = this.pos_profile?.customer;
-          evntBus.emit("set_customer", this.customer);
+          this.setCustomer(this.pos_profile?.customer);
         }
 
         evntBus.emit("invoice_session_reset");
@@ -1247,6 +1250,18 @@ get_payments() {
       evntBus.emit("show_payment", "false");
     },
 
+    setCustomer(customer) {
+      this.customer = customer;
+      this.close_payments();
+      evntBus.emit("set_customer", this.customer);
+      if (this.invoice_doc) {
+        this.invoice_doc.contact_person = "";
+        this.invoice_doc.contact_email = "";
+        this.invoice_doc.contact_mobile = "";
+      }
+      this.fetch_customer_details();
+    },
+
     fetch_customer_details() {
       const vm = this;
       if (this.customer) {
@@ -1262,6 +1277,7 @@ get_payments() {
               vm.customer_info = {
                 ...message,
               };
+              evntBus.emit("set_customer_info_to_edit", vm.customer_info);
             }
             vm.update_price_list();
           },
@@ -1923,7 +1939,7 @@ get_payments() {
 
     evntBus.on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
-      this.customer = data.pos_profile?.customer;
+      this.setCustomer(data.pos_profile?.customer);
       this.pos_opening_shift = data.pos_opening_shift;
       this.stock_settings = data.stock_settings;
       this.float_precision =
@@ -1931,12 +1947,13 @@ get_payments() {
       this.currency_precision =
         frappe.defaults.get_default("currency_precision") || 2;
       this.invoiceType = "Invoice";
+      evntBus.emit("update_invoice_type", this.invoiceType);
     });
     evntBus.on("add_item", (item) => {
       this.add_item(item);
     });
     evntBus.on("update_customer", (customer) => {
-      this.customer = customer;
+      this.setCustomer(customer);
     });
     evntBus.on("fetch_customer_details", () => {
       this.fetch_customer_details();
@@ -2071,38 +2088,6 @@ get_payments() {
   },
   // ===== SECTION 6: WATCH =====
   watch: {
-    customer() {
-      this.close_payments();
-      evntBus.emit("set_customer", this.customer);
-      // Reset contact fields to avoid ERPNext validation error when customer changes
-      if (this.invoice_doc) {
-        this.invoice_doc.contact_person = "";
-        this.invoice_doc.contact_email = "";
-        this.invoice_doc.contact_mobile = "";
-      }
-      this.fetch_customer_details();
-    },
-    customer_info() {
-      evntBus.emit("set_customer_info_to_edit", this.customer_info);
-    },
-    discount_percentage_offer_name() {
-      evntBus.emit("update_discount_percentage_offer_name", {
-        value: this.discount_percentage_offer_name,
-      });
-    },
-    // items watcher removed - using Event-driven approach instead
-    invoiceType() {
-      evntBus.emit("update_invoice_type", this.invoiceType);
-    },
-    invoice_doc: {
-      deep: true,
-      handler(newDoc) {
-        evntBus.emit("update_invoice_doc", newDoc);
-        if (newDoc && newDoc.name) {
-          this.$forceUpdate();
-        }
-      },
-    },
     discount_amount() {
       if (this.invoice_doc && this.invoice_doc?.name) {
         this.debouncedItemOperation("discount-amount-change");
