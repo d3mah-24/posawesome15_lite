@@ -2,7 +2,6 @@ import { createApp } from 'vue';
 import Home from './Home.vue';
 import { createVuetify } from 'vuetify';
 import 'vuetify/styles';
-import './components/assets/style.css'
 
 // Define Vue 3 feature flags for better tree-shaking and performance
 // See: https://link.vuejs.org/feature-flags
