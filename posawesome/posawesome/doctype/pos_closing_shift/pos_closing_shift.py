@@ -12,37 +12,37 @@ from datetime import datetime, time as dtime, timedelta
 
 class POSClosingShift(Document):
     def validate(self):
-		# Validate shift closing allowed time window based on POS Profile settings
-		self._validate_shift_closing_window()
+        # Validate shift closing allowed time window based on POS Profile settings
+        self._validate_shift_closing_window()
 
-            user = frappe.get_all(
-                "POS Closing Shift",
-                filters={
-                    "user": self.user,
-                    "docstatus": 1,
-                    "pos_opening_shift": self.pos_opening_shift,
-                    "name": ["!=", self.name],
-                },
+        user = frappe.get_all(
+            "POS Closing Shift",
+            filters={
+                "user": self.user,
+                "docstatus": 1,
+                "pos_opening_shift": self.pos_opening_shift,
+                "name": ["!=", self.name],
+            },
+        )
+
+        if user:
+            frappe.throw(
+                _(
+                    "POS Closing Shift {} against {} between selected period".format(
+                        frappe.bold("already exists"), frappe.bold(self.user)
+                    )
+                ),
+                title=_("Invalid Period"),
             )
 
-            if user:
-                frappe.throw(
-                    _(
-                        "POS Closing Shift {} against {} between selected period".format(
-                            frappe.bold("already exists"), frappe.bold(self.user)
-                        )
-                    ),
-                    title=_("Invalid Period"),
-                )
+        if frappe.db.get_value("POS Opening Shift", self.pos_opening_shift, "status") != "Open":
+            frappe.throw(
+                _("Selected POS Opening Shift should be open."),
+                title=_("Invalid Opening Entry"),
+            )
+        self.update_payment_reconciliation()
 
-		if frappe.db.get_value("POS Opening Shift", self.pos_opening_shift, "status") != "Open":
-                frappe.throw(
-                    _("Selected POS Opening Shift should be open."),
-                    title=_("Invalid Opening Entry"),
-                )
-            self.update_payment_reconciliation()
-
-	def _parse_time(self, value):
+    def _parse_time(self, value):
 		"""Parse a value to datetime.time supporting str and time inputs."""
 		if not value:
 			return None
