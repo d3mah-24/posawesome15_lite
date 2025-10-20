@@ -221,7 +221,7 @@ frappe.PosApp.posapp = class {
                         error: '#E86674',
                         orange: '#E65100',
                         golden: '#A68C59',
-                        badge: '#F5528C',
+                        badge: '#F5528C',     
                         customPrimary: '#085294',
                     },
                 },
