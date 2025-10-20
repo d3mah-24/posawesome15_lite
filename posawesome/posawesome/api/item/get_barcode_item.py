@@ -314,6 +314,7 @@ def _fetch_item_with_price(item_code, price_list):
             "max_discount": item.get("max_discount", 0),
             "price_list_rate": item.get("price_list_rate", 0),
             "rate": item.get("price_list_rate", 0),  # Same as price_list_rate
+            "base_rate": item.get("price_list_rate", 0),  # Same as price_list_rate
         }
         
     except Exception as e:
