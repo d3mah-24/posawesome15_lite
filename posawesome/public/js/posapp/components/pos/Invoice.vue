@@ -302,37 +302,22 @@ export default {
   // ===== DATA =====
   data() {
     return {
-      // POS Configuration
       pos_profile: null,
       pos_opening_shift: null,
       stock_settings: null,
-      
-      // Invoice Documents
       invoice_doc: null,
       return_doc: null,
-      
-      // Customer Data
       customer: "",
       customer_info: {},
-      
-      // Pricing & Discounts
       discount_amount: 0,
       additional_discount_percentage: 0,
       total_tax: 0,
-      
-      // Items Management
       items: [],
-      
-      // Offers & Promotions
       posa_offers: [],
       posa_coupons: [],
       discount_percentage_offer_name: null,
-      
-      // Precision Settings
       float_precision: 2,
       currency_precision: 2,
-      
-      // Date & Return Management
       invoice_posting_date: false,
       posting_date: frappe.datetime.nowdate(),
       quick_return_value: false,
@@ -567,19 +552,16 @@ export default {
    async create_draft_invoice() {
   try {
     const doc = this.get_invoice_doc("draft");
-    
-    // Use create_invoice instead of update_invoice
     const result = await this.create_invoice(doc);
-
+    
     if (result) {
       this.invoice_doc = result;
-      evntBus.emit("show_mesage", {text: "Draft created", color: "success"});
     } else {
       this.invoice_doc = null;
       this.items = [];
     }
   } catch (error) {
-    evntBus.emit("show_mesage", {text: "Draft failed", color: "error"});
+    // Draft creation failed - continue with current state
   }
 },
 create_invoice(doc) {
@@ -619,7 +601,6 @@ create_invoice(doc) {
         }
       },
       error: function (err) {
-        evntBus.emit("show_mesage", {text: "Create failed", color: "error"});
         reject(err);
       },
     });
@@ -631,7 +612,6 @@ create_invoice(doc) {
     return;
   }
 
-  // Skip auto-update if no items and no invoice doc
   if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
     return;
   }
@@ -1049,27 +1029,11 @@ get_payments() {
         }
       },
       error: function (err) {
-        if (
-          err.message &&
-          err.message.includes("Document has been modified")
-        ) {
-          evntBus.emit("show_mesage", {
-            text: "Invoice was modified elsewhere, will reload",
-            color: "warning",
-          });
-
+        if (err.message && err.message.includes("Document has been modified")) {
           vm.reload_invoice()
-            .then(() => {
-              resolve(vm.invoice_doc);
-            })
-            .catch((reloadError) => {
-              reject(reloadError);
-            });
+            .then(() => resolve(vm.invoice_doc))
+            .catch((reloadError) => reject(reloadError));
         } else {
-          evntBus.emit("show_mesage", {
-            text: "Error updating invoice",
-            color: "error",
-          });
           reject(err);
         }
       },
@@ -1091,17 +1055,7 @@ get_payments() {
     },
 
     async show_payment() {
-      if (this.readonly) {
-        return;
-      }
-      if (!this.customer) {
-        evntBus.emit("show_mesage", {text: "No customer!", color: "error"});
-        return;
-      }
-      if (!this.items.length) {
-        evntBus.emit("show_mesage", {text: "No items!", color: "error"});
-        return;
-      }
+      if (this.readonly) return;
 
       evntBus.emit("show_loading", {text: "Loading...", color: "info"});
 
@@ -1173,16 +1127,11 @@ get_payments() {
     },
 
     validate() {
-      // Minimal client-side validation; server performs authoritative checks
-      if (!this.items || this.items.length === 0) return true;
-      return true;
+      return true; // Server validates
     },
 
     open_returns() {
-      if (!this.pos_profile?.posa_allow_return) {
-        evntBus.emit("show_mesage", {text: "Returns disabled", color: "error"});
-        return;
-      }
+      if (!this.pos_profile?.posa_allow_return) return;
 
       evntBus.emit("open_returns", {
         pos_profile: this.pos_profile,
@@ -1679,15 +1628,7 @@ get_payments() {
     },
 
     printInvoice() {
-      if (!this.invoice_doc || !this.items?.length) {
-        evntBus.emit("show_mesage", {text: "No invoice to print", color: "error"});
-        return;
-      }
-
-      if (!this.defaultPaymentMode) {
-        evntBus.emit("show_mesage", {text: "No payment method", color: "error"});
-        return;
-      }
+      if (!this.invoice_doc || !this.defaultPaymentMode) return;
 
       evntBus.emit("show_loading", {text: "Processing...", color: "info"});
 
@@ -1696,7 +1637,6 @@ get_payments() {
           const hasPayment = invoice_doc?.payments?.some(p => this.flt(p.amount) > 0);
           
           if (!hasPayment) {
-            evntBus.emit("show_mesage", {text: "Choose payment first", color: "warning"});
             evntBus.emit("show_payment", "true");
             evntBus.emit("hide_loading");
             return;
