@@ -441,7 +441,8 @@ export default {
       this.invoice_doc = invoice_doc;
       const defaultPayment = this.getDefaultPayment();
       if (defaultPayment) {
-        defaultPayment.amount = this.flt(invoice_doc.grand_total, this.currency_precision);
+        const total = this.flt(invoice_doc.rounded_total) || this.flt(invoice_doc.grand_total);
+        defaultPayment.amount = this.flt(total, this.currency_precision);
       }
       this.exposeSubmit(true, true);
     },
@@ -483,7 +484,8 @@ export default {
           this.showMessage("No default payment method in POS profile", "error");
           return;
         }
-        defaultPayment.amount = this.flt(this.invoice_doc.grand_total, this.currency_precision);
+        const total = this.flt(this.invoice_doc.rounded_total) || this.flt(this.invoice_doc.grand_total);
+        defaultPayment.amount = this.flt(total, this.currency_precision);
       }
 
       this.submit_invoice(print, autoMode);
@@ -908,7 +910,8 @@ export default {
         this.is_write_off_change = 0;
 
         if (default_payment && !invoice_doc.is_return) {
-          default_payment.amount = this.flt(invoice_doc.grand_total, this.currency_precision);
+          const total = this.flt(invoice_doc.rounded_total) || this.flt(invoice_doc.grand_total);
+          default_payment.amount = this.flt(total, this.currency_precision);
         }
 
         if (invoice_doc.is_return) {
