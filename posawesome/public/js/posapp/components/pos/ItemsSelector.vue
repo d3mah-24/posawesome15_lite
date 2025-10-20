@@ -532,7 +532,6 @@ export default {
               currency: it.currency,
               actual_qty: it.actual_qty,
               stock_uom: it.stock_uom,
-              has_zero_price: it.has_zero_price || 0, // ✅ Added for zero price check
               // Empty arrays for compatibility with barcode/batch/serial features
               item_barcode: [],
               serial_no_data: [],
@@ -616,26 +615,7 @@ export default {
       return items_headers;
     },
 
-    checkZeroPriceItem(item) {
-      if (
-        item.has_zero_price &&
-        !this.pos_profile.posa_allow_zero_rated_items
-      ) {
-        evntBus.emit("show_mesage", {
-          text: `Item ${item.item_name} has zero price but Your Profile Not Allowed.`,
-          color: "error",
-        });
-        return true; // Item blocked
-      }
-      return false; // Item allowed
-    },
-
     add_item_table(event, item) {
-      // Check zero price using shared function
-      if (this.checkZeroPriceItem(item.item)) {
-        return;
-      }
-
       // إضافة الصنف كما هو من API مع الحد الأدنى من التعديلات
       evntBus.emit("add_item", {
         ...item.item,
@@ -645,11 +625,6 @@ export default {
     },
 
     add_item(item) {
-      // Check zero price using shared function
-      if (this.checkZeroPriceItem(item)) {
-        return;
-      }
-
       // إضافة الصنف كما هو من API مع الحد الأدنى من التعديلات
       evntBus.emit("add_item", {
         ...item,
@@ -790,7 +765,6 @@ export default {
             vm.items = (r.message || []).map((it) => ({
               ...it,
               item_group: it.item_group, // ✅ Added
-              has_zero_price: it.has_zero_price || 0, // ✅ Added for zero price check
               price_list_rate: it.price_list_rate || it.rate,
               base_rate: it.base_rate || it.rate,
               item_barcode: Array.isArray(it.item_barcode)
@@ -839,7 +813,6 @@ export default {
             vm.items = (r.message || []).map((it) => ({
               ...it,
               item_group: it.item_group, // ✅ Added
-              has_zero_price: it.has_zero_price || 0, // ✅ Added for zero price check
               price_list_rate: it.price_list_rate || it.rate,
               base_rate: it.base_rate || it.rate,
               item_barcode: Array.isArray(it.item_barcode)
