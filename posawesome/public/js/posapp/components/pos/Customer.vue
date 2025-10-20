@@ -322,7 +322,19 @@ export default {
     // Clean up search timeout
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
     }
+    
+    // Clean up all event listeners
+    evntBus.$off(EVENT_NAMES.TOGGLE_QUICK_RETURN, this.handleToggleQuickReturn);
+    evntBus.$off(EVENT_NAMES.REGISTER_POS_PROFILE, this.handleRegisterPosProfile);
+    evntBus.$off(EVENT_NAMES.PAYMENTS_REGISTER_POS_PROFILE, this.handlePaymentsRegisterPosProfile);
+    evntBus.$off(EVENT_NAMES.SET_CUSTOMER, this.handleSetCustomer);
+    evntBus.$off(EVENT_NAMES.ADD_CUSTOMER_TO_LIST, this.handleAddCustomerToList);
+    evntBus.$off(EVENT_NAMES.SET_CUSTOMER_READONLY, this.handleSetCustomerReadonly);
+    evntBus.$off(EVENT_NAMES.SET_CUSTOMER_INFO_TO_EDIT, this.handleSetCustomerInfoToEdit);
+    evntBus.$off(EVENT_NAMES.FETCH_CUSTOMER_DETAILS, this.handleFetchCustomerDetails);
+    evntBus.$off(EVENT_NAMES.CUSTOMER_DROPDOWN_OPENED, this.handleCustomerDropdownOpened);
   },
 
   watch: {
