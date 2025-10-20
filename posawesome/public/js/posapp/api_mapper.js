@@ -55,7 +55,13 @@ const API_MAP = {
     GET_CURRENT_SHIFT_NAME: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.get_current_shift_name",
     GET_USER_SHIFT_INVOICE_COUNT: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.get_user_shift_invoice_count",
     MAKE_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening",
-    SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift"
+    SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
+    CHECK_OPENING_TIME_ALLOWED: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.check_opening_time_allowed"
+  },
+
+  // POS Closing Shift APIs (from ClosingDialog.vue)
+  POS_CLOSING_SHIFT: {
+    CHECK_CLOSING_TIME_ALLOWED: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.check_closing_time_allowed"
   },
 
   // ERPNext Standard APIs (from Invoice.vue, Returns.vue, Payments.vue, Pos.vue)
