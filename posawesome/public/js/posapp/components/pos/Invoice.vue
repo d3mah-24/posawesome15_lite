@@ -167,7 +167,7 @@
         </div>
 
         <div class="summary-field editable-field">
-          <label>Inv Disc %</label>
+          <label>inv_disc%</label>
           <input
             type="number"
             v-model.number="additional_discount_percentage"
@@ -187,15 +187,15 @@
         </div>
 
         <div class="summary-field readonly-field warning-field">
-          <label>Items Disc</label>
+          <label>items_dis</label>
           <div class="field-value">
             {{ currencySymbol(pos_profile?.currency)
-            }}{{ formatCurrency(invoice_doc?.total_items_discount || 0) }}
+            }}{{ formatCurrency(invoice_doc?.posa_item_discount_total || 0) }}
           </div>
         </div>
 
         <div class="summary-field readonly-field">
-          <label>Before Disc</label>
+          <label>before_disc</label>
           <div class="field-value">
             {{ currencySymbol(pos_profile?.currency)
             }}{{ formatCurrency(invoice_doc?.total || 0) }}
@@ -203,7 +203,7 @@
         </div>
 
         <div class="summary-field readonly-field">
-          <label>Net Total</label>
+          <label>net_total</label>
           <div class="field-value">
             {{ currencySymbol(pos_profile?.currency)
             }}{{ formatCurrency(invoice_doc?.net_total) }}
@@ -211,7 +211,7 @@
         </div>
 
         <div class="summary-field readonly-field info-field">
-          <label>Tax</label>
+          <label>tax</label>
           <div class="field-value">
             {{ currencySymbol(pos_profile?.currency)
             }}{{ formatCurrency(invoice_doc?.total_taxes_and_charges) }}
@@ -219,7 +219,7 @@
         </div>
 
         <div class="summary-field readonly-field success-field grand-total">
-          <label>Grand Total</label>
+          <label>grand_total</label>
           <div class="field-value">
             {{ currencySymbol(pos_profile?.currency)
             }}{{ formatCurrency(invoice_doc?.grand_total) }}
@@ -344,7 +344,7 @@ export default {
       // Table Headers Configuration
       items_headers: [
         {
-          title: "I-Name",
+          title: "i_name",
           align: "start",
           sortable: true,
           key: "item_name",
@@ -363,25 +363,25 @@ export default {
           width: "8%" 
         },
         {
-          title: "Price",
+          title: "list_price",
           key: "price_list_rate",
           align: "center",
           width: "10%",
         },
         { 
-          title: "D-Price", 
+          title: "dis_price", 
           key: "rate", 
           align: "center", 
           width: "10%" 
         },
         {
-          title: "Dis %",
+          title: "dis_%",
           key: "discount_percentage",
           align: "center",
           width: "8%",
         },
         {
-          title: "Dis Amount",
+          title: "dis_amount",
           key: "discount_amount",
           align: "center",
           width: "10%",
@@ -480,6 +480,8 @@ export default {
       try {
         const newQty = Number(item.qty) || 0;
         item.qty = newQty;
+        // Calculate amount immediately for visual feedback
+        item.amount = flt(item.rate * item.qty, this.currency_precision);
         // Use unified debounce for all item operations
         this.debouncedItemOperation("qty-change");
       } catch (error) {
@@ -492,12 +494,15 @@ export default {
     
     onQtyInput(item) {
       item.qty = Number(item.qty) || 0;
-      // Just update the display, no need to recalculate discount
+      // Calculate amount immediately for visual feedback
+      item.amount = flt(item.rate * item.qty, this.currency_precision);
     },
 
     increaseQuantity(item) {
       // Simplified: just update qty and let batch update handle server sync
       item.qty = (Number(item.qty) || 0) + 1;
+      // Calculate amount immediately for visual feedback
+      item.amount = flt(item.rate * item.qty, this.currency_precision);
       evntBus.emit("item_updated", item);
     },
 
@@ -508,6 +513,8 @@ export default {
         this.remove_item(item);
       } else {
         item.qty = newQty;
+        // Calculate amount immediately for visual feedback
+        item.amount = flt(item.rate * item.qty, this.currency_precision);
         evntBus.emit("item_updated", item);
       }
     },
@@ -594,6 +601,13 @@ export default {
       }
 
       const new_item = Object.assign({}, item);
+      
+      console.log("📦 ADD_ITEM - Initial item data:", {
+        item_code: new_item.item_code,
+        price_list_rate: new_item.price_list_rate,
+        rate: new_item.rate,
+        base_rate: new_item.base_rate
+      });
 
       if (!new_item.uom) {
         new_item.uom = new_item.stock_uom || "Nos";
@@ -609,17 +623,40 @@ export default {
 
       if (existing_item) {
         existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
+        // Recalculate amount when qty changes
+        existing_item.amount = flt(existing_item.rate * existing_item.qty, this.currency_precision);
         reason = "item-updated";
+        console.log("📦 ADD_ITEM - Existing item updated:", {
+          item_code: existing_item.item_code,
+          price_list_rate: existing_item.price_list_rate,
+          qty: existing_item.qty
+        });
       } else {
-        // Item added
+        // Item added - set required tracking fields
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
         new_item.posa_offer_applied = 0;
         new_item.posa_is_offer = 0;
         new_item.posa_is_replace = 0;
         new_item.is_free_item = 0;
+        new_item.amount = flt(new_item.rate * flt(new_item.qty || 1), this.currency_precision);
+
+        console.log("📦 ADD_ITEM - New item before push:", {
+          item_code: new_item.item_code,
+          price_list_rate: new_item.price_list_rate,
+          rate: new_item.rate,
+          posa_row_id: new_item.posa_row_id
+        });
 
         this.items.push(new_item);
+        
+        console.log("📦 ADD_ITEM - Items array after push:", 
+          this.items.map(i => ({
+            item_code: i.item_code,
+            price_list_rate: i.price_list_rate,
+            posa_row_id: i.posa_row_id
+          }))
+        );
       }
 
       // Check if this is the first item and no invoice exists
@@ -708,40 +745,66 @@ create_invoice(doc) {
 },
 
     async auto_update_invoice(doc = null, reason = "auto") {
+  console.log(`🌐 AUTO_UPDATE - Starting (reason: ${reason})`);
+  
   if (this.invoice_doc?.submitted_for_payment) {
+    console.log("🌐 AUTO_UPDATE - Skipped: submitted for payment");
     return;
   }
 
   // Skip auto-update if no items and no invoice doc
   if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
+    console.log("🌐 AUTO_UPDATE - Skipped: no items and no invoice");
     return;
   }
 
   const payload = doc || this.get_invoice_doc(reason);
+  
+  console.log("🌐 AUTO_UPDATE - Payload items:", 
+    payload.items ? payload.items.map(i => ({
+      item_code: i.item_code,
+      rate: i.rate,
+      qty: i.qty
+    })) : []
+  );
 
   try {
     let result;
     
     // Decide whether to create or update based on invoice_doc.name
     if (!this.invoice_doc?.name && this.items.length > 0) {
+      console.log("🌐 AUTO_UPDATE - Creating new invoice");
       // Create new invoice
       result = await this.create_invoice(payload);
     } else if (this.invoice_doc?.name) {
+      console.log("🌐 AUTO_UPDATE - Updating existing invoice:", this.invoice_doc?.name);
       // Update existing invoice
       result = await this.update_invoice(payload);
     } else {
+      console.log("🌐 AUTO_UPDATE - No action needed");
       // No items and no invoice - do nothing
       return null;
     }
 
+    console.log("🌐 AUTO_UPDATE - API Response items:", 
+      result?.items ? result.items.map(i => ({
+        item_code: i.item_code,
+        price_list_rate: i.price_list_rate,
+        rate: i.rate,
+        posa_row_id: i.posa_row_id
+      })) : null
+    );
+
     // Handle case when API returns null (no items)
     if (!result) {
+      console.log("🌐 AUTO_UPDATE - API returned null, clearing items");
       this.invoice_doc = null;
       this.items = [];
       return null;
     }
 
     if (result && Array.isArray(result.items)) {
+      console.log("🌐 AUTO_UPDATE - Merging API items with local items");
       // Set flag to prevent watcher loop
       this._updatingFromAPI = true;
 
@@ -751,6 +814,7 @@ create_invoice(doc) {
       // Reset flag after update
       this.$nextTick(() => {
         this._updatingFromAPI = false;
+        console.log("🌐 AUTO_UPDATE - Merge complete, flag reset");
       });
     }
 
@@ -1045,11 +1109,12 @@ create_invoice(doc) {
         item_code: item.item_code,
         qty: item.qty || 1,
         rate: item.rate || item.price_list_rate || 0,
+        price_list_rate: item.price_list_rate || 0, // MUST send this so ERPNext can calculate discount_amount
         uom: item.uom || item.stock_uom,
         conversion_factor: item.conversion_factor || 1,
         serial_no: item.serial_no,
         discount_percentage: item.discount_percentage || 0,
-        discount_amount: item.discount_amount || 0,
+        // Don't send discount_amount - let ERPNext calculate it from price_list_rate + discount_percentage
         batch_no: item.batch_no,
       }));
     },
@@ -1355,26 +1420,16 @@ get_payments() {
     },
 
     setDiscountPercentage(item, event) {
-      let value = parseFloat(event.target.value);
+      let value = parseFloat(event.target.value) || 0;
 
-      if (Number(value) <= 0) {
-        value = 0;
-      }
+      // Apply max discount limit
+      const maxDiscount =
+        item.max_discount ||
+        this.pos_profile?.posa_item_max_discount_allowed ||
+        100;
 
-      let maxDiscount = 100; // Default value
-
-      if (item.max_discount && item.max_discount > 0) {
-        maxDiscount = item.max_discount;
-      } else if (
-        this.pos_profile?.posa_item_max_discount_allowed &&
-        this.pos_profile?.posa_item_max_discount_allowed > 0
-      ) {
-        maxDiscount = this.pos_profile?.posa_item_max_discount_allowed;
-      }
-
-      if (value < 0) {
-        value = 0;
-      } else if (value > maxDiscount) {
+      if (value < 0) value = 0;
+      if (value > maxDiscount) {
         value = maxDiscount;
         evntBus.emit("show_mesage", {
           text: `Maximum discount applied: ${maxDiscount}%`,
@@ -1384,39 +1439,27 @@ get_payments() {
 
       item.discount_percentage = value;
 
-      // Recalculate rate based on discount percentage
+      // Calculate rate immediately for visual feedback
       const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || 0;
-      if (basePrice > 0 && value > 0) {
-        const discountAmount = (basePrice * value) / 100;
-        item.rate = flt(basePrice - discountAmount, this.currency_precision);
-      } else if (value === 0) {
-        // Reset to original price when discount is 0
-        item.rate = flt(item.price_list_rate) || flt(item.base_rate) || 0;
+      if (basePrice > 0) {
+        if (value > 0) {
+          const discountAmount = (basePrice * value) / 100;
+          item.rate = flt(basePrice - discountAmount, this.currency_precision);
+        } else {
+          item.rate = basePrice;
+        }
+        // Calculate amount for immediate display
+        item.amount = flt(item.rate * flt(item.qty), this.currency_precision);
       }
 
-      // Use unified debounce for all item operations
       this.debouncedItemOperation("discount-change");
-
-      this.$forceUpdate();
     },
 
     setItemRate(item, event) {
-      let value = 0;
-      try {
-        // Parse and format the input value
-        let _value = parseFloat(event.target.value);
-        if (!isNaN(_value) && _value >= 0) {
-          value = _value;
-        }
-      } catch (e) {
-        console.error("Invoice(rate): parse error", e);
-        value = 0;
-      }
+      const value = parseFloat(event.target.value) || 0;
+      item.rate = flt(value >= 0 ? value : 0, this.currency_precision);
 
-      // Set the new rate
-      item.rate = flt(value, this.currency_precision);
-
-      // Recalculate discount percentage based on new rate
+      // Recalculate discount percentage for visual feedback
       const basePrice = flt(item.price_list_rate) || flt(item.base_rate) || 0;
       if (basePrice > 0 && item.rate < basePrice) {
         const discountAmount = basePrice - item.rate;
@@ -1424,15 +1467,14 @@ get_payments() {
           (discountAmount / basePrice) * 100,
           this.float_precision
         );
-      } else if (item.rate >= basePrice) {
-        // No discount if rate equals or exceeds base price
+      } else {
         item.discount_percentage = 0;
       }
 
-      // Use unified debounce for all item operations
-      this.debouncedItemOperation("rate-change");
+      // Calculate amount for immediate display
+      item.amount = flt(item.rate * flt(item.qty), this.currency_precision);
 
-      this.$forceUpdate();
+      this.debouncedItemOperation("rate-change");
     },
 
     update_price_list() {
@@ -1444,12 +1486,13 @@ get_payments() {
     },
 
     update_discount_umount() {
-      // Guard: if profile disallows editing invoice-level discount, ignore
+      // Simplified: just validate and set, server will recalculate
       if (!this.pos_profile?.posa_allow_user_to_edit_additional_discount) {
         this.additional_discount_percentage =
           this.invoice_doc?.additional_discount_percentage || 0;
         return;
       }
+
       const value = flt(this.additional_discount_percentage) || 0;
       const maxDiscount =
         this.pos_profile?.posa_invoice_max_discount_allowed || 100;
@@ -1464,7 +1507,6 @@ get_payments() {
         });
       }
 
-      // Use unified debounce for all item operations
       this.debouncedItemOperation("invoice-discount-change");
     },
 
@@ -1609,9 +1651,71 @@ get_payments() {
     },
 
     mergeItemsFromAPI(apiItems) {
-      // Simple merge - use API items if available
+      console.log("🔄 MERGE_ITEMS - Starting merge");
+      console.log("🔄 MERGE_ITEMS - Current local items:", 
+        this.items.map(i => ({
+          item_code: i.item_code,
+          price_list_rate: i.price_list_rate,
+          posa_row_id: i.posa_row_id
+        }))
+      );
+      console.log("🔄 MERGE_ITEMS - API items received:", 
+        apiItems ? apiItems.map(i => ({
+          item_code: i.item_code,
+          price_list_rate: i.price_list_rate,
+          posa_row_id: i.posa_row_id
+        })) : null
+      );
+
+      // Preserve price_list_rate and other display fields when merging API response
       if (apiItems && Array.isArray(apiItems) && apiItems.length > 0) {
-        this.items = apiItems;
+        // Create a simple map by item_code (since item_code never repeats in invoice)
+        const localItemsByCode = new Map();
+        
+        this.items.forEach(item => {
+          localItemsByCode.set(item.item_code, item);
+        });
+
+        console.log("🔄 MERGE_ITEMS - Local items map size:", localItemsByCode.size);
+
+        // Merge API items with local items, preserving price_list_rate
+        this.items = apiItems.map(apiItem => {
+          // Find local item by item_code (simple & reliable)
+          const localItem = localItemsByCode.get(apiItem.item_code);
+          
+          console.log(`🔄 MERGE_ITEMS - Processing ${apiItem.item_code}:`, {
+            has_local: !!localItem,
+            local_price_list_rate: localItem?.price_list_rate,
+            api_price_list_rate: apiItem.price_list_rate,
+            will_preserve: !!(localItem?.price_list_rate && !apiItem.price_list_rate)
+          });
+          
+          // If local item exists, preserve price_list_rate from it
+          if (localItem?.price_list_rate && !apiItem.price_list_rate) {
+            console.log(`✅ MERGE_ITEMS - Preserving price_list_rate ${localItem.price_list_rate} for ${apiItem.item_code}`);
+            apiItem.price_list_rate = localItem.price_list_rate;
+          }
+          
+          // Also preserve base_rate if needed
+          if (localItem?.base_rate && !apiItem.base_rate) {
+            apiItem.base_rate = localItem.base_rate;
+          }
+          
+          // Preserve posa_row_id from local if API doesn't have it
+          if (localItem?.posa_row_id && !apiItem.posa_row_id) {
+            apiItem.posa_row_id = localItem.posa_row_id;
+          }
+          
+          return apiItem;
+        });
+
+        console.log("🔄 MERGE_ITEMS - Final merged items:", 
+          this.items.map(i => ({
+            item_code: i.item_code,
+            price_list_rate: i.price_list_rate,
+            posa_row_id: i.posa_row_id
+          }))
+        );
       }
     },
 
