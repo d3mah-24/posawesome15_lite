@@ -271,5 +271,13 @@ export default {
       });
     });
   },
+
+  beforeDestroy() {
+    // Clean up all event listeners
+    evntBus.$off(EVENT_NAMES.REGISTER_POS_PROFILE);
+    evntBus.$off(EVENT_NAMES.UPDATE_CUSTOMER, this.handleUpdateCustomer);
+    evntBus.$off(EVENT_NAMES.UPDATE_POS_COUPONS, this.updatePosCoupons);
+    evntBus.$off(EVENT_NAMES.SET_POS_COUPONS);
+  }
 };
 </script>
