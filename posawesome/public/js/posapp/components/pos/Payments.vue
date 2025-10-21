@@ -8,13 +8,9 @@
     </button>
 
     <div class="card payments-card" style="max-height: 76vh; height: 76vh">
-      <v-progress-linear
-        :active="loading"
-        :indeterminate="loading"
-        absolute
-        top
-        color="info"
-      ></v-progress-linear>
+      <div v-if="loading" class="custom-progress-linear">
+        <div class="progress-bar"></div>
+      </div>
       
       <div class="payments-scroll" style="max-height: 75vh">
         <!-- Payment Summary Section -->
@@ -161,53 +157,54 @@
             class="option-switch"
             v-if="pos_profile.posa_allow_write_off_change && diff_payment > 0 && !invoice_doc.is_return"
           >
-            <v-switch
-              class="compact-switch"
-              v-model="is_write_off_change"
-              flat
-              label="Is it a write-off amount?"
-              hide-details
-              density="compact"
-            ></v-switch>
+            <label class="custom-switch">
+              <input 
+                type="checkbox" 
+                v-model="is_write_off_change"
+              />
+              <span class="switch-slider"></span>
+              <span class="switch-label">Is it a write-off amount?</span>
+            </label>
           </div>
           <div
             class="option-switch"
             v-if="pos_profile.posa_allow_credit_sale && !invoice_doc.is_return"
           >
-            <v-switch
-            class="compact-switch"
-              v-model="is_credit_sale"
-              variant="flat"
-              label="Is it a credit sale?"
-              hide-details
-              density="compact"
-            ></v-switch>
+            <label class="custom-switch">
+              <input 
+                type="checkbox" 
+                v-model="is_credit_sale"
+              />
+              <span class="switch-slider"></span>
+              <span class="switch-label">Is it a credit sale?</span>
+            </label>
           </div>
           <div
             class="option-switch"
             v-if="!invoice_doc.is_return && pos_profile.posa_use_customer_credit"
           >
-            <v-switch
-            class="compact-switch"
-              v-model="redeem_customer_credit"
-              flat
-              label="Use Customer Credit"
-              hide-details
-              density="compact"
-              @change="get_available_credit($event.target.value)"
-            ></v-switch>
+            <label class="custom-switch">
+              <input 
+                type="checkbox" 
+                v-model="redeem_customer_credit"
+                @change="get_available_credit($event.target.checked)"
+              />
+              <span class="switch-slider"></span>
+              <span class="switch-label">Use Customer Credit</span>
+            </label>
           </div>
           <div
             class="option-switch"
             v-if="invoice_doc.is_return && pos_profile.posa_use_cashback"
           >
-            <v-switch
-              v-model="is_cashback"
-              flat
-              label="Is it a cash refund?"
-              hide-details
-              density="compact"
-            ></v-switch>
+            <label class="custom-switch">
+              <input 
+                type="checkbox" 
+                v-model="is_cashback"
+              />
+              <span class="switch-slider"></span>
+              <span class="switch-label">Is it a cash refund?</span>
+            </label>
           </div>
           <div class="option-date" v-if="is_credit_sale">
             <label>Due Date</label>
@@ -1720,5 +1717,132 @@ export default {
 
 .text-field-wrapper.error .text-field-label {
   color: #f44336;
+}
+
+/* ===== CUSTOM SWITCH ===== */
+.custom-switch {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  gap: 12px;
+}
+
+.custom-switch input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 24px;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.switch-slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.custom-switch input[type="checkbox"]:checked + .switch-slider {
+  background: #1976d2;
+}
+
+.custom-switch input[type="checkbox"]:checked + .switch-slider::before {
+  transform: translateX(20px);
+}
+
+.custom-switch input[type="checkbox"]:focus + .switch-slider {
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.custom-switch:hover .switch-slider {
+  opacity: 0.9;
+}
+
+.custom-switch input[type="checkbox"]:disabled + .switch-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.switch-label {
+  font-size: 0.85rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.custom-switch input[type="checkbox"]:disabled ~ .switch-label {
+  color: #999;
+}
+
+/* Compact variant */
+.custom-switch.compact .switch-slider {
+  width: 36px;
+  height: 20px;
+}
+
+.custom-switch.compact .switch-slider::before {
+  height: 14px;
+  width: 14px;
+}
+
+.custom-switch.compact input[type="checkbox"]:checked + .switch-slider::before {
+  transform: translateX(16px);
+}
+
+.custom-switch.compact .switch-label {
+  font-size: 0.8rem;
+}
+
+/* ===== CUSTOM PROGRESS LINEAR ===== */
+.custom-progress-linear {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #e0e0e0;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.custom-progress-linear .progress-bar {
+  height: 100%;
+  background: #1976d2;
+  animation: progress-indeterminate 1.5s infinite linear;
+  transform-origin: 0% 50%;
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(0) scaleX(0);
+  }
+  40% {
+    transform: translateX(0) scaleX(0.4);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.5);
+  }
+}
+
+/* Thin variant for search */
+.custom-progress-linear.search-progress {
+  height: 2px;
 }
 </style>
