@@ -213,17 +213,15 @@
             <label>Due Date</label>
             <v-menu ref="date_menu" v-model="date_menu" :close-on-content-click="false" transition="scale-transition">
               <template v-slot:activator="{ props: { on, attrs } }">
-                <v-text-field
-                  v-model="invoice_doc.due_date"
-                  readonly
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  v-bind="attrs"
-                  v-on="on"
-                  color="primary"
-                  class="compact-date-field"
-                ></v-text-field>
+                <div class="text-field-wrapper" v-bind="attrs" v-on="on">
+                  <input
+                    type="text"
+                    class="custom-text-field date-field"
+                    v-model="invoice_doc.due_date"
+                    readonly
+                    placeholder="Select date"
+                  />
+                </div>
               </template>
               <v-date-picker
                 v-model="invoice_doc.due_date"
@@ -282,16 +280,15 @@
           </div>
           <div class="card-body">
             <div class="form-container">
-              <v-text-field
-                dense
-                variant="outlined"
-                color="primary"
-                label="Phone Number"
-                background-color="white"
-                hide-details
-                v-model="invoice_doc.contact_mobile"
-                type="number"
-              ></v-text-field>
+              <div class="text-field-wrapper">
+                <label class="text-field-label">Phone Number</label>
+                <input
+                  type="number"
+                  class="custom-text-field"
+                  v-model="invoice_doc.contact_mobile"
+                  placeholder="Enter phone number"
+                />
+              </div>
             </div>
           </div>
           <div class="card-footer">
@@ -1651,5 +1648,77 @@ export default {
   .option-date {
     flex: 1 1 100%;
   }
+}
+
+/* ===== CUSTOM TEXT FIELD ===== */
+.text-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.text-field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 2px;
+}
+
+.custom-text-field {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: #333;
+  background: white;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.custom-text-field:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+.custom-text-field:hover:not(:disabled):not(:focus) {
+  border-color: #999;
+}
+
+.custom-text-field:disabled,
+.custom-text-field:read-only {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  color: #666;
+}
+
+.custom-text-field.date-field {
+  cursor: pointer;
+}
+
+.custom-text-field.date-field:read-only {
+  cursor: pointer;
+  background: white;
+}
+
+.custom-text-field::placeholder {
+  color: #999;
+  font-size: 0.8rem;
+}
+
+/* Compact variant */
+.custom-text-field.compact {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
+/* Error state */
+.text-field-wrapper.error .custom-text-field {
+  border-color: #f44336;
+}
+
+.text-field-wrapper.error .text-field-label {
+  color: #f44336;
 }
 </style>
