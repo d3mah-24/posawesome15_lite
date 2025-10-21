@@ -9,7 +9,7 @@
       :items="customers"
       item-title="customer_name"
       item-value="name"
-      :filter="customFilter"
+      :no-filter="true"
       :disabled="readonly"
       :loading="loading"
       append-icon="mdi-plus"
@@ -21,32 +21,18 @@
       :style="{ backgroundColor: quick_return ? '#EF9A9A' : 'white' }"
     >
       <template v-slot:item="{ props, item }">
-        <v-list-item v-bind="props">
-          <v-list-item-title
-            class="primary--text subtitle-1"
-            v-html="item.customer_name"
-          ></v-list-item-title>
-          <v-list-item-subtitle
-            v-if="item.customer_name != item.name"
-            v-html="'Customer ID: ' + item.name"
-          ></v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-if="item.tax_id"
-            v-html="'Tax ID: ' + item.tax_id"
-          ></v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-if="item.email_id"
-            v-html="'Email: ' + item.email_id"
-          ></v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-if="item.mobile_no"
-            v-html="'Mobile: ' + item.mobile_no"
-          ></v-list-item-subtitle>
-          <v-list-item-subtitle
-            v-if="item.primary_address"
-            v-html="'Primary Address: ' + item.primary_address"
-          ></v-list-item-subtitle>
+        <v-list-item v-bind="{ ...props, title: undefined }">
+          <v-list-item-title class="primary--text subtitle-1">
+            {{ item.raw.customer_name }}
+          </v-list-item-title>
+          <v-list-item-subtitle v-if="item.raw.mobile_no">
+            {{ item.raw.mobile_no }}
+          </v-list-item-subtitle>
         </v-list-item>
+      </template>
+      
+      <template v-slot:selection="{ item }">
+        <span>{{ item.raw.customer_name }}</span>
       </template>
     </v-autocomplete>
 
@@ -114,7 +100,9 @@ export default {
         if (this.customers.length > 0) {
           return;
         }
-        this.load_default_customer();
+        
+        this.load_all_customers(""); // Load all customers first
+        this.load_default_customer(); // Then set default customer
       } catch (error) {
         this.showMessage(ERROR_MESSAGES.UNEXPECTED_ERROR, 'error');
       }
@@ -132,6 +120,7 @@ export default {
       }
 
       const default_customer = this.pos_profile.pos_profile?.customer;
+      
       if (default_customer) {
         this.customer = default_customer;
         evntBus.emit(EVENT_NAMES.UPDATE_CUSTOMER, default_customer);
@@ -141,12 +130,7 @@ export default {
     },
 
     load_all_customers(searchTerm = "") {
-      console.log("🔄 load_all_customers called");
-      console.log("📋 pos_profile:", this.pos_profile);
-      console.log("🔍 search_term:", searchTerm);
-      
       if (!this.pos_profile) {
-        console.error("❌ POS Profile not loaded");
         this.showMessage(ERROR_MESSAGES.POS_PROFILE_NOT_LOADED, 'error');
         return;
       }
@@ -176,7 +160,6 @@ export default {
       // Add search term if provided
       if (cleanSearchTerm && cleanSearchTerm.trim()) {
         args.search_term = cleanSearchTerm.trim();
-        console.log("🔎 Server-side search for:", args.search_term);
       }
 
       this.loading = true; // Start loading
@@ -185,18 +168,13 @@ export default {
         method: API_MAP.CUSTOMER.GET_MANY_CUSTOMERS,
         args: args,
         callback: (r) => {
-          console.log("✅ API Response:", r);
           if (r.message) {
-            console.log("📊 Customers loaded:", r.message.length, "customers");
-            console.log("📋 First few customers:", r.message.slice(0, 3));
             this.customers = r.message;
           }
           this.loading = false; // End loading
         },
         error: (err) => {
-          console.error("❌ API Error:", err);
           // Fallback to legacy wrapper function
-          console.log("🔄 Falling back to legacy wrapper...");
           frappe.call({
             method: API_MAP.CUSTOMER.GET_MANY_CUSTOMERS,
             args: {
@@ -204,13 +182,11 @@ export default {
             },
             callback: (r) => {
               if (r.message) {
-                console.log("✅ Fallback successful:", r.message.length, "customers");
                 this.customers = r.message;
               }
               this.loading = false; // End loading
             },
             error: (fallbackErr) => {
-              console.error("❌ Fallback API Error:", fallbackErr);
               this.showMessage(ERROR_MESSAGES.FAILED_TO_FETCH, 'error');
               this.loading = false; // End loading even on error
             },
@@ -247,8 +223,6 @@ export default {
 
     // Enhanced search with server-side filtering (POSNext style)
     performSearch(searchTerm) {
-      console.log("🔍 performSearch called with:", searchTerm);
-      
       // Clear previous timeout
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
