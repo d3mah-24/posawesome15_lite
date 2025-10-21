@@ -269,11 +269,12 @@
     </div>
 
     <!-- Phone Dialog -->
-    <div>
-      <v-dialog v-model="phone_dialog" max-width="400px">
+    <div v-if="phone_dialog" class="custom-modal-overlay" @click="phone_dialog = false">
+      <div class="custom-modal" @click.stop>
         <div class="card">
           <div class="card-header">
             <span class="card-title">Confirm Phone Number</span>
+            <button class="modal-close-btn" @click="phone_dialog = false">×</button>
           </div>
           <div class="card-body">
             <div class="form-container">
@@ -294,7 +295,7 @@
             <button class="btn btn-primary" @click="request_payment">Request</button>
           </div>
         </div>
-      </v-dialog>
+      </div>
     </div>
   </div>
 </template>
@@ -1844,5 +1845,82 @@ export default {
 /* Thin variant for search */
 .custom-progress-linear.search-progress {
   height: 2px;
+}
+
+/* ===== CUSTOM MODAL ===== */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modal-fade-in 0.2s ease;
+}
+
+.custom-modal {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: modal-slide-in 0.3s ease;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #999;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive modal */
+@media (max-width: 600px) {
+  .custom-modal {
+    width: 95%;
+    margin: 20px;
+  }
 }
 </style>
