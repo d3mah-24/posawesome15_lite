@@ -3,7 +3,7 @@
   <div class="payments-container">
     <!-- Fixed Back Button -->
     <button class="back-button-fixed" @click="back_to_invoice" title="Back to Invoice">
-      <v-icon size="18">mdi-arrow-left</v-icon>
+      <i class="mdi mdi-arrow-left back-icon"></i>
       <span class="back-text">Back</span>
     </button>
 
@@ -1149,11 +1149,12 @@ export default {
   box-shadow: 0 1px 3px rgba(25, 118, 210, 0.3);
 }
 
-.back-button-fixed .v-icon {
-  transition: transform 0.2s ease;
+.back-icon {
+  color: white;
+  font-size: 18px;
 }
 
-.back-button-fixed:hover .v-icon {
+.back-button-fixed:hover .back-icon {
   transform: translateX(-2px);
 }
 
