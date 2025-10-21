@@ -19,9 +19,9 @@
               class="mx-4"
               @keydown.enter="search_invoices"
             ></v-text-field>
-            <v-btn text class="ml-2" color="primary" dark @click="search_invoices">
+            <button class="btn btn-primary btn-search" @click="search_invoices">
               Search
-            </v-btn>
+            </button>
           </div>
           <div class="table-row">
             <div class="table-col-full">
@@ -45,10 +45,10 @@
         </div>
         <div class="card-footer">
           <div class="spacer"></div>
-          <v-btn color="error mx-2" dark @click="close_dialog">Close</v-btn>
-          <v-btn color="success" dark @click="submit_dialog">
+          <button class="btn btn-error" @click="close_dialog">Close</button>
+          <button class="btn btn-success" @click="submit_dialog">
             Select
-          </v-btn>
+          </button>
         </div>
       </div>
     </v-dialog>
@@ -331,6 +331,66 @@ export default {
 /* Spacer */
 .spacer {
   flex: 1;
+}
+
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.2s;
+  line-height: 1.5;
+  margin: 0 4px;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1976d2 0%, #1e88e5 100%);
+  border-color: #1565c0;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+}
+
+.btn-error {
+  background: linear-gradient(135deg, #f44336 0%, #e53935 100%);
+  border-color: #d32f2f;
+  color: white;
+}
+
+.btn-error:hover {
+  background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #4caf50 0%, #43a047 100%);
+  border-color: #388e3c;
+  color: white;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+}
+
+.btn-search {
+  margin-left: 8px;
 }
 
 /* Search Row */
