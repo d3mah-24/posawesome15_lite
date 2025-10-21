@@ -73,14 +73,15 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 ## 💰 Collaboration
 
 - ⚠️ **Terms**: Tasks negotiated before beginning
-- 💵 **Daily Payment:** Payments to completed tasks only
+- 💵 **Payment:** to completed tasks only
 - 🌐 **Payment Methods:**
-  - Fiverr
-  - Upwork
-  - Western Union
-  - **Crypto**
-  - <img src="./imgs/Egypt.svg" width="16" height="16"> **Egypt**: Phone cash wallets
-  - <img src="./imgs/Saudi_Arabia.svg" width="16" height="16"> **Saudi Arabia**: STC Pay, Alrajhi Bank Transfer
+- 💼 **International**: 
+  -🟢 [Fiverr](https://fiverr.com) 
+  -🔵 [Upwork](https://upwork.com) 
+  -💰 Western Union 
+  -₿ Crypto
+- <img src="./imgs/Egypt.svg" width="16" height="16"> **Egypt**: Phone cash wallets
+- <img src="./imgs/Saudi_Arabia.svg" width="16" height="16"> **Saudi Arabia**: STC Pay, Alrajhi Bank Transfer
 
 **Development Server:**
 - 🔗 Direct work via **SSH on single server**
