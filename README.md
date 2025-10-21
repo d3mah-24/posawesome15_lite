@@ -108,12 +108,19 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 **Email:** abdopcnet@gmail.com  
 **GitHub:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 
-**Contact via:**
-- 🌐 Website: [future-support.online](https://www.future-support.online/)
-- 📱 WhatsApp (EG): [+20 115 648 3669](https://wa.me/201156483669)
-- 💬 Telegram (EG): [@abdo_01156483669](https://t.me/abdo_01156483669)
-- 📱 WhatsApp (SA): [+966 57 891 9729](https://wa.me/966578919729)
-- 💬 Telegram (SA): [@abdo_0578919729](https://t.me/abdo_0578919729)
+**Need Support or Want to Join? Contact Now:**
+
+### �🇬 Egypt Contact
+- 📞 **Call:** [+20 115 648 3669](tel:+201156483669)
+- 📱 **WhatsApp:** [https://wa.me/201156483669](https://wa.me/201156483669)
+- 💬 **Telegram:** [@abdo_01156483669](https://t.me/abdo_01156483669)
+
+### 🇸🇦 Saudi Arabia Contact  
+- 📱 **WhatsApp:** [+966 57 891 9729](https://wa.me/966578919729)
+- 💬 **Telegram:** [@abdo_0578919729](https://t.me/abdo_0578919729)
+
+### 🌐 Online
+- 🌐 **Website:** [future-support.online](https://www.future-support.online/)
 
 ---
 
