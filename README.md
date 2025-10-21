@@ -72,11 +72,15 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 ## 💰 Collaboration
 
-- 💵 **Daily Payment:** $35 USD Based On Progress
+- ⚠️ **Terms**: Tasks negotiated before beginning
+- 💵 **Daily Payment:** Payments to completed tasks only
 - 🌐 **Payment Methods:**
   - Fiverr
   - Upwork
   - Western Union
+  - **Crypto**
+  - <img src="./imgs/Egypt.svg" width="16" height="16"> **Egypt**: Phone cash wallets
+  - <img src="./imgs/Saudi_Arabia.svg" width="16" height="16"> **Saudi Arabia**: STC Pay, Alrajhi Bank Transfer
 
 **Development Server:**
 - 🔗 Direct work via **SSH on single server**
