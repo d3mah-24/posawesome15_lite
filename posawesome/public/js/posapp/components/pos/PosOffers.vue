@@ -4,7 +4,7 @@
     <div class="offers-header">
       <div class="header-content">
         <div class="header-left">
-          <v-icon color="white" size="22">mdi-tag-multiple</v-icon>
+          <i class="mdi mdi-tag-multiple header-icon"></i>
           <h2 class="header-title">Special Offers</h2>
         </div>
         <div class="header-stats">
@@ -48,7 +48,7 @@
 
             <!-- APPLIED BADGE -->
             <div v-if="offer.offer_applied" class="applied-badge">
-              <v-icon size="14" color="white">mdi-check-circle</v-icon>
+              <i class="mdi mdi-check-circle badge-icon"></i>
               <span>Active</span>
             </div>
           </div>
@@ -70,7 +70,7 @@
                 <span class="discount-label">OFF</span>
               </div>
               <div v-else class="discount-main special">
-                <v-icon size="18" color="#4CAF50">mdi-gift</v-icon>
+                <i class="mdi mdi-gift gift-icon"></i>
                 <span class="discount-label">Special Offer</span>
               </div>
             </div>
@@ -85,7 +85,7 @@
               "
               class="warning-msg"
             >
-              <v-icon size="12" color="warning">mdi-alert-circle</v-icon>
+              <i class="mdi mdi-alert-circle warning-icon"></i>
               <span>Another offer active</span>
             </div>
 
@@ -112,7 +112,7 @@
     <!-- FOOTER -->
     <div class="offers-footer">
       <button class="back-button" @click="back_to_invoice">
-        <v-icon size="18">mdi-arrow-left</v-icon>
+        <i class="mdi mdi-arrow-left back-icon"></i>
         <span>Back to Invoice</span>
       </button>
     </div>
@@ -481,6 +481,11 @@ export default {
   gap: 6px;
 }
 
+.header-icon {
+  color: white;
+  font-size: 22px;
+}
+
 .header-title {
   color: white;
   font-size: 1rem;
@@ -629,6 +634,11 @@ export default {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
+.badge-icon {
+  color: white;
+  font-size: 14px;
+}
+
 /* ===== OFFER CONTENT ===== */
 .offer-content {
   padding: 6px;
@@ -670,6 +680,11 @@ export default {
   letter-spacing: 0.3px;
 }
 
+.gift-icon {
+  color: #4CAF50;
+  font-size: 18px;
+}
+
 /* ===== WARNING MESSAGE ===== */
 .warning-msg {
   display: flex;
@@ -681,6 +696,11 @@ export default {
   font-size: 0.6rem;
   color: #f57c00;
   border-left: 2px solid #ff9800;
+}
+
+.warning-icon {
+  color: #ff9800;
+  font-size: 12px;
 }
 
 /* ===== TOGGLE SWITCH ===== */
@@ -781,6 +801,10 @@ export default {
 .back-button:hover {
   box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
   background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%);
+}
+
+.back-icon {
+  font-size: 18px;
 }
 
 @media (min-width: 1200px) {
