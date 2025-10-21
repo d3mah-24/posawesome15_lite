@@ -7,7 +7,7 @@
       <span class="back-text">Back</span>
     </button>
 
-    <v-card class="payments-card" style="max-height: 76vh; height: 76vh">
+    <div class="card payments-card" style="max-height: 76vh; height: 76vh">
       <v-progress-linear
         :active="loading"
         :indeterminate="loading"
@@ -271,17 +271,17 @@
 
         <div class="section-divider"></div>
       </div>
-    </v-card>
+    </div>
 
     <!-- Phone Dialog -->
     <div>
       <v-dialog v-model="phone_dialog" max-width="400px">
-        <v-card>
-          <v-card-title>
-            <span class="headline primary--text">Confirm Phone Number</span>
-          </v-card-title>
-          <v-card-text class="pa-0">
-            <v-container>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Confirm Phone Number</span>
+          </div>
+          <div class="card-body">
+            <div class="form-container">
               <v-text-field
                 dense
                 variant="outlined"
@@ -292,14 +292,14 @@
                 v-model="invoice_doc.contact_mobile"
                 type="number"
               ></v-text-field>
-            </v-container>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
+            </div>
+          </div>
+          <div class="card-footer">
+            <div class="spacer"></div>
             <v-btn color="error" dark @click="phone_dialog = false">Close</v-btn>
             <v-btn color="primary" dark @click="request_payment">Request</v-btn>
-          </v-card-actions>
-        </v-card>
+          </div>
+        </div>
       </v-dialog>
     </div>
   </div>
@@ -1073,6 +1073,49 @@ export default {
   width: 100%;
   height: 100%;
   position: relative;
+}
+
+/* Card Components */
+.card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f5f5f5;
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1976d2;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Spacer */
+.spacer {
+  flex: 1;
+}
+
+/* Form Container */
+.form-container {
+  padding: 0;
 }
 
 .payments-card {
