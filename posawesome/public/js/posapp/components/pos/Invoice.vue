@@ -2202,7 +2202,6 @@ export default {
   width: 100%;
   max-width: 85px;
   min-width: 75px;
-  transition: all 0.2s ease;
 }
 
 .compact-qty-controls:hover {
@@ -2228,7 +2227,6 @@ export default {
   height: 20px;
   appearance: textfield;
   -moz-appearance: textfield;
-  transition: all 0.2s ease;
 }
 
 .compact-qty-input::-webkit-inner-spin-button,
@@ -2266,7 +2264,6 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
   font-size: 0;
   position: relative;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -2291,7 +2288,6 @@ export default {
 }
 
 .qty-btn.minus-btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.95);
   box-shadow: 0 1px 2px rgba(245, 124, 0, 0.3);
 }
 
@@ -2315,7 +2311,6 @@ export default {
 }
 
 .qty-btn.plus-btn:active {
-  transform: translateY(0) scale(0.95);
   box-shadow: 0 1px 2px rgba(56, 142, 60, 0.3);
 }
 
@@ -2347,7 +2342,6 @@ export default {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   border: 1px solid #1976d2;
   border-radius: 4px;
-  transition: all 0.2s ease;
   min-width: 70px;
   max-width: 90px;
 }
@@ -2405,7 +2399,6 @@ export default {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   border: 1px solid #1976d2;
   border-radius: 4px;
-  transition: all 0.2s ease;
   min-width: 55px;
   max-width: 75px;
 }
@@ -2496,7 +2489,6 @@ export default {
   background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
   border-radius: 4px;
   min-width: 60px;
-  transition: all 0.2s ease;
 }
 
 .compact-discount-amount .amount-currency {
@@ -2530,7 +2522,6 @@ export default {
   border-radius: 4px;
   border: 1px solid #4caf50;
   min-width: 70px;
-  transition: all 0.2s ease;
 }
 
 .compact-total-amount:hover {
@@ -2560,7 +2551,6 @@ export default {
   background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
   border-radius: 4px;
   min-width: 65px;
-  transition: all 0.2s ease;
 }
 
 .compact-price-display:hover {
@@ -2643,7 +2633,6 @@ export default {
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
   border: none;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
 }
 
 .payment-controls-card:hover {
@@ -2669,7 +2658,6 @@ export default {
   border-radius: 4px;
   background: #f8f9fa;
   border: 1px solid #e0e0e0;
-  transition: all 0.2s ease;
   min-width: 0;
 }
 
@@ -2791,7 +2779,6 @@ export default {
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   min-width: 0;
   white-space: nowrap;
@@ -2802,7 +2789,6 @@ export default {
 }
 
 .action-btn:active:not(:disabled) {
-  transform: translateY(0);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
