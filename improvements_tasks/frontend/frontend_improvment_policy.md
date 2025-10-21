@@ -1,36 +1,39 @@
 # Frontend Improvement Policy
 
-## Code Structure Policy
-
-### Component Organization Rules
-- Each Vue component must be under 500 lines
-- Separate business logic from UI logic
-- Use composition API for complex state management
-- Implement proper component lifecycle cleanup
-
-### Queue System Policy (MANDATORY)
-
-#### Operation Type Grouping:
-# Frontend Improvement Policy
-
-## Component Organization Rules
-- Each Vue component must be under 500 lines
-- Separate business logic from UI logic
-- Use composition API for complex state management
-- Implement proper component lifecycle cleanup
-
 ## Memory Management Rules
-- Remove all event listeners in `beforeDestroy`
-- Clear all timers and intervals
-- Unsubscribe from event bus
-- Release DOM references
+- ✅ **Event listeners cleanup**: All Vue components properly remove event listeners in `beforeDestroy`/`onBeforeUnmount`
+- ✅ **Timer cleanup**: All timers and intervals are properly cleared
+- ✅ **Event bus cleanup**: All components properly unsubscribe from event bus
+- ✅ **DOM references**: All DOM references are properly released
+
+
+## UI/UX Rules
+### **ONLY Vue.js + HTML + CSS**
+- Use named imports only
+- Minimize external dependencies
+- Use Vue.js + HTML + CSS only
 - NO caching (only temp operations batches allowed)
 - NO animations
 - NO heavy CSS
 - NO Vuetify components
 - NO complex JavaScript logic
+- No global library imports
+- Virtual scrolling for lists > 50 items
+- Simple component structure only
+- ERPNext-standard layouts only
+- No custom animations or visual effects
 
-## Batch Queue System Rules (MANDATORY)
+
+## (MANDATORY) Sequence Operations are queued as batches
+### API Call Rules
+- Use `posawesome/public/js/posapp/api_mapper.js` for all API calls
+- Maximum 2 API calls on page load
+- Use **Composition API** for complex state management (Vue 3 style)
+- Use `posawesome/public/js/posapp/api_mapper.js` for all API calls
+- Batch multiple operations when possible
+- Use specific field selection only
+- Implement request deduplication
+- Maximum 5 seconds per API call timeout
 - Single queue per DocType operation group
 - Collect operations in temp cache
 - Wait 1 second idle time
@@ -39,31 +42,3 @@
 - Maximum batch wait: 1 second
 - Maximum batch size: 50 operations
 - Clear temporary cache after successful API call
-
-## API Call Rules
-- Maximum 2 API calls on page load
-- Batch multiple operations when possible
-- Use specific field selection only
-- Implement request deduplication
-- Maximum 5 seconds per API call timeout
-
-## Import Rules
-- Use named imports only
-- No global library imports
-- Minimize external dependencies
-- Use Vue.js + HTML + CSS only
-
-## UI/UX Rules
-- Virtual scrolling for lists > 50 items
-- Simple component structure only
-- ERPNext-standard layouts only
-- No custom animations or visual effects
-
-## Code Review Checklist
-- [ ] Memory cleanup implemented
-- [ ] Batch queue system implemented (1s wait)
-- [ ] Components under 500 lines
-- [ ] No Vuetify, no heavy CSS, no animations
-- [ ] Only Vue.js + HTML + CSS
-- [ ] Performance targets met
-- [ ] No caching (batch queue only)
