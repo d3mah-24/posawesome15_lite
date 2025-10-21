@@ -1,8 +1,8 @@
 <template>
   <div class="dialog-row">
-    <v-dialog v-model="isOpen" persistent max-width="420px" overlay-opacity="0.7">
+    <div v-if="isOpen" class="custom-modal-overlay persistent" @click="go_desk">
       <!-- Custom Beautiful Dialog -->
-      <div class="beautiful-dialog">
+      <div class="beautiful-dialog" @click.stop>
         <!-- Compact Header -->
         <div class="dialog-header">
           <div class="header-content">
@@ -103,7 +103,7 @@
           </div>
         </div>
       </div>
-    </v-dialog>
+    </div>
   </div>
 </template>
 
@@ -860,5 +860,44 @@ export default {
 
 .table-header {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* ===== CUSTOM MODAL ===== */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modal-fade-in 0.2s ease;
+}
+
+.custom-modal-overlay.persistent {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 </style>
