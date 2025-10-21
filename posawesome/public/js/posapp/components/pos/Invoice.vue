@@ -129,10 +129,14 @@
             </div>
           </template>
           <template v-slot:item.posa_is_offer="{ item }">
-            <v-checkbox
-              :model-value="Boolean(item.posa_is_offer || item.posa_is_replace)"
-              :disabled="true"
-            ></v-checkbox>
+            <div class="checkbox-wrapper">
+              <input
+                type="checkbox"
+                class="custom-checkbox"
+                :checked="Boolean(item.posa_is_offer || item.posa_is_replace)"
+                disabled
+              />
+            </div>
           </template>
 
           <template v-slot:item.actions="{ item }">
@@ -2895,5 +2899,60 @@ export default {
   .action-icon {
     font-size: 14px;
   }
+}
+
+/* ===== CUSTOM CHECKBOX ===== */
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.custom-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #1976d2;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.custom-checkbox:checked {
+  background: #1976d2;
+  border-color: #1976d2;
+}
+
+.custom-checkbox:checked::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.custom-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #f5f5f5;
+}
+
+.custom-checkbox:disabled:checked {
+  background: #9e9e9e;
+  border-color: #9e9e9e;
+}
+
+.custom-checkbox:not(:disabled):hover {
+  border-color: #1565c0;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
 }
 </style>
