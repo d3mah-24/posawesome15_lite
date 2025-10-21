@@ -4,7 +4,7 @@
     <div class="coupons-header">
       <div class="header-content">
         <div class="header-left">
-          <v-icon color="white" size="22">mdi-ticket-percent</v-icon>
+          <i class="mdi mdi-ticket-percent header-icon"></i>
           <h2 class="header-title">Coupons</h2>
         </div>
         <div class="header-stats">
@@ -22,7 +22,7 @@
       <!-- ADD COUPON INPUT -->
       <div class="add-coupon-section">
         <div class="coupon-input-wrapper">
-          <v-icon size="18" class="input-icon">mdi-ticket</v-icon>
+          <i class="mdi mdi-ticket input-icon"></i>
           <input
             v-model="new_coupon"
             @keyup.enter="add_coupon(new_coupon)"
@@ -32,7 +32,7 @@
           />
         </div>
         <button class="add-button" @click="add_coupon(new_coupon)">
-          <v-icon size="18">mdi-plus</v-icon>
+          <i class="mdi mdi-plus add-icon"></i>
           <span>Add</span>
         </button>
       </div>
@@ -49,12 +49,10 @@
           <!-- COUPON ICON/TYPE BADGE -->
           <div class="coupon-icon-container">
             <div class="coupon-icon" :class="getCouponTypeClass(coupon.type)">
-              <v-icon size="28" color="white">{{
-                getCouponIcon(coupon.type)
-              }}</v-icon>
+              <i class="mdi coupon-type-icon" :class="getCouponIcon(coupon.type)"></i>
             </div>
             <div v-if="coupon.applied" class="applied-badge">
-              <v-icon size="14">mdi-check-circle</v-icon>
+              <i class="mdi mdi-check-circle check-icon"></i>
               <span>Active</span>
             </div>
           </div>
@@ -68,13 +66,13 @@
 
             <!-- COUPON TYPE -->
             <div class="coupon-type">
-              <v-icon size="12">mdi-tag</v-icon>
+              <i class="mdi mdi-tag type-icon"></i>
               <span>{{ coupon.type }}</span>
             </div>
 
             <!-- POS OFFER NAME -->
             <div class="coupon-offer" v-if="coupon.pos_offer">
-              <v-icon size="12">mdi-gift</v-icon>
+              <i class="mdi mdi-gift offer-icon"></i>
               <span>{{ truncateText(coupon.pos_offer, 15) }}</span>
             </div>
 
@@ -94,7 +92,7 @@
 
       <!-- EMPTY STATE -->
       <div v-if="posa_coupons.length === 0" class="empty-state">
-        <v-icon size="64" color="#ccc">mdi-ticket-outline</v-icon>
+        <i class="mdi mdi-ticket-outline empty-icon"></i>
         <p class="empty-text">No coupons added yet</p>
         <p class="empty-subtext">Enter a coupon code above to get started</p>
       </div>
@@ -103,7 +101,7 @@
     <!-- FOOTER -->
     <div class="coupons-footer">
       <button class="back-button" @click="back_to_invoice">
-        <v-icon size="18">mdi-arrow-left</v-icon>
+        <i class="mdi mdi-arrow-left back-icon"></i>
         <span>Back to Invoice</span>
       </button>
     </div>
@@ -362,6 +360,11 @@ export default {
   align-items: center;
   gap: 6px;
 }
+.header-icon {
+  color: white;
+  font-size: 22px;
+}
+
 .header-title {
   color: white;
   font: 600 1rem/1 sans-serif;
@@ -412,6 +415,7 @@ export default {
 .input-icon {
   color: #9c27b0;
   margin-right: 6px;
+  font-size: 18px;
 }
 .coupon-input {
   flex: 1;
@@ -443,6 +447,10 @@ export default {
 .add-button:hover {
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
   background: linear-gradient(135deg, #45a049 0%, #388e3c 100%);
+}
+
+.add-icon {
+  font-size: 18px;
 }
 .coupons-grid {
   flex: 1;
@@ -497,6 +505,11 @@ export default {
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+.coupon-type-icon {
+  color: white;
+  font-size: 28px;
+}
 .type-promotional {
   background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
 }
@@ -522,6 +535,10 @@ export default {
   gap: 3px;
   font: 600 0.65rem/1 sans-serif;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.check-icon {
+  font-size: 14px;
 }
 .coupon-content {
   padding: 8px 10px;
@@ -552,6 +569,14 @@ export default {
 .coupon-offer {
   color: #ff9800;
   font-weight: 500;
+}
+
+.type-icon {
+  font-size: 12px;
+}
+
+.offer-icon {
+  font-size: 12px;
 }
 .coupon-status {
   display: flex;
@@ -616,6 +641,11 @@ export default {
   color: #bbb;
   margin: 0;
 }
+
+.empty-icon {
+  color: #ccc;
+  font-size: 64px;
+}
 .coupons-footer {
   padding: 8px 12px;
   background: white;
@@ -632,6 +662,10 @@ export default {
 .back-button:hover {
   box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
   background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%);
+}
+
+.back-icon {
+  font-size: 18px;
 }
 @media (min-width: 1200px) {
   .coupons-grid {
