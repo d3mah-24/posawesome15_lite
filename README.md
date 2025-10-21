@@ -100,10 +100,9 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - ⚠️ Changes into backend conflicts improve policy  
 - ⚠️ Changes not asked for
 - ⚠️ Changing codebase structure
-- ⚠️ Changes not direct in server files
-- ⚠️ Changes not direct in dev_server
-- ⚠️ Commit before review and test
-- ❌ No review = rejected
+- ⚠️ Changes not direct in ssh dev_server
+- ⚠️ Commits before review and test
+- ❌ will deleted
 - ❌ No payment
 
 ---
