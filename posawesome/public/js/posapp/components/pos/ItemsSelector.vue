@@ -31,14 +31,9 @@
     </div>
 
     <div class="selector-body">
-      <v-progress-linear
-        :active="loading"
-        :indeterminate="loading"
-        absolute
-        top
-        color="info"
-        height="2"
-      ></v-progress-linear>
+      <div v-if="loading" class="custom-progress-linear">
+        <div class="progress-bar"></div>
+      </div>
 
       <!-- Search fields -->
       <div class="search-row">
@@ -68,14 +63,9 @@
 
         <div class="search-col">
           <div class="search-field-wrapper name-field">
-            <v-progress-linear
-              :active="search_loading"
-              :indeterminate="search_loading"
-              absolute
-              top
-              color="info"
-              height="2"
-            ></v-progress-linear>
+            <div v-if="search_loading" class="custom-progress-linear search-progress">
+              <div class="progress-bar"></div>
+            </div>
             <div class="search-icon">
               <i class="mdi mdi-magnify search-icon-element"></i>
             </div>
@@ -1275,5 +1265,41 @@ export default {
   .search-field-wrapper {
     height: 26px;
   }
+}
+
+/* ===== CUSTOM PROGRESS LINEAR ===== */
+.custom-progress-linear {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #e0e0e0;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.custom-progress-linear .progress-bar {
+  height: 100%;
+  background: #1976d2;
+  animation: progress-indeterminate 1.5s infinite linear;
+  transform-origin: 0% 50%;
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(0) scaleX(0);
+  }
+  40% {
+    transform: translateX(0) scaleX(0.4);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.5);
+  }
+}
+
+/* Thin variant for search */
+.custom-progress-linear.search-progress {
+  height: 2px;
 }
 </style>
