@@ -1,14 +1,14 @@
 <template>
-  <v-row justify="center">
+  <div class="dialog-row">
     <v-dialog v-model="addressDialog" max-width="480px">
-      <v-card class="compact-dialog">
-        <v-card-title class="py-3 px-4">
-          <span class="text-h6 primary--text font-weight-bold">Add New Address</span>
-        </v-card-title>
-        <v-card-text class="pa-2">
-          <v-container class="pa-2">
-            <v-row dense>
-              <v-col cols="12" class="pb-1">
+      <div class="card compact-dialog">
+        <div class="card-header">
+          <span class="card-title">Add New Address</span>
+        </div>
+        <div class="card-body">
+          <div class="form-container">
+            <div class="form-row">
+              <div class="form-col form-col-12">
                 <v-text-field
                   dense
                   outlined
@@ -19,8 +19,8 @@
                   v-model="address.name"
                   class="compact-field"
                 ></v-text-field>
-              </v-col>
-              <v-col cols="12" class="pb-1">
+              </div>
+              <div class="form-col form-col-12">
                 <v-text-field
                   dense
                   outlined
@@ -31,8 +31,8 @@
                   v-model="address.address_line1"
                   class="compact-field"
                 ></v-text-field>
-              </v-col>
-              <v-col cols="12" class="pb-1">
+              </div>
+              <div class="form-col form-col-12">
                 <v-text-field
                   dense
                   outlined
@@ -43,8 +43,8 @@
                   v-model="address.address_line2"
                   class="compact-field"
                 ></v-text-field>
-              </v-col>
-              <v-col cols="6" class="pb-1 pr-1">
+              </div>
+              <div class="form-col form-col-6">
                 <v-text-field
                   label="City"
                   dense
@@ -55,8 +55,8 @@
                   v-model="address.city"
                   class="compact-field"
                 ></v-text-field>
-              </v-col>
-              <v-col cols="6" class="pb-1 pl-1">
+              </div>
+              <div class="form-col form-col-6">
                 <v-text-field
                   label="State"
                   dense
@@ -67,12 +67,12 @@
                   v-model="address.state"
                   class="compact-field"
                 ></v-text-field>
-              </v-col>
-            </v-row>
-          </v-container>
-        </v-card-text>
-        <v-card-actions class="pa-3 pt-0">
-          <v-spacer></v-spacer>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="spacer"></div>
           <v-btn 
             outlined
             color="grey darken-1" 
@@ -91,10 +91,10 @@
           >
             Confirm
           </v-btn>
-        </v-card-actions>
-      </v-card>
+        </div>
+      </div>
     </v-dialog>
-  </v-row>
+  </div>
 </template>
 
 <script>
@@ -151,6 +151,79 @@ export default {
 </script>
 
 <style scoped>
+/* Dialog Row Container */
+.dialog-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Card Components */
+.card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f5f5f5;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1976d2;
+}
+
+.card-body {
+  padding: 8px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px 0;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Spacer */
+.spacer {
+  flex: 1;
+}
+
+/* Form Container */
+.form-container {
+  padding: 8px;
+}
+
+/* Form Row */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px;
+}
+
+/* Form Columns */
+.form-col {
+  padding: 4px;
+}
+
+.form-col-12 {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+.form-col-6 {
+  flex: 0 0 calc(50% - 4px);
+  max-width: calc(50% - 4px);
+}
+
 .compact-dialog {
   border-radius: 12px !important;
 }
