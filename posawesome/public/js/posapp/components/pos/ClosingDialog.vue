@@ -1,5 +1,5 @@
 <template>
-  <v-row justify="center">
+  <div class="dialog-row">
     <v-dialog v-model="closingDialog" max-width="420px" overlay-opacity="0.7">
       <!-- Custom Beautiful Dialog -->
       <div class="beautiful-dialog">
@@ -102,7 +102,7 @@
         </div>
       </div>
     </v-dialog>
-  </v-row>
+  </div>
 </template>
 
 <script>
@@ -366,6 +366,13 @@ export default {
 </script>
 
 <style scoped>
+/* Dialog Row Container */
+.dialog-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 /* Compact Beautiful Dialog */
 .beautiful-dialog {
   background: white;
