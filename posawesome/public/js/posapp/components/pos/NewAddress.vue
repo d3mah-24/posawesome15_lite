@@ -73,24 +73,18 @@
         </div>
         <div class="card-footer">
           <div class="spacer"></div>
-          <v-btn 
-            outlined
-            color="grey darken-1" 
-            class="mr-2 compact-btn" 
+          <button 
+            class="btn btn-outlined btn-cancel compact-btn" 
             @click="close_dialog"
-            small
           >
             Cancel
-          </v-btn>
-          <v-btn 
-            color="primary" 
-            class="compact-btn white--text" 
+          </button>
+          <button 
+            class="btn btn-primary compact-btn" 
             @click="submit_dialog"
-            small
-            elevation="2"
           >
             Confirm
-          </v-btn>
+          </button>
         </div>
       </div>
     </v-dialog>
@@ -281,15 +275,61 @@ export default {
 }
 
 /* Better button styling */
-.v-btn.compact-btn {
-  border-radius: 6px !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.2s ease;
+  line-height: 1.5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.v-btn.compact-btn:hover {
+.btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1976d2 0%, #1e88e5 100%);
+  border-color: #1565c0;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+}
+
+.btn-outlined {
+  background: white;
+  border-color: #9e9e9e;
+  color: #616161;
+}
+
+.btn-outlined:hover {
+  background: #f5f5f5;
+  border-color: #757575;
+}
+
+.btn-cancel {
+  margin-right: 8px;
+}
+
+.compact-btn {
+  padding: 4px 12px;
+  height: 26px;
+  font-size: 11px;
 }
 
 /* Outlined text fields styling */
