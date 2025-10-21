@@ -1,5 +1,5 @@
 <template>
-  <v-row justify="center">
+  <div class="dialog-row">
     <v-dialog v-model="customerDialog" max-width="400px" @click:outside="clear_customer">
       <div class="customer-modal">
         <div class="modal-header">
@@ -96,7 +96,7 @@
         </div>
       </div>
     </v-dialog>
-  </v-row>
+  </div>
 </template>
 
 <script>
@@ -393,6 +393,13 @@ export default {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Dialog Row Container */
+.dialog-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Header - very compact */
