@@ -8,17 +8,15 @@
         </div>
         <div class="card-body">
           <div class="search-row">
-            <v-text-field
-              color="primary"
-              :label="'Invoice Number'"
-              background-color="white"
-              hide-details
-              v-model="invoice_name"
-              dense
-              clearable
-              class="mx-4"
-              @keydown.enter="search_invoices"
-            ></v-text-field>
+            <div class="text-field-wrapper">
+              <input
+                type="text"
+                class="custom-text-field"
+                v-model="invoice_name"
+                placeholder="Invoice Number"
+                @keydown.enter="search_invoices"
+              />
+            </div>
             <button class="btn btn-primary btn-search" @click="search_invoices">
               Search
             </button>
@@ -414,5 +412,40 @@ export default {
 
 .v-data-table {
   font-size: 0.875rem;
+}
+
+/* ===== CUSTOM TEXT FIELD ===== */
+.text-field-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 16px;
+}
+
+.custom-text-field {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: #333;
+  background: white;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.custom-text-field:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+.custom-text-field:hover:not(:disabled):not(:focus) {
+  border-color: #999;
+}
+
+.custom-text-field::placeholder {
+  color: #999;
+  font-size: 0.8rem;
 }
 </style>
