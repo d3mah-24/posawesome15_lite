@@ -112,13 +112,13 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 ### ��🇬 Egypt Contact
 - 📞 **Call:** [+20 115 648 3669](tel:+201156483669)
-- <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="16" height="16"> **WhatsApp:** [https://wa.me/201156483669](https://wa.me/201156483669)
-- 💬 **Telegram:** [https://t.me/abdo_01156483669](https://t.me/abdo_01156483669)
+- <img src="./imgs/whatsapp.svg" width="16" height="16"> **WhatsApp:** [https://wa.me/201156483669](https://wa.me/201156483669)
+- <img src="./imgs/telegram.svg" width="16" height="16"> **Telegram:** [https://t.me/abdo_01156483669](https://t.me/abdo_01156483669)
 
 ### 🇸🇦 Saudi Arabia Contact  
 - 📞 **Call:** [+966 57 891 9729](tel:+966578919729)
-- <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="16" height="16"> **WhatsApp:** [https://wa.me/966578919729](https://wa.me/966578919729)
-- 💬 **Telegram:** [https://t.me/abdo_0578919729](https://t.me/abdo_0578919729)
+- <img src="./imgs/whatsapp.svg" width="16" height="16"> **WhatsApp:** [https://wa.me/966578919729](https://wa.me/966578919729)
+- <img src="./imgs/telegram.svg" width="16" height="16"> **Telegram:** [https://t.me/abdo_0578919729](https://t.me/abdo_0578919729)
 
 ### 🌐 Online
 - 🌐 **Website:** [future-support.online](https://www.future-support.online/)
