@@ -137,17 +137,14 @@
 
           <template v-slot:item.actions="{ item }">
             <div class="flex justify-end">
-              <v-btn
+              <button
                 :disabled="Boolean(item.posa_is_offer || item.posa_is_replace)"
-                icon
-                color="error"
-                size="small"
-                class="delete-item-btn"
+                class="delete-item-btn error-btn-small"
                 @click.stop="remove_item(item)"
                 title="Delete item"
               >
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
+                <i class="mdi mdi-delete"></i>
+              </button>
             </div>
           </template>
           <template v-slot:item.price_list_rate="{ item }">
@@ -238,7 +235,7 @@
           @click="printInvoice"
           title="Print after choosing a payment method"
         >
-          <v-icon size="16">mdi-printer</v-icon>
+          <i class="mdi mdi-printer action-icon"></i>
           <span>Print</span>
         </button>
 
@@ -247,7 +244,7 @@
           :disabled="!hasItems || is_payment"
           @click="show_payment"
         >
-          <v-icon size="16">mdi-cash-multiple</v-icon>
+          <i class="mdi mdi-cash-multiple action-icon"></i>
           <span>Pay</span>
         </button>
 
@@ -256,7 +253,7 @@
           :disabled="!pos_profile?.posa_allow_return"
           @click="open_returns"
         >
-          <v-icon size="16">mdi-keyboard-return</v-icon>
+          <i class="mdi mdi-keyboard-return action-icon"></i>
           <span>Return</span>
         </button>
 
@@ -265,12 +262,12 @@
           :disabled="!pos_profile?.posa_allow_quick_return"
           @click="quick_return"
         >
-          <v-icon size="16">mdi-flash</v-icon>
+          <i class="mdi mdi-flash action-icon"></i>
           <span>Quick Return</span>
         </button>
 
         <button class="action-btn error-btn" @click="cancel_invoice">
-          <v-icon size="16">mdi-close-circle</v-icon>
+          <i class="mdi mdi-close-circle action-icon"></i>
           <span>Cancel</span>
         </button>
       </div>
@@ -2329,8 +2326,33 @@ export default {
   box-shadow: none !important;
 }
 
-.delete-item-btn .v-icon {
-  font-size: 12px !important;
+.delete-item-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.delete-item-btn:hover:not(:disabled) {
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.delete-item-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delete-item-btn .mdi {
+  font-size: 12px;
+  color: #f44336;
+}
+
+.error-btn-small {
+  background: transparent;
+  border: none;
+  color: #f44336;
 }
 
 /* Compact Rate Input Field */
@@ -2850,6 +2872,10 @@ export default {
   background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
 }
 
+.action-icon {
+  font-size: 16px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1280px) {
   .summary-field label {
@@ -2866,8 +2892,8 @@ export default {
     font-size: 0.7rem;
   }
 
-  .action-btn .v-icon {
-    font-size: 14px !important;
+  .action-icon {
+    font-size: 14px;
   }
 }
 </style>
