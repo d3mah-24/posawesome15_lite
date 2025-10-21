@@ -110,6 +110,9 @@ posawesome/public/js/posapp/
 ![Performance Metrics - October 21, 2025 09:15 AM](./imgs/metrics_21_10_2025_09_15_am.png)
 *Performance metrics captured on October 21, 2025 at 09:15 AM*
 
+![Performance Metrics - October 21, 2025 09:40 AM](./imgs/metrics_21_10_2025_09_40_am.png)
+*Performance metrics captured on October 21, 2025 at 09:40 AM*
+
 ![Huge Bundle Payload](./imgs/huge_bundle_payload.png)
 *Bundle size analysis showing large payload issues*
 
