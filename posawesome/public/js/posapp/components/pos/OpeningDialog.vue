@@ -7,14 +7,14 @@
         <div class="dialog-header">
           <div class="header-content">
             <div class="header-icon">
-              <v-icon color="white" size="18">mdi-cash-register</v-icon>
+              <i class="mdi mdi-cash-register cash-icon"></i>
             </div>
             <div class="header-text">
               <h3 class="dialog-title">POS Opening</h3>
             </div>
           </div>
           <button class="close-btn" @click="go_desk">
-            <v-icon color="white" size="14">mdi-close</v-icon>
+            <i class="mdi mdi-close close-icon"></i>
           </button>
         </div>
 
@@ -53,9 +53,11 @@
                 >
                   <div class="table-cell method-col">
                     <div class="payment-method">
-                      <v-icon :color="getPaymentIcon(item.mode_of_payment).color" size="14">
-                        {{ getPaymentIcon(item.mode_of_payment).icon }}
-                      </v-icon>
+                      <i 
+                        class="mdi payment-icon"
+                        :class="getPaymentIcon(item.mode_of_payment).icon"
+                        :style="{ color: getPaymentIcon(item.mode_of_payment).color }"
+                      ></i>
                       <span class="method-name">{{ item.mode_of_payment }}</span>
                     </div>
                   </div>
@@ -82,7 +84,7 @@
         <!-- Compact Footer -->
         <div class="dialog-footer">
           <button class="action-btn cancel-btn" @click="go_desk">
-            <v-icon size="14">mdi-close</v-icon>
+            <i class="mdi mdi-close cancel-icon"></i>
             Cancel
           </button>
           <button 
@@ -92,8 +94,8 @@
             :disabled="is_loading"
             :class="{ 'loading': is_loading }"
           >
-            <v-icon size="14" v-if="!is_loading">mdi-check</v-icon>
-            <v-icon size="14" v-else class="rotating">mdi-loading</v-icon>
+            <i class="mdi mdi-check submit-icon" v-if="!is_loading"></i>
+            <i class="mdi mdi-loading rotating loading-icon" v-else></i>
             {{ is_loading ? 'Creating...' : 'Confirm' }}
           </button>
           <div v-else class="time-restriction-message">
@@ -515,6 +517,16 @@ export default {
   justify-content: center;
 }
 
+.cash-icon {
+  color: white;
+  font-size: 18px;
+}
+
+.close-icon {
+  color: white;
+  font-size: 14px;
+}
+
 .dialog-title {
   margin: 0;
   font-size: 14px;
@@ -657,6 +669,10 @@ export default {
   font-size: 11px;
 }
 
+.payment-icon {
+  font-size: 14px;
+}
+
 /* Amount Input Styling */
 .amount-input-wrapper {
   display: flex;
@@ -746,6 +762,12 @@ export default {
 
 .submit-btn.loading {
   background: #6b7280;
+}
+
+.cancel-icon,
+.submit-icon,
+.loading-icon {
+  font-size: 14px;
 }
 
 /* Time Restriction Message */
