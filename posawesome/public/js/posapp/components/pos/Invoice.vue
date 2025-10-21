@@ -18,7 +18,7 @@
           class="elevation-0 invoice-table"
           style="width: 700px"
           hide-default-footer
-          :items-per-page="-1"
+          :items-per-page="25"
           density="compact"
         >
           <template v-slot:item.item_name="{ item }">
@@ -197,40 +197,35 @@
         <div class="summary-field readonly-field warning-field">
           <label>items_dis</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile?.currency)
-            }}{{ formatCurrency(invoice_doc?.posa_item_discount_total || 0) }}
+            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.posa_item_discount_total || 0) }}
           </div>
         </div>
 
         <div class="summary-field readonly-field">
           <label>before_disc</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile?.currency)
-            }}{{ formatCurrency(invoice_doc?.total || 0) }}
+            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.total || 0) }}
           </div>
         </div>
 
         <div class="summary-field readonly-field">
           <label>net_total</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile?.currency)
-            }}{{ formatCurrency(invoice_doc?.net_total) }}
+            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.net_total) }}
           </div>
         </div>
 
         <div class="summary-field readonly-field info-field">
           <label>tax</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile?.currency)
-            }}{{ formatCurrency(invoice_doc?.total_taxes_and_charges) }}
+            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.total_taxes_and_charges) }}
           </div>
         </div>
 
         <div class="summary-field readonly-field success-field grand-total">
           <label>grand_total</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile?.currency)
-            }}{{ formatCurrency(invoice_doc?.grand_total) }}
+            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.grand_total) }}
           </div>
         </div>
       </div>
@@ -1347,7 +1342,8 @@ export default {
       item.serial_no_selected_count = item.serial_no_selected.length;
       if (item.serial_no_selected_count != item.stock_qty) {
         item.qty = item.serial_no_selected_count;
-        this.$forceUpdate();
+        // Use reactive update instead of $forceUpdate
+        this.$set(item, 'qty', item.serial_no_selected_count);
       }
     },
 
@@ -1386,7 +1382,8 @@ export default {
               vm.update_item_detail(item);
             }
 
-            vm.$forceUpdate();
+            // Trigger reactivity without full re-render
+            vm.$nextTick();
           } else {
             item.batch_no = null;
             item.actual_batch_qty = null;
@@ -1401,7 +1398,8 @@ export default {
               });
             }
 
-            vm.$forceUpdate();
+            // Use nextTick instead of forceUpdate
+            vm.$nextTick();
           }
         },
         error: function (err) {
