@@ -1,13 +1,13 @@
 <template>
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
-  <v-row justify="center">
+  <div class="dialog-row">
     <v-dialog v-model="invoicesDialog" max-width="800px" min-width="800px">
-      <v-card>
-        <v-card-title>
-          <span class="headline primary--text">Return Invoice</span>
-        </v-card-title>
-        <v-container>
-          <v-row class="mb-4">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Return Invoice</span>
+        </div>
+        <div class="card-body">
+          <div class="search-row">
             <v-text-field
               color="primary"
               :label="'Invoice Number'"
@@ -22,9 +22,9 @@
             <v-btn text class="ml-2" color="primary" dark @click="search_invoices">
               Search
             </v-btn>
-          </v-row>
-          <v-row>
-            <v-col cols="12" class="pa-1">
+          </div>
+          <div class="table-row">
+            <div class="table-col-full">
               <v-data-table
                 :headers="headers"
                 :items="dialog_data"
@@ -40,19 +40,19 @@
                   {{ currencySymbol(item.currency) }} {{ formatCurrency(item.grand_total) }}
                 </template>
               </v-data-table>
-            </v-col>
-          </v-row>
-        </v-container>
-        <v-card-actions class="mt-4">
-          <v-spacer></v-spacer>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="spacer"></div>
           <v-btn color="error mx-2" dark @click="close_dialog">Close</v-btn>
           <v-btn color="success" dark @click="submit_dialog">
             Select
           </v-btn>
-        </v-card-actions>
-      </v-card>
+        </div>
+      </div>
     </v-dialog>
-  </v-row>
+  </div>
 </template>
 
 <script>
@@ -287,6 +287,71 @@ export default {
 </script>
 
 <style scoped>
+/* Dialog Row Container */
+.dialog-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Card Components */
+.card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f5f5f5;
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1976d2;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 16px;
+}
+
+/* Spacer */
+.spacer {
+  flex: 1;
+}
+
+/* Search Row */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Table Row */
+.table-row {
+  display: flex;
+  width: 100%;
+}
+
+.table-col-full {
+  flex: 1;
+  padding: 4px;
+}
+
 .v-data-table {
   font-size: 0.875rem;
 }
