@@ -103,21 +103,15 @@
       <!-- Items display area -->
       <div class="items-display-area">
         <div class="items-content" v-if="items_view == 'card'">
-          <v-row
-            dense
-            class="items-scrollable"
+          <div
+            class="items-grid"
             ref="itemsScrollArea"
             :style="itemsScrollStyle"
           >
-            <v-col
+            <div
               v-for="(item, idx) in filtred_items"
               :key="idx"
-              xl="2"
-              lg="3"
-              md="4"
-              sm="6"
-              cols="6"
-              min-height="50"
+              class="item-grid-col"
             >
               <v-card hover="hover" @click="add_item(item)" class="item-card">
                 <v-img
@@ -162,8 +156,8 @@
                   </div>
                 </v-card-text>
               </v-card>
-            </v-col>
-          </v-row>
+            </div>
+          </div>
         </div>
         <div class="items-content" v-if="items_view == 'list'">
           <div
@@ -1059,6 +1053,50 @@ export default {
 }
 
 /* ===== ITEMS DISPLAY AREA ===== */
+/* Items Grid */
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.item-grid-col {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 600px) {
+  .items-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 601px) and (max-width: 960px) {
+  .items-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 961px) and (max-width: 1264px) {
+  .items-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1265px) and (max-width: 1904px) {
+  .items-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 1905px) {
+  .items-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
 .items-display-area {
   flex: 1;
   display: flex;
