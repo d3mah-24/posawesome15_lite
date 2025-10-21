@@ -82,6 +82,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - 🔗 Direct work via **SSH on single server**
 - 📦 Repository: [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 - 🌿 Branch: **main only**
+- ⚠️ **Caution**: Commits is allowed after review only
 
 **🐢 Server Specifications:**
 - 💾 **RAM:** 324 GB DDR5
