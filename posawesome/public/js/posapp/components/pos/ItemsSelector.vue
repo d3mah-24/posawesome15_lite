@@ -4,7 +4,7 @@
     <div class="selector-header">
       <div class="header-item">
         <div class="group-select-wrapper">
-          <v-icon size="14" class="group-icon">mdi-shape</v-icon>
+          <i class="mdi mdi-shape group-icon"></i>
           <select
             v-model="item_group"
             @change="onItemGroupChange"
@@ -18,13 +18,13 @@
       </div>
       <div class="header-item">
         <button class="header-btn coupon-btn" @click="show_coupons">
-          <v-icon size="14">mdi-ticket-percent</v-icon>
+          <i class="mdi mdi-ticket-percent header-icon"></i>
           <span>{{ couponsCount }} Coupons</span>
         </button>
       </div>
       <div class="header-item">
         <button class="header-btn offer-btn" @click="show_offers">
-          <v-icon size="14">mdi-tag-multiple</v-icon>
+          <i class="mdi mdi-tag-multiple header-icon"></i>
           <span>{{ offersCount }} Offers</span>
         </button>
       </div>
@@ -45,7 +45,7 @@
         <div class="search-col">
           <div class="search-field-wrapper barcode-field">
             <div class="search-icon">
-              <v-icon color="success" size="16">mdi-barcode</v-icon>
+              <i class="mdi mdi-barcode barcode-icon"></i>
             </div>
             <input
               type="text"
@@ -77,7 +77,7 @@
               height="2"
             ></v-progress-linear>
             <div class="search-icon">
-              <v-icon color="primary" size="16">mdi-magnify</v-icon>
+              <i class="mdi mdi-magnify search-icon-element"></i>
             </div>
             <input
               type="text"
@@ -852,9 +852,10 @@ export default {
   box-shadow: 0 2px 6px rgba(25, 118, 210, 0.15);
 }
 
-.group-select-wrapper .group-icon {
+.group-icon {
   color: #1976d2;
   flex-shrink: 0;
+  font-size: 14px;
 }
 
 .custom-group-select {
@@ -928,6 +929,10 @@ export default {
   border-color: #388e3c;
 }
 
+.header-icon {
+  font-size: 14px;
+}
+
 /* ===== SELECTOR BODY ===== */
 .selector-body {
   flex: 1;
@@ -983,6 +988,16 @@ export default {
   align-items: center;
   padding: 0 6px;
   height: 100%;
+}
+
+.barcode-icon {
+  color: #4caf50;
+  font-size: 16px;
+}
+
+.search-icon-element {
+  color: #1976d2;
+  font-size: 16px;
 }
 
 .custom-search-input {
