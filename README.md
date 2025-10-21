@@ -87,7 +87,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - 🔗 Direct work via **SSH on single server**
 - 📦 Repository: [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 - 🌿 Branch: **main only**
-- ⚠️ **Caution**: Commits is allowed after review only
+
 
 **🐢 Server Specifications:**
 - 💾 **RAM:** 324 GB DDR5
@@ -95,11 +95,16 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - ⚡ **Cores/Threads:** 2024 cores / 128 threads
 - 🔋 **Power:** 360 Watt
 
-⚠️ **STRICT POLICY:**  
-**Any work done outside this process or not following the Development Server Policy:**
-- ❌ Will NOT be reviewed
-- ❌ Will NOT be accepted
-- ❌ Will NOT be paid
+⚠️ **Project POLICY:**  
+- ⚠️ Changes into front conflicts improve policy
+- ⚠️ Changes into backend conflicts improve policy  
+- ⚠️ Changes not asked for
+- ⚠️ Changing codebase structure
+- ⚠️ Changes not direct in server files
+- ⚠️ Changes not direct in dev_server
+- ⚠️ Commit before review and test
+- ❌ No review = rejected
+- ❌ No payment
 
 ---
 
