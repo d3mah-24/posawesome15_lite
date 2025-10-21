@@ -1,16 +1,17 @@
 <template>
   <div class="dialog-row">
-    <v-dialog v-model="customerDialog" max-width="400px" @click:outside="clear_customer">
-      <div class="customer-modal">
-        <div class="modal-header">
-          <i class="mdi mdi-account-circle header-icon"></i>
-          <span class="modal-title">{{ customer_id ? 'Update Customer' : 'New Customer' }}</span>
-          <button class="close-icon" @click="close_dialog">
-            <i class="mdi mdi-close close-icon-element"></i>
-          </button>
-        </div>
+    <div v-if="customerDialog" class="custom-modal-overlay" @click="clear_customer">
+      <div class="custom-modal" @click.stop>
+        <div class="customer-modal">
+          <div class="modal-header">
+            <i class="mdi mdi-account-circle header-icon"></i>
+            <span class="modal-title">{{ customer_id ? 'Update Customer' : 'New Customer' }}</span>
+            <button class="close-icon" @click="close_dialog">
+              <i class="mdi mdi-close close-icon-element"></i>
+            </button>
+          </div>
 
-        <div class="modal-body">
+          <div class="modal-body">
           <div class="field-group">
             <label class="field-label">Customer Name *</label>
             <input type="text" v-model="customer_name" class="custom-input" placeholder="Enter name" />
@@ -50,10 +51,13 @@
               <label class="field-label">Date of Birth</label>
               <input type="text" v-model="birthday" readonly @click="birthday_menu = true" class="custom-input"
                 placeholder="DOB" />
-              <v-dialog v-model="birthday_menu" max-width="290px">
-                <v-date-picker v-model="birthday" color="primary" scrollable :max="frappe.datetime.now_date()"
-                  @input="birthday_menu = false"></v-date-picker>
-              </v-dialog>
+              <div v-if="birthday_menu" class="custom-modal-overlay" @click="birthday_menu = false">
+                <div class="custom-modal small-modal" @click.stop>
+                  <div class="date-picker-container">
+                    <input type="date" v-model="birthday" class="custom-date-input" :max="frappe.datetime.now_date()" @change="birthday_menu = false" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -84,6 +88,7 @@
               <input type="text" v-model="loyalty_points" readonly class="custom-input readonly" />
             </div>
           </div>
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -95,7 +100,7 @@
           </button>
         </div>
       </div>
-    </v-dialog>
+    </div>
   </div>
 </template>
 
@@ -574,5 +579,89 @@ export default {
 
 .v-date-picker-header {
   padding: 4px 8px !important;
+}
+
+/* ===== CUSTOM MODAL ===== */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modal-fade-in 0.2s ease;
+}
+
+.custom-modal {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: modal-slide-in 0.3s ease;
+}
+
+.custom-modal.small-modal {
+  max-width: 290px;
+  padding: 16px;
+}
+
+.date-picker-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.custom-date-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.custom-date-input:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive modal */
+@media (max-width: 600px) {
+  .custom-modal {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .custom-modal.small-modal {
+    width: 90%;
+    max-width: 280px;
+  }
 }
 </style>
