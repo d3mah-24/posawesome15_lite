@@ -9,64 +9,59 @@
           <div class="form-container">
             <div class="form-row">
               <div class="form-col form-col-12">
-                <v-text-field
-                  dense
-                  outlined
-                  color="primary"
-                  label="Address Title"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="address.name"
-                  class="compact-field"
-                ></v-text-field>
+                <div class="text-field-wrapper">
+                  <label class="text-field-label">Address Title</label>
+                  <input
+                    type="text"
+                    class="custom-text-field compact"
+                    v-model="address.name"
+                    placeholder="Enter address title"
+                  />
+                </div>
               </div>
               <div class="form-col form-col-12">
-                <v-text-field
-                  dense
-                  outlined
-                  color="primary"
-                  label="Address Line 1"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="address.address_line1"
-                  class="compact-field"
-                ></v-text-field>
+                <div class="text-field-wrapper">
+                  <label class="text-field-label">Address Line 1</label>
+                  <input
+                    type="text"
+                    class="custom-text-field compact"
+                    v-model="address.address_line1"
+                    placeholder="Enter address line 1"
+                  />
+                </div>
               </div>
               <div class="form-col form-col-12">
-                <v-text-field
-                  dense
-                  outlined
-                  color="primary"
-                  label="Address Line 2"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="address.address_line2"
-                  class="compact-field"
-                ></v-text-field>
+                <div class="text-field-wrapper">
+                  <label class="text-field-label">Address Line 2</label>
+                  <input
+                    type="text"
+                    class="custom-text-field compact"
+                    v-model="address.address_line2"
+                    placeholder="Enter address line 2"
+                  />
+                </div>
               </div>
               <div class="form-col form-col-6">
-                <v-text-field
-                  label="City"
-                  dense
-                  outlined
-                  color="primary"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="address.city"
-                  class="compact-field"
-                ></v-text-field>
+                <div class="text-field-wrapper">
+                  <label class="text-field-label">City</label>
+                  <input
+                    type="text"
+                    class="custom-text-field compact"
+                    v-model="address.city"
+                    placeholder="Enter city"
+                  />
+                </div>
               </div>
               <div class="form-col form-col-6">
-                <v-text-field
-                  label="State"
-                  dense
-                  outlined
-                  color="primary"
-                  background-color="white"
-                  hide-details="auto"
-                  v-model="address.state"
-                  class="compact-field"
-                ></v-text-field>
+                <div class="text-field-wrapper">
+                  <label class="text-field-label">State</label>
+                  <input
+                    type="text"
+                    class="custom-text-field compact"
+                    v-model="address.state"
+                    placeholder="Enter state"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -339,5 +334,53 @@ export default {
 
 .v-select--outlined > .v-input__control > .v-input__slot {
   border-radius: 6px !important;
+}
+
+/* ===== CUSTOM TEXT FIELD ===== */
+.text-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.text-field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 2px;
+}
+
+.custom-text-field {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: #333;
+  background: white;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.custom-text-field:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+.custom-text-field:hover:not(:disabled):not(:focus) {
+  border-color: #999;
+}
+
+.custom-text-field::placeholder {
+  color: #999;
+  font-size: 0.8rem;
+}
+
+/* Compact variant */
+.custom-text-field.compact {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  min-height: 36px;
 }
 </style>
