@@ -28,9 +28,14 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
         list: List of customer dictionaries with optimized fields
     """
     try:
+        # Log incoming request
+        frappe.log_error(f"[get_many_customers.py][get_many_customers] START - pos_profile: {pos_profile}, search_term: '{search_term}', limit: {limit}")
+        
         # Convert limit and offset to integers for safety
         limit = min(int(limit or 50), 200)  # Cap at 200 for performance
         offset = int(offset or 0)
+        
+        frappe.log_error(f"[get_many_customers.py][get_many_customers] Processed params - limit: {limit}, offset: {offset}")
         
         # Redis caching for POS Profile data (Backend Improvement Policy)
         cache_key = None
@@ -45,18 +50,22 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
             "disabled": 0  # Only active customers
         }
         
+        frappe.log_error(f"[get_many_customers.py][get_many_customers] Base filters: {query_filters}")
+        
         # Additional filters can be added here if needed in future
         # For now, we only use the base filters and pos_profile filtering
         
         # Apply POS Profile filtering
         if pos_profile:
             try:
+                frappe.log_error(f"[get_many_customers.py][get_many_customers] Applying POS profile filter: {pos_profile}")
                 # Handle both POS Profile name and JSON data
                 if isinstance(pos_profile, str) and not pos_profile.startswith('{'):
                     # It's a POS Profile name - get the document
                     profile_doc = frappe.get_cached_doc("POS Profile", pos_profile)
                     if hasattr(profile_doc, 'customer_group') and profile_doc.customer_group:
                         query_filters["customer_group"] = profile_doc.customer_group
+                        frappe.log_error(f"[get_many_customers.py][get_many_customers] Added customer_group filter: {profile_doc.customer_group}")
                 else:
                     # It's JSON data - parse customer groups
                     pos_profile_data = frappe.parse_json(pos_profile)
@@ -68,14 +77,19 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
                         
                         if customer_groups:
                             query_filters["customer_group"] = ["in", customer_groups]
+                            frappe.log_error(f"[get_many_customers.py][get_many_customers] Added customer_groups filter: {customer_groups}")
             except Exception as profile_error:
                 # Silent fallback for POS profile processing
+                frappe.log_error(f"[get_many_customers.py][get_many_customers] POS profile filter error: {str(profile_error)}")
                 pass
+        
+        frappe.log_error(f"[get_many_customers.py][get_many_customers] Final query filters: {query_filters}")
         
         # Add search term filtering (POSNext ORM-only approach)
         search_filters = []
         if search_term and search_term.strip():
             search_term = search_term.strip()
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] Search term provided: '{search_term}'")
             # Priority-based search fields (most important first)
             search_filters = [
                 ["customer_name", "like", f"%{search_term}%"],   # Primary search field
@@ -84,6 +98,9 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
                 ["email_id", "like", f"%{search_term}%"],       # Email search
                 ["tax_id", "like", f"%{search_term}%"]          # Tax ID search
             ]
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] Search filters: {search_filters}")
+        else:
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] No search term, loading all customers")
         
         # Use Frappe ORM with optimized field selection (Backend Policy Compliance)
         fields_to_fetch = [
@@ -91,46 +108,39 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
             "customer_group", "territory", "disabled"
         ]
         
+        frappe.log_error(f"[get_many_customers.py][get_many_customers] Fields to fetch: {fields_to_fetch}")
+        
         # Handle search term with ORM-only approach (POSNext style)
         if search_filters:
-            # For search functionality, use multiple separate queries and merge results
-            # This follows POSNext pattern of client-side filtering when needed
+            # Use proper OR filters for efficient search across multiple fields
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] Building OR filters for search")
             
-            search_results = []
-            processed_names = set()
-            
-            # Search by each field separately and combine results
+            # Convert search filters to proper OR format
+            or_filters = []
             for field_name, operator, value in search_filters:
-                try:
-                    field_results = frappe.get_all(
-                        "Customer",
-                        filters={
-                            **query_filters,
-                            field_name: [operator.lower(), value]
-                        },
-                        fields=fields_to_fetch,
-                        limit=limit,
-                        start=offset,
-                        order_by="customer_name asc"
-                    )
-                    
-                    # Add unique results
-                    for customer in field_results:
-                        if customer.name not in processed_names:
-                            search_results.append(customer)
-                            processed_names.add(customer.name)
-                            
-                    # Break if we have enough results
-                    if len(search_results) >= limit:
-                        break
-                        
-                except Exception as field_error:
-                    # Silent fallback for field search errors
-                    continue
+                or_filters.append([field_name, operator.lower(), value])
             
-            customers = search_results[:limit]  # Ensure we don't exceed limit
+            # Add OR filters to base query
+            search_query_filters = {
+                **query_filters,
+                "or": or_filters
+            }
+            
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] Final search query: {search_query_filters}")
+            
+            customers = frappe.get_all(
+                "Customer",
+                filters=search_query_filters,
+                fields=fields_to_fetch,
+                limit=limit,
+                start=offset,
+                order_by="customer_name asc"
+            )
+            
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] OR search returned {len(customers)} customers")
         else:
             # Simple query without search terms
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] Executing simple query with filters: {query_filters}")
             customers = frappe.get_all(
                 "Customer",
                 filters=query_filters,
@@ -139,16 +149,22 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
                 start=offset,
                 order_by="customer_name asc"
             )
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] Simple query returned {len(customers)} customers")
         
         # Cache results for better performance (Backend Improvement Policy)
         if cache_key and customers:
             frappe.cache().set_value(cache_key, customers, expires_in_sec=300)  # 5-minute cache
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] Cached {len(customers)} customers")
+        
+        frappe.log_error(f"[get_many_customers.py][get_many_customers] SUCCESS - Returning {len(customers)} customers")
+        if customers:
+            frappe.log_error(f"[get_many_customers.py][get_many_customers] Sample customer: {customers[0]}")
         
         return customers
         
     except Exception as e:
-        frappe.logger().error(f"Error in get_many_customers: {str(e)}")
-        frappe.logger().error(frappe.get_traceback())
+        frappe.log_error(f"[get_many_customers.py][get_many_customers] ERROR: {str(e)}")
+        frappe.log_error(frappe.get_traceback())
         frappe.throw(_("Error searching customers: {0}").format(str(e)))
 
 
@@ -210,5 +226,5 @@ def get_customers_count(search_term="", pos_profile=None, filters=None):
         return count
         
     except Exception as e:
-        frappe.logger().error(f"Error in get_customers_count: {str(e)}")
+        frappe.log_error(f"[get_many_customers.py][get_customers_count] Error: {str(e)}")
         return 0
