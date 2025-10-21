@@ -23,7 +23,7 @@ posawesome/api/
 ```
 
 **Rules:**
-- Each function in separate file
+- Each whitelisted def function in separate file
 - Function names express purpose clearly
 - Each DocType has dedicated folder
 
@@ -36,16 +36,11 @@ posawesome/api/
 - Reduce payload size significantly
 - Example: `frappe.get_doc("Item", name, fields=["name", "item_code", "item_name"])`
 
-### 2. Advanced Caching Strategy
-- Implement Redis caching for frequently accessed data
-- Cache query results with intelligent invalidation
-- Use `frappe.cache()` for temporary data storage
-- Reduce database load by 40%
-
-### 3. Performance Optimization
+### 2. Performance Optimization (No Caching)
 - Use `ignore_version=True` for faster saves
 - Implement immediate `frappe.db.commit()`
-- Target: < 100ms response time
+- Optimize database queries with specific field selection
+- Target: < 100ms response time without caching
 
 ### 4. Direct Printing Windows Service
 - Develop Windows service for direct invoice printing
@@ -59,14 +54,16 @@ posawesome/api/
 - Release locks immediately after operations
 
 ### 6. Error Handling
-- Implement `log_error` in every function
-- Handle database timeouts
+- Implement `frappe.log_error` at the end of each function definition
+- Log errors only for the specific function that failed
+- Handle database timeouts gracefully
 - Limit error message length
+- Example: `frappe.log_error("Error in get_customer function: {0}".format(str(e)))`
 
 ## Priority Tasks
 
-1. **Implement specific field queries** (Week 1)
-2. **Standardize API structure** (Week 1)
-3. **Setup advanced caching** (Week 2)
-4. **Develop printing service** (Week 3)
-5. **Add error handling** (Week 2)
+1. **Implement specific field queries** (Phase 1)
+2. **Standardize API structure** (Phase 1)
+3. **Optimize database performance** (Phase 2)
+4. **Develop printing service** (Phase 3)
+5. **Add error handling** (Phase 2)
