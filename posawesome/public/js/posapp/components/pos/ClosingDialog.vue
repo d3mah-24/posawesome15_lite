@@ -7,14 +7,14 @@
         <div class="dialog-header">
           <div class="header-content">
             <div class="header-icon">
-              <v-icon color="white" size="18">mdi-cash-register</v-icon>
+              <i class="mdi mdi-cash-register cash-icon"></i>
             </div>
             <div class="header-text">
               <h3 class="dialog-title">Close POS</h3>
             </div>
           </div>
           <button class="close-btn" @click="close_dialog">
-            <v-icon color="white" size="14">mdi-close</v-icon>
+            <i class="mdi mdi-close close-icon"></i>
           </button>
         </div>
 
@@ -38,9 +38,11 @@
               >
                 <div class="table-cell method-col">
                   <div class="payment-method">
-                    <v-icon :color="getPaymentIcon(item.mode_of_payment).color" size="14">
-                      {{ getPaymentIcon(item.mode_of_payment).icon }}
-                    </v-icon>
+                    <i 
+                      class="mdi payment-icon"
+                      :class="getPaymentIcon(item.mode_of_payment).icon"
+                      :style="{ color: getPaymentIcon(item.mode_of_payment).color }"
+                    ></i>
                     <span class="method-name">{{ item.mode_of_payment }}</span>
                   </div>
                 </div>
@@ -61,7 +63,7 @@
                   </div>
                   <div v-else class="amount-display" @click="item.editing = true">
                     <span class="amount clickable">{{ formatCurrency(item.closing_amount) }}</span>
-                    <v-icon size="10" class="edit-icon">mdi-pencil</v-icon>
+                    <i class="mdi mdi-pencil edit-icon"></i>
                   </div>
                 </div>
                 
@@ -82,7 +84,7 @@
         <!-- Compact Footer -->
         <div class="dialog-footer">
           <button class="action-btn cancel-btn" @click="close_dialog">
-            <v-icon size="14">mdi-close</v-icon>
+            <i class="mdi mdi-close cancel-icon"></i>
             Cancel
           </button>
           <button 
@@ -90,11 +92,11 @@
             class="action-btn submit-btn" 
             @click="submit_dialog"
           >
-            <v-icon size="14">mdi-check</v-icon>
+            <i class="mdi mdi-check submit-icon"></i>
             Submit
           </button>
           <div v-if="!isClosingAllowed && closingTimeMessage" class="time-restriction-message">
-            <v-icon size="14" color="orange">mdi-clock-alert-outline</v-icon>
+            <i class="mdi mdi-clock-alert-outline alert-icon"></i>
             {{ closingTimeMessage }}
           </div>
         </div>
@@ -411,6 +413,16 @@ export default {
   justify-content: center;
 }
 
+.cash-icon {
+  color: white;
+  font-size: 18px;
+}
+
+.close-icon {
+  color: white;
+  font-size: 14px;
+}
+
 .dialog-title {
   margin: 0;
   font-size: 14px;
@@ -528,11 +540,16 @@ export default {
   background: rgba(99, 102, 241, 0.1);
 }
 
+.payment-icon {
+  font-size: 14px;
+}
+
 .edit-icon {
   opacity: 0;
   transition: opacity 0.1s ease;
   color: #6366f1;
   margin-left: 2px;
+  font-size: 10px;
 }
 
 .amount.clickable:hover .edit-icon {
@@ -601,6 +618,11 @@ export default {
   transform: translateY(-1px);
 }
 
+.cancel-icon,
+.submit-icon {
+  font-size: 14px;
+}
+
 .time-restriction-message {
   display: flex;
   align-items: center;
@@ -612,6 +634,11 @@ export default {
   background: rgba(245, 158, 11, 0.1);
   border-radius: 6px;
   border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.alert-icon {
+  color: #ff9800;
+  font-size: 14px;
   margin-left: 8px;
   white-space: nowrap;
   overflow: hidden;
