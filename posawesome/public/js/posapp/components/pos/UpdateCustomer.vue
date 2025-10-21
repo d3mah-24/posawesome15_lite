@@ -3,10 +3,10 @@
     <v-dialog v-model="customerDialog" max-width="400px" @click:outside="clear_customer">
       <div class="customer-modal">
         <div class="modal-header">
-          <v-icon size="16" color="white">mdi-account-circle</v-icon>
+          <i class="mdi mdi-account-circle header-icon"></i>
           <span class="modal-title">{{ customer_id ? 'Update Customer' : 'New Customer' }}</span>
           <button class="close-icon" @click="close_dialog">
-            <v-icon size="16" color="white">mdi-close</v-icon>
+            <i class="mdi mdi-close close-icon-element"></i>
           </button>
         </div>
 
@@ -88,10 +88,10 @@
 
         <div class="modal-footer">
           <button class="btn-cancel" @click="close_dialog">
-            <v-icon size="13">mdi-close</v-icon> Cancel
+            <i class="mdi mdi-close btn-icon"></i> Cancel
           </button>
           <button class="btn-submit" @click="submit_dialog">
-            <v-icon size="13">mdi-check</v-icon> {{ customer_id ? 'Update' : 'Register' }}
+            <i class="mdi mdi-check btn-icon"></i> {{ customer_id ? 'Update' : 'Register' }}
           </button>
         </div>
       </div>
@@ -405,6 +405,11 @@ export default {
   color: white;
 }
 
+.header-icon {
+  color: white;
+  font-size: 16px;
+}
+
 .modal-title {
   flex: 1;
   font-size: 13px;
@@ -426,6 +431,11 @@ export default {
 
 .close-icon:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+.close-icon-element {
+  color: white;
+  font-size: 16px;
 }
 
 /* Body - minimal padding */
@@ -543,6 +553,10 @@ export default {
 .btn-submit:hover {
   background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
   box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
+}
+
+.btn-icon {
+  font-size: 13px;
 }
 
 /* Date picker compact */
