@@ -25,21 +25,56 @@
           </div>
           <div class="table-row">
             <div class="table-col-full">
-              <v-data-table
-                :headers="headers"
-                :items="dialog_data"
-                item-value="name"
-                class="elevation-1"
-                show-select
-                v-model="selected"
-                :loading="isLoading"
-                loading-text="Loading invoices..."
-                no-data-text="No invoices found"
-              >
-                <template v-slot:[`item.grand_total`]="{ item }">
-                  {{ currencySymbol(item.currency) }} {{ formatCurrency(item.grand_total) }}
-                </template>
-              </v-data-table>
+              <div class="custom-data-table">
+                <!-- Loading State -->
+                <div v-if="isLoading" class="table-loading">
+                  <div class="loading-spinner"></div>
+                  <span>Loading invoices...</span>
+                </div>
+                
+                <!-- Table Content -->
+                <div v-else>
+                  <!-- No Data State -->
+                  <div v-if="dialog_data.length === 0" class="no-data">
+                    No invoices found
+                  </div>
+                  
+                  <!-- Table -->
+                  <table v-else class="data-table">
+                    <thead>
+                      <tr>
+                        <th class="select-header">
+                          <input 
+                            type="checkbox" 
+                            :checked="selected.length === dialog_data.length && dialog_data.length > 0"
+                            @change="toggleSelectAll"
+                          />
+                        </th>
+                        <th v-for="header in headers" :key="header.key" :class="header.align">
+                          {{ header.title }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="item in dialog_data" :key="item.name" class="table-row-item">
+                        <td class="select-cell">
+                          <input 
+                            type="checkbox" 
+                            :value="item.name"
+                            v-model="selected"
+                          />
+                        </td>
+                        <td class="text-start">{{ item.customer }}</td>
+                        <td class="text-start">{{ item.posting_date }}</td>
+                        <td class="text-start">{{ item.name }}</td>
+                        <td class="text-end">
+                          {{ currencySymbol(item.currency) }} {{ formatCurrency(item.grand_total) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
           </div>
@@ -122,6 +157,14 @@ export default {
       return this.pos_profile?.company || this.pos_opening_shift?.company || this.company || DEFAULT_COMPANY;
     },
 
+    toggleSelectAll(event) {
+      if (event.target.checked) {
+        this.selected = this.dialog_data.map(item => item.name);
+      } else {
+        this.selected = [];
+      }
+    },
+
       // Close the returns dialog and reset state
     close_dialog() {
       this.$nextTick(() => {
@@ -136,11 +179,6 @@ export default {
     search_invoices() {
       this.company = this.getCompany();
       
-      console.log("Searching invoices with:", {
-        invoice_name: this.invoice_name,
-        company: this.company
-      });
-      
       this.isLoading = true;
 
       frappe.call({
@@ -151,7 +189,6 @@ export default {
         },
         callback: (r) => {
           this.isLoading = false;
-          console.log("API Response:", r.message);
           
           this.dialog_data = r.message?.length > 0 
             ? r.message.map(item => ({
@@ -267,13 +304,6 @@ export default {
       }
 
       const invoice_doc = this.createReturnInvoiceDoc(return_doc);
-      
-      console.log("Returns.vue emitting load_return_invoice with data:", {
-        invoice_doc_customer: invoice_doc.customer,
-        return_doc_customer: return_doc.customer,
-        invoice_doc,
-        return_doc
-      });
       
       evntBus.emit(EVENT_NAMES.LOAD_RETURN_INVOICE, { invoice_doc, return_doc });
       this.invoicesDialog = false;
@@ -413,8 +443,119 @@ export default {
   padding: 4px;
 }
 
-.v-data-table {
+/* ===== CUSTOM DATA TABLE ===== */
+.custom-data-table {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 0.875rem;
+}
+
+.data-table thead {
+  background: #f5f5f5;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.data-table th {
+  font-weight: 600;
+  color: #333;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.data-table td {
+  color: #666;
+}
+
+.data-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Table alignment classes */
+.text-start {
+  text-align: left;
+}
+
+.text-end {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Select column styles */
+.select-header,
+.select-cell {
+  width: 40px;
+  text-align: center;
+  padding: 8px;
+}
+
+.select-cell input[type="checkbox"],
+.select-header input[type="checkbox"] {
+  cursor: pointer;
+  transform: scale(1.1);
+}
+
+/* Loading state */
+.table-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #666;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e0e0e0;
+  border-top: 3px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* No data state */
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-style: italic;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  .data-table {
+    font-size: 0.75rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 8px 12px;
+  }
 }
 
 /* ===== CUSTOM TEXT FIELD ===== */
