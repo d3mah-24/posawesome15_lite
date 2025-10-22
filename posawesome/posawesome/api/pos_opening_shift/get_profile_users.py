@@ -30,7 +30,6 @@ def get_profile_users(doctype, txt, searchfield, start, page_len, filters):
         # Convert result to required format
         result = [[user.user] for user in users]
         
-        frappe.log_error(f"[get_profile_users.py][get_profile_users] Retrieved {len(result)} users for profile: {pos_profile}")
         return result
         
     except Exception as e:
