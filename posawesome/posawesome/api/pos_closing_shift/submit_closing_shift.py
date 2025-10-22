@@ -14,8 +14,20 @@ def submit_closing_shift(closing_shift):
     """
     try:
         closing_shift = json.loads(closing_shift)
-        doc = frappe.get_doc("POS Closing Shift", closing_shift.get("name"))
+        
+        # Check if closing shift already exists (has a name)
+        if closing_shift.get("name"):
+            # Document already exists, just submit it
+            doc = frappe.get_doc("POS Closing Shift", closing_shift.get("name"))
+        else:
+            # Document doesn't exist yet, create and save it first
+            doc = frappe.get_doc(closing_shift)
+            doc.insert()
+            frappe.db.commit()
+            
+        # Now submit the document
         doc.submit()
+        frappe.db.commit()
         
         frappe.log_error(f"[submit_closing_shift.py][submit_closing_shift] Successfully submitted shift: {doc.name}")
         return doc
