@@ -26,10 +26,8 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 ## 🖥️ Try It Live
 
 **Remote Access to the POS UI system**
-- 🌐 **Application:** [HopToDesk](https://hoptodesk.com)
-- 🔑 **IDs:**
-    - pos_touch_: `378 901 992`
-
+- 🌐 **Application:** [https://anydesk.com/en](https://anydesk.com/en)
+- 🔑 **ID:** `1134153623`
 ---
 
 ## 📚 Documentation
