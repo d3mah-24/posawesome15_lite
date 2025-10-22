@@ -42,25 +42,13 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - 🔍 **[Frontend Analysis](./improvements_tasks/frontend/frontend_analysis.md)** - Comprehensive Vue.js analysis
 - 📋 **[Frontend Policy](./improvements_tasks/frontend/frontend_improvment_policy.md)** - Development policy & batch queue system
 
-### 🔧 Backend Development  
-- 📋 **[Backend Policy](./improvements_tasks/backend/backend_improvment_policy.md)** - API structure & performance policy
-- 🔌 **[API Structure](./improvements_tasks/backend/API_STRUCTURE.md)** - API documentation
-
 ### 🚀 Development Policies
 **Mandatory compliance for all code contributions:**
 - **Frontend:** 3-API batch queue system (CREATE → UPDATE → SUBMIT)
 - **Backend:** Frappe ORM only with specific field selection
 - **Performance:** < 100ms response time, lightweight components
 - **Structure:** DocType-based API organization, no caching except temp batches
-
----
-
-## 🚀 Feature Requests
-
-### 📁 Feature Requests Directory
-- 🔍 **[Customer Search by Mobile](./feature_requests/customer_searchby_mobile_no/auto_complete_mobile_search.md)** - Auto-complete mobile search functionality
-- ⏰ **[Shift Time Controller](./feature_requests/shift_time_controller/pos_opening_closing_shift_timer.md)** - POS opening/closing shift timer control
-- 🎨 **[Customize Main Menu](./feature_requests/main_manu/customize_menu.md)** - CSS styling for main menu appearance
+- **Assets:** Local-only dependencies, no external CDN requests
 
 ---
 
