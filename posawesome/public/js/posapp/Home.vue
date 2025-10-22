@@ -37,7 +37,6 @@ export default {
   max-width: 100%;
   width: 100%;
   min-height: calc(100vh - 32px); /* Updated to match actual navbar height */
-  padding: 1rem 0;
 }
 
 /* For very small screens, remove margins and use full width */
