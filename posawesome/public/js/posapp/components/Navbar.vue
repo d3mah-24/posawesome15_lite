@@ -299,17 +299,13 @@ export default {
     
     // Fetch payment totals
     fetchPaymentTotals() {
-      console.log("Fetching payment totals...");
-      
       // Fetch cash total
       frappe.call({
         method: API_MAP.POS_CLOSING_SHIFT.GET_CURRENT_CASH_TOTAL,
         callback: (r) => {
           if (r.message && r.message.total !== undefined && r.message.total !== null) {
             this.totalCash = parseFloat(r.message.total) || 0;
-            console.log("Cash total fetched:", this.totalCash);
           } else {
-            console.log("No valid cash total received, setting to 0");
             this.totalCash = 0;
           }
         },
@@ -325,9 +321,7 @@ export default {
         callback: (r) => {
           if (r.message && r.message.total !== undefined && r.message.total !== null) {
             this.totalNonCash = parseFloat(r.message.total) || 0;
-            console.log("Non-cash total fetched:", this.totalNonCash);
           } else {
-            console.log("No valid non-cash total received, setting to 0");
             this.totalNonCash = 0;
           }
         },
