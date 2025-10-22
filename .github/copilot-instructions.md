@@ -16,8 +16,9 @@ posawesome/
 │   │   ├── sales_invoice/   # CRUD: create, update, submit, delete, get_return
 │   │   ├── customer/        # get, get_many, create, update, addresses, coupons
 │   │   ├── item/           # get_items, get_items_groups, barcode, batch
-│   │   ├── pos_profile/    # get_default_payment, opening_dialog_data
-│   │   └── pos_offer/      # get_applicable_offers, get_offers_for_profile
+│   │   ├── pos_profile/    # get_default_payment
+│   │   ├── pos_offer/      # get_applicable_offers, get_offers_for_profile
+│   │   └── pos_opening_shift/ # shift management
 │   ├── doctype/            # Custom DocTypes
 │   └── page/               # Frappe pages
 └── public/js/              # Frontend code
@@ -31,15 +32,18 @@ posawesome/
 - Example: `posawesome.posawesome.api.sales_invoice.create.create_invoice`
 - All endpoints mapped in `api_mapper.js` - **ALWAYS use API_MAP constants, never hardcode paths**
 
-### Frontend: Vue 3 + Vuetify 3
-- **Stack**: Vue 3.4.21, Vuetify 3.6.9, mitt 3.0.1 (event bus)
+### Frontend: Vue 3 (Pure HTML/CSS)
+- **Stack**: Vue 3.4.21, mitt 3.0.1 (event bus)
+- **NO Vuetify** - Migrated to pure HTML/CSS for performance
 - **Entry**: `posawesome/page/posapp/posapp.js` loads Vue app
 - **Components**: `/posawesome/public/js/posapp/components/pos/`
   - `Pos.vue` - Main container, panel switching
-  - `Invoice.vue` - 3,484 lines (TARGET FOR SIMPLIFICATION - see improving_frontend_docs/PLAN.md)
-  - `ItemsSelector.vue` - Item grid/list with barcode scanning
+  - `Invoice.vue` - Invoice management (simplified from 3,484 lines)
+  - `ItemsSelector.vue` - Item grid/list with barcode scanning (30+ scans/sec)
   - `Payments.vue` - Payment mode handling
   - `Customer.vue` - Customer selection
+  - `Returns.vue` - Return invoice handling
+  - `PosOffers.vue` - Offer management
 
 ## Critical Development Patterns
 
@@ -99,10 +103,10 @@ def get_customer(customer_id):
 // Emit
 evntBus.emit('add_item', item);
 
-// Listen (in mounted())
+// Listen (in mounted() or created())
 evntBus.on('add_item', this.handleAddItem);
 
-// CRITICAL: Clean up in beforeDestroy()
+// CRITICAL: Clean up in beforeDestroy() (Vue 2) or beforeUnmount() (Vue 3)
 beforeDestroy() {
   evntBus.off('add_item', this.handleAddItem);
   // Clear ALL timers
@@ -110,16 +114,49 @@ beforeDestroy() {
 }
 ```
 
-**Common Events**: add_item, update_customer, new_invoice, show_payment, item_updated, register_pos_profile
+**Common Events**: add_item, update_customer, new_invoice, show_payment, item_updated, register_pos_profile, show_mesage (note: typo is intentional in codebase)
 
-### 4. Framework Integration Points
+### 4. Console Logging Policy
+
+**REMOVED**: All debug `console.log()` statements have been cleaned up
+**KEEP**: Only `console.error()` for actual errors and `console.warn()` for warnings
+- Example: Debug logs like "Barcode scan", "API Response", "check data" are all removed
+- Focus on clean console output showing only actionable errors
+
+### 5. UI Component Standards
+
+**NO Vuetify** - All components use pure HTML/CSS:
+```vue
+<!-- Use native HTML tables instead of v-data-table -->
+<table class="data-table">
+  <thead>
+    <tr><th>Name</th><th>Price</th></tr>
+  </thead>
+  <tbody>
+    <tr v-for="item in items" :key="item.name">
+      <td>{{ item.name }}</td>
+      <td>{{ item.price }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- Use native HTML5 inputs instead of Vuetify components -->
+<input type="date" v-model="creditDate" class="custom-date-input" />
+```
+
+**Performance Rules**:
+- Virtual scrolling for lists > 50 items
+- Simple component structure only
+- No animations or heavy CSS
+- No global library imports
+- Lightweight, responsive designs
+
+### 6. Framework Integration Points
 
 **Frappe Hooks** (`hooks.py`):
 ```python
-# Vue.js loaded globally
+# Vue.js bundled in posawesome.bundle.js
 app_include_js = [
-    "/assets/posawesome/node_modules/vue/dist/vue.global.prod.js",
-    "/assets/posawesome/node_modules/vuetify/dist/vuetify.min.js",
     "posawesome.bundle.js",
 ]
 
@@ -127,6 +164,7 @@ app_include_js = [
 doctype_js = {
     "POS Profile": "public/js/pos_profile.js",
     "Sales Invoice": "public/js/invoice.js",
+    "Company": "public/js/company.js",
 }
 
 # Server-side hooks
@@ -138,7 +176,7 @@ doc_events = {
 }
 ```
 
-### 5. Common Workflows
+### 7. Common Workflows
 
 **Apply Backend Changes**:
 ```bash
@@ -155,7 +193,7 @@ bench clear-cache && bench clear-website-cache && bench build --app posawesome -
 
 **Debug**:
 - Backend: `frappe.log_error(f"[filename.py][function_name] Result: {result}")`
-- Frontend: `console.log('[Component.vue][method]', important_params_only)`
+- Frontend: Use `console.error()` only for actual errors (no debug console.log)
 
 ## Active Simplification Initiative
 
@@ -173,6 +211,12 @@ See `improving_frontend_docs/` for detailed analysis:
 - Print formats
 
 **When modifying Invoice.vue**: Prefer framework patterns over manual implementations. Check PLAN.md for approved simplification patterns.
+
+**Recent Improvements**:
+- ✅ Removed all Vuetify dependencies - migrated to pure HTML/CSS
+- ✅ Cleaned up all debug console.log statements
+- ✅ Removed all sound notifications (`frappe.utils.play_sound()`)
+- 🎯 Target: Continue Invoice.vue simplification using ERPNext patterns
 
 ## Code Review Checklist
 
