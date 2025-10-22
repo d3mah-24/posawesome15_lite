@@ -368,7 +368,7 @@ export default {
 <style scoped>
 /* ===== MAIN CONTAINER ===== */
 .pos-container {
-  padding: 3px;
+  padding: 0 3px 3px 3px; /* top=0, right=3px, bottom=3px, left=3px */
   background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
   min-height: 100vh;
   overflow: visible;
@@ -439,7 +439,7 @@ export default {
 
 @media (max-width: 1024px) {
   .pos-container {
-    padding: 2px;
+    padding: 0 2px 2px 2px; /* top=0, right=2px, bottom=2px, left=2px */
   }
 
   .pos-main-wrapper {
@@ -454,7 +454,7 @@ export default {
 
 @media (max-width: 768px) {
   .pos-container {
-    padding: 2px;
+    padding: 0 2px 2px 2px; /* top=0, right=2px, bottom=2px, left=2px */
   }
 
   .pos-main-wrapper {
