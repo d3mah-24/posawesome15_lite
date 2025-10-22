@@ -9,7 +9,7 @@
         </div>
         <div class="header-stats">
           <div class="stat-badge">
-            <span class="stat-label">Total</span>
+            <span class="stat-label">Total test</span>
             <span class="stat-value">{{ offersCount }}</span>
           </div>
           <div class="stat-badge active">
