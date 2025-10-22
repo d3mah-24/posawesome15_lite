@@ -58,7 +58,6 @@ def get_customer(customer_id):
             
             # Calculated fields
             "loyalty_points": None,
-            "conversion_factor": None,
             "customer_group_price_list": None,
         }
         
@@ -83,11 +82,9 @@ def get_customer(customer_id):
                     include_expired_entry=False,
                 )
                 result["loyalty_points"] = lp_details.get("loyalty_points", 0)
-                result["conversion_factor"] = lp_details.get("conversion_factor", 1)
             except Exception as loyalty_error:
                 # Silent fallback for loyalty details
                 result["loyalty_points"] = 0
-                result["conversion_factor"] = 1
         
         return result
         
