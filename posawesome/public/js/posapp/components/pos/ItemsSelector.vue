@@ -774,8 +774,8 @@ export default {
     window.addEventListener("resize", this.scheduleScrollHeightUpdate);
   },
 
-  // Add beforeDestroy to clean up memory
-  beforeDestroy() {
+  // Add beforeUnmount to clean up memory
+  beforeUnmount() {
     // Clear timer
     if (this._searchDebounceTimer) {
       clearTimeout(this._searchDebounceTimer);
