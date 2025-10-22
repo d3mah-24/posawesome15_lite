@@ -1,5 +1,3 @@
-// @ts-nocheck
-{% include "posawesome/posawesome/page/posapp/onscan.js" %}
 frappe.pages['posapp'].on_page_load = function (wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
