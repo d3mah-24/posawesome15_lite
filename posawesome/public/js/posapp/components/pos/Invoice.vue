@@ -197,6 +197,7 @@
               :max="pos_profile?.posa_invoice_max_discount_allowed || 100"
               :disabled="
                 Boolean(
+                  offer_discount_percentage > 0||
                   !pos_profile ||
                     !pos_profile?.posa_allow_user_to_edit_additional_discount ||
                     invoice_doc?.is_return
@@ -257,7 +258,7 @@
   
           <button
             class="action-btn success-btn"
-            :disabled="!hasItems || is_payment"
+            :disabled="!hasItems || is_payment||isUpdatingTotals"
             @click="show_payment"
           >
             <i class="mdi mdi-cash-multiple action-icon"></i>
@@ -313,6 +314,14 @@
         type: Boolean,
         default: false,
       },
+      offerApplied: {
+        type: Object,
+        default: null,
+      },
+      offerRemoved: {
+        type: Boolean,
+        default: false,
+      },
     },
   
     // ===== DATA =====
@@ -327,6 +336,7 @@
         customer_info: {},
         discount_amount: 0,
         additional_discount_percentage: 0,
+        offer_discount_percentage: 0,
         total_tax: 0,
         items: [],
         posa_offers: [],
@@ -337,7 +347,8 @@
         invoice_posting_date: false,
         posting_date: frappe.datetime.nowdate(),
         quick_return_value: false,
-  
+
+        isUpdatingTotals: false,
         // Simple State Management
         _itemOperationTimer: null,
         _updatingFromAPI: false,
@@ -480,6 +491,7 @@
         item.qty = (Number(item.qty) || 0) + 1;
         item.amount = this.calculateItemAmount(item);
         evntBus.emit("item_updated", item);
+        this.isUpdatingTotals = true;
       },
   
       decreaseQuantity(item) {
@@ -490,6 +502,7 @@
           item.qty = newQty;
           item.amount = this.calculateItemAmount(item);
           evntBus.emit("item_updated", item);
+          this.isUpdatingTotals = true;
         }
       },
   
@@ -879,7 +892,8 @@
               item.posa_row_id = this.makeid(20);
             }
           });
-  
+          
+          
           this.posa_offers = data.posa_offers || [];
           this.items.forEach((item) => {
             item.base_rate = item.base_rate || item.price_list_rate;
@@ -893,6 +907,8 @@
           this.setCustomer(data.customer);
           this.posting_date = data.posting_date || frappe.datetime.nowdate();
           this.discount_amount = data.discount_amount;
+          console.log("check data.additional_discount_percentage", data );
+          
           this.additional_discount_percentage =
             data.additional_discount_percentage;
           this.items.forEach((item) => {
@@ -1026,6 +1042,8 @@
       },
   
       update_invoice(doc) {
+        console.log("Updating invoice with doc:", doc);
+        
         const vm = this;
         return new Promise((resolve, reject) => {
           // Ensure we have an invoice name for updates
@@ -1048,14 +1066,43 @@
                   resolve(null);
                 } else {
                   vm.invoice_doc = r.message;
-  
+                  console.log("Updated invoice_doc:", vm.invoice_doc);
+                  
                   // Update posa_offers from backend response
                   if (r.message.posa_offers) {
                     vm.posa_offers = r.message.posa_offers;
+                    console.log("vm.posa_offers", vm.posa_offers);
+                    
+                    // Handle Transaction-level Percentage Discount Offers
+                    let transactionDiscount = 0;
+                    const appliedTransactionOffer = vm.posa_offers.find(
+                        (offer) => offer.offer_applied 
+                    );
+                    console.log("appliedTransactionOffer", appliedTransactionOffer);
+                    
+                    if (appliedTransactionOffer) {
+                        transactionDiscount = flt(appliedTransactionOffer.discount_percentage);
+                        vm.additional_discount_percentage = transactionDiscount;
+                        // Store the origin of the discount
+                        vm.offer_discount_percentage = transactionDiscount; 
+                      
+                        
+                    } else if (vm.offer_discount_percentage > 0) {
+                        // If the offer was applied but is now removed, clear it.
+                        vm.offer_discount_percentage = 0;
+                    }
+                    console.log("invoice_doc", vm.invoice_doc);
+
+                    
+                    // Emit event for navbar to update invoice display
+                    evntBus.emit("update_invoice_doc", vm.invoice_doc);
   
                     const appliedOffers = vm.posa_offers.filter(
                       (offer) => offer.offer_applied
                     );
+                    console.log("appliedOffers", appliedOffers);
+                    console.log("posa_offers", vm.posa_offers);
+                    
                     if (appliedOffers.length > 0) {
                       evntBus.emit("update_pos_offers", appliedOffers);
                     }
@@ -1237,6 +1284,8 @@
       },
   
       setDiscountPercentage(item, event) {
+        console.log("setDiscountPercentage called");
+        
         let dis_percent = parseFloat(event.target.value) || 0;
   
         // Apply max discount limit
@@ -1322,6 +1371,8 @@
       },
   
       update_discount_umount() {
+        console.log("update_discount_umount called");
+        
         // Simplified: just validate and set, server will recalculate
         if (!this.pos_profile?.posa_allow_user_to_edit_additional_discount) {
           this.additional_discount_percentage =
@@ -1462,6 +1513,8 @@
       },
   
       checkOfferIsAppley(item, offer) {
+        console.log("checkOfferIsAppley called for item:", item, "and offer:", offer);
+        
         let applied = false;
   
         // Handle null or undefined posa_offers
@@ -1546,17 +1599,25 @@
         const doc = this.get_invoice_doc("item-update");
   
         this.auto_update_invoice(doc, "item-update")
-          .then(() => {})
-          .catch((error) => {});
+          .then(() => {
+            this.isUpdatingTotals = false;
+          })
+          .catch((error) => {
+            this.isUpdatingTotals = false;
+          });
       },
   
       handelOffers() {
+        console.log("handelOffers called");
+        
         if (this.invoice_doc?.name && this.items && this.items.length > 1) {
           this._processOffers();
         }
       },
   
       _processOffers() {
+        console.log("_processOffers called");
+        
         if (!this.invoice_doc?.name) return;
   
         // Skip offers processing if no items or only one item
@@ -1644,14 +1705,20 @@
       },
   
       updatePosOffers(offers) {
+        console.log("updatePosOffers called with offers:", offers);
+        
         evntBus.emit("update_pos_offers", offers);
       },
   
       updateInvoiceOffers(offers) {
+        console.log("updateInvoiceOffers called with offers:", offers);
+        
         this.posa_offers = offers || [];
       },
   
       removeApplyOffer(invoiceOffer) {
+        console.log("removeApplyOffer called for offer:", invoiceOffer);
+        
         const index = this.posa_offers.findIndex(
           (el) => el.row_id === invoiceOffer.row_id
         );
@@ -1661,6 +1728,8 @@
       },
   
       applyNewOffer(offer) {
+        console.log("applyNewOffer called for offer:", offer);
+        
         const newOffer = {
           offer_name: offer.name,
           row_id: offer.row_id,
@@ -1786,7 +1855,10 @@
       },
     },
   
-    mounted() {
+    created() {
+      // Register event listeners in created() to avoid duplicate registrations
+      console.log("Invoice component created - registering event listeners");
+      
       evntBus.on("register_pos_profile", (data) => {
         this.pos_profile = data.pos_profile;
         this.setCustomer(data.pos_profile?.customer);
@@ -1813,6 +1885,8 @@
         this.cancel_invoice();
       });
       evntBus.on("load_invoice", (data) => {
+        console.log("load_invoice called with data:", data);
+        
         this.new_invoice(data);
   
         if (this.invoice_doc?.is_return) {
@@ -1826,9 +1900,13 @@
       });
   
       evntBus.on("set_offers", (data) => {
+        console.log("on set offer ", data);
+        
         this.posOffers = data;
       });
       evntBus.on("update_invoice_offers", (data) => {
+        console.log("on update invoice offer ", data);
+        
         this.updateInvoiceOffers(data);
       });
       evntBus.on("update_invoice_coupons", (data) => {
@@ -1932,13 +2010,15 @@
         this._autoUpdateTimer = null;
       }
     },
-    created() {
+    mounted() {
+      // DOM-related initialization (keyboard shortcuts)
+      console.log("Invoice component mounted - DOM ready");
       document.addEventListener("keydown", this.shortOpenPayment.bind(this));
       document.addEventListener("keydown", this.shortDeleteFirstItem.bind(this));
       document.addEventListener("keydown", this.shortOpenFirstItem.bind(this));
       document.addEventListener("keydown", this.shortSelectDiscount.bind(this));
     },
-    destroyed() {
+    beforeDestroy() {
       document.removeEventListener("keydown", this.shortOpenPayment);
       document.removeEventListener("keydown", this.shortDeleteFirstItem);
       document.removeEventListener("keydown", this.shortOpenFirstItem);
@@ -1950,6 +2030,42 @@
         if (this.invoice_doc && this.invoice_doc?.name) {
           this.debouncedItemOperation("discount-amount-change");
         }
+      },
+      offerApplied: {
+        handler(newVal, oldVal) {
+          if (newVal && newVal.discount_percentage) {
+            console.log("Applying offer discount:", newVal.discount_percentage);
+            
+            // Update both discount fields
+            this.additional_discount_percentage = parseFloat(newVal.discount_percentage);
+            this.offer_discount_percentage = parseFloat(newVal.discount_percentage);
+            
+            // Trigger backend sync
+            this.$nextTick(() => {
+              this.update_discount_umount();
+            });
+          } else if (newVal === null && oldVal !== null) {
+            // Offer was reset to null (preparing for new application)
+            console.log("Offer reset to null");
+          }
+        },
+        deep: true,
+        immediate: false
+      },
+      offerRemoved: {
+        handler(newVal) {
+          if (newVal === true) {
+            // Reset discount fields
+            this.additional_discount_percentage = 0;
+            this.offer_discount_percentage = 0;
+            
+            // Trigger backend sync
+            this.$nextTick(() => {
+              this.update_discount_umount();
+            });
+          }
+        },
+        immediate: false
       },
     },
   };
@@ -2080,7 +2196,7 @@
     flex: 1 1 auto !important;
     max-height: calc(100vh - 170px) !important;
     overflow-y: auto !important;
-    overflow-x: hidden !important;
+    overflow-x: auto !important;
   }
   
   /* Ultra-compact table layout */
