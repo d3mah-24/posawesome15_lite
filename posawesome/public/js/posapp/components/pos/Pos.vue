@@ -226,7 +226,7 @@ export default {
     async get_closing_data() {
       try {
         const response = await frappe.call({
-          method: API_MAP.POS_OPENING_SHIFT.MAKE_CLOSING_SHIFT,
+          method: API_MAP.POS_CLOSING_SHIFT.MAKE_CLOSING_SHIFT,
           args: {
             opening_shift: this.pos_opening_shift,
           },
@@ -247,7 +247,7 @@ export default {
     async submit_closing_pos(data) {
       try {
         const response = await frappe.call({
-          method: API_MAP.POS_OPENING_SHIFT.SUBMIT_CLOSING_SHIFT,
+          method: API_MAP.POS_CLOSING_SHIFT.SUBMIT_CLOSING_SHIFT,
           args: {
             closing_shift: data,
           },
