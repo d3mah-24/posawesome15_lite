@@ -42,6 +42,9 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - 🔍 **[Frontend Analysis](./improvements_tasks/frontend/frontend_analysis.md)** - Comprehensive Vue.js analysis
 - 📋 **[Frontend Policy](./improvements_tasks/frontend/frontend_improvment_policy.md)** - Development policy & batch queue system
 
+### 🔧 Backend Development  
+- 📋 **[Backend Policy](./improvements_tasks/backend/backend_improvment_policy.md)** - API structure & performance policy
+
 ### 🚀 Development Policies
 **Mandatory compliance for all code contributions:**
 - **Frontend:** 3-API batch queue system (CREATE → UPDATE → SUBMIT)
@@ -49,6 +52,15 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - **Performance:** < 100ms response time, lightweight components
 - **Structure:** DocType-based API organization, no caching except temp batches
 - **Assets:** Local-only dependencies, no external CDN requests
+
+---
+
+## 🚀 Feature Requests
+
+### 📁 Feature Requests Directory
+- 🔍 **[Analysis Offer Types](./feature_requests/analysis_offer_types.md)** - Analysis of offer types functionality
+- 🗑️ **[Auto Delete Draft Invoices](./feature_requests/pos_profile_posa_auto_delete_draft_invoices.md)** - Auto-delete draft invoices feature
+- 📁 **[Vue File Splitting](./feature_requests/Vue_file_splitting/Vue_file_splitting.md)** - Vue.js file splitting implementation
 
 ---
 
