@@ -329,6 +329,11 @@ export default {
       this.snack = true;
       this.snackColor = data.color;
       this.snackText = data.text;
+      
+      // Auto-hide snackbar after 4 seconds
+      setTimeout(() => {
+        this.snack = false;
+      }, 4000);
     },
     logOut() {
       this.showMenu = false; // Close menu after action
@@ -904,5 +909,98 @@ export default {
 /* Legacy styles cleanup */
 .margen-top {
   margin-top: 0px;
+}
+
+/* ===== SNACKBAR NOTIFICATION STYLES ===== */
+.snackbar {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 300px;
+  max-width: 500px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 2000;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideDown 0.3s ease-out;
+  text-align: center;
+}
+
+.snackbar.success {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  border: 1px solid #4caf50;
+}
+
+.snackbar.error {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  border: 1px solid #f44336;
+}
+
+.snackbar.info {
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  border: 1px solid #2196f3;
+}
+
+.snackbar.warning {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  border: 1px solid #ff9800;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Modal overlay styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+.modal {
+  background: white;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-title {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 20px;
+  color: #666;
+  line-height: 1.5;
 }
 </style>
