@@ -484,6 +484,7 @@
   
       onQtyInput(item) {
         // Handle input events - use same logic as onQtyChange but without debounce
+        this.isUpdatingTotals = true; // تعيين حالة تحديث المجاميع إلى true
         this.onQtyChange(item);
       },
   
@@ -558,6 +559,7 @@
         if (existing_item) {
           existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
           existing_item.amount = this.calculateItemAmount(existing_item);
+          this.isUpdatingTotals = true;
         } else {
           new_item.posa_row_id = this.generateRowId();
           new_item.posa_offers = "[]";
@@ -567,12 +569,16 @@
           new_item.is_free_item = 0;
           new_item.amount = this.calculateItemAmount(new_item);
           this.items.push(new_item);
+          this.isUpdatingTotals = true;
         }
   
         if (this.items.length === 1 && !this.invoice_doc?.name) {
           this.create_draft_invoice();
         } else {
           evntBus.emit("item_added", existing_item || new_item);
+          if (existing_item) {
+            this.isUpdatingTotals = true;
+          }
         }
       },
       generateRowId() {
@@ -610,12 +616,15 @@
   
           if (result) {
             this.invoice_doc = result;
+            this.isUpdatingTotals = false;
           } else {
             this.invoice_doc = null;
             this.items = [];
+            this.isUpdatingTotals = false;
           }
         } catch (error) {
           // Draft creation failed - continue with current state
+          this.isUpdatingTotals = false;
         }
       },
       create_invoice(doc) {
@@ -1607,17 +1616,13 @@
           });
       },
   
-      handelOffers() {
-        console.log("handelOffers called");
-        
+      handleOffers() {
         if (this.invoice_doc?.name && this.items && this.items.length > 1) {
           this._processOffers();
         }
       },
   
       _processOffers() {
-        console.log("_processOffers called");
-        
         if (!this.invoice_doc?.name) return;
   
         // Skip offers processing if no items or only one item
@@ -1980,8 +1985,32 @@
         this.printInvoice();
       });
     },
+    mounted() {
+      // DOM-related initialization (keyboard shortcuts)
+      console.log("Invoice component mounted - DOM ready");
+      
+      // Store bound function references so we can remove them later
+      this._boundShortOpenPayment = this.shortOpenPayment.bind(this);
+      this._boundShortDeleteFirstItem = this.shortDeleteFirstItem.bind(this);
+      this._boundShortOpenFirstItem = this.shortOpenFirstItem.bind(this);
+      this._boundShortSelectDiscount = this.shortSelectDiscount.bind(this);
+      
+      // Add event listeners with stored bound functions
+      document.addEventListener("keydown", this._boundShortOpenPayment);
+      document.addEventListener("keydown", this._boundShortDeleteFirstItem);
+      document.addEventListener("keydown", this._boundShortOpenFirstItem);
+      document.addEventListener("keydown", this._boundShortSelectDiscount);
+    },
     beforeUnmount() {
       // Clean up ALL event listeners to prevent memory leaks
+      
+      // Clean up document event listeners using stored bound functions
+      document.removeEventListener("keydown", this._boundShortOpenPayment);
+      document.removeEventListener("keydown", this._boundShortDeleteFirstItem);
+      document.removeEventListener("keydown", this._boundShortOpenFirstItem);
+      document.removeEventListener("keydown", this._boundShortSelectDiscount);
+      
+      // Clean up event bus listeners
       evntBus.off("register_pos_profile");
       evntBus.off("add_item");
       evntBus.off("update_customer");
@@ -2009,20 +2038,6 @@
         clearTimeout(this._autoUpdateTimer);
         this._autoUpdateTimer = null;
       }
-    },
-    mounted() {
-      // DOM-related initialization (keyboard shortcuts)
-      console.log("Invoice component mounted - DOM ready");
-      document.addEventListener("keydown", this.shortOpenPayment.bind(this));
-      document.addEventListener("keydown", this.shortDeleteFirstItem.bind(this));
-      document.addEventListener("keydown", this.shortOpenFirstItem.bind(this));
-      document.addEventListener("keydown", this.shortSelectDiscount.bind(this));
-    },
-    beforeDestroy() {
-      document.removeEventListener("keydown", this.shortOpenPayment);
-      document.removeEventListener("keydown", this.shortDeleteFirstItem);
-      document.removeEventListener("keydown", this.shortOpenFirstItem);
-      document.removeEventListener("keydown", this.shortSelectDiscount);
     },
     // ===== SECTION 6: WATCH =====
     watch: {
@@ -3092,7 +3107,7 @@
   }
 
   .table-header-cell {
-    background: #f5f5f5;
+    background: linear-gradient(180deg,rgba(128, 166, 255, 1) 0%, rgba(128, 166, 255, 0.25) 50%);
     border-bottom: 1px solid #e0e0e0;
     padding: 8px 6px;
     font-weight: 600;
