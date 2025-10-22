@@ -399,7 +399,7 @@ function enhance_form_styling(frm) {
 		}
 
 		/* Section Headers */
-		.form-layout .section-head {
+		.frappe-control[data-doctype="POS Closing Shift"] .form-layout .section-head {
 			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
 			color: white !important;
 			border-radius: 12px 12px 0 0 !important;
@@ -412,7 +412,7 @@ function enhance_form_styling(frm) {
 		}
 
 		/* Form Sections */
-		.form-layout .form-section {
+		.frappe-control[data-doctype="POS Closing Shift"] .form-layout .form-section {
 			background: white;
 			border: none !important;
 			border-radius: 12px !important;
@@ -422,13 +422,13 @@ function enhance_form_styling(frm) {
 			transition: transform 0.3s ease, box-shadow 0.3s ease;
 		}
 
-		.form-layout .form-section:hover {
+		.frappe-control[data-doctype="POS Closing Shift"] .form-layout .form-section:hover {
 			transform: translateY(-2px);
 			box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
 		}
 
 		/* Currency Fields Enhancement */
-		.frappe-control[data-fieldtype="Currency"] .control-input {
+		.frappe-control[data-doctype="POS Closing Shift"] .frappe-control[data-fieldtype="Currency"] .control-input {
 			background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%) !important;
 			border: 2px solid #28a745 !important;
 			border-radius: 8px !important;
@@ -438,27 +438,27 @@ function enhance_form_styling(frm) {
 			padding: 12px 16px !important;
 		}
 
-		.frappe-control[data-fieldtype="Currency"] .control-input:focus {
+		.frappe-control[data-doctype="POS Closing Shift"] .frappe-control[data-fieldtype="Currency"] .control-input:focus {
 			border-color: #20c997 !important;
 			box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25) !important;
 			transform: scale(1.02);
 		}
 
 		/* Table Enhancements */
-		.grid-wrapper .grid-row {
+		.frappe-control[data-doctype="POS Closing Shift"] .grid-wrapper .grid-row {
 			border-radius: 8px !important;
 			margin-bottom: 10px !important;
 			transition: all 0.3s ease !important;
 			border: 1px solid #e9ecef !important;
 		}
 
-		.grid-wrapper .grid-row:hover {
+		.frappe-control[data-doctype="POS Closing Shift"] .grid-wrapper .grid-row:hover {
 			background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%) !important;
 			transform: translateX(8px) !important;
 			box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
 		}
 
-		.grid-wrapper .grid-row .grid-row-index {
+		.frappe-control[data-doctype="POS Closing Shift"] .grid-wrapper .grid-row .grid-row-index {
 			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
 			color: white !important;
 			border-radius: 50% !important;
@@ -471,7 +471,7 @@ function enhance_form_styling(frm) {
 		}
 
 		/* Button Improvements */
-		.btn-primary {
+		.frappe-control[data-doctype="POS Closing Shift"] .btn-primary {
 			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
 			border: none !important;
 			border-radius: 25px !important;
@@ -483,13 +483,13 @@ function enhance_form_styling(frm) {
 			transition: all 0.3s ease !important;
 		}
 
-		.btn-primary:hover {
+		.frappe-control[data-doctype="POS Closing Shift"] .btn-primary:hover {
 			transform: translateY(-2px) !important;
 			box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6) !important;
 		}
 
 		/* Field Labels */
-		.control-label {
+		.frappe-control[data-doctype="POS Closing Shift"] .control-label {
 			font-weight: 600 !important;
 			color: #495057 !important;
 			margin-bottom: 8px !important;
@@ -499,14 +499,14 @@ function enhance_form_styling(frm) {
 		}
 
 		/* Input Fields */
-		.form-control {
+		.frappe-control[data-doctype="POS Closing Shift"] .form-control {
 			border-radius: 8px !important;
 			border: 2px solid #e9ecef !important;
 			padding: 12px 16px !important;
 			transition: all 0.3s ease !important;
 		}
 
-		.form-control:focus {
+		.frappe-control[data-doctype="POS Closing Shift"] .form-control:focus {
 			border-color: #667eea !important;
 			box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25) !important;
 			transform: scale(1.02);
@@ -527,11 +527,11 @@ function enhance_form_styling(frm) {
 		
 		/* Responsive Design */
 		@media (max-width: 768px) {
-			.form-layout {
+			.frappe-control[data-doctype="POS Closing Shift"] .form-layout {
 				padding: 10px !important;
 			}
 			
-			.section-head {
+			.frappe-control[data-doctype="POS Closing Shift"] .section-head {
 				padding: 12px 15px !important;
 				font-size: 0.9rem !important;
 			}
