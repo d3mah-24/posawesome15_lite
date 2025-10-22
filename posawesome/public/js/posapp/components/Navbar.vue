@@ -257,6 +257,12 @@ export default {
       return "error";
     },
   },
+  // ===== SECTION 3.5: WATCHERS =====
+  watch: {
+    showMenu(newVal, oldVal) {
+      // Menu visibility watcher - cleaned up debug logs
+    }
+  },
   // ===== SECTION 4: METHODS =====
   methods: {
     changePage(key) {
@@ -264,16 +270,59 @@ export default {
     },
     toggleMenu() {
       this.showMenu = !this.showMenu;
+      
+      // Add click outside handler when menu opens
+      if (this.showMenu) {
+        // Use setTimeout to avoid catching the same click that opened the menu
+        setTimeout(() => {
+          document.addEventListener('click', this.handleClickOutside);
+        }, 50);
+
+        // Position menu to stay within viewport
+        this.$nextTick(() => {
+          const menuElement = this.$el.querySelector('.dropdown-menu');
+          const menuButton = this.$el.querySelector('.menu-btn');
+          
+          if (menuElement && menuButton) {
+            const buttonRect = menuButton.getBoundingClientRect();
+            const menuWidth = 200; // min-width from CSS
+            const viewportWidth = window.innerWidth;
+            
+            // Check if menu would overflow on the right
+            if (buttonRect.right < menuWidth) {
+              // Not enough space on right, align to left edge of button
+              menuElement.style.right = 'auto';
+              menuElement.style.left = '0';
+            } else {
+              // Enough space, keep right alignment
+              menuElement.style.right = '0';
+              menuElement.style.left = 'auto';
+            }
+          }
+        });
+      } else {
+        document.removeEventListener('click', this.handleClickOutside);
+      }
+    },
+    handleClickOutside(event) {
+      // Check if click is outside the menu wrapper
+      const menuWrapper = this.$el.querySelector('.menu-wrapper');
+      if (menuWrapper && !menuWrapper.contains(event.target)) {
+        this.showMenu = false;
+        document.removeEventListener('click', this.handleClickOutside);
+      }
     },
     go_desk() {
       frappe.set_route("/");
       location.reload();
     },
     go_about() {
+      this.showMenu = false; // Close menu after action
       const win = window.open("https://github.com/abdopcnet", "_blank");
       win.focus();
     },
     close_shift_dialog() {
+      this.showMenu = false; // Close menu after action
       evntBus.emit("open_closing_dialog");
     },
     show_mesage(data) {
@@ -282,6 +331,7 @@ export default {
       this.snackText = data.text;
     },
     logOut() {
+      this.showMenu = false; // Close menu after action
       var me = this;
       me.logged_out = true;
       return frappe.call({
@@ -496,6 +546,9 @@ export default {
   beforeDestroy() {
     // Clean up ping monitoring
     this.stopPingMonitoring();
+
+    // Clean up click outside listener
+    document.removeEventListener('click', this.handleClickOutside);
 
     // Clean up all event listeners
     evntBus.$off("show_mesage");
@@ -752,30 +805,46 @@ export default {
 }
 
 /* ===== DROPDOWN MENU STYLES ===== */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
 .dropdown-menu {
-  min-width: 200px;
-  border-radius: 8px !important;
-  overflow: hidden;
+  position: absolute;
+  top: 100%;
+  right: 0;
   background: white;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1200;
+  min-width: 200px;
+  margin-top: 4px;
+  overflow: hidden;
+  display: block !important; /* Force display */
+  /* Prevent overflow outside viewport */
+  max-width: calc(100vw - 10px);
 }
 
 .menu-list {
-  padding: 4px !important;
+  padding: 4px;
   background: white;
 }
 
 .menu-item {
-  border-radius: 6px !important;
-  margin: 2px 0 !important;
-  min-height: 40px !important;
-  padding: 8px 12px !important;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
+  border-radius: 6px;
+  margin: 2px 0;
+  min-height: 40px;
 }
 
 .menu-item:hover {
-  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%) !important;
+  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
 }
 
 .menu-icon {
@@ -806,69 +875,6 @@ export default {
 
 .menu-item:hover .menu-icon {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.menu-text {
-  font-size: 0.875rem !important;
-  font-weight: 600 !important;
-  color: #333 !important;
-  letter-spacing: 0.2px;
-}
-
-.menu-divider {
-  margin: 4px 0 !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-/* Dropdown styles */
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: white;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-lg);
-  z-index: 1000;
-  min-width: 200px;
-  margin-top: 4px;
-}
-
-.menu-list {
-  padding: 8px 0;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-  border-bottom: 1px solid var(--gray-200);
-}
-
-.menu-item:hover {
-  background: var(--gray-50);
-}
-
-.menu-item:last-child {
-  border-bottom: none;
-}
-
-.menu-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 12px;
-  transition: all var(--transition-fast);
 }
 
 .menu-text {
