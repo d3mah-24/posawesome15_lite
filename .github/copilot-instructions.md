@@ -1,3 +1,4 @@
+````instructions
 # AI Agent Instructions for POS Awesome Lite
 
 ## Project Philosophy
@@ -12,40 +13,41 @@ This is NOT a standalone system. It's a lightweight web interface built on top o
 ```
 posawesome/
 ├── posawesome/              # Main module (note: nested same name)
-│   ├── api/                 # API endpoints by DocType (RECENTLY MIGRATED)
+│   ├── api/                 # API endpoints by DocType (ONE FUNCTION PER FILE)
 │   │   ├── sales_invoice/   # CRUD: create, update, submit, delete, get_return
 │   │   ├── customer/        # get, get_many, create, update, addresses, coupons
 │   │   ├── item/           # get_items, get_items_groups, barcode, batch
 │   │   ├── pos_profile/    # get_default_payment, get_opening_dialog_data
 │   │   ├── pos_offer/      # get_applicable_offers, get_offers_for_profile
-│   │   ├── pos_opening_shift/ # NEW: shift management APIs
-│   │   └── pos_closing_shift/ # NEW: shift closing APIs
-│   ├── doctype/            # Custom DocTypes (cleaned - only class methods)
-│   └── page/               # Frappe pages
+│   │   ├── pos_opening_shift/ # Shift management APIs
+│   │   └── pos_closing_shift/ # Shift closing + payment totals APIs
+│   ├── doctype/            # Custom DocTypes (only class methods, no @frappe.whitelist())
+│   └── page/               # Frappe pages (posapp entry point)
 └── public/js/              # Frontend code
+    ├── posawesome.bundle.js # Bundle entry: imports toConsole, onscan, posapp
+    ├── onscan.js           # Barcode scanning library (moved from page/posapp/)
     └── posapp/
-        ├── components/pos/  # Vue components
-        ├── api_mapper.js   # Central API endpoint registry
-        └── bus.js          # Event bus (mitt)
+        ├── components/     # Vue 3 components
+        │   ├── Navbar.vue  # Top nav with shift info, payment totals (💰💳)
+        │   └── pos/        # POS-specific components
+        │       ├── Pos.vue       # Main container
+        │       ├── Invoice.vue   # Invoice management (3,129 lines - being simplified)
+        │       ├── ItemsSelector.vue # Item grid with 30+ scans/sec
+        │       └── Payments.vue  # Payment modes
+        ├── api_mapper.js   # Central API endpoint registry (ALWAYS USE THIS)
+        └── bus.js          # Event bus (mitt 3.0.1)
 ```
 
 **Critical Pattern**: API functions follow strict naming: `posawesome.posawesome.api.[doctype].[operation].[operation]_[doctype]`
 - Example: `posawesome.posawesome.api.sales_invoice.create.create_invoice`
-- **BREAKING CHANGE**: All shift APIs moved from `doctype.pos_*_shift.pos_*_shift.*` to `api.pos_*_shift.*.*`
 - All endpoints mapped in `api_mapper.js` - **ALWAYS use API_MAP constants, never hardcode paths**
+- Example: `API_MAP.POS_CLOSING_SHIFT.GET_CURRENT_CASH_TOTAL` not hardcoded string
 
-### Frontend: Vue 3 (Pure HTML/CSS)
-- **Stack**: Vue 3.4.21, mitt 3.0.1 (event bus)
-- **NO Vuetify** - Migrated to pure HTML/CSS for performance
-- **Entry**: `posawesome/page/posapp/posapp.js` loads Vue app
-- **Components**: `/posawesome/public/js/posapp/components/pos/`
-  - `Pos.vue` - Main container, panel switching
-  - `Invoice.vue` - Invoice management (target: simplify from 3,484 lines)
-  - `ItemsSelector.vue` - Item grid/list with barcode scanning (30+ scans/sec)
-  - `Payments.vue` - Payment mode handling
-  - `Customer.vue` - Customer selection
-  - `Returns.vue` - Return invoice handling
-  - `PosOffers.vue` - Offer management
+### Frontend: Vue 3 (Pure HTML/CSS - NO Vuetify)
+- **Stack**: Vue 3.4.21, mitt 3.0.1 (event bus), NO frameworks
+- **Entry**: `posawesome/page/posapp/posapp.js` → loads Vue app via `new frappe.PosApp.posapp()`
+- **Bundle**: `posawesome.bundle.js` imports: toConsole → onscan → posapp
+- **Build**: `bench build --app posawesome` (esbuild, ~606KB JS, ~114KB CSS)
 
 ## Critical Development Patterns
 
@@ -74,7 +76,7 @@ frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });
 
 ### 2. Backend API Standards (MANDATORY)
 
-**File Structure**: One function per file (RECENTLY ENFORCED)
+**File Structure**: One function per file (STRICTLY ENFORCED)
 ```python
 # posawesome/posawesome/api/customer/get_customer.py
 @frappe.whitelist()
@@ -91,12 +93,29 @@ def get_customer(customer_id):
 - `update_[doctype].py` - Update existing record
 - `delete_[doctype].py` - Delete record
 
+**Database Query Standards**:
+- **Field Selection**: ALWAYS specify fields - `frappe.get_doc("DocType", name, fields=["field1", "field2"])`
+- **Table Names**: Use backticks - ``` `tabSales Invoice Payment` ```
+- **Column Names**: Check actual DB column names via `DESCRIBE \`tabDocType\`;`
+  - Example: `amount` NOT `paid_amount` in Sales Invoice Payment
+- **SQL Queries**: Use parametrized queries with `%s` placeholders
+  ```python
+  frappe.db.sql("""
+      SELECT SUM(amount) as total
+      FROM `tabSales Invoice Payment`
+      WHERE parent IN (
+          SELECT name FROM `tabSales Invoice` 
+          WHERE posa_pos_opening_shift = %s
+          AND docstatus = 1
+      )
+  """, (shift_name,), as_dict=1)
+  ```
+
 **Performance Rules**:
 - Target: <100ms response time
-- Use `fields=["field1", "field2"]` parameter - **NO SELECT * allowed**
 - Use `ignore_version=True` for faster saves
 - Call `frappe.db.commit()` immediately after operations
-- Implement `frappe.log_error(f"[filename.py][function_name] Result: {result}")` at end of each function
+- NO `frappe.log_error()` for successful operations (only for actual errors)
 
 ### 3. Event Bus Communication
 
@@ -108,28 +127,40 @@ evntBus.emit('add_item', item);
 // Listen (in mounted() or created())
 evntBus.on('add_item', this.handleAddItem);
 
-// CRITICAL: Clean up in beforeDestroy() (Vue 2) or beforeUnmount() (Vue 3)
-beforeDestroy() {
+// CRITICAL: Clean up in beforeUnmount() (Vue 3)
+beforeUnmount() {
   evntBus.off('add_item', this.handleAddItem);
-  // Clear ALL timers
+  // Clear ALL timers and intervals
   if (this._debounceTimer) clearTimeout(this._debounceTimer);
+  if (this.cashUpdateInterval) clearInterval(this.cashUpdateInterval);
 }
 ```
 
-**Common Events**: add_item, update_customer, new_invoice, show_payment, item_updated, register_pos_profile, show_mesage (note: typo is intentional in codebase)
+**Common Events**: 
+- `add_item`, `update_customer`, `new_invoice`, `show_payment`
+- `item_updated`, `register_pos_profile`, `invoice_submitted`
+- `show_mesage` (note: typo is intentional in codebase)
+- `update_invoice_doc`, `set_pos_opening_shift`
 
-### 4. Console Logging Policy
+### 4. Console Logging Policy (STRICTLY ENFORCED)
 
-**REMOVED**: All debug `console.log()` statements have been cleaned up
+**REMOVED**: All debug `console.log()` statements
 **KEEP**: Only `console.error()` for actual errors and `console.warn()` for warnings
-- Example: Debug logs like "Barcode scan", "API Response", "check data" are all removed
-- Focus on clean console output showing only actionable errors
+```javascript
+// ❌ NEVER do this
+console.log("Fetching data...");
+console.log("Result:", data);
+
+// ✅ ONLY for errors
+console.error('Error fetching cash total:', err);
+console.warn('Deprecated API usage');
+```
 
 ### 5. UI Component Standards
 
-**NO Vuetify** - All components use pure HTML/CSS:
+**NO Vuetify, NO Frameworks** - Pure HTML/CSS only:
 ```vue
-<!-- Use native HTML tables instead of v-data-table -->
+<!-- ✅ Use native HTML tables -->
 <table class="data-table">
   <thead>
     <tr><th>Name</th><th>Price</th></tr>
@@ -142,24 +173,39 @@ beforeDestroy() {
   </tbody>
 </table>
 
-<!-- Use native HTML5 inputs instead of Vuetify components -->
-<input type="date" v-model="creditDate" class="custom-date-input" />
+<!-- ✅ Use native HTML5 inputs -->
+<input type="date" v-model="date" class="custom-input" />
+
+<!-- ❌ NEVER use Vuetify -->
+<v-data-table>  <!-- NO -->
+<v-date-picker> <!-- NO -->
 ```
 
 **Performance Rules**:
 - Virtual scrolling for lists > 50 items
 - Simple component structure only
 - No animations or heavy CSS
-- No global library imports
-- Lightweight, responsive designs
+- No global library imports (except mitt, Vue)
+- Target component size: < 500 lines (split if larger)
 
-### 6. Framework Integration Points
+### 6. File Organization Standards
+
+**Third-Party Libraries**:
+- Place in `public/js/` folder (e.g., `onscan.js`)
+- Import in `posawesome.bundle.js` entry point
+- **NEVER** use Jinja2 `{% include %}` in .js files (causes TypeScript errors)
+
+**Frappe Page Files**:
+- `posapp.js` loads Vue app - keep minimal
+- Use `@ts-nocheck` comment if TypeScript complains about Frappe globals
+
+### 7. Framework Integration Points
 
 **Frappe Hooks** (`hooks.py`):
 ```python
-# Vue.js bundled in posawesome.bundle.js
+# Vue.js + libraries bundled in posawesome.bundle.js
 app_include_js = [
-    "posawesome.bundle.js",
+    "posawesome.bundle.js",  # Contains: toConsole, onscan, posapp
 ]
 
 # Inject JS into ERPNext forms
@@ -178,96 +224,111 @@ doc_events = {
 }
 ```
 
-### 7. Common Workflows
+### 8. Common Workflows
 
 **Apply Backend Changes**:
 ```bash
-find . -name "*.pyc" -print -delete
-find . -type d -name "__pycache__" -print -exec rm -rf {} +
 bench restart
 ```
 
 **Apply Frontend Changes**:
 ```bash
 cd ~/frappe-bench-15
-bench clear-cache && bench clear-website-cache && bench build --app posawesome --force
+bench build --app posawesome
+# OR with cache clear
+bench clear-cache && bench build --app posawesome
 ```
 
-**Debug**:
-- Backend: `frappe.log_error(f"[filename.py][function_name] Result: {result}")`
-- Frontend: Use `console.error()` only for actual errors (no debug console.log)
+**Debug Database Schema**:
+```bash
+bench mariadb
+DESCRIBE `tabDocTypeName`;
+```
+
+**Clean Python Cache**:
+```bash
+find . -name "*.pyc" -delete
+find . -type d -name "__pycache__" -exec rm -rf {} +
+```
 
 ## Recent Major Changes (October 2025)
 
+### ✅ Payment Totals in Navbar (NEW)
+- **Feature**: Real-time cash 💰 and non-cash 💳 totals in navbar
+- **Implementation**: Uses shift-based queries matching closing shift logic
+- **APIs**: `get_current_cash_total.py`, `get_current_non_cash_total.py`
+- **Updates**: On shift open, invoice submit, every 5 minutes
+- **Key Learning**: Must match closing shift calculations (subtract change_amount for cash)
+
+### ✅ Console.log Cleanup (NEW)
+- **Removed**: ALL 30+ debug console.log statements
+- **Files**: Navbar.vue, Invoice.vue, Pos.vue
+- **Method**: Used `sed -i` commands to bulk remove
+- **Build Impact**: Reduced bundle size ~2KB
+
+### ✅ Bundle Organization (NEW)
+- **onscan.js**: Moved from `page/posapp/` to `public/js/`
+- **Reason**: Cleaner structure, avoid Jinja2 templates in JS
+- **Import**: `posawesome.bundle.js` → `import './onscan';`
+- **Benefit**: No TypeScript errors, modern ES6 imports
+
 ### ✅ API Migration Completed
-- **All @frappe.whitelist() functions** moved from DocType files to `/api/` folder structure
-- **12 functions migrated**: 6 pos_closing_shift + 6 pos_opening_shift
-- **DocType files cleaned**: Only class methods remain (e.g., `get_payment_reconciliation_details()`)
-- **api_mapper.js updated**: All paths now point to `/api/` structure
-- **DocType .js files fixed**: Hardcoded calls updated to new paths
+- **All @frappe.whitelist()** moved from DocType files to `/api/` structure
+- **DocType files**: Only class methods remain
+- **api_mapper.js**: All paths updated to new structure
 
 ### ✅ Vuetify Removal
-- **All Vuetify components removed**: v-data-table, v-date-picker, etc.
-- **Migrated to pure HTML/CSS**: Better performance, smaller bundle
-- **Build size optimized**: ~588KB JavaScript, ~113KB CSS
-
-### ✅ Console Cleanup
-- **All debug console.log removed**: Only console.error/warn remain
-- **Sound notifications removed**: No frappe.utils.play_sound() calls
-
-## Active Simplification Initiative
-
-**Target**: Reduce Invoice.vue from 3,484 → 400 lines (89% reduction)
-
-See `improvements_tasks/` for detailed analysis:
-- `frontend/frontend_analysis.md` - ERPNext vs POSAwesome patterns analysis
-- `backend/erpnext_original_invoice_approach.md` - Framework patterns guide
-- `backend/API_STRUCTURE.md` - Complete API documentation
-
-**Key Insight**: ERPNext's sales_invoice.js does same functionality in 1,169 lines because framework handles:
-- Automatic calculations (totals, taxes, discounts)
-- State management (reactive updates)
-- CRUD operations (save, submit, validate)
-- Print formats
-
-**When modifying Invoice.vue**: Prefer framework patterns over manual implementations.
+- **All Vuetify components removed**: Replaced with pure HTML/CSS
+- **Build size**: Optimized to ~606KB JS, ~114KB CSS
 
 ## Code Review Checklist
 
 Before committing:
-- [ ] Backend: Used specific fields in `frappe.get_doc()` (no SELECT *)
-- [ ] Backend: Added `frappe.log_error()` at function end
+- [ ] Backend: Used specific fields in `frappe.get_doc()` - NO SELECT *
+- [ ] Backend: Verified column names via `DESCRIBE \`tabDocType\`;`
+- [ ] Backend: Used parametrized SQL queries with `%s`
+- [ ] Backend: NO `frappe.log_error()` for successful operations
 - [ ] Frontend: Implemented 1s debounce for batch operations
-- [ ] Frontend: Cleaned up event listeners in `beforeDestroy()`
-- [ ] Frontend: Used `API_MAP` constants (never hardcoded paths)
-- [ ] Frontend: Components under 500 lines (split if larger)
-- [ ] No caching (only temporary operation batches allowed)
+- [ ] Frontend: Cleaned up event listeners in `beforeUnmount()`
+- [ ] Frontend: Used `API_MAP` constants - NEVER hardcoded paths
+- [ ] Frontend: NO `console.log()` - only console.error/warn
+- [ ] Frontend: Components < 500 lines (split if larger)
+- [ ] Frontend: Pure HTML/CSS - NO Vuetify or frameworks
+- [ ] No caching (only temporary operation batches)
 - [ ] Response time <100ms (backend)
-- [ ] No heavy CSS, animations, or complex JavaScript
-
-## External Dependencies
-
-**Payment**: $35 USD/day based on progress via Fiverr/Upwork/Western Union  
-**Development**: SSH access to single server (main branch only)  
-**Server**: 2x AMD EPYC 9555 (128 threads), 324GB RAM  
-
-**STRICT**: Work outside this process = not reviewed, not accepted, not paid
 
 ## Key Files to Understand
 
-1. `api_mapper.js` - ALL API endpoints (never hardcode) - **RECENTLY UPDATED**
-2. `improvements_tasks/backend/erpnext_original_invoice_approach.md` - Framework migration strategy
-3. `improvements_tasks/frontend/frontend_improvment_policy.md` - Batch queue rules
-4. `improvements_tasks/backend/backend_improvment_policy.md` - API standards
-5. `hooks.py` - Frappe integration points
-6. `Invoice.vue` - Main target for simplification (3,484 lines)
-7. `api/` folder structure - **NEW**: All @frappe.whitelist() functions organized by DocType
+1. `api_mapper.js` - ALL API endpoints (ALWAYS use this)
+2. `posawesome.bundle.js` - Bundle entry point
+3. `hooks.py` - Frappe integration
+4. `api/` folder - All @frappe.whitelist() functions (one per file)
+5. `components/Navbar.vue` - Top nav with payment totals
+6. `components/pos/Invoice.vue` - Main invoice logic (being simplified)
+7. `improvements_tasks/` - Detailed policy documentation
 
 ## What Makes This Project Unique
 
-- **Barcode Performance**: Handles 30+ scans/second
-- **Zero Frontend Calculations**: All math done server-side using ERPNext controllers
-- **Framework-First**: Uses original ERPNext methods (sales_invoice.js patterns)
-- **Batch Queue System**: Only 3 API calls per invoice (CREATE → UPDATE → SUBMIT)
-- **DocType-Based APIs**: One function per file, organized by DocType - **RECENTLY ENFORCED**
-- **No Reinventing**: Leverages ERPNext's battle-tested foundation
+- **Barcode Performance**: 30+ scans/second via onscan.js
+- **Zero Frontend Calculations**: All math via ERPNext controllers
+- **Framework-First**: Uses original ERPNext patterns
+- **Batch Queue System**: Only 3 API calls per invoice
+- **One Function Per File**: Strictly enforced API structure
+- **No Frameworks**: Pure Vue 3 + HTML/CSS, no Vuetify
+- **No Debug Logs**: Clean console with only errors
+- **Shift-Based Totals**: Real-time cash/non-cash tracking
+
+## Common Pitfalls to Avoid
+
+1. **❌ Hardcoding API paths** → ✅ Use `API_MAP.DOCTYPE.OPERATION`
+2. **❌ Using console.log()** → ✅ Use console.error() only
+3. **❌ SELECT * queries** → ✅ Specify fields in frappe.get_doc()
+4. **❌ Wrong column names** → ✅ Check via DESCRIBE first
+5. **❌ Vuetify components** → ✅ Use pure HTML/CSS
+6. **❌ {% include %} in .js** → ✅ Import in bundle
+7. **❌ frappe.log_error() for success** → ✅ Only for actual errors
+8. **❌ Multiple API calls** → ✅ Use batch queue system
+9. **❌ Forgetting beforeUnmount()** → ✅ Clean up listeners/timers
+10. **❌ Large components (>500 lines)** → ✅ Split into smaller files
+
+````
