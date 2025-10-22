@@ -956,7 +956,7 @@
       document.addEventListener("keydown", this.shortPay.bind(this));
     },
   
-    beforeDestroy() {
+    beforeUnmount() {
       // Clean up all event listeners
       const events = [
         EVENT_NAMES.TOGGLE_QUICK_RETURN,
