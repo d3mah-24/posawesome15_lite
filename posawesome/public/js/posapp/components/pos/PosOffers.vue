@@ -5,11 +5,11 @@
       <div class="header-content">
         <div class="header-left">
           <i class="mdi mdi-tag-multiple header-icon"></i>
-          <h2 class="header-title">Special Offers</h2>
+          <h2 class="header-title">Special Offers Total</h2>
         </div>
         <div class="header-stats">
           <div class="stat-badge">
-            <span class="stat-label">Total test</span>
+            <span class="stat-label">Total</span>
             <span class="stat-value">{{ offersCount }}</span>
           </div>
           <div class="stat-badge active">
@@ -199,15 +199,12 @@ export default {
 
     toggleOffer(offer) {
       if (!this.isOfferDisabled(offer)) {
-        console.log("Toggling offer:", offer);
         offer.offer_applied = !offer.offer_applied;
         this.forceUpdateItem();
       }
       if (offer.offer_applied) {
-        console.log("Offer applied:", offer);
         this.$emit("offerApplied", offer);
       } else {
-        console.log("Offer removed:", offer);
         this.$emit("offerRemoved", false);
       }
     },
@@ -422,7 +419,7 @@ export default {
         this.pos_offers = data.map((offer) => ({
           ...offer,
           row_id: offer.row_id || this.makeid(20),
-          offer_applied: !!offer.offer_applied,
+          offer_applied: !!offer.auto,
         }));
       });
 
