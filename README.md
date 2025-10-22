@@ -3,7 +3,7 @@
     <h2>POS Awesome Lite</h2>
     <p><em>Point of Sale for ERPNext v15</em></p>
 
-![Version](https://img.shields.io/badge/version-21.10.2025-blue)
+![Version](https://img.shields.io/badge/version-22.10.2025-blue)
 ![License](https://img.shields.io/badge/license-GPLv3-green)
 ![ERPNext](https://img.shields.io/badge/ERPNext-v15-orange)
 ![Frappe](https://img.shields.io/badge/Frappe-v15-red)
@@ -25,10 +25,12 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 ## 🖥️ Try It Live
 
-**Remote Desktop Access** - Test the POS system remotely
-- 💻 **Server:** `remote_hoptodesk_pos_pc`
+**Remote Access to the POS UI system**
 - 🌐 **Application:** [HopToDesk](https://hoptodesk.com)
-- 🔑 **ID:** `378901992`
+- 🔑 **IDs:**
+    - pc1: `307 085 660`
+    - pc2: `351 465 377`
+    - pos1: `378 901 992`
 
 ---
 

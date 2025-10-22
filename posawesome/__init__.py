@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import frappe
 
-__version__ = "21.10.2025"
+__version__ = "22.10.2025"
 
 
 def console(*data):
