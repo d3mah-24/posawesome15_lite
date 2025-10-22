@@ -3,45 +3,43 @@
     <div class="custom-navbar">
       <!-- Logo/Title -->
       <div class="nav-brand" @click="go_desk" title="Go to Desk">
-        <v-icon size="16" color="primary">mdi-point-of-sale</v-icon>
+        <i class="mdi mdi-point-of-sale" style="font-size: 16px; color: var(--primary);"></i>
       </div>
 
       <!-- Info Badges -->
       <div class="nav-badges">
         <div class="badge" :class="invoiceNumberClass">
-          <v-icon size="12" :color="invoiceIconColor">mdi-receipt</v-icon>
+          <i class="mdi mdi-receipt" :style="`font-size: 12px; color: ${invoiceIconColor};`"></i>
           <span>{{ invoiceNumberText }}</span>
         </div>
 
         <div class="badge" :class="shiftNumberClass">
-          <v-icon size="12" :color="shiftIconColor">mdi-clock-outline</v-icon>
+          <i class="mdi mdi-clock-outline" :style="`font-size: 12px; color: ${shiftIconColor};`"></i>
           <span>{{ shiftNumberText }}</span>
         </div>
 
         <div class="badge user-badge">
-          <v-icon size="12" color="primary">mdi-account</v-icon>
+          <i class="mdi mdi-account" style="font-size: 12px; color: var(--primary);"></i>
           <span>{{ currentUserName }}</span>
         </div>
 
         <div class="badge" :class="shiftStartClass">
-          <v-icon size="12" :color="shiftStartIconColor"
-            >mdi-clock-start</v-icon
-          >
+          <i class="mdi mdi-clock-start" :style="`font-size: 12px; color: ${shiftStartIconColor};`"></i>
           <span>{{ shiftStartText }}</span>
         </div>
 
         <div class="badge totals-badge">
-          <v-icon size="12" color="primary">mdi-counter</v-icon>
+          <i class="mdi mdi-counter" style="font-size: 12px; color: var(--primary);"></i>
           <span>QTY: {{ totalInvoicesQty }}</span>
         </div>
 
         <div class="badge" :class="pingClass">
-          <v-icon size="12" :color="pingIconColor">mdi-wifi</v-icon>
+          <i class="mdi mdi-wifi" :style="`font-size: 12px; color: ${pingIconColor};`"></i>
           <span>{{ pingTime }}ms</span>
         </div>
 
         <div class="badge profile-badge">
-          <v-icon size="12" color="primary">mdi-briefcase</v-icon>
+          <i class="mdi mdi-briefcase" style="font-size: 12px; color: var(--primary);"></i>
           <span>{{ pos_profile.name }}</span>
         </div>
       </div>
@@ -55,9 +53,7 @@
           @click="print_last_invoice"
           :title="last_invoice ? 'Print Last Receipt' : 'No last receipt'"
         >
-          <v-icon size="14" :color="last_invoice ? 'primary' : 'grey'"
-            >mdi-printer</v-icon
-          >
+          <i class="mdi mdi-printer" :style="`font-size: 14px; color: ${last_invoice ? 'var(--primary)' : 'var(--gray-500)'};`"></i>
         </button>
 
         <button
@@ -65,77 +61,60 @@
           @click="clearCache"
           title="Clear Cache"
         >
-          <v-icon size="14" color="warning">mdi-cached</v-icon>
+          <i class="mdi mdi-cached" style="font-size: 14px; color: var(--warning);"></i>
         </button>
 
         <div class="menu-wrapper">
-          <v-menu>
-            <template v-slot:activator="{ props }">
-              <button class="action-btn menu-btn" v-bind="props">
-                <v-icon size="14">mdi-menu</v-icon>
-                <span>Menu</span>
-              </button>
-            </template>
-            <v-card class="dropdown-menu" elevation="8">
-              <v-list class="menu-list" density="compact" v-model="menu_item">
-                <v-list-item
+          <div class="dropdown">
+            <button class="action-btn menu-btn" @click="toggleMenu">
+              <i class="mdi mdi-menu" style="font-size: 14px;"></i>
+              <span>Menu</span>
+            </button>
+            <div v-if="showMenu" class="dropdown-menu">
+              <div class="menu-list">
+                <div
                   class="menu-item"
                   @click="close_shift_dialog"
                   v-if="!pos_profile.posa_hide_closing_shift && menu_item == 0"
                 >
-                  <template v-slot:prepend>
-                    <div class="menu-icon close-shift-icon">
-                      <v-icon size="16">mdi-content-save-move-outline</v-icon>
-                    </div>
-                  </template>
-                  <v-list-item-title class="menu-text"
-                    >Close Shift</v-list-item-title
-                  >
-                </v-list-item>
+                  <div class="menu-icon close-shift-icon">
+                    <i class="mdi mdi-content-save-move-outline" style="font-size: 16px;"></i>
+                  </div>
+                  <div class="menu-text">Close Shift</div>
+                </div>
 
-                <v-list-item class="menu-item" @click="logOut">
-                  <template v-slot:prepend>
-                    <div class="menu-icon logout-icon">
-                      <v-icon size="16">mdi-logout</v-icon>
-                    </div>
-                  </template>
-                  <v-list-item-title class="menu-text"
-                    >Logout</v-list-item-title
-                  >
-                </v-list-item>
+                <div class="menu-item" @click="logOut">
+                  <div class="menu-icon logout-icon">
+                    <i class="mdi mdi-logout" style="font-size: 16px;"></i>
+                  </div>
+                  <div class="menu-text">Logout</div>
+                </div>
 
-                <v-list-item class="menu-item" @click="go_about">
-                  <template v-slot:prepend>
-                    <div class="menu-icon about-icon">
-                      <v-icon size="16">mdi-information-outline</v-icon>
-                    </div>
-                  </template>
-                  <v-list-item-title class="menu-text"
-                    >About System</v-list-item-title
-                  >
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-menu>
+                <div class="menu-item" @click="go_about">
+                  <div class="menu-icon about-icon">
+                    <i class="mdi mdi-information-outline" style="font-size: 16px;"></i>
+                  </div>
+                  <div class="menu-text">About System</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <v-snackbar
-      v-model="snack"
-      :timeout="5000"
-      :color="snackColor"
-      top
-      right
-      @click="snack = false"
-    >
+    <div v-if="snack" class="snackbar" :class="snackColor" @click="snack = false">
       {{ snackText }}
-    </v-snackbar>
-    <v-dialog v-model="freeze" persistent max-width="290">
-      <v-card>
-        <v-card-title class="text-h5">{{ freezeTitle }}</v-card-title>
-        <v-card-text>{{ freezeMsg }}</v-card-text>
-      </v-card>
-    </v-dialog>
+    </div>
+    <div v-if="freeze" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">{{ freezeTitle }}</h3>
+        </div>
+        <div class="modal-body">
+          {{ freezeMsg }}
+        </div>
+      </div>
+    </div>
   </nav>
 </template>
 
@@ -159,6 +138,7 @@ export default {
       page: "",
       fav: true,
       menu: false,
+      showMenu: false,
       message: false,
       hints: true,
       menu_item: 0,
@@ -281,6 +261,9 @@ export default {
   methods: {
     changePage(key) {
       this.$emit("changePage", key);
+    },
+    toggleMenu() {
+      this.showMenu = !this.showMenu;
     },
     go_desk() {
       frappe.set_route("/");
@@ -835,6 +818,64 @@ export default {
 .menu-divider {
   margin: 4px 0 !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Dropdown styles */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  min-width: 200px;
+  margin-top: 4px;
+}
+
+.menu-list {
+  padding: 8px 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.menu-item:hover {
+  background: var(--gray-50);
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  transition: all var(--transition-fast);
+}
+
+.menu-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 0.2px;
 }
 
 /* Responsive - tighter at small screens */
