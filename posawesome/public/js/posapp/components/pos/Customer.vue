@@ -335,7 +335,7 @@ export default {
     document.addEventListener("click", this.handleClickOutside);
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.searchTimeout) clearTimeout(this.searchTimeout);
     document.removeEventListener("click", this.handleClickOutside);
   },
