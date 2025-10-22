@@ -345,8 +345,16 @@ export default {
           if (r.exc) {
             return;
           }
-          frappe.set_route("/login");
-          location.reload();
+          // Instead of automatic reload, let the user manually reload
+          me.show_mesage({
+            color: "info",
+            text: "Logged out successfully. Click to reload.",
+          });
+          // Only reload when user clicks on the message
+          document.querySelector(".snackbar").addEventListener("click", function() {
+            frappe.set_route("/login");
+            location.reload();
+          });
         },
       });
     },
@@ -460,6 +468,12 @@ export default {
     },
     // Ping methods
     async measurePing() {
+      // Skip if connection issues might cause a reload
+      if (navigator.onLine === false) {
+        this.pingTime = "999";
+        return;
+      }
+      
       const startTime = performance.now();
       try {
         await frappe.call({
@@ -470,12 +484,28 @@ export default {
             const ping = Math.round(endTime - startTime);
             this.pingTime = ping.toString().padStart(3, "0");
           },
+          error: () => {
+            // Silently handle error without triggering page reload
+            this.pingTime = "999";
+          },
+          freeze: false,  // Don't freeze the UI
+          show_spinner: false, // Don't show spinner
+          async: true,  // Make sure it's async
         });
       } catch (error) {
+        // Capture error without allowing it to affect the application
         this.pingTime = "999";
       }
     },
     startPingMonitoring() {
+      // Safety check - if already monitoring, don't start another interval
+      if (this.pingInterval) {
+        return;
+      }
+      
+      // Track that we're running (for visibility change handler)
+      this._wasRunningBeforeHidden = true;
+      
       // Initial ping
       this.measurePing();
 
@@ -488,23 +518,48 @@ export default {
       if (this.pingInterval) {
         clearInterval(this.pingInterval);
         this.pingInterval = null;
+        // Track that monitoring is stopped
+        this._wasRunningBeforeHidden = false;
+      }
+    },
+    
+    // Toggle ping monitoring (can be called via evntBus)
+    togglePingMonitoring(enable) {
+      if (enable) {
+        sessionStorage.setItem('pos_enable_ping_monitoring', 'true');
+        this.startPingMonitoring();
+      } else {
+        sessionStorage.setItem('pos_enable_ping_monitoring', 'false');
+        this.stopPingMonitoring();
       }
     },
   },
   created: function () {
     this.$nextTick(function () {
       try {
-        // Start ping monitoring
-        this.startPingMonitoring();
+        // Check if ping monitoring should be enabled
+        // We can add a global setting to control this
+        const enablePingMonitoring = sessionStorage.getItem('pos_enable_ping_monitoring') !== 'false';
+        
+        if (enablePingMonitoring) {
+          // Start ping monitoring
+          this.startPingMonitoring();
+        }
 
         // Add page visibility handler to pause/resume ping monitoring for bfcache compatibility
+        // Modified to prevent automatic reloads
         this.handleVisibilityChange = () => {
           if (document.hidden) {
             this.stopPingMonitoring();
           } else {
-            this.startPingMonitoring();
+            // Only restart monitoring if it was previously running
+            if (this._wasRunningBeforeHidden) {
+              this.startPingMonitoring();
+            }
           }
         };
+        // Track ping monitor state before hiding
+        this._wasRunningBeforeHidden = true; 
         document.addEventListener('visibilitychange', this.handleVisibilityChange);
 
         evntBus.on("show_mesage", (data) => {
@@ -550,6 +605,11 @@ export default {
           this.freezTitle = "";
           this.freezeMsg = "";
         });
+        
+        // Add event listener for toggling ping monitoring
+        evntBus.on("toggle_ping_monitoring", (enable) => {
+          this.togglePingMonitoring(enable);
+        });
       } catch (error) {
         this.show_mesage({
           color: "error",
@@ -579,6 +639,7 @@ export default {
     evntBus.off("invoice_submitted");
     evntBus.off("freeze");
     evntBus.off("unfreeze");
+    evntBus.off("toggle_ping_monitoring");
   },
 };
 </script>
