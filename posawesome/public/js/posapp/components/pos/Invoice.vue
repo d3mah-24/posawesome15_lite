@@ -1,168 +1,180 @@
 <template>
-    <div>
-      <v-card
-        class="cards py-0 grey lighten-5 d-flex flex-column flex-grow-1"
-        style="min-height: 0"
-      >
-        <!-- Compact Customer Section -->
-        <div class="compact-customer-section">
-          <Customer></Customer>
-        </div>
-  
-        <div class="my-0 py-0 invoice-items-scrollable">
-          <v-data-table
-            :headers="dynamicHeaders"
-            :items="items"
-            item-key="posa_row_id"
-            item-value="posa_row_id"
-            class="elevation-0 invoice-table"
-            style="width: 700px"
-            hide-default-footer
-            :items-per-page="25"
-            density="compact"
-          >
-            <template v-slot:item.item_name="{ item }">
-              <div style="width: 120px">
-                <p class="mb-0">{{ item.item_name }}</p>
-              </div>
-            </template>
-            <template v-slot:item.qty="{ item }">
-              <div class="compact-qty-controls">
-                <button
-                  class="qty-btn minus-btn"
-                  @click="decreaseQuantity(item)"
-                  :disabled="!(item.qty && item.qty > 0)"
-                  type="button"
-                >
-                  <span class="btn-icon">−</span>
-                </button>
-                <input
-                  type="number"
-                  v-model.number="item.qty"
-                  @input="onQtyInput(item)"
-                  @change="onQtyChange(item)"
-                  @blur="onQtyChange(item)"
-                  class="compact-qty-input"
-                  placeholder="0"
-                />
-                <button
-                  class="qty-btn plus-btn"
-                  @click="increaseQuantity(item)"
-                  type="button"
-                >
-                  <span class="btn-icon">+</span>
-                </button>
-              </div>
-            </template>
-            <template v-slot:item.rate="{ item }">
-              <!-- Compact Price Input -->
-              <div class="compact-rate-wrapper">
-                <input
-                  type="text"
-                  :value="formatCurrency(item.rate)"
-                  @change="setItemRate(item, $event)"
-                  @blur="setItemRate(item, $event)"
-                  @keyup.enter="setItemRate(item, $event)"
-                  :disabled="
-                    Boolean(
-                      item.posa_is_offer ||
-                        item.posa_is_replace ||
-                        item.posa_offer_applied ||
-                        invoice_doc?.is_return
-                    )
-                  "
-                  class="compact-rate-input"
-                  placeholder="0.00"
-                />
-              </div>
-            </template>
-            <template v-slot:item.discount_percentage="{ item }">
-              <!-- Compact Discount Input -->
-              <div
-                class="compact-discount-wrapper"
-                :class="{ 'has-discount': item.discount_percentage > 0 }"
+  <div>
+    <div class="cards py-0 grey lighten-5 d-flex flex-column flex-grow-1" style="min-height: 0">
+      <!-- Compact Customer Section -->
+      <div class="compact-customer-section">
+        <Customer></Customer>
+      </div>
+
+      <div class="my-0 py-0 invoice-items-scrollable">
+        <table class="invoice-table elevation-0" style="width: 700px">
+          <thead>
+            <tr>
+              <th
+                v-for="header in dynamicHeaders"
+                :key="header.key"
+                :style="{ width: header.width, textAlign: header.align }"
+                class="table-header-cell"
               >
-                <input
-                  type="number"
-                  :value="formatFloat(item.discount_percentage || 0)"
-                  @change="setDiscountPercentage(item, $event)"
-                  @blur="setDiscountPercentage(item, $event)"
-                  @keyup.enter="setDiscountPercentage(item, $event)"
-                  :disabled="
-                    Boolean(
-                      item.posa_is_offer ||
-                        item.posa_is_replace ||
-                        item.posa_offer_applied ||
-                        !pos_profile?.posa_allow_user_to_edit_item_discount ||
-                        invoice_doc?.is_return
-                    )
-                  "
-                  class="compact-discount-input"
-                  placeholder="0"
-                  min="0"
-                  :max="pos_profile?.posa_item_max_discount_allowed || 100"
-                  step="0.01"
-                />
-                <span class="discount-suffix">%</span>
-              </div>
-            </template>
-            <template v-slot:item.discount_amount="{ item }">
-              <div class="compact-discount-amount">
-                <span
-                  class="amount-value"
-                  :class="{ 'has-value': getDiscountAmount(item) > 0 }"
+                {{ header.title }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="item in items"
+              :key="item.posa_row_id"
+              class="table-row"
+            >
+              <!-- Item Name Column -->
+              <td v-if="dynamicHeaders.find(h => h.key === 'item_name')" class="table-cell">
+                <div style="width: 120px">
+                  <p class="mb-0">{{ item.item_name }}</p>
+                </div>
+              </td>
+
+              <!-- Quantity Column -->
+              <td v-if="dynamicHeaders.find(h => h.key === 'qty')" class="table-cell">
+                <div class="compact-qty-controls">
+                  <button
+                    class="qty-btn minus-btn"
+                    @click="decreaseQuantity(item)"
+                    :disabled="!(item.qty && item.qty > 0)"
+                    type="button"
+                  >
+                    <span class="btn-icon">−</span>
+                  </button>
+                  <input
+                    type="number"
+                    v-model.number="item.qty"
+                    @input="onQtyInput(item)"
+                    @change="onQtyChange(item)"
+                    @blur="onQtyChange(item)"
+                    class="compact-qty-input"
+                    placeholder="0"
+                  />
+                  <button
+                    class="qty-btn plus-btn"
+                    @click="increaseQuantity(item)"
+                    type="button"
+                  >
+                    <span class="btn-icon">+</span>
+                  </button>
+                </div>
+              </td>
+
+              <!-- UOM Column -->
+              <td v-if="dynamicHeaders.find(h => h.key === 'uom')" class="table-cell">
+                {{ item.uom }}
+              </td>
+
+              <!-- Price List Rate Column -->
+              <td v-if="dynamicHeaders.find(h => h.key === 'price_list_rate')" class="table-cell">
+                <div class="compact-price-display">
+                  <span class="amount-value">
+                    {{ formatCurrency(item.price_list_rate) }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Rate (Discounted Price) Column -->
+              <td v-if="dynamicHeaders.find(h => h.key === 'rate')" class="table-cell">
+                <div class="compact-rate-wrapper">
+                  <input
+                    type="text"
+                    :value="formatCurrency(item.rate)"
+                    @change="setItemRate(item, $event)"
+                    @blur="setItemRate(item, $event)"
+                    @keyup.enter="setItemRate(item, $event)"
+                    :disabled="
+                      Boolean(
+                        item.posa_is_offer ||
+                          item.posa_is_replace ||
+                          item.posa_offer_applied ||
+                          invoice_doc?.is_return
+                      )
+                    "
+                    class="compact-rate-input"
+                    placeholder="0.00"
+                  />
+                </div>
+              </td>
+
+              <!-- Discount Percentage Column -->
+              <td v-if="dynamicHeaders.find(h => h.key === 'discount_percentage')" class="table-cell">
+                <div
+                  class="compact-discount-wrapper"
+                  :class="{ 'has-discount': item.discount_percentage > 0 }"
                 >
-                  {{ formatCurrency(getDiscountAmount(item)) }}
-                </span>
-              </div>
-            </template>
-            <template v-slot:item.amount="{ item }">
-              <div class="compact-total-amount">
-                <span class="amount-value">
-                  {{
-                    formatCurrency(
-                      flt(item.qty, float_precision) *
-                        flt(item.rate, currency_precision)
-                    )
-                  }}
-                </span>
-              </div>
-            </template>
-            <template v-slot:item.posa_is_offer="{ item }">
-              <div class="checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  class="custom-checkbox"
-                  :checked="Boolean(item.posa_is_offer || item.posa_is_replace)"
-                  disabled
-                />
-              </div>
-            </template>
-  
-            <template v-slot:item.actions="{ item }">
-              <div class="flex justify-end">
-                <button
-                  :disabled="Boolean(item.posa_is_offer || item.posa_is_replace)"
-                  class="delete-item-btn error-btn-small"
-                  @click.stop="remove_item(item)"
-                  title="Delete item"
-                >
-                  <i class="mdi mdi-delete"></i>
-                </button>
-              </div>
-            </template>
-            <template v-slot:item.price_list_rate="{ item }">
-              <div class="compact-price-display">
-                <span class="amount-value">
-                  {{ formatCurrency(item.price_list_rate) }}
-                </span>
-              </div>
-            </template>
-          </v-data-table>
-        </div>
-      </v-card>
-  
-      <!-- Compact Payment Controls Card -->
+                  <input
+                    type="number"
+                    :value="formatFloat(item.discount_percentage || 0)"
+                    @change="setDiscountPercentage(item, $event)"
+                    @blur="setDiscountPercentage(item, $event)"
+                    @keyup.enter="setDiscountPercentage(item, $event)"
+                    :disabled="
+                      Boolean(
+                        item.posa_is_offer ||
+                          item.posa_is_replace ||
+                          item.posa_offer_applied ||
+                          !pos_profile?.posa_allow_user_to_edit_item_discount ||
+                          invoice_doc?.is_return
+                      )
+                    "
+                    class="compact-discount-input"
+                    placeholder="0"
+                    min="0"
+                    :max="pos_profile?.posa_item_max_discount_allowed || 100"
+                    step="0.01"
+                  />
+                  <span class="discount-suffix">%</span>
+                </div>
+              </td>
+
+              <!-- Discount Amount Column -->
+              <td v-if="dynamicHeaders.find(h => h.key === 'discount_amount')" class="table-cell">
+                <div class="compact-discount-amount">
+                  <span
+                    class="amount-value"
+                    :class="{ 'has-value': getDiscountAmount(item) > 0 }"
+                  >
+                    {{ formatCurrency(getDiscountAmount(item)) }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Total Amount Column -->
+              <td v-if="dynamicHeaders.find(h => h.key === 'amount')" class="table-cell">
+                <div class="compact-total-amount">
+                  <span class="amount-value">
+                    {{
+                      formatCurrency(
+                        flt(item.qty, float_precision) *
+                          flt(item.rate, currency_precision)
+                      )
+                    }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Actions Column -->
+              <td v-if="dynamicHeaders.find(h => h.key === 'actions')" class="table-cell">
+                <div class="flex justify-end">
+                  <button
+                    :disabled="Boolean(item.posa_is_offer || item.posa_is_replace)"
+                    class="delete-item-btn error-btn-small"
+                    @click.stop="remove_item(item)"
+                    title="Delete item"
+                  >
+                    <i class="mdi mdi-delete"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>      <!-- Compact Payment Controls Card -->
       <div class="payment-controls-card">
         <!-- Financial Summary Row -->
         <div class="financial-summary">
@@ -1343,8 +1355,8 @@
         item.serial_no_selected_count = item.serial_no_selected.length;
         if (item.serial_no_selected_count != item.stock_qty) {
           item.qty = item.serial_no_selected_count;
-          // Use reactive update instead of $forceUpdate
-          this.$set(item, 'qty', item.serial_no_selected_count);
+          // Vue 3 reactive update - no need for $set
+          this.$forceUpdate();
         }
       },
   
@@ -1701,8 +1713,7 @@
                     text: `Invoice ${r.message.name} submitted`,
                     color: "success",
                   });
-                  frappe.utils.play_sound("submit");
-  
+
                   this.resetInvoiceState();
                   this.invoice_doc = null;
                   evntBus.emit("new_invoice", "false");
@@ -1891,26 +1902,26 @@
         this.printInvoice();
       });
     },
-    beforeDestroy() {
+    beforeUnmount() {
       // Clean up ALL event listeners to prevent memory leaks
-      evntBus.$off("register_pos_profile");
-      evntBus.$off("add_item");
-      evntBus.$off("update_customer");
-      evntBus.$off("fetch_customer_details");
-      evntBus.$off("new_invoice");
-      evntBus.$off("load_invoice");
-      evntBus.$off("set_offers");
-      evntBus.$off("update_invoice_offers");
-      evntBus.$off("update_invoice_coupons");
-      evntBus.$off("set_all_items");
-      evntBus.$off("load_return_invoice");
-      evntBus.$off("item_added");
-      evntBus.$off("item_removed");
-      evntBus.$off("item_updated");
-      evntBus.$off("send_invoice_doc_payment");
-      evntBus.$off("payments_updated");
-      evntBus.$off("request_invoice_print");
-  
+      evntBus.off("register_pos_profile");
+      evntBus.off("add_item");
+      evntBus.off("update_customer");
+      evntBus.off("fetch_customer_details");
+      evntBus.off("new_invoice");
+      evntBus.off("load_invoice");
+      evntBus.off("set_offers");
+      evntBus.off("update_invoice_offers");
+      evntBus.off("update_invoice_coupons");
+      evntBus.off("set_all_items");
+      evntBus.off("load_return_invoice");
+      evntBus.off("item_added");
+      evntBus.off("item_removed");
+      evntBus.off("item_updated");
+      evntBus.off("send_invoice_doc_payment");
+      evntBus.off("payments_updated");
+      evntBus.off("request_invoice_print");
+
       // Clear ALL timers to prevent memory leaks
       if (this._itemOperationTimer) {
         clearTimeout(this._itemOperationTimer);
@@ -2954,6 +2965,57 @@
   .custom-checkbox:not(:disabled):hover {
     border-color: #1565c0;
     box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+  }
+
+  /* ===== INVOICE TABLE STYLES ===== */
+  .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 0.75rem;
+  }
+
+  .table-header-cell {
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 8px 6px;
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: #424242;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .table-row {
+    border-bottom: 1px solid #f1f1f1;
+    transition: background-color 0.15s;
+  }
+
+  .table-row:hover {
+    background: #fafafa;
+  }
+
+  .table-cell {
+    padding: 6px;
+    vertical-align: middle;
+    border-right: 1px solid #f5f5f5;
+  }
+
+  .table-cell:last-child {
+    border-right: none;
+  }
+
+  /* Compact table for POS */
+  .invoice-items-scrollable {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+  }
+
+  .elevation-0 {
+    box-shadow: none;
   }
   </style>
   
