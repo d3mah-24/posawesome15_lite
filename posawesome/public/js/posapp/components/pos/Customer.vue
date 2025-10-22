@@ -370,7 +370,7 @@ export default {
 
 .autocomplete-input {
   width: 100%;
-  padding: 8px 40px 8px 12px;
+  padding: 13px 40px 13px 12px;
   border: 1px solid var(--gray-300);
   border-radius: var(--radius-sm);
   font-size: 14px;
