@@ -36,7 +36,7 @@ export default {
   margin: 0 auto;
   max-width: 100%;
   width: 100%;
-  min-height: calc(100vh - 60px);
+  min-height: calc(100vh - 32px); /* Updated to match actual navbar height */
   padding: 1rem 0;
 }
 
@@ -45,7 +45,7 @@ export default {
   .container1 {
     width: 100%;
     margin: 0;
-    min-height: calc(100vh - 60px); /* Adjust height for smaller screens */
+    min-height: calc(100vh - 32px); /* Updated to match actual navbar height */
     overflow: hidden;
   }
 }
@@ -53,7 +53,7 @@ export default {
 /* For mobile devices */
 @media (max-width: 768px) {
   .container1 {
-    min-height: calc(100vh - 50px);
+    min-height: calc(100vh - 32px); /* Updated to match actual navbar height */
   }
 }
 
