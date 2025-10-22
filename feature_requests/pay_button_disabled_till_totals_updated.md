@@ -1,1 +1,2 @@
-here i want pay button is disabled till totals are fetched from its api call.
+i want it
+disabled ( for mement ) just untill totals updated
