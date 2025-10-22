@@ -916,7 +916,6 @@
           this.setCustomer(data.customer);
           this.posting_date = data.posting_date || frappe.datetime.nowdate();
           this.discount_amount = data.discount_amount;
-          console.log("check data.additional_discount_percentage", data );
           
           this.additional_discount_percentage =
             data.additional_discount_percentage;
@@ -1051,8 +1050,6 @@
       },
   
       update_invoice(doc) {
-        console.log("Updating invoice with doc:", doc);
-        
         const vm = this;
         return new Promise((resolve, reject) => {
           // Ensure we have an invoice name for updates
@@ -1075,19 +1072,16 @@
                   resolve(null);
                 } else {
                   vm.invoice_doc = r.message;
-                  console.log("Updated invoice_doc:", vm.invoice_doc);
                   
                   // Update posa_offers from backend response
                   if (r.message.posa_offers) {
                     vm.posa_offers = r.message.posa_offers;
-                    console.log("vm.posa_offers", vm.posa_offers);
                     
                     // Handle Transaction-level Percentage Discount Offers
                     let transactionDiscount = 0;
                     const appliedTransactionOffer = vm.posa_offers.find(
                         (offer) => offer.offer_applied 
                     );
-                    console.log("appliedTransactionOffer", appliedTransactionOffer);
                     
                     if (appliedTransactionOffer) {
                         transactionDiscount = flt(appliedTransactionOffer.discount_percentage);
@@ -1100,7 +1094,6 @@
                         // If the offer was applied but is now removed, clear it.
                         vm.offer_discount_percentage = 0;
                     }
-                    console.log("invoice_doc", vm.invoice_doc);
 
                     
                     // Emit event for navbar to update invoice display
@@ -1109,8 +1102,6 @@
                     const appliedOffers = vm.posa_offers.filter(
                       (offer) => offer.offer_applied
                     );
-                    console.log("appliedOffers", appliedOffers);
-                    console.log("posa_offers", vm.posa_offers);
                     
                     if (appliedOffers.length > 0) {
                       evntBus.emit("update_pos_offers", appliedOffers);
@@ -1293,7 +1284,6 @@
       },
   
       setDiscountPercentage(item, event) {
-        console.log("setDiscountPercentage called");
         
         let dis_percent = parseFloat(event.target.value) || 0;
   
@@ -1380,7 +1370,6 @@
       },
   
       update_discount_umount() {
-        console.log("update_discount_umount called");
         
         // Simplified: just validate and set, server will recalculate
         if (!this.pos_profile?.posa_allow_user_to_edit_additional_discount) {
@@ -1522,7 +1511,6 @@
       },
   
       checkOfferIsAppley(item, offer) {
-        console.log("checkOfferIsAppley called for item:", item, "and offer:", offer);
         
         let applied = false;
   
@@ -1710,19 +1698,16 @@
       },
   
       updatePosOffers(offers) {
-        console.log("updatePosOffers called with offers:", offers);
         
         evntBus.emit("update_pos_offers", offers);
       },
   
       updateInvoiceOffers(offers) {
-        console.log("updateInvoiceOffers called with offers:", offers);
         
         this.posa_offers = offers || [];
       },
   
       removeApplyOffer(invoiceOffer) {
-        console.log("removeApplyOffer called for offer:", invoiceOffer);
         
         const index = this.posa_offers.findIndex(
           (el) => el.row_id === invoiceOffer.row_id
@@ -1733,7 +1718,6 @@
       },
   
       applyNewOffer(offer) {
-        console.log("applyNewOffer called for offer:", offer);
         
         const newOffer = {
           offer_name: offer.name,
@@ -1862,7 +1846,6 @@
   
     created() {
       // Register event listeners in created() to avoid duplicate registrations
-      console.log("Invoice component created - registering event listeners");
       
       evntBus.on("register_pos_profile", (data) => {
         this.pos_profile = data.pos_profile;
@@ -1890,7 +1873,6 @@
         this.cancel_invoice();
       });
       evntBus.on("load_invoice", (data) => {
-        console.log("load_invoice called with data:", data);
         
         this.new_invoice(data);
   
@@ -1905,12 +1887,10 @@
       });
   
       evntBus.on("set_offers", (data) => {
-        console.log("on set offer ", data);
         
         this.posOffers = data;
       });
       evntBus.on("update_invoice_offers", (data) => {
-        console.log("on update invoice offer ", data);
         
         this.updateInvoiceOffers(data);
       });
@@ -1987,7 +1967,6 @@
     },
     mounted() {
       // DOM-related initialization (keyboard shortcuts)
-      console.log("Invoice component mounted - DOM ready");
       
       // Store bound function references so we can remove them later
       this._boundShortOpenPayment = this.shortOpenPayment.bind(this);
@@ -2049,7 +2028,6 @@
       offerApplied: {
         handler(newVal, oldVal) {
           if (newVal && newVal.discount_percentage) {
-            console.log("Applying offer discount:", newVal.discount_percentage);
             
             // Update both discount fields
             this.additional_discount_percentage = parseFloat(newVal.discount_percentage);
@@ -2061,7 +2039,6 @@
             });
           } else if (newVal === null && oldVal !== null) {
             // Offer was reset to null (preparing for new application)
-            console.log("Offer reset to null");
           }
         },
         deep: true,
