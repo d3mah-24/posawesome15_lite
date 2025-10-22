@@ -99,15 +99,11 @@ export default {
   methods: {
     // ===== OFFER EVENT HANDLERS =====
     handleOfferApplied(offer) {
-      console.log("[Pos.vue] Offer applied:", offer);
-      this.offerApplied = offer;
-      this.offerRemoved = false;
+      this.$emit("offerApplied", offer);
     },
 
     handleOfferRemoved() {
-      console.log("[Pos.vue] Offer removed");
-      this.offerApplied = null;
-      this.offerRemoved = true;
+      this.$emit("offerRemoved");
     },
 
     async check_opening_entry() {
