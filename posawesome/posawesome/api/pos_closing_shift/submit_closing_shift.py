@@ -29,7 +29,6 @@ def submit_closing_shift(closing_shift):
         doc.submit()
         frappe.db.commit()
         
-        frappe.log_error(f"[submit_closing_shift.py][submit_closing_shift] Successfully submitted shift: {doc.name}")
         return doc
         
     except Exception as e:
