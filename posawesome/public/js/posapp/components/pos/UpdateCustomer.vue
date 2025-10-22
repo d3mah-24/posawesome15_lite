@@ -314,7 +314,6 @@ export default {
         ? SUCCESS_MESSAGES.CUSTOMER_UPDATED 
         : SUCCESS_MESSAGES.CUSTOMER_CREATED;
 
-      frappe.utils.play_sound('submit');
       args.name = customerName;
 
       if (!isUpdate) {
@@ -327,7 +326,6 @@ export default {
     },
 
     handleCustomerError() {
-      frappe.utils.play_sound('error');
       this.showMessage(ERROR_MESSAGES.FAILED_TO_CREATE, 'error');
     },
 
