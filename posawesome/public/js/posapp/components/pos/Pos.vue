@@ -99,7 +99,6 @@ export default {
   methods: {
     // ===== OFFER EVENT HANDLERS =====
     handleOfferApplied(offer) {
-      console.log("[Pos.vue] Offer applied:", offer);
       
       // Reset first to null to ensure reactivity
       this.offerApplied = null;
@@ -112,12 +111,10 @@ export default {
           ...offer,
           _timestamp: Date.now()
         };
-        console.log("this.offerApplied:", this.offerApplied);
       });
     },
 
     handleOfferRemoved() {
-      console.log("[Pos.vue] Offer removed");
       this.offerApplied = null;
       this.offerRemoved = true;
       
