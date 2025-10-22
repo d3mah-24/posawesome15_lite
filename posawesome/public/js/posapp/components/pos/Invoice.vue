@@ -7,7 +7,7 @@
       </div>
 
       <div class="my-0 py-0 invoice-items-scrollable">
-        <table class="invoice-table elevation-0" style="width: 700px">
+        <table class="invoice-table elevation-0" style="width: 600px">
           <thead>
             <tr>
               <th
@@ -360,49 +360,49 @@
             align: "start",
             sortable: true,
             key: "item_name",
-            width: "25%",
+            width: "12%",
           },
           {
             title: "Qty",
             key: "qty",
             align: "center",
-            width: "8%",
+            width: "11%",
           },
           {
             title: "Uom",
             key: "uom",
             align: "center",
-            width: "8%",
+            width: "10%",
           },
           {
             title: "list_price",
             key: "price_list_rate",
             align: "center",
-            width: "10%",
+            width: "12%",
           },
           {
             title: "dis_price",
             key: "rate",
             align: "center",
-            width: "10%",
+            width: "12%",
           },
           {
             title: "dis_%",
             key: "discount_percentage",
             align: "center",
-            width: "8%",
+            width: "13%",
           },
           {
             title: "dis_amount",
             key: "discount_amount",
             align: "center",
-            width: "10%",
+            width: "12%",
           },
           {
             title: "Total",
             key: "amount",
             align: "center",
-            width: "11%",
+            width: "13%",
           },
           {
             title: "Delete",
