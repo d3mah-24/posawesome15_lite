@@ -1,12 +1,12 @@
 <template>
-  <v-app>
-    <v-main>
+  <div class="app-container">
+    <main class="main-content">
       <Navbar @changePage="setPage" />
       <keep-alive>
         <component :is="page" class="container1" />
       </keep-alive>
-    </v-main>
-  </v-app>
+    </main>
+  </div>
 </template>
 
 <script>
@@ -58,66 +58,56 @@ export default {
 }
 
 /* Optimized for cashier screens - no browser zoom needed */
-.v-application {
-  font-size: 0.8rem !important; /* Slightly larger for better readability */
+.app-container {
+  font-size: 0.8rem; /* Slightly larger for better readability */
 }
 
-.v-btn {
-  font-size: 0.75rem !important;
-  padding: 6px 12px !important;
-  min-height: 28px !important;
+.btn {
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  min-height: 28px;
 }
 
-.v-text-field {
-  font-size: 0.8rem !important;
+.text-input {
+  font-size: 0.8rem;
 }
 
-.v-text-field .v-field {
-  min-height: 32px !important;
+.text-input {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
 }
 
-.v-text-field .v-field__input {
-  padding: 6px 12px !important;
-  font-size: 0.8rem !important;
+.data-table {
+  font-size: 0.8rem;
 }
 
-.v-data-table {
-  font-size: 0.8rem !important;
+.data-table table {
+  font-size: 0.8rem;
 }
 
-.v-data-table .v-data-table__wrapper table {
-  font-size: 0.8rem !important;
+.data-table th,
+.data-table td {
+  padding: 6px 8px;
+  font-size: 0.8rem;
 }
 
-.v-data-table .v-data-table__wrapper table th,
-.v-data-table .v-data-table__wrapper table td {
-  padding: 6px 8px !important;
-  font-size: 0.8rem !important;
+.card {
+  padding: 8px;
 }
 
-.v-card {
-  padding: 8px !important;
+.d-flex {
+  margin: -2px;
 }
 
-.v-row {
-  margin: -2px !important;
-}
-
-.v-col {
-  padding: 2px !important;
+.d-flex > * {
+  padding: 2px;
 }
 
 /* Optimized select elements for cashier screens */
-.v-select {
-  font-size: 0.8rem !important;
-}
-
-.v-select .v-field {
-  min-height: 32px !important;
-}
-
-.v-select .v-field__input {
-  padding: 6px 12px !important;
-  font-size: 0.8rem !important;
+.select-input {
+  font-size: 0.8rem;
+  min-height: 32px;
+  padding: 6px 12px;
 }
 </style>
