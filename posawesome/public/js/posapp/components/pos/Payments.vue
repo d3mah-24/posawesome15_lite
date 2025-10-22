@@ -381,7 +381,7 @@
   
       available_pioints_amount() {
         if (!this.customer_info?.loyalty_points) return 0;
-        return this.customer_info.loyalty_points * this.customer_info.conversion_factor;
+        return this.customer_info.loyalty_points;
       },
   
       available_customer_credit() {
@@ -992,7 +992,7 @@
         } else {
           this.invoice_doc.loyalty_amount = this.flt(this.loyalty_amount);
           this.invoice_doc.redeem_loyalty_points = 1;
-          this.invoice_doc.loyalty_points = this.flt(this.loyalty_amount) / this.customer_info.conversion_factor;
+          this.invoice_doc.loyalty_points = this.flt(this.loyalty_amount);
         }
       },
   
