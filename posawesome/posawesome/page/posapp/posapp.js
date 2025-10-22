@@ -11,9 +11,7 @@ frappe.pages['posapp'].on_page_load = function (wrapper) {
 
 	$('div.navbar-fixed-top').find('.container').css('padding', '0');
 
-	$("head").append("<link rel='stylesheet' href='/assets/posawesome/public/css/posawesome_page.css'>");
-	$("head").append("<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@mdi/font@6.9.96/css/materialdesignicons.min.css'>");
-	$("head").append("<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900' />");
+	$("head").append("<link rel='stylesheet' href='/assets/posawesome/css/materialdesignicons.css'>");
 	
 	// Fix shortcut.js offsetWidth error by hiding layout-main-section
 	$("head").append("<style>.layout-main-section { display: none !important; }</style>");
