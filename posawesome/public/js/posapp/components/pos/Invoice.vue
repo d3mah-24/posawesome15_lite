@@ -989,7 +989,6 @@
           rate: item.rate || item.price_list_rate || 0,
           price_list_rate: item.price_list_rate || 0, // MUST send this so ERPNext can calculate discount_amount
           uom: item.uom || item.stock_uom,
-          conversion_factor: item.conversion_factor || 1,
           serial_no: item.serial_no,
           discount_percentage: item.discount_percentage || 0,
           // Don't send discount_amount - let ERPNext calculate it from price_list_rate + discount_percentage
