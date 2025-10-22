@@ -440,9 +440,6 @@ export default {
 
     process_barcode(barcode_value) {
       // Single unified method - backend determines barcode type
-      console.log("=== BARCODE SCAN ===");
-      console.log("Barcode:", barcode_value);
-      console.log("Calling unified API...");
       
       frappe.call({
         method: API_MAP.ITEM.GET_BARCODE_ITEM,
@@ -451,10 +448,8 @@ export default {
           barcode_value: barcode_value 
         },
         callback: (response) => {
-          console.log("Barcode API Response:", response);
           
           if (response?.message?.item_code) {
-            console.log("✓ Item found:", response.message);
             
             // Add item to cart
             this.add_item_to_cart(response.message);
@@ -468,7 +463,6 @@ export default {
               color: "success"
             });
           } else {
-            console.error("✗ Item not found for barcode:", barcode_value);
             evntBus.emit("show_mesage", {
               text: "Item not found with this barcode",
               color: "error"
@@ -476,7 +470,6 @@ export default {
           }
         },
         error: (error) => {
-          console.error("Barcode API Error:", error);
           evntBus.emit("show_mesage", {
             text: "Error processing barcode",
             color: "error"
@@ -733,7 +726,6 @@ export default {
 
     trigger_onscan(sCode) {
       // Direct barcode processing using existing working method
-      console.log("🔍 Auto-scan detected:", sCode);
       this.process_barcode(sCode);
     },
   },
