@@ -26,7 +26,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 ## 🖥️ Try It Live
 
 **Remote Access to the POS UI system**
-- 🌐 **Application:** [https://anydesk.com/en](https://anydesk.com/en)
+- 🌐 **Application:** (https://anydesk.com/en)
 - 🔑 **ID:** `1134153623`
 ---
 
