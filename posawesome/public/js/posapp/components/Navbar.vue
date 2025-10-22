@@ -497,6 +497,16 @@ export default {
         // Start ping monitoring
         this.startPingMonitoring();
 
+        // Add page visibility handler to pause/resume ping monitoring for bfcache compatibility
+        this.handleVisibilityChange = () => {
+          if (document.hidden) {
+            this.stopPingMonitoring();
+          } else {
+            this.startPingMonitoring();
+          }
+        };
+        document.addEventListener('visibilitychange', this.handleVisibilityChange);
+
         evntBus.on("show_mesage", (data) => {
           this.show_mesage(data);
         });
@@ -548,24 +558,27 @@ export default {
       }
     });
   },
-  beforeDestroy() {
+  beforeUnmount() {
     // Clean up ping monitoring
     this.stopPingMonitoring();
 
     // Clean up click outside listener
     document.removeEventListener('click', this.handleClickOutside);
+    
+    // Clean up page visibility listener
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
 
     // Clean up all event listeners
-    evntBus.$off("show_mesage");
-    evntBus.$off("set_company");
-    evntBus.$off("register_pos_profile");
-    evntBus.$off("set_last_invoice");
-    evntBus.$off("update_invoice_doc");
-    evntBus.$off("set_pos_opening_shift");
-    evntBus.$off("register_pos_data");
-    evntBus.$off("invoice_submitted");
-    evntBus.$off("freeze");
-    evntBus.$off("unfreeze");
+    evntBus.off("show_mesage");
+    evntBus.off("set_company");
+    evntBus.off("register_pos_profile");
+    evntBus.off("set_last_invoice");
+    evntBus.off("update_invoice_doc");
+    evntBus.off("set_pos_opening_shift");
+    evntBus.off("register_pos_data");
+    evntBus.off("invoice_submitted");
+    evntBus.off("freeze");
+    evntBus.off("unfreeze");
   },
 };
 </script>
