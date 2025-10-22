@@ -1,4 +1,3 @@
-````instructions
 # AI Agent Instructions for POS Awesome Lite
 
 ## Project Philosophy
@@ -24,14 +23,14 @@ posawesome/
 │   ├── doctype/            # Custom DocTypes (only class methods, no @frappe.whitelist())
 │   └── page/               # Frappe pages (posapp entry point)
 └── public/js/              # Frontend code
-    ├── posawesome.bundle.js # Bundle entry: imports toConsole, onscan, posapp
+    ├── posawesome.bundle.js # Bundle entry: imports toConsole, posapp
     ├── onscan.js           # Barcode scanning library (moved from page/posapp/)
     └── posapp/
         ├── components/     # Vue 3 components
         │   ├── Navbar.vue  # Top nav with shift info, payment totals (💰💳)
         │   └── pos/        # POS-specific components
         │       ├── Pos.vue       # Main container
-        │       ├── Invoice.vue   # Invoice management (3,129 lines - being simplified)
+        │       ├── Invoice.vue   # Invoice management (2,357 lines - being simplified)
         │       ├── ItemsSelector.vue # Item grid with 30+ scans/sec
         │       └── Payments.vue  # Payment modes
         ├── api_mapper.js   # Central API endpoint registry (ALWAYS USE THIS)
@@ -46,7 +45,7 @@ posawesome/
 ### Frontend: Vue 3 (Pure HTML/CSS - NO Vuetify)
 - **Stack**: Vue 3.4.21, mitt 3.0.1 (event bus), NO frameworks
 - **Entry**: `posawesome/page/posapp/posapp.js` → loads Vue app via `new frappe.PosApp.posapp()`
-- **Bundle**: `posawesome.bundle.js` imports: toConsole → onscan → posapp
+- **Bundle**: `posawesome.bundle.js` imports: toConsole → posapp
 - **Build**: `bench build --app posawesome` (esbuild, ~606KB JS, ~114KB CSS)
 
 ## Critical Development Patterns
@@ -205,7 +204,7 @@ console.warn('Deprecated API usage');
 ```python
 # Vue.js + libraries bundled in posawesome.bundle.js
 app_include_js = [
-    "posawesome.bundle.js",  # Contains: toConsole, onscan, posapp
+    "posawesome.bundle.js",  # Contains: toConsole, posapp
 ]
 
 # Inject JS into ERPNext forms
@@ -269,7 +268,7 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 ### ✅ Bundle Organization (NEW)
 - **onscan.js**: Moved from `page/posapp/` to `public/js/`
 - **Reason**: Cleaner structure, avoid Jinja2 templates in JS
-- **Import**: `posawesome.bundle.js` → `import './onscan';`
+- **Import**: `posawesome.bundle.js` → clean ES6 imports only
 - **Benefit**: No TypeScript errors, modern ES6 imports
 
 ### ✅ API Migration Completed
@@ -280,6 +279,12 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 ### ✅ Vuetify Removal
 - **All Vuetify components removed**: Replaced with pure HTML/CSS
 - **Build size**: Optimized to ~606KB JS, ~114KB CSS
+
+### ✅ Success Logging Cleanup (NEW)
+- **Removed**: `frappe.log_error()` calls for successful operations
+- **Examples**: "Opening allowed", "Retrieved X users", "Successfully submitted"
+- **Kept**: Only actual error logging in exception handlers
+- **Benefit**: Cleaner error logs, reduced noise
 
 ## Code Review Checklist
 
@@ -330,5 +335,3 @@ Before committing:
 8. **❌ Multiple API calls** → ✅ Use batch queue system
 9. **❌ Forgetting beforeUnmount()** → ✅ Clean up listeners/timers
 10. **❌ Large components (>500 lines)** → ✅ Split into smaller files
-
-````
