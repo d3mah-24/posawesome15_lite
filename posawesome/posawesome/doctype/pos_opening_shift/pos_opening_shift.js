@@ -11,7 +11,7 @@ frappe.ui.form.on('POS Opening Shift', {
 			}
 			frm.set_query("user", function(doc) {
 				return {
-					query: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.get_profile_users",
+					query: "posawesome.posawesome.api.pos_opening_shift.get_profile_users.get_profile_users",
 					filters: { 'parent': doc.pos_profile }
 				};
 			});
