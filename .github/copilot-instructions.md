@@ -1,52 +1,227 @@
 # AI Agent Instructions for POS Awesome Lite
 
-## Project Philosophy
+## Core Principles
 
-**POS Awesome Lite = Modern Vue.js Interface + Original ERPNext Engine**
+**POS Awesome Lite = Vue.js UI + ERPNext Engine**
+- Lightweight web interface on top of ERPNext v15 foundation
+- Uses original ERPNext patterns and controllers (zero custom calculations)
+- Framework-first approach: all business logic via ERPNext
 
-This is NOT a standalone system. It's a lightweight web interface built on top of ERPNext's proven foundation, using original ERPNext patterns (sales_invoice.js) and controllers. Zero custom calculations - all framework-powered.
+## Architecture at a Glance
 
-## Architecture Overview
-
-### Backend: Frappe App Structure
+### Backend Structure
 ```
-posawesome/
-├── posawesome/              # Main module (note: nested same name)
-│   ├── api/                 # API endpoints by DocType (ONE FUNCTION PER FILE)
-│   │   ├── sales_invoice/   # CRUD: create, update, submit, delete, get_return
-│   │   ├── customer/        # get, get_many, create, update, addresses, coupons
-│   │   ├── item/           # get_items, get_items_groups, barcode, batch
-│   │   ├── pos_profile/    # get_default_payment, get_opening_dialog_data
-│   │   ├── pos_offer/      # get_applicable_offers, get_offers_for_profile
-│   │   ├── pos_opening_shift/ # Shift management APIs
-│   │   └── pos_closing_shift/ # Shift closing + payment totals APIs
-│   ├── doctype/            # Custom DocTypes (only class methods, no @frappe.whitelist())
-│   └── page/               # Frappe pages (posapp entry point)
-└── public/js/              # Frontend code
-    ├── posawesome.bundle.js # Bundle entry: imports toConsole, posapp
-    ├── onscan.js           # Barcode scanning library (moved from page/posapp/)
-    └── posapp/
-        ├── components/     # Vue 3 components
-        │   ├── Navbar.vue  # Top nav with shift info, payment totals (💰💳)
-        │   └── pos/        # POS-specific components
-        │       ├── Pos.vue       # Main container
-        │       ├── Invoice.vue   # Invoice management (2,357 lines - being simplified)
-        │       ├── ItemsSelector.vue # Item grid with 30+ scans/sec
-        │       └── Payments.vue  # Payment modes
-        ├── api_mapper.js   # Central API endpoint registry (ALWAYS USE THIS)
-        └── bus.js          # Event bus (mitt 3.0.1)
+posawesome/posawesome/api/          # ONE function per file (STRICT)
+├── sales_invoice/                  # create, update, submit, delete
+├── customer/                       # get, get_many, create, update
+├── item/                           # get_items, get_barcode_item (unified)
+├── pos_profile/                    # get_default_payment, opening_dialog
+├── pos_opening_shift/              # shift management
+└── pos_closing_shift/              # shift closing + payment totals
 ```
 
-**Critical Pattern**: API functions follow strict naming: `posawesome.posawesome.api.[doctype].[operation].[operation]_[doctype]`
-- Example: `posawesome.posawesome.api.sales_invoice.create.create_invoice`
-- All endpoints mapped in `api_mapper.js` - **ALWAYS use API_MAP constants, never hardcode paths**
-- Example: `API_MAP.POS_CLOSING_SHIFT.GET_CURRENT_CASH_TOTAL` not hardcoded string
+**API Naming**: `posawesome.posawesome.api.[doctype].[operation].[operation]_[doctype]`
 
-### Frontend: Vue 3 (Pure HTML/CSS - NO Vuetify)
-- **Stack**: Vue 3.4.21, mitt 3.0.1 (event bus), NO frameworks
-- **Entry**: `posawesome/page/posapp/posapp.js` → loads Vue app via `new frappe.PosApp.posapp()`
-- **Bundle**: `posawesome.bundle.js` imports: toConsole → posapp
-- **Build**: `bench build --app posawesome` (esbuild, ~606KB JS, ~114KB CSS)
+### Frontend Structure  
+```
+posawesome/public/js/posapp/
+├── api_mapper.js                   # Central API registry (ALWAYS USE)
+├── bus.js                          # Event bus (mitt 3.0.1)
+└── components/
+    ├── Navbar.vue                  # Top nav + payment totals
+    └── pos/
+        ├── Invoice.vue             # Main invoice (2,357 lines)
+        ├── ItemsSelector.vue       # Items + barcode (30+ scans/sec)
+        └── Payments.vue            # Payment processing
+```
+
+**Tech Stack**: Vue 3.4.21 + Vuetify 3.6.9, mitt event bus, onScan.js for barcode
+
+## Critical Patterns
+
+### 1. 3-API Batch Queue (MANDATORY)
+Only 3 API calls per invoice lifecycle:
+```javascript
+// 1. CREATE (first item)
+frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, args: { data: doc } });
+
+// 2. UPDATE (batch after 1s idle - collect qty, discounts, payments)
+frappe.call({ method: API_MAP.SALES_INVOICE.UPDATE, args: { data: doc } });
+
+// 3. SUBMIT (finalize + print)
+frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });
+```
+- Debounce 1000ms, max 50 operations/batch
+- Clear temp cache after response
+- NO caching except temp batches
+
+### 2. Backend Standards
+```python
+# posawesome/posawesome/api/customer/get_customer.py
+@frappe.whitelist()
+def get_customer(customer_id):
+    return frappe.get_doc("Customer", customer_id, 
+                          fields=["name", "customer_name", "mobile_no"])  # MUST specify fields
+```
+
+**Requirements**:
+- One function per file (STRICT)
+- Specific field selection (NO `SELECT *`)
+- Parametrized SQL with `%s` placeholders
+- Check column names: `DESCRIBE \`tabDocType\`;`
+- `ignore_version=True` + immediate `frappe.db.commit()`
+- Target <100ms response time
+- `frappe.log_error()` ONLY for actual errors (not success)
+
+### 3. Event Bus (mitt)
+```javascript
+// Emit
+evntBus.emit('add_item', item);
+
+// Listen  
+evntBus.on('add_item', this.handleAddItem);
+
+// CRITICAL: Clean up in beforeUnmount()
+beforeUnmount() {
+  evntBus.off('add_item', this.handleAddItem);
+  if (this._debounceTimer) clearTimeout(this._debounceTimer);
+  if (this.cashUpdateInterval) clearInterval(this.cashUpdateInterval);
+}
+```
+
+**Common Events**: `add_item`, `update_customer`, `new_invoice`, `show_payment`, `show_mesage` (typo intentional)
+
+### 4. Barcode Scanning
+- **Unified Handler**: `API_MAP.ITEM.GET_BARCODE_ITEM` (backend auto-detects type)
+- **Types**: Standard EAN/UPC, weight scale (prefix), private/custom
+- **Performance**: 30+ scans/second via onScan.js
+- **Location**: `public/js/onscan.js` (imported in bundle)
+
+### 5. UI Components
+**Pure HTML/CSS** (NO Vuetify in new code):
+```vue
+<!-- ✅ Native HTML -->
+<table class="data-table">
+  <tr v-for="item in items" :key="item.name">
+    <td>{{ item.name }}</td>
+  </tr>
+</table>
+
+<!-- ❌ NO Vuetify -->
+<v-data-table>  <!-- NO -->
+```
+
+**Rules**: Components <500 lines, virtual scroll >50 items, no animations, local assets only
+
+### 6. Logging Policy
+```javascript
+// ❌ NEVER
+console.log("Fetching data...");
+
+// ✅ ONLY errors/warnings
+console.error('Error fetching cash total:', err);
+console.warn('Deprecated API usage');
+```
+
+## Developer Workflows
+
+**Backend Changes**:
+```bash
+find . -name "*.pyc" -delete && find . -type d -name "__pycache__" -exec rm -rf {} + && bench restart
+```
+
+**Frontend Changes**:
+```bash
+cd ~/frappe-bench-15 && bench clear-cache && bench build --app posawesome
+```
+
+**Debug DB Schema**:
+```bash
+bench mariadb
+DESCRIBE `tabSales Invoice Payment`;  # Check actual column names
+```
+
+**Full Rebuild** (after major changes):
+```bash
+bench clear-cache && bench clear-website-cache && bench build --app posawesome --force && bench restart
+```
+
+## Key Integration Points
+
+### Frappe Hooks (`hooks.py`)
+```python
+app_include_js = ["posawesome.bundle.js"]  # Vue app + libs
+
+doctype_js = {
+    "POS Profile": "public/js/pos_profile.js",
+    "Sales Invoice": "public/js/invoice.js",
+}
+
+doc_events = {
+    "Sales Invoice": {
+        "before_submit": "posawesome.posawesome.api.sales_invoice.before_submit.before_submit",
+        "before_cancel": "posawesome.posawesome.api.sales_invoice.before_cancel.before_cancel",
+    }
+}
+```
+
+### API Mapper (ALWAYS USE)
+```javascript
+// posawesome/public/js/posapp/api_mapper.js
+const API_MAP = {
+  SALES_INVOICE: {
+    CREATE: "posawesome.posawesome.api.sales_invoice.create.create_invoice",
+    UPDATE: "posawesome.posawesome.api.sales_invoice.update.update_invoice",
+    SUBMIT: "posawesome.posawesome.api.sales_invoice.submit.submit_invoice",
+  },
+  ITEM: {
+    GET_BARCODE_ITEM: "posawesome.posawesome.api.item.get_barcode_item.get_barcode_item",
+  }
+};
+```
+
+**Usage**: `frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, ... })`
+
+## What Makes This Unique
+
+- **Barcode Performance**: 30+ scans/second (onScan.js)
+- **Zero Frontend Calc**: All math via ERPNext controllers
+- **Batch Queue System**: Only 3 API calls per invoice
+- **One Function Per File**: Strictly enforced API structure
+- **Shift-Based Tracking**: Real-time cash/non-cash totals in navbar
+- **Local Assets**: No external CDN requests
+
+## Common Pitfalls
+
+1. ❌ Hardcoded API paths → ✅ Use `API_MAP` constants
+2. ❌ `console.log()` → ✅ Only `console.error/warn`
+3. ❌ `SELECT *` queries → ✅ Specify fields in `frappe.get_doc()`
+4. ❌ Wrong column names → ✅ Verify with `DESCRIBE`
+5. ❌ Vuetify in new code → ✅ Pure HTML/CSS
+6. ❌ `frappe.log_error()` for success → ✅ Only for errors
+7. ❌ Multiple API calls → ✅ Use batch queue
+8. ❌ Forgetting `beforeUnmount()` → ✅ Clean up listeners/timers
+9. ❌ Large components (>500 lines) → ✅ Split into smaller files
+10. ❌ External CDN → ✅ Local assets only
+
+## Recent Changes (October 2025)
+
+- ✅ Payment totals in navbar (cash 💰 + non-cash 💳)
+- ✅ Console.log cleanup (30+ removed)
+- ✅ Success logging cleanup (`frappe.log_error()` only for errors)
+- ✅ Bundle organization (onscan.js → public/js/)
+- ✅ Vuetify removal (pure HTML/CSS replacement)
+- ✅ API migration (all @frappe.whitelist() → /api/)
+
+## Key Files
+
+1. `api_mapper.js` - API endpoint registry
+2. `posawesome.bundle.js` - Bundle entry
+3. `hooks.py` - Frappe integration
+4. `api/` - All whitelisted functions
+5. `components/Navbar.vue` - Nav + payment totals
+6. `components/pos/Invoice.vue` - Main invoice logic
+7. `README.md` - Complete documentation
 
 ## Critical Development Patterns
 
