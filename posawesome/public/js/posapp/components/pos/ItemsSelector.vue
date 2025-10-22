@@ -1227,7 +1227,6 @@ export default {
 }
 
 .table-header {
-  background: linear-gradient(180deg,rgba(255, 174, 0, 1) 0%, rgba(255, 174, 0, 0.33) 50%);
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -1236,7 +1235,11 @@ export default {
   font-size: 0.75rem;
   font-weight: 600;
   color: #424242;
+  background: linear-gradient(180deg,rgba(255, 174, 0, 1) 0%, rgba(255, 174, 0, 0.33) 50%);
   border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .table-row {
