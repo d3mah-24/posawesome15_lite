@@ -9,7 +9,19 @@ if (typeof window !== 'undefined') {
     window.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false;
 }
 
-
+// Define SetVueGlobals function to set up Vue global properties
+function SetVueGlobals(app) {
+    // Set up global properties that components might need
+    app.config.globalProperties.$frappe = frappe;
+    app.config.globalProperties.$__ = __; // Frappe's translation function
+    
+    // Make common Frappe utilities available globally
+    if (typeof frappe !== 'undefined') {
+        app.config.globalProperties.$call = frappe.call;
+        app.config.globalProperties.$format = frappe.format;
+        app.config.globalProperties.$db = frappe.db;
+    }
+}
 
 frappe.provide('frappe.PosApp');
 
