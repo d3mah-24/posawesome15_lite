@@ -158,7 +158,7 @@
             <table class="data-table">
               <thead>
                 <tr class="table-header">
-                  <th v-for="header in getItemsHeaders()" :key="header.value" class="table-header-cell">
+                  <th v-for="header in getItemsHeaders()" :key="header.value" class="table-header-cell" :style="{ textAlign: header.align || 'left' }">
                     {{ header.title || header.text }}
                   </th>
                 </tr>
@@ -170,7 +170,7 @@
                   @click="add_item_table(item)"
                   class="table-row"
                 >
-                  <td v-for="header in getItemsHeaders()" :key="header.value" class="table-cell">
+                  <td v-for="header in getItemsHeaders()" :key="header.value" class="table-cell" :style="{ textAlign: header.align || 'left' }">
                     <span v-if="header.key === 'rate'" class="primary--text">
                       {{ formatCurrency(item.rate) }}
                     </span>
@@ -615,6 +615,7 @@ export default {
         {
           title: "Qty",
           value: "actual_qty",
+          key: "actual_qty",
           align: "center",
           width: "25%",
         },
@@ -1226,13 +1227,12 @@ export default {
 }
 
 .table-header {
-  background: #f5f5f5;
+  background: linear-gradient(180deg,rgba(255, 174, 0, 1) 0%, rgba(255, 174, 0, 0.33) 50%);
   border-bottom: 1px solid #e0e0e0;
 }
 
 .table-header-cell {
   padding: 8px 12px;
-  text-align: left;
   font-size: 0.75rem;
   font-weight: 600;
   color: #424242;
