@@ -103,18 +103,18 @@
               :key="idx"
               class="item-grid-col"
             >
-              <v-card hover="hover" @click="add_item(item)" class="item-card">
-                <v-img
-                  :src="
-                    item.image ||
-                    '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
-                  "
-                  class="white--text align-start item-image"
-                  gradient="to bottom, rgba(0,0,0,0), rgba(0,0,0,0.4)"
-                >
-                  <v-card-text
+              <div @click="add_item(item)" class="item-card">
+                <div class="item-image-wrapper">
+                  <img
+                    :src="
+                      item.image ||
+                      '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
+                    "
+                    class="item-image"
+                  />
+                  <div
                     v-if="item.actual_qty !== undefined"
-                    class="text-caption px-1 pt-1 text-right"
+                    class="stock-indicator"
                   >
                     <span
                       :style="{
@@ -124,10 +124,10 @@
                     >
                       Qty: {{ formatFloat(item.actual_qty) }}
                     </span>
-                  </v-card-text>
-                </v-img>
+                  </div>
+                </div>
 
-                <v-card-text class="text--primary pa-1 text-center">
+                <div class="item-card-text text-center">
                   <div
                     class="text-caption"
                     style="font-weight: bold; margin-bottom: 4px"
@@ -144,8 +144,8 @@
                       }}{{ formatCurrency(item.rate) || 0 }}
                     </span>
                   </div>
-                </v-card-text>
-              </v-card>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -155,24 +155,35 @@
             ref="itemsScrollArea"
             :style="itemsScrollStyle"
           >
-            <v-data-table
-              :headers="getItemsHeaders()"
-              :items="filtred_items"
-              item-key="item_code"
-              class="elevation-1"
-              hide-default-footer
-              :items-per-page="50"
-              @click:row="add_item_table"
-            >
-              <template v-slot:item.rate="{ item }">
-                <span class="primary--text">
-                  {{ formatCurrency(item.rate) }}
-                </span>
-              </template>
-              <template v-slot:item.actual_qty="{ item }">
-                {{ formatFloat(item.actual_qty) }}
-              </template>
-            </v-data-table>
+            <table class="data-table">
+              <thead>
+                <tr class="table-header">
+                  <th v-for="header in getItemsHeaders()" :key="header.value" class="table-header-cell">
+                    {{ header.title || header.text }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr 
+                  v-for="item in filtred_items" 
+                  :key="item.item_code"
+                  @click="add_item_table(item)"
+                  class="table-row"
+                >
+                  <td v-for="header in getItemsHeaders()" :key="header.value" class="table-cell">
+                    <span v-if="header.key === 'rate'" class="primary--text">
+                      {{ formatCurrency(item.rate) }}
+                    </span>
+                    <span v-else-if="header.key === 'actual_qty'">
+                      {{ formatFloat(item.actual_qty) }}
+                    </span>
+                    <span v-else>
+                      {{ item[header.key] }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -620,10 +631,10 @@ export default {
       return items_headers;
     },
 
-    add_item_table(event, item) {
+    add_item_table(item) {
       // Add the item from the table - use the item object directly
       evntBus.emit("add_item", {
-        ...item.item,
+        ...item,
         qty: this.qty || 1,
       });
       this.qty = 1;
@@ -1112,10 +1123,41 @@ export default {
 }
 
 /* Special styling for table view - no padding, full height */
-.items-content:has(.v-data-table) .items-scrollable {
+.items-content:has(.data-table) .items-scrollable {
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: block;
+}
+
+/* Ensure table takes full width and height */
+.items-scrollable .data-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* Column width distribution */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+  width: 30%;
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+  width: 25%;
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) {
+  width: 10%;
+}
+
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) {
+  width: 25%;
+}
+
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) {
+  width: 10%;
 }
 
 /* ===== ITEM CARD STYLES ===== */
@@ -1132,7 +1174,7 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
-.item-card .v-card__text {
+.item-card .item-card__text {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1141,12 +1183,12 @@ export default {
   padding: 4px !important;
 }
 
-.item-card .v-img {
+.item-card .item-image {
   position: relative;
   height: 60px !important;
 }
 
-.item-card .v-img .v-card__text {
+.item-card .item-image .item-card__text {
   position: absolute;
   top: 0;
   right: 0;
@@ -1157,50 +1199,74 @@ export default {
   font-size: 0.65rem !important;
 }
 
+.item-image-wrapper {
+  position: relative;
+  height: 80px;
+  overflow: hidden;
+}
+
+.stock-indicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.item-card-text {
+  padding: 8px;
+}
+
 .item-card .text-caption {
   font-size: 0.7rem !important;
   line-height: 1.2 !important;
 }
 
 /* ===== DATA TABLE STYLES ===== */
-.v-data-table {
-  font-size: 0.75rem !important;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  background: white;
 }
 
-.v-data-table .v-data-table__wrapper {
-  flex: 1;
-  overflow-y: auto !important;
-  overflow-x: hidden;
-  max-height: none !important;
+.table-header {
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
 }
 
-.v-data-table .v-data-table__wrapper table {
-  font-size: 0.7rem !important;
+.table-header-cell {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #424242;
+  border-bottom: 1px solid #e0e0e0;
 }
 
-.v-data-table .v-data-table__wrapper table th,
-.v-data-table .v-data-table__wrapper table td {
-  padding: 4px 6px !important;
-  font-size: 0.7rem !important;
-  font-weight: 500 !important;
-  line-height: 1.2 !important;
-}
-
-.v-data-table .v-data-table__wrapper table th {
-  font-weight: 600 !important;
-  font-size: 0.75rem !important;
-  background-color: #f5f5f5 !important;
-}
-
-.v-data-table .v-data-table__wrapper table tr {
+.table-row {
+  border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.v-data-table .v-data-table__wrapper table tr:hover {
-  background: #e3f2fd !important;
+.table-row:hover {
+  background: #e3f2fd;
+}
+
+.table-cell {
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  color: #424242;
+  vertical-align: middle;
+}
+
+.primary--text {
+  color: #1976d2;
+  font-weight: 600;
 }
 
 /* ===== SCROLLBAR STYLING ===== */
@@ -1229,7 +1295,7 @@ export default {
     min-height: 100px !important;
   }
 
-  .item-card .v-img {
+  .item-card .item-image {
     height: 55px !important;
   }
 
@@ -1253,7 +1319,7 @@ export default {
     min-height: 90px !important;
   }
 
-  .item-card .v-img {
+  .item-card .item-image {
     height: 50px !important;
   }
 
