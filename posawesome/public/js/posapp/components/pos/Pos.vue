@@ -26,7 +26,7 @@
 
       <div class="pos-right-panel">
         <div class="panel-content">
-          <Invoice :is_payment="payment"></Invoice>
+          <Invoice :is_payment="payment" :offer-applied="offerApplied" :offer-removed="offerRemoved"></Invoice>
         </div>
       </div>
     </div>
@@ -99,11 +99,34 @@ export default {
   methods: {
     // ===== OFFER EVENT HANDLERS =====
     handleOfferApplied(offer) {
-      this.$emit("offerApplied", offer);
+      console.log("[Pos.vue] Offer applied:", offer);
+      
+      // Reset first to null to ensure reactivity
+      this.offerApplied = null;
+      this.offerRemoved = false;
+      
+      // Use $nextTick to ensure reset is processed
+      this.$nextTick(() => {
+        // Create new object with timestamp to force reactivity
+        this.offerApplied = {
+          ...offer,
+          _timestamp: Date.now()
+        };
+        console.log("this.offerApplied:", this.offerApplied);
+      });
     },
 
     handleOfferRemoved() {
-      this.$emit("offerRemoved");
+      console.log("[Pos.vue] Offer removed");
+      this.offerApplied = null;
+      this.offerRemoved = true;
+      
+      // Reset offerRemoved flag after a short delay
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.offerRemoved = false;
+        }, 100);
+      });
     },
 
     async check_opening_entry() {
@@ -358,7 +381,7 @@ export default {
     });
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     // Clean up event listeners
     this.unregisterEventListeners();
   },
@@ -380,7 +403,7 @@ export default {
   gap: 5px;
   min-height: calc(100vh - 130px) !important;
   width: 100%;
-  margin-top: 10px;
+  margin-top: 3px !important;
 }
 
 /* ===== LEFT PANEL (Items/Offers/Coupons/Payments) ===== */
