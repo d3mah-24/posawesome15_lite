@@ -35,12 +35,12 @@
         
         <div class="badge cash-badge">
           <i class="mdi mdi-cash-multiple" style="font-size: 12px; color: var(--success);"></i>
-          <span>💰 {{ formatCurrency(totalCash) }}</span>
+          <span>{{ formatCurrency(totalCash) }}</span>
         </div>
         
         <div class="badge card-badge">
           <i class="mdi mdi-credit-card" style="font-size: 12px; color: var(--primary);"></i>
-          <span>💳 {{ formatCurrency(totalNonCash) }}</span>
+          <span>{{ formatCurrency(totalNonCash) }}</span>
         </div>
 
         <div class="badge" :class="pingClass">
