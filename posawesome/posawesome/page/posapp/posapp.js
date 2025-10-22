@@ -10,7 +10,7 @@ frappe.pages['posapp'].on_page_load = function (wrapper) {
 
 	$('div.navbar-fixed-top').find('.container').css('padding', '0');
 
-	$("head").append("<link rel='stylesheet' href='/assets/posawesome/page/posapp/custom-framework.css'>");
+	$("head").append("<link rel='stylesheet' href='/assets/posawesome/posawesome/page/posapp/custom-framework.css'>");
 	$("head").append("<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@mdi/font@6.9.96/css/materialdesignicons.min.css'>");
 	$("head").append("<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900' />");
 	
