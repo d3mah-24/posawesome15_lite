@@ -12,14 +12,15 @@ This is NOT a standalone system. It's a lightweight web interface built on top o
 ```
 posawesome/
 ├── posawesome/              # Main module (note: nested same name)
-│   ├── api/                 # API endpoints by DocType
+│   ├── api/                 # API endpoints by DocType (RECENTLY MIGRATED)
 │   │   ├── sales_invoice/   # CRUD: create, update, submit, delete, get_return
 │   │   ├── customer/        # get, get_many, create, update, addresses, coupons
 │   │   ├── item/           # get_items, get_items_groups, barcode, batch
-│   │   ├── pos_profile/    # get_default_payment
+│   │   ├── pos_profile/    # get_default_payment, get_opening_dialog_data
 │   │   ├── pos_offer/      # get_applicable_offers, get_offers_for_profile
-│   │   └── pos_opening_shift/ # shift management
-│   ├── doctype/            # Custom DocTypes
+│   │   ├── pos_opening_shift/ # NEW: shift management APIs
+│   │   └── pos_closing_shift/ # NEW: shift closing APIs
+│   ├── doctype/            # Custom DocTypes (cleaned - only class methods)
 │   └── page/               # Frappe pages
 └── public/js/              # Frontend code
     └── posapp/
@@ -30,6 +31,7 @@ posawesome/
 
 **Critical Pattern**: API functions follow strict naming: `posawesome.posawesome.api.[doctype].[operation].[operation]_[doctype]`
 - Example: `posawesome.posawesome.api.sales_invoice.create.create_invoice`
+- **BREAKING CHANGE**: All shift APIs moved from `doctype.pos_*_shift.pos_*_shift.*` to `api.pos_*_shift.*.*`
 - All endpoints mapped in `api_mapper.js` - **ALWAYS use API_MAP constants, never hardcode paths**
 
 ### Frontend: Vue 3 (Pure HTML/CSS)
@@ -38,7 +40,7 @@ posawesome/
 - **Entry**: `posawesome/page/posapp/posapp.js` loads Vue app
 - **Components**: `/posawesome/public/js/posapp/components/pos/`
   - `Pos.vue` - Main container, panel switching
-  - `Invoice.vue` - Invoice management (simplified from 3,484 lines)
+  - `Invoice.vue` - Invoice management (target: simplify from 3,484 lines)
   - `ItemsSelector.vue` - Item grid/list with barcode scanning (30+ scans/sec)
   - `Payments.vue` - Payment mode handling
   - `Customer.vue` - Customer selection
@@ -72,7 +74,7 @@ frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });
 
 ### 2. Backend API Standards (MANDATORY)
 
-**File Structure**: One function per file
+**File Structure**: One function per file (RECENTLY ENFORCED)
 ```python
 # posawesome/posawesome/api/customer/get_customer.py
 @frappe.whitelist()
@@ -94,7 +96,7 @@ def get_customer(customer_id):
 - Use `fields=["field1", "field2"]` parameter - **NO SELECT * allowed**
 - Use `ignore_version=True` for faster saves
 - Call `frappe.db.commit()` immediately after operations
-- Implement `frappe.log_error()` at end of each function
+- Implement `frappe.log_error(f"[filename.py][function_name] Result: {result}")` at end of each function
 
 ### 3. Event Bus Communication
 
@@ -195,14 +197,32 @@ bench clear-cache && bench clear-website-cache && bench build --app posawesome -
 - Backend: `frappe.log_error(f"[filename.py][function_name] Result: {result}")`
 - Frontend: Use `console.error()` only for actual errors (no debug console.log)
 
+## Recent Major Changes (October 2025)
+
+### ✅ API Migration Completed
+- **All @frappe.whitelist() functions** moved from DocType files to `/api/` folder structure
+- **12 functions migrated**: 6 pos_closing_shift + 6 pos_opening_shift
+- **DocType files cleaned**: Only class methods remain (e.g., `get_payment_reconciliation_details()`)
+- **api_mapper.js updated**: All paths now point to `/api/` structure
+- **DocType .js files fixed**: Hardcoded calls updated to new paths
+
+### ✅ Vuetify Removal
+- **All Vuetify components removed**: v-data-table, v-date-picker, etc.
+- **Migrated to pure HTML/CSS**: Better performance, smaller bundle
+- **Build size optimized**: ~588KB JavaScript, ~113KB CSS
+
+### ✅ Console Cleanup
+- **All debug console.log removed**: Only console.error/warn remain
+- **Sound notifications removed**: No frappe.utils.play_sound() calls
+
 ## Active Simplification Initiative
 
 **Target**: Reduce Invoice.vue from 3,484 → 400 lines (89% reduction)
 
-See `improving_frontend_docs/` for detailed analysis:
-- `COMPARISON.md` - ERPNext vs POSAwesome patterns (1,169 vs 3,484 lines)
-- `PLAN.md` - 5-phase migration roadmap with code examples
-- `README.md` - Quick overview and metrics
+See `improvements_tasks/` for detailed analysis:
+- `frontend/frontend_analysis.md` - ERPNext vs POSAwesome patterns analysis
+- `backend/erpnext_original_invoice_approach.md` - Framework patterns guide
+- `backend/API_STRUCTURE.md` - Complete API documentation
 
 **Key Insight**: ERPNext's sales_invoice.js does same functionality in 1,169 lines because framework handles:
 - Automatic calculations (totals, taxes, discounts)
@@ -210,13 +230,7 @@ See `improving_frontend_docs/` for detailed analysis:
 - CRUD operations (save, submit, validate)
 - Print formats
 
-**When modifying Invoice.vue**: Prefer framework patterns over manual implementations. Check PLAN.md for approved simplification patterns.
-
-**Recent Improvements**:
-- ✅ Removed all Vuetify dependencies - migrated to pure HTML/CSS
-- ✅ Cleaned up all debug console.log statements
-- ✅ Removed all sound notifications (`frappe.utils.play_sound()`)
-- 🎯 Target: Continue Invoice.vue simplification using ERPNext patterns
+**When modifying Invoice.vue**: Prefer framework patterns over manual implementations.
 
 ## Code Review Checklist
 
@@ -241,12 +255,13 @@ Before committing:
 
 ## Key Files to Understand
 
-1. `api_mapper.js` - ALL API endpoints (never hardcode)
-2. `improving_frontend_docs/PLAN.md` - Framework migration strategy
+1. `api_mapper.js` - ALL API endpoints (never hardcode) - **RECENTLY UPDATED**
+2. `improvements_tasks/backend/erpnext_original_invoice_approach.md` - Framework migration strategy
 3. `improvements_tasks/frontend/frontend_improvment_policy.md` - Batch queue rules
 4. `improvements_tasks/backend/backend_improvment_policy.md` - API standards
 5. `hooks.py` - Frappe integration points
 6. `Invoice.vue` - Main target for simplification (3,484 lines)
+7. `api/` folder structure - **NEW**: All @frappe.whitelist() functions organized by DocType
 
 ## What Makes This Project Unique
 
@@ -254,5 +269,5 @@ Before committing:
 - **Zero Frontend Calculations**: All math done server-side using ERPNext controllers
 - **Framework-First**: Uses original ERPNext methods (sales_invoice.js patterns)
 - **Batch Queue System**: Only 3 API calls per invoice (CREATE → UPDATE → SUBMIT)
-- **DocType-Based APIs**: One function per file, organized by DocType
+- **DocType-Based APIs**: One function per file, organized by DocType - **RECENTLY ENFORCED**
 - **No Reinventing**: Leverages ERPNext's battle-tested foundation
