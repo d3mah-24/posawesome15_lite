@@ -51,7 +51,6 @@ def check_opening_time_allowed(pos_profile):
         allowed = start_dt <= current_dt <= end_dt
 
         if allowed:
-            frappe.log_error(f"[check_opening_time_allowed.py][check_opening_time_allowed] Opening allowed for profile: {pos_profile}")
             return {"allowed": True, "message": "Opening allowed"}
         else:
             start_str = start_time.strftime("%H:%M")
@@ -59,7 +58,6 @@ def check_opening_time_allowed(pos_profile):
             if start_time > end_time:
                 end_str += " (next day)"
             
-            frappe.log_error(f"[check_opening_time_allowed.py][check_opening_time_allowed] Opening not allowed for profile: {pos_profile}, window: {start_str} : {end_str}")
             return {
                 "allowed": False, 
                 "message": f"{start_str} : {end_str}"
