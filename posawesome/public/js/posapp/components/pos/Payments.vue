@@ -208,27 +208,15 @@
             </div>
             <div class="option-date" v-if="is_credit_sale">
               <label>Due Date</label>
-              <v-menu ref="date_menu" v-model="date_menu" :close-on-content-click="false" transition="scale-transition">
-                <template v-slot:activator="{ props: { on, attrs } }">
-                  <div class="text-field-wrapper" v-bind="attrs" v-on="on">
-                    <input
-                      type="text"
-                      class="custom-text-field date-field"
-                      v-model="invoice_doc.due_date"
-                      readonly
-                      placeholder="Select date"
-                    />
-                  </div>
-                </template>
-                <v-date-picker
+              <div class="text-field-wrapper">
+                <input
+                  type="date"
+                  class="custom-text-field date-field"
                   v-model="invoice_doc.due_date"
-                  :no-title="true"
-                  scrollable
-                  color="primary"
                   :min="frappe.datetime.now_date()"
-                  @update:model-value="date_menu = false"
-                ></v-date-picker>
-              </v-menu>
+                  placeholder="Select date"
+                />
+              </div>
             </div>
   
           </div>
@@ -342,7 +330,6 @@
         loyalty_amount: 0,
         is_credit_sale: 0,
         is_write_off_change: 0,
-        date_menu: false,
         addresses: [],
         paid_change: 0,
         paid_change_rules: [],
@@ -595,7 +582,6 @@
               }
               evntBus.emit(EVENT_NAMES.SET_LAST_INVOICE, this.invoice_doc.name);
               this.showMessage(`Invoice ${r.message.name} submitted successfully`, "success");
-              frappe.utils.play_sound("submit");
               this.addresses = [];
               evntBus.emit(EVENT_NAMES.NEW_INVOICE, "false");
               evntBus.emit(EVENT_NAMES.INVOICE_SUBMITTED);
