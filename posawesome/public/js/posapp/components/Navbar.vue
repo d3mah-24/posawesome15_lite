@@ -32,6 +32,16 @@
           <i class="mdi mdi-counter" style="font-size: 12px; color: var(--primary);"></i>
           <span>QTY: {{ totalInvoicesQty }}</span>
         </div>
+        
+        <div class="badge cash-badge">
+          <i class="mdi mdi-cash-multiple" style="font-size: 12px; color: var(--success);"></i>
+          <span>💰 {{ formatCurrency(totalCash) }}</span>
+        </div>
+        
+        <div class="badge card-badge">
+          <i class="mdi mdi-credit-card" style="font-size: 12px; color: var(--primary);"></i>
+          <span>💳 {{ formatCurrency(totalNonCash) }}</span>
+        </div>
 
         <div class="badge" :class="pingClass">
           <i class="mdi mdi-wifi" :style="`font-size: 12px; color: ${pingIconColor};`"></i>
@@ -157,6 +167,9 @@ export default {
       // Ping variables
       pingTime: "000",
       pingInterval: null,
+      // Payment totals
+      totalCash: 0,
+      totalNonCash: 0,
     };
   },
   computed: {
@@ -265,6 +278,82 @@ export default {
   },
   // ===== SECTION 4: METHODS =====
   methods: {
+    // Format currency values
+    formatCurrency(value) {
+      // Handle null, undefined or NaN values
+      if (value === null || value === undefined || isNaN(value)) {
+        value = 0;
+      }
+      
+      // Convert to number if it's a string
+      if (typeof value === 'string') {
+        value = parseFloat(value) || 0;
+      }
+      
+      // Format the number with comma separators and 2 decimal places
+      return value.toLocaleString('en-US', { 
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2 
+      });
+    },
+    
+    // Fetch payment totals
+    fetchPaymentTotals() {
+      console.log("Fetching payment totals...");
+      
+      // Fetch cash total
+      frappe.call({
+        method: API_MAP.POS_CLOSING_SHIFT.GET_CURRENT_CASH_TOTAL,
+        callback: (r) => {
+          if (r.message && r.message.total !== undefined && r.message.total !== null) {
+            this.totalCash = parseFloat(r.message.total) || 0;
+            console.log("Cash total fetched:", this.totalCash);
+          } else {
+            console.log("No valid cash total received, setting to 0");
+            this.totalCash = 0;
+          }
+        },
+        error: (err) => {
+          console.error('Error fetching cash total:', err);
+          this.totalCash = 0;
+        }
+      });
+      
+      // Fetch non-cash total
+      frappe.call({
+        method: API_MAP.POS_CLOSING_SHIFT.GET_CURRENT_NON_CASH_TOTAL,
+        callback: (r) => {
+          if (r.message && r.message.total !== undefined && r.message.total !== null) {
+            this.totalNonCash = parseFloat(r.message.total) || 0;
+            console.log("Non-cash total fetched:", this.totalNonCash);
+          } else {
+            console.log("No valid non-cash total received, setting to 0");
+            this.totalNonCash = 0;
+          }
+        },
+        error: (err) => {
+          console.error('Error fetching non-cash total:', err);
+          this.totalNonCash = 0;
+        }
+      });
+    },
+    
+    // Set up interval to periodically update payment totals
+    setupCashUpdateInterval() {
+      // Clear existing interval if any
+      if (this.cashUpdateInterval) {
+        clearInterval(this.cashUpdateInterval);
+      }
+      
+      // Fetch initial totals
+      this.fetchPaymentTotals();
+      
+      // Set up interval to update totals (every 5 minutes)
+      this.cashUpdateInterval = setInterval(() => {
+        this.fetchPaymentTotals();
+      }, 300000); // 5 minutes in milliseconds
+    },
+    
     changePage(key) {
       this.$emit("changePage", key);
     },
@@ -573,6 +662,7 @@ export default {
           this.pos_opening_shift = data.pos_opening_shift;
           this.fetch_company_info();
           this.fetchShiftInvoiceCount();
+          this.fetchPaymentTotals(); // Fetch payment totals when POS profile is registered
           // External payments screen disabled - removed payments option
         });
         evntBus.on("set_last_invoice", (data) => {
@@ -584,15 +674,18 @@ export default {
         evntBus.on("set_pos_opening_shift", (data) => {
           this.pos_opening_shift = data;
           this.fetchShiftInvoiceCount();
+          this.fetchPaymentTotals(); // Fetch payment totals when shift is opened
         });
         evntBus.on("register_pos_data", (data) => {
           this.pos_opening_shift = data.pos_opening_shift;
+          this.fetchPaymentTotals(); // Fetch payment totals when POS data is registered
         });
         evntBus.on("invoice_submitted", () => {
           // Refresh invoice count when a new invoice is submitted
           // Add delay to wait for background job to complete
           setTimeout(() => {
             this.fetchShiftInvoiceCount();
+            this.fetchPaymentTotals(); // Update payment totals after invoice submission
           }, 2000); // Wait 2 seconds for background job
         });
         evntBus.on("freeze", (data) => {
@@ -627,6 +720,12 @@ export default {
     
     // Clean up page visibility listener
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    
+    // Clean up payment totals interval
+    if (this.cashUpdateInterval) {
+      clearInterval(this.cashUpdateInterval);
+      this.cashUpdateInterval = null;
+    }
 
     // Clean up all event listeners
     evntBus.off("show_mesage");
@@ -802,6 +901,18 @@ export default {
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   color: #1976d2;
   font-weight: 700;
+}
+
+.badge.cash-badge {
+  border-color: #4caf50;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #2e7d32;
+}
+
+.badge.card-badge {
+  border-color: #9c27b0;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  color: #7b1fa2;
 }
 
 /* Actions Container */
