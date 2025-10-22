@@ -51,17 +51,21 @@ const API_MAP = {
   // POS Opening Shift APIs (from OpeningDialog.vue, Pos.vue, Navbar.vue)
   POS_OPENING_SHIFT: {
     GET_OPENING_DATA: "posawesome.posawesome.api.pos_profile.get_opening_dialog_data.get_opening_dialog_data",
-    CREATE_OPENING_VOUCHER: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.create_opening_voucher",
-    GET_CURRENT_SHIFT_NAME: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.get_current_shift_name",
-    GET_USER_SHIFT_INVOICE_COUNT: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.get_user_shift_invoice_count",
-    MAKE_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening",
-    SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
-    CHECK_OPENING_TIME_ALLOWED: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.check_opening_time_allowed"
+    CREATE_OPENING_VOUCHER: "posawesome.posawesome.api.pos_opening_shift.create_opening_voucher.create_opening_voucher",
+    GET_CURRENT_SHIFT_NAME: "posawesome.posawesome.api.pos_opening_shift.get_current_shift_name.get_current_shift_name",
+    GET_USER_SHIFT_INVOICE_COUNT: "posawesome.posawesome.api.pos_opening_shift.get_user_shift_invoice_count.get_user_shift_invoice_count",
+    GET_PROFILE_USERS: "posawesome.posawesome.api.pos_opening_shift.get_profile_users.get_profile_users",
+    CHECK_OPENING_TIME_ALLOWED: "posawesome.posawesome.api.pos_opening_shift.check_opening_time_allowed.check_opening_time_allowed"
   },
 
   // POS Closing Shift APIs (from ClosingDialog.vue)
   POS_CLOSING_SHIFT: {
-    CHECK_CLOSING_TIME_ALLOWED: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.check_closing_time_allowed"
+    CHECK_CLOSING_TIME_ALLOWED: "posawesome.posawesome.api.pos_closing_shift.check_closing_time_allowed.check_closing_time_allowed",
+    GET_CASHIERS: "posawesome.posawesome.api.pos_closing_shift.get_cashiers.get_cashiers",
+    GET_POS_INVOICES: "posawesome.posawesome.api.pos_closing_shift.get_pos_invoices.get_pos_invoices",
+    GET_PAYMENTS_ENTRIES: "posawesome.posawesome.api.pos_closing_shift.get_payments_entries.get_payments_entries",
+    MAKE_CLOSING_SHIFT: "posawesome.posawesome.api.pos_closing_shift.make_closing_shift_from_opening.make_closing_shift_from_opening",
+    SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.api.pos_closing_shift.submit_closing_shift.submit_closing_shift"
   },
 
   // ERPNext Standard APIs (from Invoice.vue, Returns.vue, Payments.vue, Pos.vue)
