@@ -628,7 +628,7 @@ export default {
 } */
 
 .custom-modal.small-modal {
-  max-width: 600px;
+  max-width: 575px;
   min-width: 550px;
   max-height: 80vh;
 }
