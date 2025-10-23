@@ -3,6 +3,4 @@
 - "@mdi/font": "^6.0.95",
 - "lodash": "^4.17.21",
 
-2. remove the online dependencies from the posapp.js
-
-- Removed external GitHub links (Navbar.vue)
+2. Removed external GitHub links (Navbar.vue)
