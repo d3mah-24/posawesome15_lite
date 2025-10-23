@@ -36,9 +36,24 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 ## 📋 Current Tasks & Development
 
-📋 **Current Tasks:** [needed_tasks.md](docs/needed_tasks.md)
-🔧 **Development Tools:** [dev_common_commands.md](docs/dev_common_commands.md)
-🛡️ **Security Features:** [security_features.md](docs/security_features.md)
+### 📋 **Project Management**
+📋 **Current Tasks:** [needed_tasks.md](docs/needed_tasks.md)  
+
+### 🛠️ **Development Resources**
+🔧 **Development Tools:** [dev_common_commands.md](docs/dev_common_commands.md)  
+🛠️ **Development Tools:** [development_tools.md](docs/development_tools.md)  
+📱 **POS Lite Features:** [pos_lite_features.md](docs/pos_lite_features.md)  
+⌨️ **POS Shortcuts:** [pos_lite_shortcuts.md](docs/pos_lite_shortcuts.md)  
+
+### 🔧 **Configuration & Setup**
+⚙️ **POS Profile Config:** [pos_profile_config_readme.md](docs/pos_profile_config_readme.md)  
+📊 **Technology Stack:** [technology stack_info.md](docs/technology stack_info.md)  
+📱 **Barcode Scanner:** [barcode_scanner_lntegration.md](docs/barcode_scanner_lntegration.md)  
+
+### 🛡️ **Security & Policies**
+🛡️ **Security Features:** [security_features.md](docs/security_features.md)  
+🔒 **Backend Policy:** [backend_policy.md](docs/backend_policy.md)  
+🎨 **Frontend Policy:** [frontend_policy.md](docs/frontend_policy.md)
 
 
 
@@ -107,12 +122,12 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 ### <img src="./imgs/Egypt.svg" width="20" height="20"> Egypt Contact
 - 📞 **Call:** <img src="./imgs/Egypt.svg" width="16" height="16"> [+20 115 648 3669](tel:+201156483669)
 - <img src="./imgs/whatsapp.svg" width="16" height="16"> **WhatsApp:** <img src="./imgs/Egypt.svg" width="16" height="16"> [https://wa.me/201156483669](https://wa.me/201156483669)
-- <img src="./imgs/telegram.svg" width="16" height="16"> **Telegram:** [https://t.me/abdo_01156483669](https://t.me/abdo_01156483669)
+- <img src="./imgs/telegram.svg" width="16" height="16"> **Telegram:** [https://t.me/EG_01156483669](https://t.me/EG_01156483669)
 
 ### <img src="./imgs/Saudi_Arabia.svg" width="20" height="20"> Saudi Arabia Contact  
 - 📞 **Call:** <img src="./imgs/Saudi_Arabia.svg" width="16" height="16"> [+966 57 891 9729](tel:+966578919729)
 - <img src="./imgs/whatsapp.svg" width="16" height="16"> **WhatsApp:** <img src="./imgs/Saudi_Arabia.svg" width="16" height="16"> [https://wa.me/966578919729](https://wa.me/966578919729)
-- <img src="./imgs/telegram.svg" width="16" height="16"> **Telegram:** [https://t.me/abdo_0578919729](https://t.me/abdo_0578919729)
+- <img src="./imgs/telegram.svg" width="16" height="16"> **Telegram:** [https://t.me/KSA_0578919729](https://t.me/KSA_0578919729)
 
 ### 🌐 Online
 - 🌐 **Website:** [future-support.online](https://www.future-support.online/)
