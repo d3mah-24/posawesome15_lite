@@ -195,14 +195,6 @@
               step="0.01"
               min="0"
               :max="pos_profile?.posa_invoice_max_discount_allowed || 100"
-              :disabled="
-                Boolean(
-                  offer_discount_percentage > 0||
-                  !pos_profile ||
-                    !pos_profile?.posa_allow_user_to_edit_additional_discount ||
-                    invoice_doc?.is_return
-                )
-              "
               class="field-input discount-input"
               placeholder="0.00"
             />
@@ -630,6 +622,8 @@
       create_invoice(doc) {
         const vm = this;
         return new Promise((resolve, reject) => {
+          console.log("Creating invoice with doc:", this.posa_offers);
+          
           frappe.call({
             method: API_MAP.SALES_INVOICE.CREATE,
             args: {
@@ -638,13 +632,22 @@
             async: true,
             callback: function (r) {
               console.log("API Response (Create Invoice):", r);
+              console.log("API Response message:", r.message);
+              console.log("API Response message.name:", r.message?.name);
+              
+              vm._processOffers();
               if (r.message !== undefined) {
                 if (r.message === null) {
                   vm.invoice_doc = null;
                   vm.items = [];
                   resolve(null);
                 } else {
+
                   vm.invoice_doc = r.message;
+                  
+                  console.log("Invoice created with name:", vm.invoice_doc?.name);
+                  console.log("Full invoice_doc:", vm.invoice_doc);
+
   
                   // Emit event for navbar to update invoice display
                   evntBus.emit("update_invoice_doc", vm.invoice_doc);
@@ -662,6 +665,8 @@
                   }
                   vm._processOffers();
                   
+                  // Resolve the promise with the created invoice
+                  resolve(vm.invoice_doc);
                 }
               } else {
                 reject(new Error("Failed to create invoice"));
@@ -737,6 +742,12 @@
                   : result.items || [],
             };
           }
+          console.log("Auto-update result this.invoice_doc:", this.invoice_doc);
+          
+          // === CRITICAL FIX: ENSURE LOCAL STATE REFLECTS SERVER'S CALCULATION ===
+            this.additional_discount_percentage = this.invoice_doc.additional_discount_percentage || 0;
+            this.discount_amount = this.invoice_doc.discount_amount || 0;
+            // ======================================================================
   
           this._updatingFromAPI = false;
           return result;
@@ -1078,6 +1089,8 @@
                   
                   // Update posa_offers from backend response
                   if (r.message.posa_offers) {
+                    console.log("Updating posa_offers from API response", r.message.posa_offers);
+                    
                     vm.posa_offers = r.message.posa_offers;
                     
                     // Handle Transaction-level Percentage Discount Offers
@@ -1085,6 +1098,7 @@
                     const appliedTransactionOffer = vm.posa_offers.find(
                         (offer) => offer.offer_applied 
                     );
+                    console.log("Applied Transaction Offer:", appliedTransactionOffer);
                     
                     if (appliedTransactionOffer) {
                         transactionDiscount = flt(appliedTransactionOffer.discount_percentage);
@@ -1897,6 +1911,7 @@
         this.posOffers = data;
       });
       evntBus.on("update_invoice_offers", (data) => {
+        console.log("updateInvoiceOffers ", data);
         
         this.updateInvoiceOffers(data);
       });
