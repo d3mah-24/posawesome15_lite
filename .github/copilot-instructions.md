@@ -1,18 +1,10 @@
 # AI Agent Instructions for POS Awesome Lite# AI Agent Instructions for POS Awesome Lite# AI Agent Instructions for POS Awesome Lite
 
-
-
 ## Architecture Overview
-
-
 
 **POS Awesome Lite** = Vue.js UI + ERPNext v15 Engine (Zero Custom Calculations)## Architecture Overview## Core Principles
 
-
-
 This is a lightweight Point of Sale interface built on top of ERPNext's proven foundation. The core principle: **NO custom business logic calculations**—all math and business rules are handled by ERPNext's native controllers.
-
-
 
 ### Backend: `/posawesome/api/` (ONE function per file - STRICT)**POS Awesome Lite** = Vue.js UI + ERPNext v15 Engine (Zero Custom Calculations)**POS Awesome Lite = Vue.js UI + ERPNext Engine**
 
@@ -139,8 +131,6 @@ def get_customer(customer_id):        ├── ItemsSelector.vue       # Items 
                           fields=["name", "customer_name", "mobile_no"])
 
 ``````
-
-
 
 **Naming Conventions**:### 1. API Calls: 3-Call Batch Queue System
 
@@ -304,11 +294,7 @@ frappe.db.sql("""- `frappe.log_error()` ONLY for actual errors (not success)
 
 - Local assets only (no external CDN)    WHERE parent IN (```javascript
 
-
-
 ### 6. Logging Policy (STRICT)        SELECT name FROM `tabSales Invoice` // Emit
-
-
 
 ```javascript        WHERE posa_pos_opening_shift = %s AND docstatus = 1evntBus.emit('add_item', item);
 
@@ -326,8 +312,6 @@ console.warn('Deprecated API usage');```evntBus.on('add_item', this.handleAddIte
 
 ```
 
-
-
 **Backend**: `frappe.log_error()` ONLY for actual errors (not success messages)
 
 **Performance**:// CRITICAL: Clean up in beforeUnmount()
@@ -344,7 +328,7 @@ console.warn('Deprecated API usage');```evntBus.on('add_item', this.handleAddIte
 
 ```bash- `frappe.log_error()` ONLY for actual errors (NOT success messages)  if (this._debounceTimer) clearTimeout(this._debounceTimer);
 
-find . -name "*.pyc" -delete && find . -type d -name "__pycache__" -exec rm -rf {} + && bench restart
+find . -name "*.pyc" -delete && find . -type d -name "**pycache**" -exec rm -rf {} + && bench restart
 
 ```  if (this.cashUpdateInterval) clearInterval(this.cashUpdateInterval);
 
@@ -429,8 +413,6 @@ doc_events = {
 **Common Events**: `add_item`, `update_customer`, `new_invoice`, `show_payment`, `show_mesage` (typo intentional), `invoice_submitted`</table>
 
 ### API Mapper (ALWAYS USE - NO hardcoded paths)
-
-
 
 ```javascript
 
@@ -890,6 +872,7 @@ Before committing:- `get_many_[doctype]s.py` - Multiple records with filters
   ```
 
 **Performance Rules**:
+
 - Target: <100ms response time
 - Use `ignore_version=True` for faster saves
 - Call `frappe.db.commit()` immediately after operations
@@ -898,6 +881,7 @@ Before committing:- `get_many_[doctype]s.py` - Multiple records with filters
 ### 3. Event Bus Communication
 
 **Use mitt** (imported as `evntBus` from `bus.js`):
+
 ```javascript
 // Emit
 evntBus.emit('add_item', item);
@@ -914,7 +898,8 @@ beforeUnmount() {
 }
 ```
 
-**Common Events**: 
+**Common Events**:
+
 - `add_item`, `update_customer`, `new_invoice`, `show_payment`
 - `item_updated`, `register_pos_profile`, `invoice_submitted`
 - `show_mesage` (note: typo is intentional in codebase)
@@ -924,6 +909,7 @@ beforeUnmount() {
 
 **REMOVED**: All debug `console.log()` statements
 **KEEP**: Only `console.error()` for actual errors and `console.warn()` for warnings
+
 ```javascript
 // ❌ NEVER do this
 console.log("Fetching data...");
@@ -937,6 +923,7 @@ console.warn('Deprecated API usage');
 ### 5. UI Component Standards
 
 **NO Vuetify, NO Frameworks** - Pure HTML/CSS only:
+
 ```vue
 <!-- ✅ Use native HTML tables -->
 <table class="data-table">
@@ -960,6 +947,7 @@ console.warn('Deprecated API usage');
 ```
 
 **Performance Rules**:
+
 - Virtual scrolling for lists > 50 items
 - Simple component structure only
 - No animations or heavy CSS
@@ -969,17 +957,20 @@ console.warn('Deprecated API usage');
 ### 6. File Organization Standards
 
 **Third-Party Libraries**:
+
 - Place in `public/js/` folder (e.g., `onscan.js`)
 - Import in `posawesome.bundle.js` entry point
 - **NEVER** use Jinja2 `{% include %}` in .js files (causes TypeScript errors)
 
 **Frappe Page Files**:
+
 - `posapp.js` loads Vue app - keep minimal
 - Use `@ts-nocheck` comment if TypeScript complains about Frappe globals
 
 ### 7. Framework Integration Points
 
 **Frappe Hooks** (`hooks.py`):
+
 ```python
 # Vue.js + libraries bundled in posawesome.bundle.js
 app_include_js = [
@@ -1005,11 +996,13 @@ doc_events = {
 ### 8. Common Workflows
 
 **Apply Backend Changes**:
+
 ```bash
 bench restart
 ```
 
 **Apply Frontend Changes**:
+
 ```bash
 cd ~/frappe-bench-15
 bench build --app posawesome
@@ -1018,12 +1011,14 @@ bench clear-cache && bench build --app posawesome
 ```
 
 **Debug Database Schema**:
+
 ```bash
 bench mariadb
 DESCRIBE `tabDocTypeName`;
 ```
 
 **Clean Python Cache**:
+
 ```bash
 find . -name "*.pyc" -delete
 find . -type d -name "__pycache__" -exec rm -rf {} +
@@ -1032,6 +1027,7 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 ## Recent Major Changes (October 2025)
 
 ### ✅ Payment Totals in Navbar (NEW)
+
 - **Feature**: Real-time cash 💰 and non-cash 💳 totals in navbar
 - **Implementation**: Uses shift-based queries matching closing shift logic
 - **APIs**: `get_current_cash_total.py`, `get_current_non_cash_total.py`
@@ -1039,27 +1035,32 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 - **Key Learning**: Must match closing shift calculations (subtract change_amount for cash)
 
 ### ✅ Console.log Cleanup (NEW)
+
 - **Removed**: ALL 30+ debug console.log statements
 - **Files**: Navbar.vue, Invoice.vue, Pos.vue
 - **Method**: Used `sed -i` commands to bulk remove
 - **Build Impact**: Reduced bundle size ~2KB
 
 ### ✅ Bundle Organization (NEW)
+
 - **onscan.js**: Moved from `page/posapp/` to `public/js/`
 - **Reason**: Cleaner structure, avoid Jinja2 templates in JS
 - **Import**: `posawesome.bundle.js` → clean ES6 imports only
 - **Benefit**: No TypeScript errors, modern ES6 imports
 
 ### ✅ API Migration Completed
+
 - **All @frappe.whitelist()** moved from DocType files to `/api/` structure
 - **DocType files**: Only class methods remain
 - **api_mapper.js**: All paths updated to new structure
 
 ### ✅ Vuetify Removal
+
 - **All Vuetify components removed**: Replaced with pure HTML/CSS
 - **Build size**: Optimized to ~606KB JS, ~114KB CSS
 
 ### ✅ Success Logging Cleanup (NEW)
+
 - **Removed**: `frappe.log_error()` calls for successful operations
 - **Examples**: "Opening allowed", "Retrieved X users", "Successfully submitted"
 - **Kept**: Only actual error logging in exception handlers
@@ -1068,6 +1069,7 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 ## Code Review Checklist
 
 Before committing:
+
 - [ ] Backend: Used specific fields in `frappe.get_doc()` - NO SELECT *
 - [ ] Backend: Verified column names via `DESCRIBE \`tabDocType\`;`
 - [ ] Backend: Used parametrized SQL queries with `%s`

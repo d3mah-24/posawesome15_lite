@@ -18,6 +18,7 @@
 **POS Awesome Lite** = Modern Interface + Original ERPNext Engine
 
 Just a lightweight web interface built on top of ERPNext's proven foundation:
+
 - 🎨 **Interface:** Fast, responsive Vue.js UI (+ 30 BarcodeScan/s)
 - 🔧 **Frontend:** Uses original ERPNext methods (sales_invoice.js patterns)
 - ⚙️ **Backend:** Uses original ERPNext def's & imports (ERPNext controllers)
@@ -30,34 +31,38 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 ## 🖥️ Try It Live
 
 **Remote Access to the POS UI system**
-- 🌐 **Application:** (https://anydesk.com/en)
+
+- 🌐 **Application:** (<https://anydesk.com/en>)
 - 🔑 **ID:** `1134153623`
 - 🚀 **Status:** Online and Ready
 - 📱 **Platform:** Cross-platform compatible
+
 ---
 
 ## 📋 Current Tasks & Development
 
 ### 📋 **Project Management**
+
 📋 **Current Tasks:** [needed_tasks.md](docs/needed_tasks.md)  
 
 ### 🛠️ **Development Resources**
+
 🔧 **Development Tools:** [dev_common_commands.md](docs/dev_common_commands.md)  
 🛠️ **Development Tools:** [development_tools.md](docs/development_tools.md)  
 📱 **POS Lite Features:** [pos_lite_features.md](docs/pos_lite_features.md)  
 ⌨️ **POS Shortcuts:** [pos_lite_shortcuts.md](docs/pos_lite_shortcuts.md)  
 
 ### 🔧 **Configuration & Setup**
+
 ⚙️ **POS Profile Config:** [pos_profile_config_readme.md](docs/pos_profile_config_readme.md)  
 📊 **Technology Stack:** [technology stack_info.md](docs/technology stack_info.md)  
 📱 **Barcode Scanner:** [barcode_scanner_lntegration.md](docs/barcode_scanner_lntegration.md)  
 
 ### 🛡️ **Security & Policies**
+
 🛡️ **Security Features:** [security_features.md](docs/security_features.md)  
 🔒 **Backend Policy:** [backend_policy.md](docs/backend_policy.md)  
 🎨 **Frontend Policy:** [frontend_policy.md](docs/frontend_policy.md)
-
-
 
 ## 💰 Development Collaboration
 
@@ -65,10 +70,10 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - 💵 **Payment:** to completed tasks only
 - 🤝 **Collaboration:** Professional and transparent
 - 🌐 **Payment Methods:**
-- 💼 **International**: 
-  -🟢 [Fiverr](https://fiverr.com) 
-  -🔵 [Upwork](https://upwork.com) 
-  -💰 Western Union 
+- 💼 **International**:
+  -🟢 [Fiverr](https://fiverr.com)
+  -🔵 [Upwork](https://upwork.com)
+  -💰 Western Union
   -₿ Crypto
 - <img src="./imgs/Egypt.svg" width="16" height="16" alt="Egypt Flag"> **Egypt**: Phone cash wallets
 - <img src="./imgs/Saudi_Arabia.svg" width="16" height="16" alt="Saudi Arabia Flag"> **Saudi Arabia**: STC Pay, Alrajhi Bank Transfer
@@ -76,6 +81,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 ## 🖥️ Development Server
 
 **Development Server:**
+
 - 🔗 Direct work via **SSH on single server**
 - 📦 Repository: [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 - 🌿 Branch: **main only**
@@ -85,6 +91,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 ## 🐢 Server Specifications
 
 **🐢 Server Specifications:**
+
 - 💾 **RAM:** 324 GB DDR5
 - 🔧 **CPU:** 2x AMD EPYC 9555
 - ⚡ **Cores/Threads:** 2024 cores / 128 threads
@@ -95,6 +102,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 ## ⚠️ Project POLICY
 
 **⚠️ Project POLICY:**  
+
 - ⚠️ Changes into front conflicts improve policy
 - ⚠️ Changes into backend conflicts improve policy  
 - ⚠️ Changes not asked for
@@ -116,7 +124,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 **👨‍💻 Developer:** abdopcnet  
 **🏢 Company:** [Future Support](https://www.future-support.online/)  
-**📧 Email:** abdopcnet@gmail.com  
+**📧 Email:** <abdopcnet@gmail.com>  
 **🐙 GitHub:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 
 **🤝 Need Support or Want to Join? Contact Now:**
@@ -134,8 +142,9 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - <img src="./imgs/telegram.svg" width="16" height="16" alt="Telegram"> **Telegram:** [https://t.me/KSA_0578919729](https://t.me/KSA_0578919729)
 
 ### 🌐 Online
+
 - 🌐 **Website:** [future-support.online](https://www.future-support.online/)
-- 📧 **Email:** abdopcnet@gmail.com
+- 📧 **Email:** <abdopcnet@gmail.com>
 - 🐙 **GitHub:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 
 ---
