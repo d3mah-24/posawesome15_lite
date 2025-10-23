@@ -53,8 +53,8 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
   -🔵 [Upwork](https://upwork.com) 
   -💰 Western Union 
   -₿ Crypto
-- 🇪🇬 **Egypt**: Phone cash wallets
-- 🇸🇦 **Saudi Arabia**: STC Pay, Alrajhi Bank Transfer
+- <img src="./imgs/Egypt.svg" width="16" height="16"> **Egypt**: Phone cash wallets
+- <img src="./imgs/Saudi_Arabia.svg" width="16" height="16"> **Saudi Arabia**: STC Pay, Alrajhi Bank Transfer
 
 ## 🖥️ Development Server
 
