@@ -8,7 +8,62 @@ import json
 import frappe
 from frappe import _
 from frappe.utils import flt
+from ..pos_offer.get_applicable_offers import get_applicable_offers
+from ..pos_offer.get_offers_by_type_handler import get_offers_by_type_handler
 
+
+def apply_auto_transaction_discount(doc):
+    """Finds auto transaction discount and applies it to the Sales Invoice doc."""
+
+    try:
+        # Get all offers for the profile
+        profile = doc.pos_profile
+        if not profile:
+            return False
+        
+        # Get offers for this POS Profile directly from database
+        # We can't use get_offers_by_type_handler because doc.name is None (not saved yet)
+        offers = frappe.get_all(
+            "POS Offer",
+            filters={
+                "disable": 0,
+                "auto": 1,
+                "apply_on": "Transaction",
+                "discount_type": "Discount Percentage",
+                "pos_profile": ["in", [profile, ""]],
+            },
+            fields=["name", "discount_percentage", "min_amt", "max_amt"],
+            order_by="discount_percentage desc",
+            limit=1
+        )
+        
+        if offers and len(offers) > 0:
+            auto_disc_offer = offers[0]
+            discount_percentage = flt(auto_disc_offer.get("discount_percentage"))
+            
+            # Check min/max amount conditions if set
+            # Use flt() to safely handle None values (converts None to 0)
+            grand_total = flt(doc.grand_total)
+            min_amt = flt(auto_disc_offer.get("min_amt"))
+            max_amt = flt(auto_disc_offer.get("max_amt"))
+            
+            if min_amt > 0 and grand_total < min_amt:
+                return False
+            if max_amt > 0 and grand_total > max_amt:
+                return False
+            
+            if discount_percentage > 0:
+                # Apply the discount percentage directly to the Sales Invoice doc
+                doc.additional_discount_percentage = discount_percentage
+                
+                # Return True to indicate success
+                return True
+                    
+    except Exception as e:
+        # Silent fail - don't break invoice creation
+        frappe.log_error(f"Auto discount error: {str(e)}", "Auto Discount Error")
+        
+    return False
 
 @frappe.whitelist()
 def create_invoice(data):
@@ -16,6 +71,7 @@ def create_invoice(data):
     Create new Sales Invoice using ERPNext native methods only.
     Uses frappe.new_doc('Sales Invoice') with is_pos=1.
     """
+    # print("coming in create_invoice ", data)
     try:
         # Parse JSON data
         if isinstance(data, str):
@@ -40,7 +96,16 @@ def create_invoice(data):
         
         # Use ERPNext native methods
         doc.set_missing_values()
+
+
+        if apply_auto_transaction_discount(doc):
+             # Rerun calculation to adopt the discount injected by the custom function above
+             doc.calculate_taxes_and_totals()
+
+        # Calculate taxes and totals using ERPNext native methods
         doc.calculate_taxes_and_totals()
+
+        # Save the document to get a proper name
         doc.save()
 
         # Return created document
