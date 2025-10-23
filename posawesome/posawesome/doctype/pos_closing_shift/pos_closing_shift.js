@@ -28,15 +28,19 @@ frappe.ui.form.on('POS Closing Shift', {
 	},
 
 	refresh: function(frm) {
-		// Add custom buttons with better styling
+		// Add custom buttons with better styling and icons
 		if (frm.doc.docstatus === 1) {
-			frm.add_custom_button(__('View Detailed Report'), function() {
+			frm.add_custom_button(__('📊 View Detailed Report'), function() {
 				show_detailed_modal(frm);
-			}, __('Reports')).addClass('btn-primary');
+			}, __('📋 Reports')).addClass('btn-primary');
 			
-			frm.add_custom_button(__('Export Summary'), function() {
+			frm.add_custom_button(__('📤 Export Summary'), function() {
 				export_summary(frm);
-			}, __('Reports')).addClass('btn-info');
+			}, __('📋 Reports')).addClass('btn-info');
+			
+			frm.add_custom_button(__('🖨️ Print Report'), function() {
+				print_closing_report(frm);
+			}, __('📋 Reports')).addClass('btn-success');
 		}
 		
 		// Update form colors based on status
@@ -45,8 +49,8 @@ frappe.ui.form.on('POS Closing Shift', {
 
 	pos_opening_shift (frm) {
 		if (frm.doc.pos_opening_shift && frm.doc.user) {
-			// Show progress indicator
-			show_loading_indicator(frm, __("Loading shift data..."));
+			// Show progress indicator with emoji
+			show_loading_indicator(frm, __("🔄 Loading shift data..."));
 			
 			reset_values(frm);
 			frappe.run_serially([
@@ -55,6 +59,11 @@ frappe.ui.form.on('POS Closing Shift', {
 				() => frm.trigger("get_pos_payments")
 			]).finally(() => {
 				hide_loading_indicator(frm);
+				// Show success message
+				frappe.show_alert({
+					message: __('✅ Shift data loaded successfully'),
+					indicator: 'green'
+				});
 			});
 		}
 	},
@@ -71,7 +80,11 @@ frappe.ui.form.on('POS Closing Shift', {
 				});
 			})
 			.catch(e => {
-				console.error('[ERROR] Exception in set_opening_amounts:', e);
+				console.error('[❌ ERROR] Exception in set_opening_amounts:', e);
+				frappe.show_alert({
+					message: __('❌ Error loading opening amounts'),
+					indicator: 'red'
+				});
 			});
 	},
 
@@ -88,7 +101,11 @@ frappe.ui.form.on('POS Closing Shift', {
 				set_html_data(frm);
 			},
 			error: function(err) {
-				console.error('[ERROR] Exception in get_pos_invoices:', err);
+				console.error('[❌ ERROR] Exception in get_pos_invoices:', err);
+				frappe.show_alert({
+					message: __('❌ Error loading POS invoices'),
+					indicator: 'red'
+				});
 			}
 		});
 	},
@@ -106,7 +123,11 @@ frappe.ui.form.on('POS Closing Shift', {
 				set_html_data(frm);
 			},
 			error: function(err) {
-				console.error('[ERROR] Exception in get_pos_payments:', err);
+				console.error('[❌ ERROR] Exception in get_pos_payments:', err);
+				frappe.show_alert({
+					message: __('❌ Error loading POS payments'),
+					indicator: 'red'
+				});
 			}
 		});
 	}
@@ -130,7 +151,11 @@ function set_form_data (data, frm) {
 			add_to_taxes(d, frm);
 		});
 	} catch (e) {
-		console.error('[ERROR] Exception in set_form_data:', e);
+		console.error('[❌ ERROR] Exception in set_form_data:', e);
+		frappe.show_alert({
+			message: __('❌ Error processing form data'),
+			indicator: 'red'
+		});
 	}
 }
 
@@ -141,7 +166,11 @@ function set_form_payments_data (data, frm) {
 			add_pos_payment_to_payments(d, frm);
 		});
 	} catch (e) {
-		console.error('[ERROR] Exception in set_form_payments_data:', e);
+		console.error('[❌ ERROR] Exception in set_form_payments_data:', e);
+		frappe.show_alert({
+			message: __('❌ Error processing payments data'),
+			indicator: 'red'
+		});
 	}
 }
 
@@ -187,7 +216,11 @@ function add_to_payments (d, frm) {
 			}
 		});
 	} catch (e) {
-		console.error('[ERROR] Exception in add_to_payments:', e);
+		console.error('[❌ ERROR] Exception in add_to_payments:', e);
+		frappe.show_alert({
+			message: __('❌ Error adding payment data'),
+			indicator: 'red'
+		});
 	}
 }
 
@@ -205,7 +238,11 @@ function add_pos_payment_to_payments (p, frm) {
 			});
 		}
 	} catch (e) {
-		console.error('[ERROR] Exception in add_pos_payment_to_payments:', e);
+		console.error('[❌ ERROR] Exception in add_pos_payment_to_payments:', e);
+		frappe.show_alert({
+			message: __('❌ Error processing POS payment data'),
+			indicator: 'red'
+		});
 	}
 };
 
@@ -225,7 +262,11 @@ function add_to_taxes (d, frm) {
 			}
 		});
 	} catch (e) {
-		console.error('[ERROR] Exception in add_to_taxes:', e);
+		console.error('[❌ ERROR] Exception in add_to_taxes:', e);
+		frappe.show_alert({
+			message: __('❌ Error processing tax data'),
+			indicator: 'red'
+		});
 	}
 }
 
@@ -255,10 +296,10 @@ function set_html_data (frm) {
 	wrapper.html(`
 		<div style="text-align: center; padding: 40px; color: #6c757d;">
 			<div class="spinner-border" role="status" style="width: 3rem; height: 3rem;">
-				<span class="sr-only">Loading...</span>
+				<span class="sr-only">🔄 Loading...</span>
 			</div>
 			<div style="margin-top: 15px; font-size: 0.9rem;">
-				${__("Generating closing shift report...")}
+				🔄 ${__("Generating closing shift report...")}
 			</div>
 		</div>
 	`);
@@ -277,30 +318,30 @@ function set_html_data (frm) {
 			} else {
 				wrapper.html(`
 					<div style="text-align: center; padding: 40px; color: #dc3545;">
-						<i class="fa fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px;"></i>
+						<div style="font-size: 3rem; margin-bottom: 15px;">❌</div>
 						<div style="font-size: 1.1rem; margin-bottom: 10px;">
-							${__("Failed to generate report")}
+							${__("❌ Failed to generate report")}
 						</div>
 						<div style="font-size: 0.9rem; color: #6c757d;">
-							${__("Please try refreshing the form or contact your administrator")}
+							${__("🔄 Please try refreshing the form or contact your administrator")}
 						</div>
 					</div>
 				`);
 			}
 		},
 		error: function(err) {
-			console.error('[ERROR] Exception in set_html_data:', err);
+			console.error('[❌ ERROR] Exception in set_html_data:', err);
 			wrapper.html(`
 				<div style="text-align: center; padding: 40px; color: #dc3545;">
-					<i class="fa fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px;"></i>
+					<div style="font-size: 3rem; margin-bottom: 15px;">❌</div>
 					<div style="font-size: 1.1rem; margin-bottom: 10px;">
-						${__("Error loading closing shift details")}
+						${__("❌ Error loading closing shift details")}
 					</div>
 					<div style="font-size: 0.9rem; color: #6c757d;">
-						${err.message || __("An unexpected error occurred")}
+						${err.message || __("⚠️ An unexpected error occurred")}
 					</div>
 					<button class="btn btn-sm btn-primary" onclick="cur_frm.trigger('refresh')" style="margin-top: 15px;">
-						<i class="fa fa-refresh"></i> ${__("Retry")}
+						🔄 ${__("Retry")}
 					</button>
 				</div>
 			`);
@@ -313,10 +354,10 @@ function add_print_button(wrapper, frm) {
 	const print_btn = $(`
 		<div style="text-align: center; margin: 20px 0; padding: 20px;">
 			<button class="btn btn-primary btn-print-closing-shift" style="margin-right: 10px;">
-				<i class="fa fa-print"></i> ${__("Print Report")}
+				🖨️ ${__("Print Report")}
 			</button>
 			<button class="btn btn-secondary btn-export-pdf">
-				<i class="fa fa-file-pdf-o"></i> ${__("Export as PDF")}
+				📄 ${__("Export as PDF")}
 			</button>
 		</div>
 	`);
@@ -355,8 +396,8 @@ function add_print_button(wrapper, frm) {
 	// PDF export functionality (placeholder)
 	wrapper.find('.btn-export-pdf').on('click', function() {
 		frappe.msgprint({
-			title: __("Export Feature"),
-			message: __("PDF export functionality can be implemented using a PDF library like jsPDF or by creating a server-side PDF generation endpoint."),
+			title: __("📄 Export Feature"),
+			message: __("📄 PDF export functionality can be implemented using a PDF library like jsPDF or by creating a server-side PDF generation endpoint."),
 			indicator: 'blue'
 		});
 	});
@@ -378,7 +419,7 @@ const get_value = (doctype, name, field) => {
 			}
 		},
 		error: function(err) {
-			console.error('[ERROR] Exception in get_value:', err);
+			console.error('[❌ ERROR] Exception in get_value:', err);
 		}
 	});
 	return value;
@@ -553,13 +594,13 @@ function update_form_indicators(frm) {
 	
 	if (frm.doc.docstatus === 0) {
 		indicator_class = 'bg-warning';
-		indicator_text = __('Draft');
+		indicator_text = __('📝 Draft');
 	} else if (frm.doc.docstatus === 1) {
 		indicator_class = 'bg-success';
-		indicator_text = __('Submitted');
+		indicator_text = __('✅ Submitted');
 	} else if (frm.doc.docstatus === 2) {
 		indicator_class = 'bg-danger';
-		indicator_text = __('Cancelled');
+		indicator_text = __('❌ Cancelled');
 	}
 	
 	if (indicator_text) {
@@ -582,7 +623,7 @@ function hide_loading_indicator(frm) {
 
 function show_detailed_modal(frm) {
 	const dialog = new frappe.ui.Dialog({
-		title: __('Detailed Closing Shift Report'),
+		title: __('📊 Detailed Closing Shift Report'),
 		fields: [
 			{
 				fieldname: 'report_html',
@@ -597,6 +638,15 @@ function show_detailed_modal(frm) {
 		size: 'large'
 	});
 	dialog.show();
+}
+
+function print_closing_report(frm) {
+	frappe.msgprint({
+		title: __("🖨️ Print Report"),
+		message: __("🖨️ Print functionality will open the report in a new window for printing."),
+		indicator: 'blue'
+	});
+	// Add actual print functionality here
 }
 
 function export_summary(frm) {
@@ -640,7 +690,7 @@ function export_summary(frm) {
 	document.body.removeChild(link);
 	
 	frappe.show_alert({
-		message: __('Summary exported successfully'),
+		message: __('✅ Summary exported successfully'),
 		indicator: 'green'
 	});
 }
