@@ -387,9 +387,10 @@ export default {
 
 <style scoped>
 /* ===== MAIN CONTAINER ===== */
+/* Simple background - no gradient to avoid affecting ERP doctypes */
 .pos-container {
   padding: 0 3px 3px 3px; /* top=0, right=3px, bottom=3px, left=3px */
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+  background: #f8f9fa; /* Simple light gray background */
   min-height: 100vh;
   overflow: visible;
 }
