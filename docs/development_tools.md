@@ -1,4 +1,5 @@
 **Development Tools**
+
 - **Git/GitHub** - Version control with main branch strategy
 - **npm/yarn** - Frontend dependencies management
 - **Frappe Build System** - Built-in build tools with Webpack and Babel
