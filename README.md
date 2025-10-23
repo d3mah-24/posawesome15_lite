@@ -102,7 +102,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 **📧 Email:** abdopcnet@gmail.com  
 **🐙 GitHub:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 
-**🤝 Need Support or Want to Join? Contact Now:** 
+**🤝 Need Support or Want to Join? Contact Now:**
 
 ### <img src="./imgs/Egypt.svg" width="20" height="20"> Egypt Contact
 - 📞 **Call:** <img src="./imgs/Egypt.svg" width="16" height="16"> [+20 115 648 3669](tel:+201156483669)
