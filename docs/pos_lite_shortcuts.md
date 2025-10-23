@@ -1,4 +1,5 @@
 **Shortcut Details**
+
 - **Payment Shortcuts:** Ctrl/Cmd + S opens payment dialog, Ctrl/Cmd + X submits payment
 - **Item Management:** Ctrl/Cmd + D removes first item, Ctrl/Cmd + A expands first item, Ctrl/Cmd + Z focuses discount field
 - **Search Shortcuts:** ESC clears search field, Enter confirms input in form fields
@@ -6,6 +7,7 @@
 - **Efficient Workflow:** Use Ctrl/Cmd + S for quick payment, Ctrl/Cmd + D for fast item removal
 - **Form Navigation:** Use Enter to confirm changes, Tab to move between fields
 - **Cross-Platform Support:** Ctrl works on Windows/Linux, Cmd works on macOS
+
 #### ⌨️ Keyboard Shortcuts - Complete Guide
 
 **Global Shortcuts**
