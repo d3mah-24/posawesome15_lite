@@ -184,16 +184,16 @@
 - ✅ No premature payment attempts
 - ✅ Improved user experience and data integrity
 
-## 🎨 Task 6: Returns Component Design Customizations
+## 🎨 Task 6: Returns Dialog Design Customizations
 **💰 Budget**: $10
 **👨‍💻 Developer**: Priyansh Vijay  
 **💳 Payment**: 🔄 USDT crypto  
 **🎯 Priority**: 🔥 Normal  
 **📊 Status**: ⏳ Pending
 
-**🔧 Feature**: `Returns.vue` design customizations
+**🔧 Feature**: `Returns.vue` dialog design customizations
 
-**📖 Description**: Implement custom design improvements and UI enhancements for the Returns component to improve user experience and visual appeal.
+**📖 Description**: Implement custom design improvements and UI enhancements for the Returns dialog component to improve user experience and visual appeal.
 
 **🛠️ Technical Requirements**:
 - 🎨 **UI/UX Improvements**: Enhance visual design and user interface
