@@ -2,11 +2,14 @@
   <!-- ===== TEMPLATE SECTION 1: MAIN CONTAINER ===== -->
   <div class="dialog-row">
     <div v-if="invoicesDialog" class="custom-modal-overlay" @click="invoicesDialog = false">
-      <div class="custom-modal large-modal" @click.stop>
+      <div class="custom-modal small-modal" @click.stop>
         <div class="card">
-          <div class="card-header">
-            <span class="card-title">Return Invoice</span>
-            <button class="modal-close-btn" @click="invoicesDialog = false">×</button>
+          <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <span class="card-title" style="color: white; display: flex; align-items: center; gap: 8px;">
+              <i class="mdi mdi-keyboard-return" style="font-size: 18px;"></i>
+              Return Invoice
+            </span>
+            <button class="modal-close-btn" @click="invoicesDialog = false" style="color: white;">×</button>
           </div>
           <div class="card-body">
           <div class="search-row">
@@ -24,7 +27,7 @@
             </button>
           </div>
           <div class="table-row">
-            <div class="table-col-full">
+          <div class="table-col-full" style="max-height: 60vh; overflow-y: auto;">
               <div class="custom-data-table">
                 <!-- Loading State -->
                 <div v-if="isLoading" class="table-loading">
@@ -619,9 +622,15 @@ export default {
   animation: modal-slide-in 0.3s ease;
 }
 
-.custom-modal.large-modal {
+/* .custom-modal.large-modal {
   max-width: 800px;
   min-width: 600px;
+} */
+
+.custom-modal.small-modal {
+  max-width: 600px;
+  min-width: 550px;
+  max-height: 80vh;
 }
 
 .modal-close-btn {
@@ -669,10 +678,40 @@ export default {
 
 /* Responsive modal */
 @media (max-width: 900px) {
-  .custom-modal.large-modal {
+  .custom-modal.small-modal {
     width: 95%;
     min-width: auto;
     margin: 20px;
   }
 }
+
+.card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  position: relative;
+}
+
+.card-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.card-title {
+  color: white !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-close-btn {
+  color: white !important;
+}
+
+
 </style>
