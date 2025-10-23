@@ -400,9 +400,14 @@ export default {
       location.reload();
     },
     go_about() {
-      this.showMenu = false; // Close menu after action
-      const win = window.open("https://github.com/abdopcnet", "_blank");
-      win.focus();
+      // this.showMenu = false; // Close menu after action
+      // const win = window.open("https://github.com/abdopcnet", "_blank");
+      // win.focus();
+
+      this.show_mesage({
+        color: "info",
+        text: "POSAwesome Lite v15 - Local System",
+      });
     },
     close_shift_dialog() {
       this.showMenu = false; // Close menu after action
