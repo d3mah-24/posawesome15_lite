@@ -205,16 +205,24 @@ export default {
     },
 
     add_coupon(coupon_code) {
+      console.log("[DEBUG] add_coupon called with:", coupon_code);
+      console.log("[DEBUG] Current customer:", this.customer);
+      console.log("[DEBUG] Current pos_profile:", this.pos_profile);
+      
       if (!this.customer || !coupon_code) {
+        console.warn("[WARN] add_coupon - Missing customer or coupon code");
         this.showMessage("Customer or coupon code is missing", "error");
         return;
       }
 
       if (this.posa_coupons.some((el) => el.coupon_code === coupon_code)) {
+        console.warn("[WARN] add_coupon - Coupon already used:", coupon_code);
         this.showMessage("This coupon is already used!", "error");
         return;
       }
 
+      console.log("[DEBUG] add_coupon - Calling API to validate coupon");
+      
       frappe.call({
         method: API_MAP.CUSTOMER.GET_POS_COUPON,
         args: {
@@ -223,11 +231,15 @@ export default {
           company: this.pos_profile.company,
         },
         callback: (r) => {
+          console.log("[DEBUG] add_coupon - API response:", r.message);
+          
           if (r.message) {
             const { msg, coupon } = r.message;
             if (msg !== "Apply" || !coupon) {
+              console.warn("[WARN] add_coupon - Coupon validation failed:", msg);
               this.showMessage(msg, "error");
             } else {
+              console.log("[DEBUG] add_coupon - Coupon validated successfully:", coupon);
               this.new_coupon = null;
               this.posa_coupons.push({
                 coupon: coupon.name,
@@ -237,10 +249,15 @@ export default {
                 pos_offer: coupon.pos_offer,
                 customer: coupon.customer || this.customer,
               });
+              console.log("[DEBUG] add_coupon - Updated posa_coupons:", this.posa_coupons);
             }
           } else {
+            console.error("[ERROR] add_coupon - No message in response");
             this.showMessage("Failed to get coupon from server", "error");
           }
+        },
+        error: (err) => {
+          console.error("[ERROR] add_coupon - API call failed:", err);
         },
       });
     },
@@ -265,12 +282,22 @@ export default {
     },
 
     updatePosCoupons(offers) {
+      console.log("[DEBUG] updatePosCoupons called with offers:", offers);
+      console.log("[DEBUG] Current posa_coupons before update:", this.posa_coupons);
+      
       this.posa_coupons.forEach((coupon) => {
         const offer = offers.find(
           (el) => el.offer_applied && el.coupon === coupon.coupon
         );
+        const wasApplied = coupon.applied;
         coupon.applied = offer ? 1 : 0;
+        
+        if (wasApplied !== coupon.applied) {
+          console.log(`[DEBUG] Coupon '${coupon.coupon_code}' status changed: ${wasApplied} -> ${coupon.applied}`);
+        }
       });
+      
+      console.log("[DEBUG] posa_coupons after update:", this.posa_coupons);
     },
 
     removeCoupon(remove_list) {
@@ -342,7 +369,7 @@ export default {
   display: flex;
   flex-direction: column;
   height: 91vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+  background: #f8f9fa; /* Simple background - no gradient */
 }
 .coupons-header {
   background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
