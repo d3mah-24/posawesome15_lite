@@ -4,8 +4,8 @@
 **💰 Budget**: $15
 **👨‍💻 Developer**: Not Assigned
 **💳 Payment**: Not Assigned
-**📊 Status**: ⏳ Pending
 **🎯 Priority**: 🔥 High
+**📊 Status**: ⏳ Pending
 
 **🔧 Feature**: `pos_profile_posa_auto_delete_draft_invoices`
 
@@ -29,7 +29,7 @@
 **👨‍💻 Developer**: Muneer Ahmed
 **💳 Payment**: $40
 **🎯 Priority**: 🔥 Normal
-**📊 Status**: ⏳ Pending
+**📊 Status**: 🔄 In Progress
 
 **📖 Description**: Comprehensive offers and coupons system following POS Awesome Lite architecture patterns with seamless frontend-backend integration.
 
@@ -74,7 +74,7 @@
 **👨‍💻 Developer**: Guby
 **💳 Payment**: Crypto
 **🎯 Priority**: 🔥 Normal
-**📊 Status**: 🔄 In Progress
+**📊 Status**: ⏳ Pending
 
 **📖 Description**: Comprehensive performance optimization across frontend and backend following POS Awesome Lite architecture patterns.
 
@@ -130,10 +130,10 @@
 
 ## 🧹 Task 4: Code Cleanup and Localization
 **💰 Budget**: $40
-**📊 Status**: 🔄 In Progress
-**🎯 Priority**: 🔥 High
 **👨‍💻 Developer**: Oscar
 **💳 Payment**: Crypto
+**🎯 Priority**: 🔥 High
+**📊 Status**: 🔄 In Progress (85% Complete)
 
 **📖 Description**: Complete code cleanup and localization to ensure no external dependencies and optimize the codebase.
 
