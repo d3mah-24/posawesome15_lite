@@ -1,9 +1,24 @@
 // Copyright (c) 2020, Youssef Restom and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('POS Opening Shift', {
+	frappe.ui.form.on('POS Opening Shift', {
 	setup(frm) {
 		try {
+			// Force default Frappe styling - override any custom backgrounds
+			$('head').append(`
+				<style>
+					/* Override any custom backgrounds on ERP doctype forms */
+					.form-section, .form-layout, .layout-section, 
+					.form-section .form-column, .form-layout .form-column,
+					.layout-section .form-column, .form-section .form-column .form-column,
+					.form-layout .form-column .form-column, .layout-section .form-column .form-column {
+						background: #ffffff !important;
+						background-image: none !important;
+						background-color: #ffffff !important;
+					}
+				</style>
+			`);
+			
 			if (frm.doc.docstatus == 0) {
 				frm.trigger('set_posting_date_read_only');
 				frm.set_value('period_start_date', frappe.datetime.now_datetime());
