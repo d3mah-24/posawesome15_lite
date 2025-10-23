@@ -15,7 +15,7 @@ app_license = "GPLv3"
 
 
 app_include_js = [
-    "posawesome.bundle.EGA6PM4Z.js",
+    "posawesome.bundle.js",
 ]
 
 
