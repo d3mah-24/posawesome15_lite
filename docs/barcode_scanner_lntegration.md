@@ -1,4 +1,5 @@
 **Hardware Integration**
+
 - **onScan.js** - Hardware barcode scanner detection with cross-platform compatibility
 - **Supported Scanner Types:** USB HID, Bluetooth, Camera-based, Keyboard wedge scanners
 **Barcode Scanner Integration**
