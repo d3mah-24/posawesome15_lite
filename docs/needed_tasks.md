@@ -1,10 +1,10 @@
 # 📋 Needed Tasks
 
 ## 📝 Task 1: Auto Delete Draft Invoices
-**💰 Budget**: $15
-**👨‍💻 Developer**: Not Assigned
-**💳 Payment**: Not Assigned
-**🎯 Priority**: 🔥 High
+**💰 Budget**: $15  
+**👨‍💻 Developer**: Not Assigned  
+**💳 Payment**: Not Assigned  
+**🎯 Priority**: 🔥 High  
 **📊 Status**: ⏳ Pending
 
 **🔧 Feature**: `pos_profile_posa_auto_delete_draft_invoices`
@@ -25,10 +25,10 @@
 - 🔗 Add to closing shift workflow if POS Profile checkbox enabled
 
 ## 🎁 Task 2: Offers and Coupons Implementation
-**💰 Budget**: $40
-**👨‍💻 Developer**: Muneer Ahmed
-**💳 Payment**: $40
-**🎯 Priority**: 🔥 Normal
+**💰 Budget**: $40  
+**👨‍💻 Developer**: Muneer Ahmed  
+**💳 Payment**: $40  
+**🎯 Priority**: 🔥 Normal  
 **📊 Status**: 🔄 In Progress
 
 **📖 Description**: Comprehensive offers and coupons system following POS Awesome Lite architecture patterns with seamless frontend-backend integration.
@@ -70,10 +70,10 @@
 - ⚡ Real-time offer validation during invoice creation
 
 ## ⚡ Task 3: Performance Optimizations
-**💰 Budget**: $40
-**👨‍💻 Developer**: Guby
-**💳 Payment**: Crypto
-**🎯 Priority**: 🔥 Normal
+**💰 Budget**: $40  
+**👨‍💻 Developer**: Guby  
+**💳 Payment**: Crypto  
+**🎯 Priority**: 🔥 Normal  
 **📊 Status**: ⏳ Pending
 
 **📖 Description**: Comprehensive performance optimization across frontend and backend following POS Awesome Lite architecture patterns.
@@ -129,10 +129,10 @@
 - 🌐 Browser performance API measurements
 
 ## 🧹 Task 4: Code Cleanup and Localization
-**💰 Budget**: $40
-**👨‍💻 Developer**: Oscar
-**💳 Payment**: Crypto
-**🎯 Priority**: 🔥 High
+**💰 Budget**: $40  
+**👨‍💻 Developer**: Oscar  
+**💳 Payment**: ✅ Crypto  
+**🎯 Priority**: 🔥 High  
 **📊 Status**: 🔄 In Progress (85% Complete)
 
 **📖 Description**: Complete code cleanup and localization to ensure no external dependencies and optimize the codebase.
@@ -157,10 +157,10 @@
 - ✅ Codebase is fully self-contained
 
 ## 🔘 Task 5: Pay Button Disabled Till Totals Updated
-**💰 Budget**: $10
-**👨‍💻 Developer**: Priyansh Vijay
-**💳 Payment**: USDT crypto (Pending to add more tasks)
-**🎯 Priority**: 🔥 High
+**💰 Budget**: $10  
+**👨‍💻 Developer**: Priyansh Vijay  
+**💳 Payment**: 🔄 USDT crypto (Pending to add more tasks ) 
+**🎯 Priority**: 🔥 High  
 **📊 Status**: ✅ Completed
 
 **🔧 Feature**: `pay_button_disabled_till_totals_updated`
