@@ -1,1 +1,0 @@
-auto delete draft invoices after closing shift for same invoices created during the shift.
