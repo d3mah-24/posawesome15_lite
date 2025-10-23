@@ -87,7 +87,7 @@
 - **No Manual Input Required:** Seamless scanning workflow without keyboard interaction
 
 **🎨 User Interface**
-- **Frontend:** Vue 3.4.21 + Vuetify 3.6.9
+- **Frontend:** Vue 3.4.21 (Pure HTML/CSS components)
 - Responsive and modern design
 - Split view (items selector + invoice)
 - Compact table layouts
