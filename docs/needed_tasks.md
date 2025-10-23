@@ -2,7 +2,7 @@
 
 ## 📝 Task 1: Auto Delete Draft Invoices
 
-**💰 Budget**: $15  
+**💰 Budget**: $15
 **👨‍💻 Developer**: Not Assigned  
 **💳 Payment**: Not Assigned  
 **🎯 Priority**: 🔥 High  
