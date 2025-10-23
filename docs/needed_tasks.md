@@ -32,7 +32,7 @@ created during the shift.
 ## 🎁 Task 2: Offers and Coupons Implementation
 
 **💰 Budget**: $40  
-**👨‍💻 Developer**: Muneer Ahmed  
+**👨‍💻 Developer**: Priyansh Vijay  
 **💳 Payment**: $40  
 **🎯 Priority**: 🔥 Normal  
 **📊 Status**: 🔄 In Progress
