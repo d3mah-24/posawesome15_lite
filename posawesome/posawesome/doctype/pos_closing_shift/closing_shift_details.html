@@ -1,96 +1,88 @@
-<!-- Custom styling removed - using default Frappe styling -->
+<div class="clearfix"></div>
+<div class="box">
+        <div class="grid-body">
+            <div class="rows text-center">
 
-<!-- Simple HTML structure without custom styling -->
-<div>
-    <h2>{{ _("POS Closing Shift Report") }}</h2>
-    
-    <!-- Quick Metrics Overview -->
-    <div>
-        <h3>{{ _("Summary") }}</h3>
-        <p><strong>{{ _("Grand Total") }}:</strong> {{ frappe.utils.fmt_money(data.grand_total or 0, currency=currency) }}</p>
-        <p><strong>{{ _("Net Total") }}:</strong> {{ frappe.utils.fmt_money(data.net_total or 0, currency=currency) }}</p>
-        <p><strong>{{ _("Total Quantity") }}:</strong> {{ data.total_quantity or 0 }}</p>
-    </div>
+                <!-- Sales summary section -->
+                <div>
+                        <h6 class="text-center uppercase" style="color: #8D99A6">{{ _("Sales Summary") }}</h6>
+                        <div class="tax-break-up" style="overflow-x: auto;">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-left font-bold">{{ _('Grand Total') }}</td>
+                                        <td class='text-right'> {{ frappe.utils.fmt_money(data.grand_total or '', currency=currency) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-left font-bold">{{ _('Net Total') }}</td>
+                                        <td class='text-right'> {{ frappe.utils.fmt_money(data.net_total or '', currency=currency) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-left font-bold">{{ _('Total Quantity') }}</td>
+                                        <td class='text-right'>{{ data.total_quantity or '' }}</td>
+                                    </tr>
 
-    <!-- Sales Summary Section -->
-    <div>
-        <h3>{{ _("Sales Summary") }}</h3>
-        <table border="1" style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr>
-                    <th>{{ _("Description") }}</th>
-                    <th>{{ _("Amount") }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ _("Grand Total") }}</td>
-                    <td>{{ frappe.utils.fmt_money(data.grand_total or 0, currency=currency) }}</td>
-                </tr>
-                <tr>
-                    <td>{{ _("Net Total") }}</td>
-                    <td>{{ frappe.utils.fmt_money(data.net_total or 0, currency=currency) }}</td>
-                </tr>
-                <tr>
-                    <td>{{ _("Total Quantity") }}</td>
-                    <td>{{ data.total_quantity or 0 }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Section end -->
 
-    <!-- Payment Methods Section -->
-    <div>
-        <h3>{{ _("Payment Methods") }}</h3>
-        {% if data.payment_reconciliation %}
-            <table border="1" style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th>{{ _("Payment Method") }}</th>
-                        <th>{{ _("Amount") }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for d in data.payment_reconciliation %}
-                        <tr>
-                            <td>{{ d.mode_of_payment }}</td>
-                            <td>{{ frappe.utils.fmt_money(d.expected_amount - d.opening_amount, currency=currency) }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>{{ _("No payment methods recorded") }}</p>
-        {% endif %}
-    </div>
+                <!-- Mode of payment section -->
+                <div>
+                        <h6 class="text-center uppercase" style="color: #8D99A6">{{ _("Mode of Payments") }}</h6>
+                        <div class="tax-break-up" style="overflow-x: auto;">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left">{{ _("Mode of Payment") }}</th>
+                                        <th class="text-right">{{ _("Amount") }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for d in data.payment_reconciliation %}
+                                    <tr>
+                                        <td class="text-left">{{ d.mode_of_payment }}</td>
+                                        <td class='text-right'> {{ frappe.utils.fmt_money(d.expected_amount - d.opening_amount, currency=currency) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Section end -->
 
-    <!-- Taxes Section -->
-    {% if data.taxes %}
-        <div>
-            <h3>{{ _("Taxes") }}</h3>
-            <table border="1" style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th>{{ _("Tax Account") }}</th>
-                        <th>{{ _("Rate") }}</th>
-                        <th>{{ _("Amount") }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for d in data.taxes %}
-                        <tr>
-                            <td>{{ d.account_head }}</td>
-                            <td>{{ d.rate }}%</td>
-                            <td>{{ frappe.utils.fmt_money(d.amount, currency=currency) }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                <!-- Taxes section -->
+                {% if data.taxes %}
+                <div>
+                        <h6 class="text-center uppercase" style="color: #8D99A6">{{ _("Taxes") }}</h6>
+                        <div class="tax-break-up" style="overflow-x: auto;">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left">{{ _("Account") }}</th>
+                                        <th class="text-left">{{ _("Rate") }}</th>
+                                        <th class="text-right">{{ _("Amount") }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for d in data.taxes %}
+                                    <tr>
+                                        <td class="text-left">{{ d.account_head }}</td>
+                                        <td class="text-left">{{ d.rate }} %</td>
+                                        <td class='text-right'> {{ frappe.utils.fmt_money(d.amount, currency=currency) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                <!-- Section end -->
+
+            </div>
         </div>
-    {% endif %}
-    
-    <!-- Footer Note -->
-    <div style="text-align: center; margin-top: 20px;">
-        <small>{{ _("Report generated at") }} {{ frappe.utils.now_datetime().strftime("%Y-%m-%d %H:%M:%S") }}</small>
     </div>
 </div>
