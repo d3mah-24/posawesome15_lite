@@ -637,6 +637,7 @@
             },
             async: true,
             callback: function (r) {
+              console.log("API Response (Create Invoice):", r);
               if (r.message !== undefined) {
                 if (r.message === null) {
                   vm.invoice_doc = null;
@@ -659,8 +660,8 @@
                       evntBus.emit("update_pos_offers", appliedOffers);
                     }
                   }
-  
-                  resolve(vm.invoice_doc);
+                  vm._processOffers();
+                  
                 }
               } else {
                 reject(new Error("Failed to create invoice"));
@@ -674,6 +675,9 @@
       },
   
       async auto_update_invoice(doc = null, reason = "auto") {
+        console.log("Auto-updating invoice, reason:", reason);
+        console.log("Auto-updating invoice, doc:", doc);
+        
         if (this.invoice_doc?.submitted_for_payment) {
           return;
         }
@@ -1604,6 +1608,8 @@
       },
   
       handleOffers() {
+      console.log("Handling offers for invoice:", this.invoice_doc?.name, "with items:", this.items);
+      
         if (this.invoice_doc?.name && this.items && this.items.length > 1) {
           this._processOffers();
         }
@@ -1886,6 +1892,7 @@
       });
   
       evntBus.on("set_offers", (data) => {
+        console.log("check offere data ", data);
         
         this.posOffers = data;
       });
