@@ -11,7 +11,7 @@ bench restart
 **Backend (Python) Debug Policy**
 - **Summary:** Use `frappe.log_error()` at the end of each function to summarize results
 - **Details:** Include the filename, function name, and results in the log
-- **Tracking:** [Error Log](http://localhost/app/error-log)
+- **Tracking:** [Error Log](http://192.168.100.117/app/error-log)
 
 
 
