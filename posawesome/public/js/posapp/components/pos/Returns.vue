@@ -337,7 +337,7 @@ export default {
 }
 
 .card-header {
-  padding: 16px;
+  padding: 12px;
   border-bottom: 1px solid #e0e0e0;
   background: #f5f5f5;
 }
@@ -349,7 +349,7 @@ export default {
 }
 
 .card-body {
-  padding: 16px;
+  padding: 12px;
 }
 
 .card-footer {
@@ -357,9 +357,9 @@ export default {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding: 16px;
+  padding: 12px;
   border-top: 1px solid #e0e0e0;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 /* Spacer */
@@ -432,7 +432,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 /* Table Row */
@@ -457,7 +457,7 @@ export default {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
 }
 
 .data-table thead {
@@ -466,15 +466,15 @@ export default {
 
 .data-table th,
 .data-table td {
-  padding: 12px 16px;
+  padding: 8px 12px;
   border-bottom: 1px solid #e0e0e0;
+  white-space: nowrap; 
 }
 
 .data-table th {
   font-weight: 600;
   color: #333;
   text-align: left;
-  white-space: nowrap;
 }
 
 .data-table td {
@@ -567,7 +567,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin: 0 16px;
+  margin: 0 8px;
 }
 
 .custom-text-field {
@@ -628,9 +628,9 @@ export default {
 } */
 
 .custom-modal.small-modal {
-  max-width: 575px;
-  min-width: 550px;
-  max-height: 80vh;
+  max-width: 775px;
+  min-width: 750px;
+  max-height: 70vh;
 }
 
 .modal-close-btn {
