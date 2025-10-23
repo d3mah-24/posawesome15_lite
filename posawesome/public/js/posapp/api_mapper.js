@@ -65,7 +65,7 @@ const API_MAP = {
     GET_POS_INVOICES: "posawesome.posawesome.api.pos_closing_shift.get_pos_invoices.get_pos_invoices",
     GET_PAYMENTS_ENTRIES: "posawesome.posawesome.api.pos_closing_shift.get_payments_entries.get_payments_entries",
     MAKE_CLOSING_SHIFT: "posawesome.posawesome.api.pos_closing_shift.make_closing_shift_from_opening.make_closing_shift_from_opening",
-    SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.api.pos_closing_shift.submit_closing_shift.submit_closing_shift",
+    SUBMIT_CLOSING_SHIFT: "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
     GET_CURRENT_CASH_TOTAL: "posawesome.posawesome.api.pos_closing_shift.get_current_cash_total.get_current_cash_total",
     GET_CURRENT_NON_CASH_TOTAL: "posawesome.posawesome.api.pos_closing_shift.get_current_non_cash_total.get_current_non_cash_total"
   },
