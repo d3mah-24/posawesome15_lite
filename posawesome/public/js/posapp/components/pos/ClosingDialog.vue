@@ -366,6 +366,11 @@ export default {
 </script>
 
 <style scoped>
+/* ===== CENTRALIZED POS STYLING ===== */
+/* This file contains all POS dialog styling */
+/* ERP forms use default Frappe styling */
+/* Reports use simple HTML without custom CSS */
+
 /* Dialog Row Container */
 .dialog-row {
   display: flex;
@@ -373,15 +378,16 @@ export default {
   align-items: center;
 }
 
-/* Compact Beautiful Dialog */
+/* Enhanced Beautiful Dialog with Centralized POS Styling */
 .beautiful-dialog {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  max-width: 420px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 450px;
   width: 100%;
   animation: dialogSlideIn 0.3s ease-out;
+  border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
 @keyframes dialogSlideIn {
@@ -395,13 +401,28 @@ export default {
   }
 }
 
-/* Compact Header */
+/* Enhanced Header with Centralized POS Styling */
 .dialog-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 10px 12px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.dialog-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  transform: rotate(45deg);
+  pointer-events: none;
 }
 
 .header-content {
@@ -432,9 +453,12 @@ export default {
 
 .dialog-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 2;
 }
 
 .close-btn {
