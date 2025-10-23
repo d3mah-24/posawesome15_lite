@@ -1,6 +1,7 @@
 #### ✨ Features - Complete Feature List
 
 **💰 Sales & Invoices**
+
 - Create, update, and submit sales invoices
 - Multiple payment modes (Cash, Card, Bank Transfer, Phone/M-PESA)
 - Split payments across multiple payment methods
@@ -13,17 +14,20 @@
 - Change amount calculation (cashback)
 
 **💸 Easy Item Discount Control**
+
 - Control show/hide discount price and discount percentage columns in POS interface
 - Insert discounted price (limited to allowed max percentage)
 - Insert discount percentage (limited to allowed max percentage)  
 - Sales invoice shows total items discount amount (simplified for invoice print format)
 
 **💰 Easy Invoice Discount Control**
+
 - Control show/hide Invoice discount percentage
 - Insert discount percentage (limited to allowed max percentage)
 - Sales invoice shows total Invoice discount amount & Percentage (simplified for invoice print format)
 
 **🎯 Offers & Coupons**
+
 - **POS Offers** - Apply on: Item, Item Group, Brand, Transaction
 - **Offer Types:** Product/Give Product, Discount (%), Discount (Amount)
 - Min/Max quantity and amount triggers
@@ -34,6 +38,7 @@
 - Replace item or replace cheapest item options
 
 **👥 Customer Management**
+
 - Customer search and quick selection
 - Create new customers with full details
 - Customer addresses (shipping/billing)
@@ -46,6 +51,7 @@
 - Mobile number tracking
 
 **📦 Inventory**
+
 - Real-time stock availability display
 - Batch number selection and tracking
 - Serial number support
@@ -59,6 +65,7 @@
 - Item images display
 
 **🔐 Shift Management**
+
 - **POS Opening Shift** - Opening balance entry
 - **POS Closing Shift** - End-of-day reconciliation
 - Cash denomination counting
@@ -68,6 +75,7 @@
 - Shift reports and statistics
 
 **💳 Payment Features**
+
 - Payment mode configuration
 - Phone payment request (M-PESA/Mobile Money)
 - Loyalty points payment
@@ -77,6 +85,7 @@
 - Payment reference tracking
 
 **📱 Barcode Scanner Compatibility**
+
 - **Auto-Focus Free Scanning:** Scan barcodes anywhere in POS interface without focusing search field
 - **Instant Item Addition:** Scanned items automatically added to invoice cart
 - **Multiple Barcode Support:** EAN-13, Code 128, UPC-A, and custom barcodes
@@ -87,6 +96,7 @@
 - **No Manual Input Required:** Seamless scanning workflow without keyboard interaction
 
 **🎨 User Interface**
+
 - **Frontend:** Vue 3.4.21 (Pure HTML/CSS components)
 - Responsive and modern design
 - Split view (items selector + invoice)
