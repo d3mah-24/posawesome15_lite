@@ -115,6 +115,7 @@ class POSClosingShift(Document):
         opening_entry = frappe.get_doc("POS Opening Shift", self.pos_opening_shift)
         opening_entry.pos_closing_shift = self.name
         opening_entry.set_status()
+        self.delete_draft_invoices()
         opening_entry.save()
 
     def on_cancel(self):
@@ -132,3 +133,44 @@ class POSClosingShift(Document):
                 "posawesome/posawesome/doctype/pos_closing_shift/closing_shift_details.html",
                 {"data": self, "currency": currency},
             )
+
+    def delete_draft_invoices(self):
+        """Delete draft invoices for this shift if auto-delete is enabled in POS Profile."""
+        if not frappe.get_value("POS Profile", self.pos_profile, "posa_auto_delete_draft_invoices"):
+            return
+        
+        # Find draft invoices for this shift
+        draft_invoices = frappe.get_all(
+            "Sales Invoice",
+            filters={
+                "posa_pos_opening_shift": self.pos_opening_shift,
+                "docstatus": 0  # Draft only
+            },
+            fields=["name"]
+        )
+        
+        # Delete each draft invoice
+        for invoice in draft_invoices:
+            try:
+                frappe.delete_doc("Sales Invoice", invoice.name, force=1, ignore_permissions=True)
+            except Exception as e:
+                frappe.log_error(f"Error deleting draft invoice {invoice.name}: {str(e)}")
+
+
+@frappe.whitelist()
+def submit_closing_shift(closing_shift):
+    """Submit closing shift - simple wrapper for API calls."""
+    import json
+    closing_shift = json.loads(closing_shift)
+    
+    if closing_shift.get("name"):
+        doc = frappe.get_doc("POS Closing Shift", closing_shift.get("name"))
+    else:
+        doc = frappe.get_doc(closing_shift)
+        doc.insert()
+        frappe.db.commit()
+    
+    doc.submit()  # This calls on_submit() which calls delete_draft_invoices()
+    frappe.db.commit()
+    
+    return doc
