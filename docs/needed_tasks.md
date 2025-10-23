@@ -2,6 +2,8 @@
 
 ## 📝 Task 1: Auto Delete Draft Invoices
 **💰 Budget**: $15
+**👨‍💻 Developer**: Not Assigned
+**💳 Payment**: Not Assigned
 **📊 Status**: ⏳ Pending
 **🎯 Priority**: 🔥 High
 
@@ -24,8 +26,10 @@
 
 ## 🎁 Task 2: Offers and Coupons Implementation
 **💰 Budget**: $40
+**👨‍💻 Developer**: Muneer Ahmed
+**💳 Payment**: $40
+**🎯 Priority**: 🔥 Normal
 **📊 Status**: ⏳ Pending
-**🎯 Priority**: 🔥 High
 
 **📖 Description**: Comprehensive offers and coupons system following POS Awesome Lite architecture patterns with seamless frontend-backend integration.
 
@@ -67,8 +71,10 @@
 
 ## ⚡ Task 3: Performance Optimizations
 **💰 Budget**: $40
-**📊 Status**: ⏳ Pending
-**🎯 Priority**: 🔥 High
+**👨‍💻 Developer**: Guby
+**💳 Payment**: Crypto
+**🎯 Priority**: 🔥 Normal
+**📊 Status**: 🔄 In Progress
 
 **📖 Description**: Comprehensive performance optimization across frontend and backend following POS Awesome Lite architecture patterns.
 
@@ -121,4 +127,32 @@
 - 📦 Bundle size analysis and reporting
 - 🗄️ Database query performance monitoring
 - 🌐 Browser performance API measurements
+
+## 🧹 Task 4: Code Cleanup and Localization
+**💰 Budget**: $40
+**📊 Status**: 🔄 In Progress
+**🎯 Priority**: 🔥 High
+**👨‍💻 Developer**: Oscar
+**💳 Payment**: Crypto
+
+**📖 Description**: Complete code cleanup and localization to ensure no external dependencies and optimize the codebase.
+
+**🛠️ Technical Requirements**:
+- 🗑️ **No unused node_modules**: Remove all unused dependencies
+- 🏠 **No online elements**: Remove all CDN links, external fonts, and online resources
+- 📦 **Local only**: All assets must be local (CSS, fonts, images)
+- 🎨 **Customizations**: Complete remaining simple CSS and HTML customizations
+
+**📋 Deliverables**:
+1. **🧹 CLEANUP_REPORT.md** - List of removed unused dependencies and online resources
+2. **📦 LOCAL_ASSETS_INVENTORY.md** - Complete inventory of all local assets
+3. **🎨 CUSTOMIZATION_COMPLETE.md** - Documentation of completed CSS/HTML customizations
+4. **✅ FINAL_VALIDATION.md** - Validation that all requirements are met
+
+**🎯 Success Criteria**:
+- ✅ Zero unused node_modules dependencies
+- ✅ Zero external CDN links or online resources
+- ✅ All fonts and assets are local
+- ✅ All CSS/HTML customizations completed
+- ✅ Codebase is fully self-contained
 
