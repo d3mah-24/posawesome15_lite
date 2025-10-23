@@ -23,8 +23,11 @@ frappe.ui.form.on('POS Closing Shift', {
 		if (frm.doc.docstatus === 0) frm.set_value("period_end_date", frappe.datetime.now_datetime());
 		if (frm.doc.docstatus === 1) set_html_data(frm);
 		
-		// Enhance form appearance
-		enhance_form_styling(frm);
+		// Form styling removed - using default Frappe styling
+	},
+
+	onload_post_render: function(frm) {
+		// No custom styling - using default Frappe styling
 	},
 
 	refresh: function(frm) {
@@ -43,8 +46,7 @@ frappe.ui.form.on('POS Closing Shift', {
 			}, __('📋 Reports')).addClass('btn-success');
 		}
 		
-		// Update form colors based on status
-		update_form_indicators(frm);
+		// Form indicators removed - using default Frappe styling
 	},
 
 	pos_opening_shift (frm) {
@@ -425,193 +427,10 @@ const get_value = (doctype, name, field) => {
 	return value;
 };
 
-// Enhanced UI Functions
-function enhance_form_styling(frm) {
-	// Add custom CSS directly to the page
-	const style = `
-		<style id="pos-closing-custom-styles">
-		/* POS Closing Shift Enhanced Styling */
-		
-		/* Form Container Improvements */
-		.frappe-control[data-doctype="POS Closing Shift"] .form-layout {
-			background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-			min-height: 100vh;
-			padding: 20px;
-		}
+// Enhanced UI Functions - Removed custom styling
+// Using default Frappe styling for ERP forms
 
-		/* Section Headers */
-		.frappe-control[data-doctype="POS Closing Shift"] .form-layout .section-head {
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-			color: white !important;
-			border-radius: 12px 12px 0 0 !important;
-			padding: 15px 25px !important;
-			font-weight: 600 !important;
-			text-transform: uppercase;
-			letter-spacing: 1px;
-			border: none !important;
-			box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-		}
-
-		/* Form Sections */
-		.frappe-control[data-doctype="POS Closing Shift"] .form-layout .form-section {
-			background: white;
-			border: none !important;
-			border-radius: 12px !important;
-			margin-bottom: 25px !important;
-			box-shadow: 0 8px 30px rgba(0,0,0,0.1) !important;
-			overflow: hidden;
-			transition: transform 0.3s ease, box-shadow 0.3s ease;
-		}
-
-		.frappe-control[data-doctype="POS Closing Shift"] .form-layout .form-section:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
-		}
-
-		/* Currency Fields Enhancement */
-		.frappe-control[data-doctype="POS Closing Shift"] .frappe-control[data-fieldtype="Currency"] .control-input {
-			background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%) !important;
-			border: 2px solid #28a745 !important;
-			border-radius: 8px !important;
-			font-weight: 700 !important;
-			color: #155724 !important;
-			font-size: 1.1rem !important;
-			padding: 12px 16px !important;
-		}
-
-		.frappe-control[data-doctype="POS Closing Shift"] .frappe-control[data-fieldtype="Currency"] .control-input:focus {
-			border-color: #20c997 !important;
-			box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25) !important;
-			transform: scale(1.02);
-		}
-
-		/* Table Enhancements */
-		.frappe-control[data-doctype="POS Closing Shift"] .grid-wrapper .grid-row {
-			border-radius: 8px !important;
-			margin-bottom: 10px !important;
-			transition: all 0.3s ease !important;
-			border: 1px solid #e9ecef !important;
-		}
-
-		.frappe-control[data-doctype="POS Closing Shift"] .grid-wrapper .grid-row:hover {
-			background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%) !important;
-			transform: translateX(8px) !important;
-			box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
-		}
-
-		.frappe-control[data-doctype="POS Closing Shift"] .grid-wrapper .grid-row .grid-row-index {
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-			color: white !important;
-			border-radius: 50% !important;
-			width: 28px !important;
-			height: 28px !important;
-			display: flex !important;
-			align-items: center !important;
-			justify-content: center !important;
-			font-weight: 600 !important;
-		}
-
-		/* Button Improvements */
-		.frappe-control[data-doctype="POS Closing Shift"] .btn-primary {
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-			border: none !important;
-			border-radius: 25px !important;
-			padding: 10px 25px !important;
-			font-weight: 600 !important;
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
-			box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
-			transition: all 0.3s ease !important;
-		}
-
-		.frappe-control[data-doctype="POS Closing Shift"] .btn-primary:hover {
-			transform: translateY(-2px) !important;
-			box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6) !important;
-		}
-
-		/* Field Labels */
-		.frappe-control[data-doctype="POS Closing Shift"] .control-label {
-			font-weight: 600 !important;
-			color: #495057 !important;
-			margin-bottom: 8px !important;
-			font-size: 0.95rem !important;
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
-		}
-
-		/* Input Fields */
-		.frappe-control[data-doctype="POS Closing Shift"] .form-control {
-			border-radius: 8px !important;
-			border: 2px solid #e9ecef !important;
-			padding: 12px 16px !important;
-			transition: all 0.3s ease !important;
-		}
-
-		.frappe-control[data-doctype="POS Closing Shift"] .form-control:focus {
-			border-color: #667eea !important;
-			box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25) !important;
-			transform: scale(1.02);
-		}
-
-		/* Status Indicators */
-		.pos-closing-indicator {
-			position: fixed;
-			top: 20px;
-			right: 20px;
-			padding: 10px 20px;
-			border-radius: 25px;
-			color: white;
-			font-weight: 600;
-			z-index: 1000;
-			box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-		}
-		
-		/* Responsive Design */
-		@media (max-width: 768px) {
-			.frappe-control[data-doctype="POS Closing Shift"] .form-layout {
-				padding: 10px !important;
-			}
-			
-			.frappe-control[data-doctype="POS Closing Shift"] .section-head {
-				padding: 12px 15px !important;
-				font-size: 0.9rem !important;
-			}
-		}
-		</style>
-	`;
-	
-	if (!$('#pos-closing-custom-styles').length) {
-		$('head').append(style);
-	}
-}
-
-function update_form_indicators(frm) {
-	// Remove existing indicators
-	$('.pos-closing-indicator').remove();
-	
-	let indicator_class = '';
-	let indicator_text = '';
-	
-	if (frm.doc.docstatus === 0) {
-		indicator_class = 'bg-warning';
-		indicator_text = __('📝 Draft');
-	} else if (frm.doc.docstatus === 1) {
-		indicator_class = 'bg-success';
-		indicator_text = __('✅ Submitted');
-	} else if (frm.doc.docstatus === 2) {
-		indicator_class = 'bg-danger';
-		indicator_text = __('❌ Cancelled');
-	}
-	
-	if (indicator_text) {
-		$('body').append(`
-			<div class="pos-closing-indicator ${indicator_class}">
-				<i class="fa fa-circle" style="margin-right: 8px;"></i>
-				${indicator_text}
-			</div>
-		`);
-	}
-}
+// Form indicators removed - using default Frappe styling
 
 function show_loading_indicator(frm, message) {
 	frm.dashboard.show_progress(__('Processing'), 0, message);
@@ -694,3 +513,5 @@ function export_summary(frm) {
 		indicator: 'green'
 	});
 }
+
+// Cleanup function removed - no custom styling to clean up
