@@ -1,5 +1,7 @@
+# POS Awesome Lite
+
 <div align="center">
-    <img src="./imgs/pos_lite.png" height="128">
+    <img src="./imgs/pos_lite.png" height="128" alt="POS Awesome Lite Logo">
     <h2>POS Awesome Lite</h2>
     <p><em>Point of Sale for ERPNext v15</em></p>
 
@@ -68,8 +70,8 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
   -🔵 [Upwork](https://upwork.com) 
   -💰 Western Union 
   -₿ Crypto
-- <img src="./imgs/Egypt.svg" width="16" height="16"> **Egypt**: Phone cash wallets
-- <img src="./imgs/Saudi_Arabia.svg" width="16" height="16"> **Saudi Arabia**: STC Pay, Alrajhi Bank Transfer
+- <img src="./imgs/Egypt.svg" width="16" height="16" alt="Egypt Flag"> **Egypt**: Phone cash wallets
+- <img src="./imgs/Saudi_Arabia.svg" width="16" height="16" alt="Saudi Arabia Flag"> **Saudi Arabia**: STC Pay, Alrajhi Bank Transfer
 
 ## 🖥️ Development Server
 
@@ -119,15 +121,17 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 **🤝 Need Support or Want to Join? Contact Now:**
 
-### <img src="./imgs/Egypt.svg" width="20" height="20"> Egypt Contact
-- 📞 **Call:** <img src="./imgs/Egypt.svg" width="16" height="16"> [+20 115 648 3669](tel:+201156483669)
-- <img src="./imgs/whatsapp.svg" width="16" height="16"> **WhatsApp:** <img src="./imgs/Egypt.svg" width="16" height="16"> [https://wa.me/201156483669](https://wa.me/201156483669)
-- <img src="./imgs/telegram.svg" width="16" height="16"> **Telegram:** [https://t.me/EG_01156483669](https://t.me/EG_01156483669)
+### <img src="./imgs/Egypt.svg" width="20" height="20" alt="Egypt Flag"> Egypt Contact
 
-### <img src="./imgs/Saudi_Arabia.svg" width="20" height="20"> Saudi Arabia Contact  
-- 📞 **Call:** <img src="./imgs/Saudi_Arabia.svg" width="16" height="16"> [+966 57 891 9729](tel:+966578919729)
-- <img src="./imgs/whatsapp.svg" width="16" height="16"> **WhatsApp:** <img src="./imgs/Saudi_Arabia.svg" width="16" height="16"> [https://wa.me/966578919729](https://wa.me/966578919729)
-- <img src="./imgs/telegram.svg" width="16" height="16"> **Telegram:** [https://t.me/KSA_0578919729](https://t.me/KSA_0578919729)
+- 📞 **Call:** <img src="./imgs/Egypt.svg" width="16" height="16" alt="Egypt Flag"> [+20 115 648 3669](tel:+201156483669)
+- <img src="./imgs/whatsapp.svg" width="16" height="16" alt="WhatsApp"> **WhatsApp:** <img src="./imgs/Egypt.svg" width="16" height="16" alt="Egypt Flag"> [https://wa.me/201156483669](https://wa.me/201156483669)
+- <img src="./imgs/telegram.svg" width="16" height="16" alt="Telegram"> **Telegram:** [https://t.me/EG_01156483669](https://t.me/EG_01156483669)
+
+### <img src="./imgs/Saudi_Arabia.svg" width="20" height="20" alt="Saudi Arabia Flag"> Saudi Arabia Contact  
+
+- 📞 **Call:** <img src="./imgs/Saudi_Arabia.svg" width="16" height="16" alt="Saudi Arabia Flag"> [+966 57 891 9729](tel:+966578919729)
+- <img src="./imgs/whatsapp.svg" width="16" height="16" alt="WhatsApp"> **WhatsApp:** <img src="./imgs/Saudi_Arabia.svg" width="16" height="16" alt="Saudi Arabia Flag"> [https://wa.me/966578919729](https://wa.me/966578919729)
+- <img src="./imgs/telegram.svg" width="16" height="16" alt="Telegram"> **Telegram:** [https://t.me/KSA_0578919729](https://t.me/KSA_0578919729)
 
 ### 🌐 Online
 - 🌐 **Website:** [future-support.online](https://www.future-support.online/)

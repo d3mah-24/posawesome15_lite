@@ -1,326 +1,96 @@
-<style>
-/* Scope all styles to POS closing shift details only */
-.pos-closing-shift-details {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    min-height: 100vh;
-    padding: 20px 0;
-}
+<!-- Custom styling removed - using default Frappe styling -->
 
-.pos-closing-shift-details .summary-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-.pos-closing-shift-details .summary-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-    margin-bottom: 24px;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.pos-closing-shift-details .summary-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-}
-
-.pos-closing-shift-details .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 20px 30px;
-    position: relative;
-    overflow: hidden;
-}
-
-.pos-closing-shift-details .card-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    transform: rotate(45deg);
-}
-
-.pos-closing-shift-details .card-header h3 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    text-align: center;
-    position: relative;
-    z-index: 2;
-}
-
-.pos-closing-shift-details .card-body {
-    padding: 30px;
-}
-
-.pos-closing-shift-details .modern-table {
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-}
-
-.pos-closing-shift-details .modern-table thead th {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    color: #495057;
-    font-weight: 600;
-    padding: 18px 24px;
-    text-align: left;
-    font-size: 0.95rem;
-    border: none;
-    position: relative;
-}
-
-.pos-closing-shift-details .modern-table thead th:first-child {
-    border-top-left-radius: 12px;
-}
-
-.pos-closing-shift-details .modern-table thead th:last-child {
-    border-top-right-radius: 12px;
-    text-align: right;
-}
-
-.pos-closing-shift-details .modern-table tbody tr {
-    border-bottom: 1px solid #f1f3f4;
-    transition: background-color 0.3s ease;
-}
-
-.pos-closing-shift-details .modern-table tbody tr:last-child {
-    border-bottom: none;
-}
-
-.pos-closing-shift-details .modern-table tbody tr:hover {
-    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
-}
-
-.pos-closing-shift-details .modern-table tbody td {
-    padding: 18px 24px;
-    color: #495057;
-    font-size: 0.95rem;
-    border: none;
-}
-
-.pos-closing-shift-details .modern-table tbody td:last-child {
-    text-align: right;
-    font-weight: 600;
-    color: #28a745;
-}
-
-.pos-closing-shift-details .amount-highlight {
-    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
-    border-radius: 8px;
-    padding: 8px 16px;
-    display: inline-block;
-    font-weight: 700;
-    color: #155724;
-}
-
-.pos-closing-shift-details .metric-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    transition: all 0.3s ease;
-}
-
-.pos-closing-shift-details .metric-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-.pos-closing-shift-details .metric-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #667eea;
-    margin: 10px 0;
-}
-
-.pos-closing-shift-details .metric-label {
-    font-size: 0.9rem;
-    color: #6c757d;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.pos-closing-shift-details .grid-3 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
-
-@media (max-width: 768px) {
-    .pos-closing-shift-details .summary-container {
-        padding: 0 15px;
-    }
+<!-- Simple HTML structure without custom styling -->
+<div>
+    <h2>{{ _("POS Closing Shift Report") }}</h2>
     
-    .pos-closing-shift-details .card-body {
-        padding: 20px;
-    }
-    
-    .pos-closing-shift-details .modern-table thead th,
-    .pos-closing-shift-details .modern-table tbody td {
-        padding: 12px 16px;
-        font-size: 0.9rem;
-    }
-    
-    .pos-closing-shift-details .metric-value {
-        font-size: 1.5rem;
-    }
-    
-    .pos-closing-shift-details .grid-3 {
-        grid-template-columns: 1fr;
-    }
-}
+    <!-- Quick Metrics Overview -->
+    <div>
+        <h3>{{ _("Summary") }}</h3>
+        <p><strong>{{ _("Grand Total") }}:</strong> {{ frappe.utils.fmt_money(data.grand_total or 0, currency=currency) }}</p>
+        <p><strong>{{ _("Net Total") }}:</strong> {{ frappe.utils.fmt_money(data.net_total or 0, currency=currency) }}</p>
+        <p><strong>{{ _("Total Quantity") }}:</strong> {{ data.total_quantity or 0 }}</p>
+    </div>
 
-.pos-closing-shift-details .section-divider {
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #667eea, transparent);
-    margin: 30px 0;
-    border-radius: 2px;
-}
+    <!-- Sales Summary Section -->
+    <div>
+        <h3>{{ _("Sales Summary") }}</h3>
+        <table border="1" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>{{ _("Description") }}</th>
+                    <th>{{ _("Amount") }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ _("Grand Total") }}</td>
+                    <td>{{ frappe.utils.fmt_money(data.grand_total or 0, currency=currency) }}</td>
+                </tr>
+                <tr>
+                    <td>{{ _("Net Total") }}</td>
+                    <td>{{ frappe.utils.fmt_money(data.net_total or 0, currency=currency) }}</td>
+                </tr>
+                <tr>
+                    <td>{{ _("Total Quantity") }}</td>
+                    <td>{{ data.total_quantity or 0 }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-.pos-closing-shift-details .no-data {
-    text-align: center;
-    padding: 40px 20px;
-    color: #6c757d;
-    font-style: italic;
-}
-
-.pos-closing-shift-details .tax-rate-badge {
-    background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
-    color: #2d3436;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    display: inline-block;
-}
-</style>
-
-<div class="pos-closing-shift-details">
-    <div class="summary-container">
-        <!-- Quick Metrics Overview -->
-        <div class="grid-3">
-            <div class="metric-card">
-                <div class="metric-label">{{ _("Grand Total") }}</div>
-                <div class="metric-value">{{ frappe.utils.fmt_money(data.grand_total or 0, currency=currency) }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">{{ _("Net Total") }}</div>
-                <div class="metric-value">{{ frappe.utils.fmt_money(data.net_total or 0, currency=currency) }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">{{ _("Total Quantity") }}</div>
-                <div class="metric-value">{{ data.total_quantity or 0 }}</div>
-            </div>
-        </div>
-
-        <!-- Sales Summary Section -->
-        <div class="summary-card">
-            <div class="card-header">
-                <h3>{{ _("Sales Summary") }}</h3>
-            </div>
-            <div class="card-body">
-                <table class="modern-table">
-                    <thead>
+    <!-- Payment Methods Section -->
+    <div>
+        <h3>{{ _("Payment Methods") }}</h3>
+        {% if data.payment_reconciliation %}
+            <table border="1" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>{{ _("Payment Method") }}</th>
+                        <th>{{ _("Amount") }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in data.payment_reconciliation %}
                         <tr>
-                            <th>{{ _("Description") }}</th>
-                            <th>{{ _("Amount") }}</th>
+                            <td>{{ d.mode_of_payment }}</td>
+                            <td>{{ frappe.utils.fmt_money(d.expected_amount - d.opening_amount, currency=currency) }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ _("Grand Total") }}</td>
-                            <td><span class="amount-highlight">{{ frappe.utils.fmt_money(data.grand_total or 0, currency=currency) }}</span></td>
-                        </tr>
-                        <tr>
-                            <td>{{ _("Net Total") }}</td>
-                            <td><span class="amount-highlight">{{ frappe.utils.fmt_money(data.net_total or 0, currency=currency) }}</span></td>
-                        </tr>
-                        <tr>
-                            <td>{{ _("Total Quantity") }}</td>
-                            <td><span class="amount-highlight">{{ data.total_quantity or 0 }}</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Payment Methods Section -->
-        <div class="summary-card">
-            <div class="card-header">
-                <h3>{{ _("Payment Methods") }}</h3>
-            </div>
-            <div class="card-body">
-                {% if data.payment_reconciliation %}
-                    <table class="modern-table">
-                        <thead>
-                            <tr>
-                                <th>{{ _("Payment Method") }}</th>
-                                <th>{{ _("Amount") }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for d in data.payment_reconciliation %}
-                                <tr>
-                                    <td>{{ d.mode_of_payment }}</td>
-                                    <td><span class="amount-highlight">{{ frappe.utils.fmt_money(d.expected_amount - d.opening_amount, currency=currency) }}</span></td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <div class="no-data">
-                        {{ _("No payment methods recorded") }}
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Taxes Section -->
-        {% if data.taxes %}
-            <div class="summary-card">
-                <div class="card-header">
-                    <h3>{{ _("Taxes") }}</h3>
-                </div>
-                <div class="card-body">
-                    <table class="modern-table">
-                        <thead>
-                            <tr>
-                                <th>{{ _("Tax Account") }}</th>
-                                <th>{{ _("Rate") }}</th>
-                                <th>{{ _("Amount") }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for d in data.taxes %}
-                                <tr>
-                                    <td>{{ d.account_head }}</td>
-                                    <td><span class="tax-rate-badge">{{ d.rate }}%</span></td>
-                                    <td><span class="amount-highlight">{{ frappe.utils.fmt_money(d.amount, currency=currency) }}</span></td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{{ _("No payment methods recorded") }}</p>
         {% endif %}
-        
-        <div class="section-divider"></div>
-        
-        <!-- Footer Note -->
-        <div style="text-align: center; color: #6c757d; font-size: 0.9rem; margin-top: 20px;">
-            {{ _("Report generated at") }} {{ frappe.utils.now_datetime().strftime("%Y-%m-%d %H:%M:%S") }}
+    </div>
+
+    <!-- Taxes Section -->
+    {% if data.taxes %}
+        <div>
+            <h3>{{ _("Taxes") }}</h3>
+            <table border="1" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>{{ _("Tax Account") }}</th>
+                        <th>{{ _("Rate") }}</th>
+                        <th>{{ _("Amount") }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in data.taxes %}
+                        <tr>
+                            <td>{{ d.account_head }}</td>
+                            <td>{{ d.rate }}%</td>
+                            <td>{{ frappe.utils.fmt_money(d.amount, currency=currency) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+    {% endif %}
+    
+    <!-- Footer Note -->
+    <div style="text-align: center; margin-top: 20px;">
+        <small>{{ _("Report generated at") }} {{ frappe.utils.now_datetime().strftime("%Y-%m-%d %H:%M:%S") }}</small>
     </div>
 </div>
