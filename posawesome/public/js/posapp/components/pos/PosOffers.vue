@@ -233,27 +233,36 @@ export default {
 
     handleManualOfferChange() {
       try {
+        console.log("[DEBUG] handleManualOfferChange - Current offers:", this.pos_offers);
+        
         const appliedGrandTotalOffers = this.pos_offers.filter(
           (offer) =>
             offer.offer === OFFER_TYPES.GRAND_TOTAL && offer.offer_applied
         );
 
+        console.log("[DEBUG] Applied Grand Total Offers count:", appliedGrandTotalOffers.length, appliedGrandTotalOffers);
+
         if (appliedGrandTotalOffers.length > 1) {
+          console.log("[DEBUG] Multiple Grand Total offers detected, applying best one");
           this.applyBestGrandTotalOffer();
         } else if (appliedGrandTotalOffers.length === 1) {
+          console.log("[DEBUG] Single Grand Total offer applied:", appliedGrandTotalOffers[0].name);
           this.discount_percentage_offer_name = appliedGrandTotalOffers[0].name;
           this.pos_offers.forEach((offer) => {
             if (
               offer.offer === OFFER_TYPES.GRAND_TOTAL &&
               offer.name !== appliedGrandTotalOffers[0].name
             ) {
+              console.log("[DEBUG] Disabling other Grand Total offer:", offer.name);
               offer.offer_applied = false;
             }
           });
         } else {
+          console.log("[DEBUG] No Grand Total offers applied, clearing discount_percentage_offer_name");
           this.discount_percentage_offer_name = null;
         }
       } catch (error) {
+        console.error("[ERROR] handleManualOfferChange exception:", error);
         this.showMessage("Error processing offer change", "error");
       }
     },
@@ -267,16 +276,26 @@ export default {
 
     updatePosOffers(appliedOffers) {
       try {
+        console.log("[DEBUG] updatePosOffers called with:", appliedOffers);
+        console.log("[DEBUG] Current pos_offers before update:", this.pos_offers);
+        
         this.pos_offers.forEach((pos_offer) => {
+          const wasApplied = pos_offer.offer_applied;
           pos_offer.offer_applied = appliedOffers.some(
             (offer) =>
               offer.name === pos_offer.name ||
               offer.offer_name === pos_offer.name ||
               offer.name === pos_offer.title
           );
+          
+          if (wasApplied !== pos_offer.offer_applied) {
+            console.log(`[DEBUG] Offer '${pos_offer.name}' status changed: ${wasApplied} -> ${pos_offer.offer_applied}`);
+          }
         });
+        
+        console.log("[DEBUG] pos_offers after update:", this.pos_offers);
       } catch (error) {
-        console.error("[PosOffers] error updating applied offers:", error);
+        console.error("[ERROR] updatePosOffers exception:", error);
       }
     },
 
@@ -416,11 +435,13 @@ export default {
       });
 
       evntBus.on(EVENT_NAMES.SET_OFFERS, (data) => {
+        console.log("[DEBUG] SET_OFFERS event received:", data);
         this.pos_offers = data.map((offer) => ({
           ...offer,
           row_id: offer.row_id || this.makeid(20),
           offer_applied: !!offer.auto,
         }));
+        console.log("[DEBUG] pos_offers set to:", this.pos_offers);
       });
 
       evntBus.on(EVENT_NAMES.UPDATE_POS_OFFERS, (data) => {
@@ -455,7 +476,7 @@ export default {
   display: flex;
   flex-direction: column;
   height: 91vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+  background: #f8f9fa; /* Simple background - no gradient */
 }
 
 /* ===== HEADER ===== */
