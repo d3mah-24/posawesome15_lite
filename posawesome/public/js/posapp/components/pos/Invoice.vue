@@ -7,7 +7,7 @@
       </div>
 
       <div class="my-0 py-0 invoice-items-scrollable">
-        <table class="invoice-table elevation-0" style="width: 600px">
+        <table class="invoice-table elevation-0" style="min-width: 600px; max-width: 100%">
           <thead>
             <tr>
               <th
