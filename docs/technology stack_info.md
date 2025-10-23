@@ -1,6 +1,7 @@
 #### 🛠️ Tech Stack - Technology Stack Details
 
 **Backend Infrastructure**
+
 - **Frappe v15** - Python web framework with built-in ORM and API system
 - **ERPNext v15** - Enterprise Resource Planning with integrated accounting and inventory
 - **Python 3.10+** - Modern Python features with type hints support
@@ -8,12 +9,14 @@
 - **Redis** - In-memory data store for session management and performance optimization
 
 **Frontend Technology**
+
 - **Vue 3.4.21** - Progressive JavaScript framework with Composition API
 - **Vuetify 3.6.9** - Material Design components with responsive design
 - **mitt** - Lightweight event emitter for component communication
 - **lodash** - JavaScript utility library for data manipulation
 
 **External Libraries & Dependencies**
+
 - **Bootstrap 4.6.2** - CSS framework with responsive grid system
 - **jQuery 3.7.0** - JavaScript library for DOM manipulation
 - **Leaflet 1.2.0** - Interactive maps with mobile-friendly support
