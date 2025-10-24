@@ -16,9 +16,12 @@ def apply_auto_transaction_discount(doc):
     """Finds auto transaction discount and applies it to the Sales Invoice doc."""
 
     try:
+        frappe.log_error(f"[DEBUG] apply_auto_transaction_discount called for profile: {doc.pos_profile}", "POS Offers Debug")
+
         # Get all offers for the profile
         profile = doc.pos_profile
         if not profile:
+            frappe.log_error(f"[DEBUG] No POS profile found", "POS Offers Debug")
             return False
 
         # Get offers for this POS Profile directly from database
@@ -37,9 +40,13 @@ def apply_auto_transaction_discount(doc):
             limit=1
         )
 
+        frappe.log_error(f"[DEBUG] Found {len(offers)} auto offers", "POS Offers Debug")
+
         if offers and len(offers) > 0:
             auto_disc_offer = offers[0]
             discount_percentage = flt(auto_disc_offer.get("discount_percentage"))
+
+            frappe.log_error(f"[DEBUG] Processing offer: {auto_disc_offer.name}, discount: {discount_percentage}%", "POS Offers Debug")
 
             # Check min/max amount conditions if set
             # Use flt() to safely handle None values (converts None to 0)
@@ -47,21 +54,28 @@ def apply_auto_transaction_discount(doc):
             min_amt = flt(auto_disc_offer.get("min_amt"))
             max_amt = flt(auto_disc_offer.get("max_amt"))
 
+            frappe.log_error(f"[DEBUG] Amount check - grand_total: {grand_total}, min_amt: {min_amt}, max_amt: {max_amt}", "POS Offers Debug")
+
             if min_amt > 0 and grand_total < min_amt:
+                frappe.log_error(f"[DEBUG] Offer rejected - grand_total {grand_total} < min_amt {min_amt}", "POS Offers Debug")
                 return False
             if max_amt > 0 and grand_total > max_amt:
+                frappe.log_error(f"[DEBUG] Offer rejected - grand_total {grand_total} > max_amt {max_amt}", "POS Offers Debug")
                 return False
 
             if discount_percentage > 0:
                 # Apply the discount percentage directly to the Sales Invoice doc
                 doc.additional_discount_percentage = discount_percentage
+                frappe.log_error(f"[DEBUG] Applied discount {discount_percentage}% to invoice", "POS Offers Debug")
 
                 # Return True to indicate success
                 return True
+        else:
+            frappe.log_error(f"[DEBUG] No applicable auto offers found", "POS Offers Debug")
 
     except Exception as e:
         # Silent fail - don't break invoice creation
-        frappe.log_error(f"Auto discount error: {str(e)}", "Auto Discount Error")
+        frappe.log_error(f"[ERROR] Auto discount error: {str(e)}", "Auto Discount Error")
 
     return False
 
@@ -71,12 +85,12 @@ def create_invoice(data):
     Create new Sales Invoice using ERPNext native methods only.
     Uses frappe.new_doc('Sales Invoice') with is_pos=1.
     """
-    # print("coming in create_invoice ", data)
     try:
         # Parse JSON data
         if isinstance(data, str):
             data = json.loads(data)
     except (json.JSONDecodeError, ValueError) as e:
+        frappe.log_error(f"[ERROR] Invalid JSON data: {str(e)}", "POS Invoice Error")
         frappe.throw(_("Invalid JSON data: {0}").format(str(e)))
 
     try:
@@ -97,13 +111,20 @@ def create_invoice(data):
         # Use ERPNext native methods
         doc.set_missing_values()
 
+        # Debug offers logic
+        frappe.log_error(f"[DEBUG] Before auto discount - grand_total: {doc.grand_total}, pos_profile: {doc.pos_profile}", "POS Offers Debug")
 
         if apply_auto_transaction_discount(doc):
+             frappe.log_error(f"[DEBUG] Auto discount applied successfully", "POS Offers Debug")
              # Rerun calculation to adopt the discount injected by the custom function above
              doc.calculate_taxes_and_totals()
+        else:
+             frappe.log_error(f"[DEBUG] No auto discount applied", "POS Offers Debug")
 
         # Calculate taxes and totals using ERPNext native methods
         doc.calculate_taxes_and_totals()
+
+        frappe.log_error(f"[DEBUG] After calculation - grand_total: {doc.grand_total}, additional_discount_percentage: {doc.additional_discount_percentage}", "POS Offers Debug")
 
         # Save the document to get a proper name
         doc.save()
