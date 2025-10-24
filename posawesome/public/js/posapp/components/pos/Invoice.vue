@@ -544,7 +544,9 @@ export default {
     create_invoice(doc) {
       const vm = this;
       return new Promise((resolve, reject) => {
-        console.log("Creating invoice with doc:", this.posa_offers);
+        console.log("[DEBUG] Creating invoice with posa_offers:", this.posa_offers);
+        console.log("[DEBUG] Full doc data:", doc);
+        console.log("[DEBUG] POS Profile:", this.pos_profile);
 
         frappe.call({
           method: API_MAP.SALES_INVOICE.CREATE,
@@ -553,9 +555,9 @@ export default {
           },
           async: true,
           callback: function (r) {
-            console.log("API Response (Create Invoice):", r);
-            console.log("API Response message:", r.message);
-            console.log("API Response message.name:", r.message?.name);
+            console.log("[DEBUG] API Response (Create Invoice):", r);
+            console.log("[DEBUG] API Response message:", r.message);
+            console.log("[DEBUG] API Response message.name:", r.message?.name);
 
             vm._processOffers();
             if (r.message !== undefined) {
@@ -1552,9 +1554,9 @@ export default {
       if (!this.invoice_doc?.name) return;
 
       // Debug logging to check the field value
-      console.log("DEBUG Invoice: pos_profile:", this.pos_profile);
-      console.log("DEBUG Invoice: posa_auto_fetch_offers value:", this.pos_profile?.posa_auto_fetch_offers);
-      console.log("DEBUG Invoice: posa_auto_fetch_offers type:", typeof this.pos_profile?.posa_auto_fetch_offers);
+      console.log("[DEBUG] _processOffers - pos_profile:", this.pos_profile);
+      console.log("[DEBUG] _processOffers - posa_auto_fetch_offers value:", this.pos_profile?.posa_auto_fetch_offers);
+      console.log("[DEBUG] _processOffers - posa_auto_fetch_offers type:", typeof this.pos_profile?.posa_auto_fetch_offers);
 
       // Check if offers are enabled in POS Profile (handle different value types)
       const offersEnabled = this.pos_profile?.posa_auto_fetch_offers !== 0 &&
@@ -1563,10 +1565,10 @@ export default {
         this.pos_profile?.posa_auto_fetch_offers !== null &&
         this.pos_profile?.posa_auto_fetch_offers !== undefined;
 
-      console.log("DEBUG Invoice: offersEnabled:", offersEnabled);
+      console.log("[DEBUG] _processOffers - offersEnabled:", offersEnabled);
 
       if (!offersEnabled) {
-        console.log("DEBUG Invoice: Offers disabled, skipping processing");
+        console.log("[DEBUG] _processOffers - Offers disabled, skipping processing");
         return; // Skip offers processing
       }
 
