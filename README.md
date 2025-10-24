@@ -15,6 +15,8 @@
 
 ## 🎯 Goal
 
+![POS Awesome metrics snapshot](./imgs/metrics_24_10_2025_06_00_am.png)
+
 **POS Awesome Lite** = Modern Interface + Original ERPNext Engine
 
 Just a lightweight web interface built on top of ERPNext's proven foundation:
@@ -43,25 +45,25 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 ### 📋 **Project Management**
 
-📋 **Current Tasks:** [needed_tasks.md](docs/needed_tasks.md)  
+📋 **Current Tasks:** [needed_tasks.md](docs/needed_tasks.md)
 
 ### 🛠️ **Development Resources**
 
-🔧 **Development Tools:** [dev_common_commands.md](docs/dev_common_commands.md)  
-🛠️ **Development Tools:** [development_tools.md](docs/development_tools.md)  
-📱 **POS Lite Features:** [pos_lite_features.md](docs/pos_lite_features.md)  
-⌨️ **POS Shortcuts:** [pos_lite_shortcuts.md](docs/pos_lite_shortcuts.md)  
+🔧 **Development Tools:** [dev_common_commands.md](docs/dev_common_commands.md)
+🛠️ **Development Tools:** [development_tools.md](docs/development_tools.md)
+📱 **POS Lite Features:** [pos_lite_features.md](docs/pos_lite_features.md)
+⌨️ **POS Shortcuts:** [pos_lite_shortcuts.md](docs/pos_lite_shortcuts.md)
 
 ### 🔧 **Configuration & Setup**
 
-⚙️ **POS Profile Config:** [pos_profile_config_readme.md](docs/pos_profile_config_readme.md)  
-📊 **Technology Stack:** [technology stack_info.md](docs/technology stack_info.md)  
-📱 **Barcode Scanner:** [barcode_scanner_lntegration.md](docs/barcode_scanner_lntegration.md)  
+⚙️ **POS Profile Config:** [pos_profile_config_readme.md](docs/pos_profile_config_readme.md)
+📊 **Technology Stack:** [technology stack_info.md](docs/technology stack_info.md)
+📱 **Barcode Scanner:** [barcode_scanner_lntegration.md](docs/barcode_scanner_lntegration.md)
 
 ### 🛡️ **Security & Policies**
 
-🛡️ **Security Features:** [security_features.md](docs/security_features.md)  
-🔒 **Backend Policy:** [backend_policy.md](docs/backend_policy.md)  
+🛡️ **Security Features:** [security_features.md](docs/security_features.md)
+🔒 **Backend Policy:** [backend_policy.md](docs/backend_policy.md)
 🎨 **Frontend Policy:** [frontend_policy.md](docs/frontend_policy.md)
 
 ## 💰 Development Collaboration
@@ -101,10 +103,10 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 ## ⚠️ Project POLICY
 
-**⚠️ Project POLICY:**  
+**⚠️ Project POLICY:**
 
 - ⚠️ Changes into front conflicts improve policy
-- ⚠️ Changes into backend conflicts improve policy  
+- ⚠️ Changes into backend conflicts improve policy
 - ⚠️ Changes not asked for
 - ⚠️ Changing codebase structure
 - ⚠️ Changes not direct in ssh dev_server
@@ -122,9 +124,9 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
     <img src="./imgs/ERPNext-support.png" height="200" alt="Future Support" style="border-radius: 20px;">
 </div>
 
-**👨‍💻 Developer:** abdopcnet  
-**🏢 Company:** [Future Support](https://www.future-support.online/)  
-**📧 Email:** <abdopcnet@gmail.com>  
+**👨‍💻 Developer:** abdopcnet
+**🏢 Company:** [Future Support](https://www.future-support.online/)
+**📧 Email:** <abdopcnet@gmail.com>
 **🐙 GitHub:** [github.com/abdopcnet/posawesome15_lite](https://github.com/abdopcnet/posawesome15_lite)
 
 **🤝 Need Support or Want to Join? Contact Now:**
@@ -135,7 +137,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - <img src="./imgs/whatsapp.svg" width="16" height="16" alt="WhatsApp"> **WhatsApp:** <img src="./imgs/Egypt.svg" width="16" height="16" alt="Egypt Flag"> [https://wa.me/201156483669](https://wa.me/201156483669)
 - <img src="./imgs/telegram.svg" width="16" height="16" alt="Telegram"> **Telegram:** [https://t.me/EG_01156483669](https://t.me/EG_01156483669)
 
-### <img src="./imgs/Saudi_Arabia.svg" width="20" height="20" alt="Saudi Arabia Flag"> Saudi Arabia Contact  
+### <img src="./imgs/Saudi_Arabia.svg" width="20" height="20" alt="Saudi Arabia Flag"> Saudi Arabia Contact
 
 - 📞 **Call:** <img src="./imgs/Saudi_Arabia.svg" width="16" height="16" alt="Saudi Arabia Flag"> [+966 57 891 9729](tel:+966578919729)
 - <img src="./imgs/whatsapp.svg" width="16" height="16" alt="WhatsApp"> **WhatsApp:** <img src="./imgs/Saudi_Arabia.svg" width="16" height="16" alt="Saudi Arabia Flag"> [https://wa.me/966578919729](https://wa.me/966578919729)
