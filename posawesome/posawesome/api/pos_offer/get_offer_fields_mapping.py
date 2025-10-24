@@ -16,7 +16,6 @@ def get_offer_fields_mapping():
     field_mapping = {
         "auto": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "discount_type", "discount_percentage", "auto"],
         "manual": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "discount_type", "discount_percentage", "auto"],
-        "coupon": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "discount_type", "discount_percentage", "coupon_based"],
         "give_product": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "given_qty", "apply_item_code", "apply_item_group"],
         "loyalty": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "loyalty_program", "loyalty_points"],
         "rate": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "rate", "less_then"],
@@ -25,5 +24,5 @@ def get_offer_fields_mapping():
         "conditional": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "min_qty", "max_qty", "min_amt", "max_amt"],
         "unconditional": ["name", "title", "description", "apply_on", "item", "item_group", "brand", "discount_type", "discount_percentage", "discount_amount", "rate"]
     }
-    
+
     return field_mapping
