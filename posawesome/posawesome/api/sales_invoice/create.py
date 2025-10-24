@@ -23,6 +23,12 @@ def apply_auto_transaction_discount(doc):
             frappe.log_error(f"[DEBUG] No POS profile found", "POS Offers Debug")
             return False
 
+        # Check if offers are enabled in POS Profile
+        pos_profile_doc = frappe.get_doc("POS Profile", profile)
+        if not pos_profile_doc.get("posa_auto_fetch_offers"):
+            frappe.log_error(f"[DEBUG] Offers disabled for POS Profile: {profile}", "POS Offers Debug")
+            return False
+
         # Get all auto offers for this POS Profile
         offers = frappe.get_all(
             "POS Offer",
@@ -52,7 +58,7 @@ def apply_auto_transaction_discount(doc):
 
     except Exception as e:
         # Silent fail - don't break invoice creation
-        frappe.log_error(f"[ERROR] Auto discount error: {str(e)}", "Auto Discount Error")
+        frappe.log_error(f"Auto discount error: {str(e)}", "Auto Discount Error")
 
     return False
 
