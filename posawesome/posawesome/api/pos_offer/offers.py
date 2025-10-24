@@ -173,6 +173,11 @@ def is_offer_applicable(offer, invoice):
 
         return False
 
+    except Exception as e:
+        frappe.log_error(f"Error in is_offer_applicable: {str(e)}", "POS Offers Error")
+        return False
+
+
 def apply_offer_to_invoice(doc, offer):
     """
     تطبيق عرض على الفاتورة وتسجيله في posa_offers
