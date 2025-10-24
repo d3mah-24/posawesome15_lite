@@ -8,7 +8,7 @@
 
 **🎯 Priority**: 🔥 High
 
-**📊 Status**: ✅ Completed
+**📊 Status**: ❌ Failed
 
 **🔧 Feature**: Frontend and Backend Improvements
 
