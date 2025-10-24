@@ -41,12 +41,9 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 ---
 
-## 📋 Current Tasks & Development
+## 📋 Development Tasks Tracking
 
-### 📋 **Project Management**
-
-- 🔄 **Active Tasks:** [needed_tasks/](docs/tasks/needed_tasks/)
-- ✅ **Completed Tasks:** [completed_tasks/](docs/tasks/completed_tasks/)
+📋 **Tasks Management:** [docs/tasks/](docs/tasks/)
 
 ### 🛠️ **Development Resources**
 
