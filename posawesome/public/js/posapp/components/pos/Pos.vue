@@ -11,10 +11,7 @@
           <ItemsSelector></ItemsSelector>
         </div>
         <div v-show="offers" class="panel-content">
-          <PosOffers
-            @offerApplied="handleOfferApplied"
-            @offerRemoved="handleOfferRemoved"
-          ></PosOffers>
+          <PosOffers @offerApplied="handleOfferApplied" @offerRemoved="handleOfferRemoved"></PosOffers>
         </div>
         <div v-show="coupons" class="panel-content">
           <PosCoupons></PosCoupons>
@@ -99,11 +96,11 @@ export default {
   methods: {
     // ===== OFFER EVENT HANDLERS =====
     handleOfferApplied(offer) {
-      
+
       // Reset first to null to ensure reactivity
       this.offerApplied = null;
       this.offerRemoved = false;
-      
+
       // Use $nextTick to ensure reset is processed
       this.$nextTick(() => {
         // Create new object with timestamp to force reactivity
@@ -117,7 +114,7 @@ export default {
     handleOfferRemoved() {
       this.offerApplied = null;
       this.offerRemoved = true;
-      
+
       // Reset offerRemoved flag after a short delay
       this.$nextTick(() => {
         setTimeout(() => {
@@ -139,7 +136,7 @@ export default {
           // No active shift - show message and create new opening voucher
           this.show_message(
             response.message.message ||
-              "No opening shift found, a new opening entry will be created.",
+            "No opening shift found, a new opening entry will be created.",
             "info"
           );
           this.create_opening_voucher();
@@ -224,6 +221,10 @@ export default {
     // ===== OFFERS METHODS =====
     async get_offers(pos_profile) {
       try {
+        // if (!this.pos_profile?.posa_auto_fetch_offers) {
+        //   console.log("Auto fetch offers is disabled in POS Profile settings");
+        //   return;
+        // }
         const response = await frappe.call({
           method: API_MAP.POS_OFFER.GET_OFFERS_FOR_PROFILE,
           args: {
@@ -389,8 +390,10 @@ export default {
 /* ===== MAIN CONTAINER ===== */
 /* Simple background - no gradient to avoid affecting ERP doctypes */
 .pos-container {
-  padding: 0 3px 3px 3px; /* top=0, right=3px, bottom=3px, left=3px */
-  background: #f8f9fa; /* Simple light gray background */
+  padding: 0 3px 3px 3px;
+  /* top=0, right=3px, bottom=3px, left=3px */
+  background: #f8f9fa;
+  /* Simple light gray background */
   min-height: 100vh;
   overflow: visible;
 }
@@ -440,7 +443,7 @@ export default {
 }
 
 /* ===== NESTED COMPONENT STYLING ===== */
-.panel-content > * {
+.panel-content>* {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -460,7 +463,8 @@ export default {
 
 @media (max-width: 1024px) {
   .pos-container {
-    padding: 0 2px 2px 2px; /* top=0, right=2px, bottom=2px, left=2px */
+    padding: 0 2px 2px 2px;
+    /* top=0, right=2px, bottom=2px, left=2px */
   }
 
   .pos-main-wrapper {
@@ -475,7 +479,8 @@ export default {
 
 @media (max-width: 768px) {
   .pos-container {
-    padding: 0 2px 2px 2px; /* top=0, right=2px, bottom=2px, left=2px */
+    padding: 0 2px 2px 2px;
+    /* top=0, right=2px, bottom=2px, left=2px */
   }
 
   .pos-main-wrapper {
@@ -491,7 +496,7 @@ export default {
 }
 
 /* ===== SMOOTH TRANSITIONS FOR PANEL SWITCHING ===== */
-.pos-left-panel > div {
+.pos-left-panel>div {
   position: absolute;
   top: 0;
   left: 0;
@@ -503,13 +508,13 @@ export default {
   pointer-events: none;
 }
 
-.pos-left-panel > div[style*="display: none"] {
+.pos-left-panel>div[style*="display: none"] {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
 
-.pos-left-panel > div:not([style*="display: none"]) {
+.pos-left-panel>div:not([style*="display: none"]) {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -521,6 +526,7 @@ export default {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
