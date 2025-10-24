@@ -21,26 +21,24 @@
   "col4",
   "warehouse",
   "sec3",
-  "col5",
-  "offer_type",
   "col6",
+  "offer_type",
+  "col7",
   "item_code",
   "item_group",
   "brand",
-  "grand_total",
   "customer",
   "customer_group",
   "sec4",
-  "col7",
+  "col8",
   "min_qty",
   "max_qty",
-  "col8",
+  "col9",
   "min_amt",
   "max_amt",
-  "sec5",
-  "col9",
+  "price_discount_scheme_section",
   "discount_type",
-  "col10",
+  "col11",
   "discount_percentage"
  ],
  "fields": [
@@ -63,7 +61,7 @@
    "fieldname": "company",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Company",
+   "label": "company",
    "options": "Company",
    "reqd": 1
   },
@@ -71,7 +69,7 @@
    "fieldname": "pos_profile",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "POS Profile",
+   "label": "pos_profile",
    "options": "POS Profile"
   },
   {
@@ -79,7 +77,7 @@
    "fieldname": "warehouse",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Warehouse",
+   "label": "warehouse",
    "options": "Warehouse",
    "search_index": 1
   },
@@ -122,7 +120,7 @@
    "fieldname": "discount_type",
    "fieldtype": "Select",
    "label": "discount_type",
-   "options": "Discount Percentage"
+   "options": "\nDiscount Percentage"
   },
   {
    "fieldname": "discount_percentage",
@@ -170,16 +168,12 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "col5",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "offer_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "offer_type",
-   "options": "\nitem_code\nitem_group\nbrand\ngrand_total\ncustomer\ncustomer_group",
+   "options": "\nitem_code\nitem_group\nbrand\ncustomer\ncustomer_group",
    "reqd": 1
   },
   {
@@ -191,11 +185,6 @@
    "fieldtype": "Link",
    "label": "item_code",
    "options": "Item"
-  },
-  {
-   "fieldname": "grand_total",
-   "fieldtype": "Currency",
-   "label": "grand_total"
   },
   {
    "fieldname": "customer",
@@ -215,11 +204,6 @@
    "label": "Quantity and Amount Conditions"
   },
   {
-   "fieldname": "sec5",
-   "fieldtype": "Section Break",
-   "label": "Price Discount Scheme "
-  },
-  {
    "fieldname": "col7",
    "fieldtype": "Column Break"
   },
@@ -232,13 +216,18 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "col10",
+   "fieldname": "col11",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "price_discount_scheme_section",
+   "fieldtype": "Section Break",
+   "label": "Price Discount Scheme"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-24 16:07:47.450805",
+ "modified": "2025-10-24 18:28:07.966911",
  "modified_by": "Administrator",
  "module": "POSAwesome",
  "name": "POS Offer",
