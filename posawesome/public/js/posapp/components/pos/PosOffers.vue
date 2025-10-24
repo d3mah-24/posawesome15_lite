@@ -169,12 +169,16 @@ export default {
     offersEnabled() {
       const value = this.pos_profile?.posa_auto_fetch_offers;
 
+      console.log("[DEBUG] PosOffers - posa_auto_fetch_offers value:", value);
+      console.log("[DEBUG] PosOffers - posa_auto_fetch_offers type:", typeof value);
+
       const enabled = value !== 0 &&
         value !== "0" &&
         value !== false &&
         value !== null &&
         value !== undefined;
 
+      console.log("[DEBUG] PosOffers - offersEnabled:", enabled);
       return enabled;
     },
     offersCount() {
