@@ -8,8 +8,7 @@ import json
 import frappe
 from frappe import _
 from frappe.utils import flt
-from ..pos_offer.get_applicable_offers import get_applicable_offers
-from ..pos_offer.get_offers_by_type_handler import get_offers_by_type_handler
+from ..pos_offer.offers import get_applicable_offers, is_offer_applicable
 
 
 def apply_auto_transaction_discount(doc):
