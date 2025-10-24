@@ -49,49 +49,65 @@ def is_offer_applicable(offer, invoice_doc):
                 return False
 
         # Check offer_type field
-        if offer.get('offer_type') == "item_code" and offer.get('item_code'):
-            # Check specific item code
-            invoice_items = [item.item_code for item in invoice_doc.items]
+        offer_type = offer.get('offer_type')
+
+        if not offer_type:
+            # No offer_type specified - this is a general offer
+            return True
+
+        # If offer_type is specified, the corresponding field MUST have a value
+        if offer_type == "item_code":
+            if not offer.get('item_code'):
+                return False  # Field is required but empty
+            # Check if item exists in invoice
             for item in invoice_doc.items:
                 if item.item_code == offer.item_code:
                     return True
             return False
 
-        elif offer.get('offer_type') == "item_group" and offer.get('item_group'):
+        elif offer_type == "item_group":
+            if not offer.get('item_group'):
+                return False
             # Check item group
             for item in invoice_doc.items:
                 if item.item_group == offer.item_group:
                     return True
             return False
 
-        elif offer.get('offer_type') == "brand" and offer.get('brand'):
+        elif offer_type == "brand":
+            if not offer.get('brand'):
+                return False
             # Check brand
             for item in invoice_doc.items:
                 if item.brand == offer.brand:
                     return True
             return False
 
-        elif offer.get('offer_type') == "customer" and offer.get('customer'):
+        elif offer_type == "customer":
+            if not offer.get('customer'):
+                return False
             # Check customer
             if invoice_doc.customer == offer.customer:
                 return True
             return False
 
-        elif offer.get('offer_type') == "customer_group" and offer.get('customer_group'):
+        elif offer_type == "customer_group":
+            if not offer.get('customer_group'):
+                return False
             # Check customer group
             customer_doc = frappe.get_doc("Customer", invoice_doc.customer)
             if customer_doc.customer_group == offer.customer_group:
                 return True
             return False
 
-        elif offer.get('offer_type') == "grand_total" and offer.get('grand_total'):
-            # Check grand total
-            if invoice_doc.grand_total >= offer.grand_total:
-                return True
-            return False
+        elif offer_type == "grand_total":
+            # For grand_total offers, check min_amt and max_amt conditions
+            # These are already checked above in the general validation
+            # If we reach here, it means the offer is applicable
+            return True
 
-        # Default: if no specific conditions, offer is applicable
-        return True
+        # If offer_type is not recognized, reject the offer
+        return False
 
     except Exception as e:
         frappe.log_error(f"[ERROR] is_offer_applicable exception for offer '{offer.get('name', 'Unknown')}': {str(e)}", "Offers Debug - Exception")
