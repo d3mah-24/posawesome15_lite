@@ -45,7 +45,8 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 ### 📋 **Project Management**
 
-📋 **Current Tasks:** [needed_tasks.md](docs/needed_tasks.md)
+- 🔄 **Active Tasks:** [needed_tasks/](docs/tasks/needed_tasks/)
+- ✅ **Completed Tasks:** [completed_tasks/](docs/tasks/completed_tasks/)
 
 ### 🛠️ **Development Resources**
 
