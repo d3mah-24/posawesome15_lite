@@ -165,8 +165,11 @@ def is_offer_applicable(offer, invoice):
             # عرض على مجموعة عملاء
             if not offer.get('customer_group'):
                 return False
-            customer_doc = frappe.get_doc("Customer", invoice.customer)
-            return customer_doc.customer_group == offer.customer_group
+            try:
+                customer_doc = frappe.get_doc("Customer", invoice.customer)
+                return customer_doc.customer_group == offer.customer_group
+            except:
+                return False
 
         return False
 

@@ -1,0 +1,79 @@
+{
+  "actions": [],
+  "creation": "2025-10-24 21:18:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "offer_name",
+    "row_id",
+    "apply_on",
+    "offer",
+    "items",
+    "give_item",
+    "give_item_row_id",
+    "offer_applied"
+  ],
+  "fields": [
+    {
+      "fieldname": "offer_name",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Offer Name",
+      "options": "POS Offer",
+      "reqd": 1
+    },
+    {
+      "fieldname": "row_id",
+      "fieldtype": "Data",
+      "label": "Row ID"
+    },
+    {
+      "fieldname": "apply_on",
+      "fieldtype": "Select",
+      "label": "Apply On",
+      "options": "Item\nItem Group\nBrand\nCustomer\nCustomer Group\nGrand Total"
+    },
+    {
+      "fieldname": "offer",
+      "fieldtype": "Select",
+      "label": "Offer",
+      "options": "Discount Percentage\nDiscount Amount\nRate\nGive Product\nLoyalty Point"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Int",
+      "label": "Items",
+      "default": 0
+    },
+    {
+      "fieldname": "give_item",
+      "fieldtype": "Link",
+      "label": "Give Item",
+      "options": "Item"
+    },
+    {
+      "fieldname": "give_item_row_id",
+      "fieldtype": "Data",
+      "label": "Give Item Row ID"
+    },
+    {
+      "default": "0",
+      "fieldname": "offer_applied",
+      "fieldtype": "Check",
+      "label": "Offer Applied"
+    }
+  ],
+  "istable": 1,
+  "links": [],
+  "modified": "2025-10-24 21:18:00.000000",
+  "modified_by": "Administrator",
+  "module": "POSAwesome",
+  "name": "POS Offer Detail",
+  "owner": "Administrator",
+  "permissions": [],
+  "quick_entry": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1
+}
