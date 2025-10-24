@@ -173,6 +173,35 @@ def is_offer_applicable(offer, invoice):
 
         return False
 
+def apply_offer_to_invoice(doc, offer):
+    """
+    تطبيق عرض على الفاتورة وتسجيله في posa_offers
+
+    Args:
+        doc: Sales Invoice document
+        offer: dict - بيانات العرض
+
+    Returns:
+        bool: True إذا تم التطبيق بنجاح
+    """
+    try:
+        # تطبيق الخصم على الفاتورة
+        if offer.get("discount_percentage"):
+            doc.additional_discount_percentage = flt(offer.get("discount_percentage"))
+
+        # تسجيل العرض في child table
+        doc.append("posa_offers", {
+            "offer_name": offer.get("name"),
+            "offer_type": offer.get("offer_type"),
+            "discount_percentage": offer.get("discount_percentage"),
+            "row_id": ""  # فارغ للعروض على grand_total، يمكن استخدامه لربط العرض بمنتج معين
+        })
+
+        frappe.log_error(f"[DEBUG] Applied offer {offer.get('name')} to invoice", "POS Offers Debug")
+        return True
+
     except Exception as e:
-        frappe.log_error(f"Error checking offer applicability: {str(e)}", "POS Offers Error")
+        frappe.log_error(f"Error applying offer to invoice: {str(e)}", "POS Offers Error")
         return False
+
+
