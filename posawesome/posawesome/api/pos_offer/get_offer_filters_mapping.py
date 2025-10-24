@@ -16,7 +16,6 @@ def get_offer_filters_mapping():
     filter_mapping = {
         "auto": {"disable": 0, "auto": 1},
         "manual": {"disable": 0, "auto": 0},
-        "coupon": {"disable": 0, "coupon_based": 1},
         "give_product": {"disable": 0, "offer": "Give Product"},
         "loyalty": {"disable": 0, "offer": "Loyalty Point"},
         "rate": {"disable": 0, "discount_type": "Rate"},
@@ -25,5 +24,5 @@ def get_offer_filters_mapping():
         "conditional": {"disable": 0, "min_qty": [">", 0]},
         "unconditional": {"disable": 0, "min_qty": 0, "max_qty": 0, "min_amt": 0, "max_amt": 0}
     }
-    
+
     return filter_mapping
