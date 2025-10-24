@@ -1,356 +1,645 @@
-# AI Agent Instructions for POS Awesome Lite# AI Agent Instructions for POS Awesome Lite# AI Agent Instructions for POS Awesome Lite
+# AI Agent Instructions for POS Awesome Lite# AI Agent Instructions for POS Awesome Lite
 
-## Architecture Overview
 
-**POS Awesome Lite** = Vue.js UI + ERPNext v15 Engine (Zero Custom Calculations)## Architecture Overview## Core Principles
 
-This is a lightweight Point of Sale interface built on top of ERPNext's proven foundation. The core principle: **NO custom business logic calculations**—all math and business rules are handled by ERPNext's native controllers.
+## Architecture Overview## Architecture Overview
 
-### Backend: `/posawesome/api/` (ONE function per file - STRICT)**POS Awesome Lite** = Vue.js UI + ERPNext v15 Engine (Zero Custom Calculations)**POS Awesome Lite = Vue.js UI + ERPNext Engine**
 
-```
 
-api/- Lightweight web interface on top of ERPNext v15 foundation
+**POS Awesome Lite** = Vue.js UI + ERPNext v15 Engine (Zero Custom Calculations)**POS Awesome Lite** = Vue.js UI + ERPNext v15 Engine (Zero Custom Calculations)
 
-├── sales_invoice/      → create, update, submit, delete
 
-├── customer/           → get, get_many, create, update### Backend: `/posawesome/api/` (ONE function per file - STRICT)- Uses original ERPNext patterns and controllers (zero custom calculations)
 
-├── item/               → get_items, get_barcode_item (unified handler)
+This is a lightweight Point of Sale interface built on top of ERPNext's proven foundation. The core principle: **NO custom business logic calculations**—all math and business rules are handled by ERPNext's native controllers.This is a lightweight Point of Sale interface built on top of ERPNext's proven foundation. The core principle: **NO custom business logic calculations**—all math and business rules are handled by ERPNext's native controllers.
 
-├── pos_profile/        → get_default_payment, opening_dialog```- Framework-first approach: all business logic via ERPNext
 
-├── pos_opening_shift/  → shift management
 
-└── pos_closing_shift/  → closing + cash/non-cash totalsapi/
+### Backend: `/posawesome/api/` (ONE function per file - STRICT)### Backend: `/posawesome/api/` (ONE function per file - STRICT)
 
-```
 
-├── sales_invoice/  → create, update, submit, delete## Architecture at a Glance
-
-**API Naming Convention**: `posawesome.posawesome.api.[doctype].[operation].[operation]_[doctype]`
-
-├── customer/       → get, get_many, create, update
-
-### Frontend: `/public/js/posapp/`
-
-```├── item/           → get_items, get_barcode_item (unified handler)### Backend Structure
-
-posapp/
-
-├── api_mapper.js       → Central API registry (ALWAYS USE)├── pos_profile/    → get_default_payment, opening_dialog```
-
-├── bus.js              → Event bus (mitt 3.0.1)
-
-└── components/├── pos_opening_shift/  → shift managementposawesome/posawesome/api/          # ONE function per file (STRICT)
-
-    ├── Navbar.vue            → Top nav + payment totals
-
-    └── pos/└── pos_closing_shift/  → closing + cash/non-cash totals├── sales_invoice/                  # create, update, submit, delete
-
-        ├── Invoice.vue           → Main invoice (3,135 lines)
-
-        ├── ItemsSelector.vue     → Items + barcode (30+ scans/sec)```├── customer/                       # get, get_many, create, update
-
-        └── Payments.vue          → Payment processing
-
-```├── item/                           # get_items, get_barcode_item (unified)
-
-
-
-**Tech Stack**: Vue 3.4.21, mitt 3.0.1, onScan.js, Frappe v15, ERPNext v15, MariaDB### Frontend: `/public/js/posapp/`├── pos_profile/                    # get_default_payment, opening_dialog
-
-
-
----```├── pos_opening_shift/              # shift management
-
-
-
-## Critical Patterns (MANDATORY)posapp/└── pos_closing_shift/              # shift closing + payment totals
-
-
-
-### 1. API Calls: 3-Call Batch Queue System├── api_mapper.js    → Central API registry (ALWAYS USE)```
-
-
-
-**Golden Rule**: Only 3 API calls per invoice lifecycle├── bus.js           → Event bus (mitt 3.0.1)
-
-
-
-```javascript└── components/**API Naming**: `posawesome.posawesome.api.[doctype].[operation].[operation]_[doctype]`
-
-// 1. CREATE (first item added)
-
-frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, args: { data: doc } });    ├── Navbar.vue         → Top nav + payment totals
-
-
-
-// 2. UPDATE (batch all changes after 1s idle - qty, discounts, payments)    └── pos/### Frontend Structure  
-
-frappe.call({ method: API_MAP.SALES_INVOICE.UPDATE, args: { data: doc } });
-
-        ├── Invoice.vue        → Main invoice (2,357 lines - needs refactor)```
-
-// 3. SUBMIT (finalize + print)
-
-frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });        ├── ItemsSelector.vue  → Items + barcode (30+ scans/sec)posawesome/public/js/posapp/
-
-```
-
-        └── Payments.vue       → Payment processing├── api_mapper.js                   # Central API registry (ALWAYS USE)
-
-- **Debounce**: 1000ms idle time before UPDATE
-
-- **Batch Size**: Max 50 operations```├── bus.js                          # Event bus (mitt 3.0.1)
-
-- **Cache**: NO caching except temp operation batches (cleared after API response)
-
-└── components/
-
-### 2. Backend Standards
-
-**Tech**: Vue 3.4.21, mitt 3.0.1, onScan.js, Frappe v15, ERPNext v15, MariaDB    ├── Navbar.vue                  # Top nav + payment totals
-
-**File Structure**: ONE function per file (STRICTLY ENFORCED)
-
-    └── pos/
-
-```python
-
-# posawesome/posawesome/api/customer/get_customer.py---        ├── Invoice.vue             # Main invoice (2,357 lines)
-
-@frappe.whitelist()
-
-def get_customer(customer_id):        ├── ItemsSelector.vue       # Items + barcode (30+ scans/sec)
-
-    # MUST specify fields - NO SELECT *
-
-    return frappe.get_doc("Customer", customer_id, ## Critical Patterns (MANDATORY)        └── Payments.vue            # Payment processing
-
-                          fields=["name", "customer_name", "mobile_no"])
 
 ``````
 
-**Naming Conventions**:### 1. API Calls: 3-Call Batch Queue System
+api/api/
 
-- `get_[doctype].py` - Single record with specific fields
+├── sales_invoice/      → create, update, submit, delete├── sales_invoice/      → create, update, submit, delete
 
-- `get_many_[doctype]s.py` - Multiple records with filters**Tech Stack**: Vue 3.4.21 + Vuetify 3.6.9, mitt event bus, onScan.js for barcode
+├── customer/           → get, get_many, create, update├── customer/           → get, get_many, create, update
 
-- `create_[doctype].py` - Create new record
+├── item/               → get_items, get_barcode_item (unified handler)├── item/               → get_items, get_barcode_item (unified handler)
 
-- `update_[doctype].py` - Update existing record**Golden Rule**: Only 3 API calls per invoice lifecycle
+├── pos_profile/        → get_default_payment, opening_dialog├── pos_profile/        → get_default_payment, opening_dialog
 
-- `delete_[doctype].py` - Delete record
+├── pos_opening_shift/  → shift management├── pos_opening_shift/  → shift management
 
-```javascript## Critical Patterns
+└── pos_closing_shift/  → closing + cash/non-cash totals└── pos_closing_shift/  → closing + cash/non-cash totals
 
-**Database Query Rules**:
+``````
 
-- ✅ `fields=["field1", "field2"]` - ALWAYS specify fields// 1. CREATE (first item added)
 
-- ✅ Backticks for tables: ``` `tabSales Invoice Payment` ```
 
-- ✅ Check column names first: `DESCRIBE \`tabDocType\`;` (e.g., `amount` NOT `paid_amount`)frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, args: { data: doc } });### 1. 3-API Batch Queue (MANDATORY)
+**API Naming Convention**: `posawesome.posawesome.api.[doctype].[operation].[operation]_[doctype]`**API Naming Convention**: `posawesome.posawesome.api.[doctype].[operation].[operation]_[doctype]`
 
-- ✅ Parametrized SQL: Use `%s` placeholders
 
-Only 3 API calls per invoice lifecycle:
+
+### Frontend: `/public/js/posapp/`### Frontend: `/public/js/posapp/`
+
+
+
+``````
+
+posapp/posapp/
+
+├── api_mapper.js       → Central API registry (ALWAYS USE)├── api_mapper.js       → Central API registry (ALWAYS USE)
+
+├── bus.js              → Event bus (mitt 3.0.1)├── bus.js              → Event bus (mitt 3.0.1)
+
+└── components/└── components/
+
+    ├── Navbar.vue            → Top nav + payment totals    ├── Navbar.vue            → Top nav + payment totals
+
+    └── pos/    └── pos/
+
+        ├── Invoice.vue           → Main invoice (2,357 lines)        ├── Invoice.vue           → Main invoice (2,357 lines)
+
+        ├── ItemsSelector.vue     → Items + barcode (30+ scans/sec)        ├── ItemsSelector.vue     → Items + barcode (30+ scans/sec)
+
+        └── Payments.vue          → Payment processing        └── Payments.vue          → Payment processing
+
+``````
+
+
+
+**Tech Stack**: Vue 3.4.21, mitt 3.0.1, onScan.js, Frappe v15, ERPNext v15, MariaDB**Tech Stack**: Vue 3.4.21, mitt 3.0.1, onScan.js, Frappe v15, ERPNext v15, MariaDB
+
+
+
+------
+
+
+
+## Critical Patterns (MANDATORY)## Critical Patterns (MANDATORY)
+
+
+
+### 1. API Calls: 3-Call Batch Queue System### 1. API Calls: 3-Call Batch Queue System
+
+
+
+**Golden Rule**: Only 3 API calls per invoice lifecycle**Golden Rule**: Only 3 API calls per invoice lifecycle
+
+
+
+```javascript
+
+// 1. CREATE (first item added)
+
+frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, args: { data: doc } });```javascript└── components/**API Naming**: `posawesome.posawesome.api.[doctype].[operation].[operation]_[doctype]`
+
+
+
+// 2. UPDATE (batch all changes after 1s idle - qty, discounts, payments)// 1. CREATE (first item added)
+
+frappe.call({ method: API_MAP.SALES_INVOICE.UPDATE, args: { data: doc } });
+
+frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, args: { data: doc } });    ├── Navbar.vue         → Top nav + payment totals
+
+// 3. SUBMIT (finalize + print)
+
+frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });
+
+```
+
+// 2. UPDATE (batch all changes after 1s idle - qty, discounts, payments)    └── pos/### Frontend Structure  
+
+- **Debounce**: 1000ms idle time before UPDATE
+
+- **Batch Size**: Max 50 operationsfrappe.call({ method: API_MAP.SALES_INVOICE.UPDATE, args: { data: doc } });
+
+- **Cache**: NO caching except temp operation batches (cleared after API response)
+
+        ├── Invoice.vue        → Main invoice (2,357 lines - needs refactor)```
+
+### 2. Backend Standards
+
+// 3. SUBMIT (finalize + print)
+
+**File Structure**: ONE function per file (STRICTLY ENFORCED)
+
+frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });        ├── ItemsSelector.vue  → Items + barcode (30+ scans/sec)posawesome/public/js/posapp/
 
 ```python
 
-frappe.db.sql("""// 2. UPDATE (batch all changes after 1s idle - qty, discounts, payments)```javascript
+# posawesome/posawesome/api/customer/get_customer.py```
+
+@frappe.whitelist()
+
+def get_customer(customer_id):        └── Payments.vue       → Payment processing├── api_mapper.js                   # Central API registry (ALWAYS USE)
+
+    # MUST specify fields - NO SELECT *
+
+    return frappe.get_doc("Customer", customer_id, - **Debounce**: 1000ms idle time before UPDATE
+
+                          fields=["name", "customer_name", "mobile_no"])
+
+```- **Batch Size**: Max 50 operations```├── bus.js                          # Event bus (mitt 3.0.1)
+
+
+
+**Naming Conventions**:- **Cache**: NO caching except temp operation batches (cleared after API response)
+
+- `get_[doctype].py` - Single record with specific fields
+
+- `get_many_[doctype]s.py` - Multiple records with filters└── components/
+
+- `create_[doctype].py` - Create new record
+
+- `update_[doctype].py` - Update existing record### 2. Backend Standards
+
+- `delete_[doctype].py` - Delete record
+
+**Tech**: Vue 3.4.21, mitt 3.0.1, onScan.js, Frappe v15, ERPNext v15, MariaDB    ├── Navbar.vue                  # Top nav + payment totals
+
+**Database Query Rules**:
+
+- ✅ `fields=["field1", "field2"]` - ALWAYS specify fields**File Structure**: ONE function per file (STRICTLY ENFORCED)
+
+- ✅ Backticks for tables: ``` `tabSales Invoice Payment` ```
+
+- ✅ Check column names first: `DESCRIBE \`tabDocType\`;` (e.g., `amount` NOT `paid_amount`)    └── pos/
+
+- ✅ Parametrized SQL: Use `%s` placeholders
+
+```python
+
+```python
+
+frappe.db.sql("""# posawesome/posawesome/api/customer/get_customer.py---        ├── Invoice.vue             # Main invoice (2,357 lines)
 
     SELECT SUM(amount) as total
 
-    FROM `tabSales Invoice Payment`frappe.call({ method: API_MAP.SALES_INVOICE.UPDATE, args: { data: doc } });// 1. CREATE (first item)
+    FROM `tabSales Invoice Payment`@frappe.whitelist()
 
     WHERE parent IN (
 
-        SELECT name FROM `tabSales Invoice` frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, args: { data: doc } });
+        SELECT name FROM `tabSales Invoice` def get_customer(customer_id):        ├── ItemsSelector.vue       # Items + barcode (30+ scans/sec)
 
         WHERE posa_pos_opening_shift = %s AND docstatus = 1
 
-    )// 3. SUBMIT (finalize + print)
+    )    # MUST specify fields - NO SELECT *
 
 """, (shift_name,), as_dict=1)
 
-```frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });// 2. UPDATE (batch after 1s idle - collect qty, discounts, payments)
+```    return frappe.get_doc("Customer", customer_id, ## Critical Patterns (MANDATORY)        └── Payments.vue            # Payment processing
 
 
 
-**Performance**:```frappe.call({ method: API_MAP.SALES_INVOICE.UPDATE, args: { data: doc } });
+**Performance**:                          fields=["name", "customer_name", "mobile_no"])
 
 - Target: <100ms response time
 
-- Use `ignore_version=True` + immediate `frappe.db.commit()`- **Debounce**: 1000ms idle time before UPDATE
+- Use `ignore_version=True` + immediate `frappe.db.commit()```````
 
 - `frappe.log_error()` ONLY for actual errors (NOT success messages)
 
-- **Batch Size**: Max 50 operations// 3. SUBMIT (finalize + print)
+**Naming Conventions**:### 1. API Calls: 3-Call Batch Queue System
 
 ### 3. Event Bus (mitt)
 
-- **Cache**: NO caching except temp operation batches (cleared after API response)frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });
+- `get_[doctype].py` - Single record with specific fields
 
 ```javascript
 
-import { evntBus } from './bus.js';```
+import { evntBus } from './bus.js';- `get_many_[doctype]s.py` - Multiple records with filters**Tech Stack**: Vue 3.4.21 + Vuetify 3.6.9, mitt event bus, onScan.js for barcode
 
 
 
-// Emit### 2. Backend Standards- Debounce 1000ms, max 50 operations/batch
+// Emit- `create_[doctype].py` - Create new record
 
 evntBus.emit('add_item', item);
 
-- Clear temp cache after response
+- `update_[doctype].py` - Update existing record**Golden Rule**: Only 3 API calls per invoice lifecycle
 
 // Listen
 
-evntBus.on('add_item', this.handleAddItem);**File Structure**: ONE function per file (STRICTLY ENFORCED)- NO caching except temp batches
+evntBus.on('add_item', this.handleAddItem);- `delete_[doctype].py` - Delete record
 
 
 
-// CRITICAL: Clean up in beforeUnmount()```python
+// CRITICAL: Clean up in beforeUnmount()```javascript## Critical Patterns
 
 beforeUnmount() {
 
-  evntBus.off('add_item', this.handleAddItem);# posawesome/posawesome/api/customer/get_customer.py### 2. Backend Standards
+  evntBus.off('add_item', this.handleAddItem);**Database Query Rules**:
 
   if (this._debounceTimer) clearTimeout(this._debounceTimer);
 
-  if (this.cashUpdateInterval) clearInterval(this.cashUpdateInterval);@frappe.whitelist()```python
+  if (this.cashUpdateInterval) clearInterval(this.cashUpdateInterval);- ✅ `fields=["field1", "field2"]` - ALWAYS specify fields// 1. CREATE (first item added)
 
 }
 
-```def get_customer(customer_id):# posawesome/posawesome/api/customer/get_customer.py
+```- ✅ Backticks for tables: ``` `tabSales Invoice Payment` ```
 
 
 
-**Common Events**: `add_item`, `update_customer`, `new_invoice`, `show_payment`, `show_mesage` (typo intentional), `invoice_submitted`, `update_invoice_doc`, `set_pos_opening_shift`    # MUST specify fields - NO SELECT *@frappe.whitelist()
+**Common Events**: `add_item`, `update_customer`, `new_invoice`, `show_payment`, `show_mesage` (typo intentional), `invoice_submitted`, `update_invoice_doc`, `set_pos_opening_shift`- ✅ Check column names first: `DESCRIBE \`tabDocType\`;` (e.g., `amount` NOT `paid_amount`)frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, args: { data: doc } });### 1. 3-API Batch Queue (MANDATORY)
 
 
 
-### 4. Barcode Scanning    return frappe.get_doc("Customer", customer_id, def get_customer(customer_id):
+### 4. Barcode Scanning- ✅ Parametrized SQL: Use `%s` placeholders
 
 
 
-**Unified Handler**: `API_MAP.ITEM.GET_BARCODE_ITEM` (backend auto-detects type)                          fields=["name", "customer_name", "mobile_no"])    return frappe.get_doc("Customer", customer_id, 
+**Unified Handler**: `API_MAP.ITEM.GET_BARCODE_ITEM` (backend auto-detects type)Only 3 API calls per invoice lifecycle:
 
 
 
-- **Types**: Standard EAN/UPC, weight scale (prefix-based), private/custom```                          fields=["name", "customer_name", "mobile_no"])  # MUST specify fields
+- **Types**: Standard EAN/UPC, weight scale (prefix-based), private/custom```python
 
 - **Performance**: 30+ scans/second via onScan.js
 
-- **Implementation**: `posawesome/api/item/get_barcode_item.py` - tries scale → private → normal```
+- **Implementation**: `posawesome/api/item/get_barcode_item.py` - tries scale → private → normalfrappe.db.sql("""// 2. UPDATE (batch all changes after 1s idle - qty, discounts, payments)```javascript
 
 - **Location**: `public/js/onscan.js` (imported in `posawesome.bundle.js`)
 
-**Naming**: `get_[doctype].py`, `get_many_[doctype]s.py`, `create_[doctype].py`, `update_[doctype].py`, `delete_[doctype].py`
+    SELECT SUM(amount) as total
 
 ### 5. UI Components
 
-**Requirements**:
+    FROM `tabSales Invoice Payment`frappe.call({ method: API_MAP.SALES_INVOICE.UPDATE, args: { data: doc } });// 1. CREATE (first item)
 
 **NO Vuetify, NO Frameworks** - Pure HTML/CSS only:
 
-**Database Query Rules**:- One function per file (STRICT)
+    WHERE parent IN (
 
 ```vue
 
-<!-- ✅ Native HTML -->- ✅ `fields=["field1", "field2"]` - ALWAYS specify fields- Specific field selection (NO `SELECT *`)
+<!-- ✅ Native HTML -->        SELECT name FROM `tabSales Invoice` frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, args: { data: doc } });
 
-<table class="invoice-table">
+<table class="data-table">
 
-  <tr v-for="item in items" :key="item.name">- ✅ Backticks for tables: ``` `tabSales Invoice Payment` ```- Parametrized SQL with `%s` placeholders
+  <tr v-for="item in items" :key="item.name">        WHERE posa_pos_opening_shift = %s AND docstatus = 1
 
     <td>{{ item.name }}</td>
 
-  </tr>- ✅ Check column names first: `DESCRIBE \`tabDocType\`;` (e.g., `amount` NOT `paid_amount`)- Check column names: `DESCRIBE \`tabDocType\`;`
+  </tr>    )// 3. SUBMIT (finalize + print)
 
 </table>
 
-- ✅ Parametrized SQL: Use `%s` placeholders- `ignore_version=True` + immediate `frappe.db.commit()`
+""", (shift_name,), as_dict=1)
 
 <!-- ❌ NO Vuetify -->
 
-<v-data-table>  <!-- FORBIDDEN -->```python- Target <100ms response time
+<v-data-table>  <!-- FORBIDDEN -->```frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });// 2. UPDATE (batch after 1s idle - collect qty, discounts, payments)
 
 ```
 
-frappe.db.sql("""- `frappe.log_error()` ONLY for actual errors (not success)
+
 
 **Rules**:
 
-- Components <500 lines (split if larger) - Invoice.vue needs refactoring    SELECT SUM(amount) as total
+- Components <500 lines (split if larger) - Invoice.vue needs refactoring**Performance**:```frappe.call({ method: API_MAP.SALES_INVOICE.UPDATE, args: { data: doc } });
 
 - Virtual scroll for lists >50 items
 
-- No animations or heavy CSS    FROM `tabSales Invoice Payment`### 3. Event Bus (mitt)
+- No animations or heavy CSS- Target: <100ms response time
 
 - **CSS Architecture**: Scoped Vue SFC styles (`<style scoped>`) - NO global CSS
 
-- Local assets only (no external CDN)    WHERE parent IN (```javascript
+- Local assets only (no external CDN)- Use `ignore_version=True` + immediate `frappe.db.commit()`- **Debounce**: 1000ms idle time before UPDATE
 
-### 6. Logging Policy (STRICT)        SELECT name FROM `tabSales Invoice` // Emit
 
-```javascript        WHERE posa_pos_opening_shift = %s AND docstatus = 1evntBus.emit('add_item', item);
+
+### 6. Logging Policy (STRICT)- `frappe.log_error()` ONLY for actual errors (NOT success messages)
+
+
+
+```javascript- **Batch Size**: Max 50 operations// 3. SUBMIT (finalize + print)
 
 // ❌ NEVER
 
-console.log("Fetching data...");    )
+console.log("Fetching data...");### 3. Event Bus (mitt)
 
 
 
-// ✅ ONLY errors/warnings""", (shift_name,), as_dict=1)// Listen  
+// ✅ ONLY errors/warnings- **Cache**: NO caching except temp operation batches (cleared after API response)frappe.call({ method: API_MAP.SALES_INVOICE.SUBMIT, args: { invoice, data } });
 
 console.error('Error fetching cash total:', err);
 
-console.warn('Deprecated API usage');```evntBus.on('add_item', this.handleAddItem);
+console.warn('Deprecated API usage');```javascript
 
 ```
+
+import { evntBus } from './bus.js';```
 
 **Backend**: `frappe.log_error()` ONLY for actual errors (not success messages)
 
-**Performance**:// CRITICAL: Clean up in beforeUnmount()
+
 
 ---
 
-- Target: <100ms response timebeforeUnmount() {
+// Emit### 2. Backend Standards- Debounce 1000ms, max 50 operations/batch
 
 ## Developer Workflows
 
-- Use `ignore_version=True` + immediate `frappe.db.commit()`  evntBus.off('add_item', this.handleAddItem);
+evntBus.emit('add_item', item);
 
 **Backend Changes** (Python):
 
-```bash- `frappe.log_error()` ONLY for actual errors (NOT success messages)  if (this._debounceTimer) clearTimeout(this._debounceTimer);
+```bash- Clear temp cache after response
 
-find . -name "*.pyc" -delete && find . -type d -name "**pycache**" -exec rm -rf {} + && bench restart
+find . -name "*.pyc" -delete && find . -type d -name "__pycache__" -exec rm -rf {} + && bench restart
 
-```  if (this.cashUpdateInterval) clearInterval(this.cashUpdateInterval);
+```// Listen
 
 
 
-**Frontend Changes** (Vue/JS):### 3. Event Bus (mitt)}
+**Frontend Changes** (Vue/JS):evntBus.on('add_item', this.handleAddItem);**File Structure**: ONE function per file (STRICTLY ENFORCED)- NO caching except temp batches
 
 ```bash
 
-cd ~/frappe-bench-15 && bench clear-cache && bench build --app posawesome```
+cd ~/frappe-bench-15 && bench clear-cache && bench build --app posawesome
 
 ```
 
-```javascript
+// CRITICAL: Clean up in beforeUnmount()```python
 
 **Debug DB Schema**:
 
-```bashimport { evntBus } from './bus.js';**Common Events**: `add_item`, `update_customer`, `new_invoice`, `show_payment`, `show_mesage` (typo intentional)
+```bashbeforeUnmount() {
 
 bench mariadb
 
-DESCRIBE `tabSales Invoice Payment`;  # Check actual column names
+DESCRIBE `tabSales Invoice Payment`;  # Check actual column names  evntBus.off('add_item', this.handleAddItem);# posawesome/posawesome/api/customer/get_customer.py### 2. Backend Standards
+
+```
+
+  if (this._debounceTimer) clearTimeout(this._debounceTimer);
+
+**Full Rebuild** (after major changes):
+
+```bash  if (this.cashUpdateInterval) clearInterval(this.cashUpdateInterval);@frappe.whitelist()```python
+
+bench clear-cache && bench clear-website-cache && bench build --app posawesome --force && bench restart
+
+```}
+
+
+
+---```def get_customer(customer_id):# posawesome/posawesome/api/customer/get_customer.py
+
+
+
+## Integration Points
+
+
+
+### Frappe Hooks (`hooks.py`)**Common Events**: `add_item`, `update_customer`, `new_invoice`, `show_payment`, `show_mesage` (typo intentional), `invoice_submitted`, `update_invoice_doc`, `set_pos_opening_shift`    # MUST specify fields - NO SELECT *@frappe.whitelist()
+
+
+
+```python
+
+app_include_js = ["posawesome.bundle.js"]  # Vue app + onScan.js
+
+### 4. Barcode Scanning    return frappe.get_doc("Customer", customer_id, def get_customer(customer_id):
+
+doctype_js = {
+
+    "POS Profile": "public/js/pos_profile.js",
+
+    "Sales Invoice": "public/js/invoice.js",
+
+    "Company": "public/js/company.js",**Unified Handler**: `API_MAP.ITEM.GET_BARCODE_ITEM` (backend auto-detects type)                          fields=["name", "customer_name", "mobile_no"])    return frappe.get_doc("Customer", customer_id, 
+
+}
+
+
+
+doc_events = {
+
+    "Sales Invoice": {- **Types**: Standard EAN/UPC, weight scale (prefix-based), private/custom```                          fields=["name", "customer_name", "mobile_no"])  # MUST specify fields
+
+        "before_submit": "posawesome.posawesome.api.sales_invoice.before_submit.before_submit",
+
+        "before_cancel": "posawesome.posawesome.api.sales_invoice.before_cancel.before_cancel",- **Performance**: 30+ scans/second via onScan.js
+
+    }
+
+}- **Implementation**: `posawesome/api/item/get_barcode_item.py` - tries scale → private → normal```
+
+```
+
+- **Location**: `public/js/onscan.js` (imported in `posawesome.bundle.js`)
+
+### API Mapper (ALWAYS USE - NO hardcoded paths)
+
+**Naming**: `get_[doctype].py`, `get_many_[doctype]s.py`, `create_[doctype].py`, `update_[doctype].py`, `delete_[doctype].py`
+
+```javascript
+
+// posawesome/public/js/posapp/api_mapper.js### 5. UI Components
+
+const API_MAP = {
+
+  SALES_INVOICE: {**Requirements**:
+
+    CREATE: "posawesome.posawesome.api.sales_invoice.create.create_invoice",
+
+    UPDATE: "posawesome.posawesome.api.sales_invoice.update.update_invoice",**NO Vuetify, NO Frameworks** - Pure HTML/CSS only:
+
+    SUBMIT: "posawesome.posawesome.api.sales_invoice.submit.submit_invoice",
+
+  },**Database Query Rules**:- One function per file (STRICT)
+
+  ITEM: {
+
+    GET_BARCODE_ITEM: "posawesome.posawesome.api.item.get_barcode_item.get_barcode_item",```vue
+
+  },
+
+  CUSTOMER: {<!-- ✅ Native HTML -->- ✅ `fields=["field1", "field2"]` - ALWAYS specify fields- Specific field selection (NO `SELECT *`)
+
+    GET_CUSTOMER: "posawesome.posawesome.api.customer.get_customer.get_customer",
+
+    GET_MANY_CUSTOMERS: "posawesome.posawesome.api.customer.get_many_customers.get_many_customers",<table class="invoice-table">
+
+  }
+
+};  <tr v-for="item in items" :key="item.name">- ✅ Backticks for tables: ``` `tabSales Invoice Payment` ```- Parametrized SQL with `%s` placeholders
+
+
+
+// Usage    <td>{{ item.name }}</td>
+
+frappe.call({ method: API_MAP.SALES_INVOICE.CREATE, args: { data: doc } });
+
+```  </tr>- ✅ Check column names first: `DESCRIBE \`tabDocType\`;` (e.g., `amount` NOT `paid_amount`)- Check column names: `DESCRIBE \`tabDocType\`;`
+
+
+
+---</table>
+
+
+
+## What Makes This Unique- ✅ Parametrized SQL: Use `%s` placeholders- `ignore_version=True` + immediate `frappe.db.commit()`
+
+
+
+- **Barcode Performance**: 30+ scans/second (onScan.js with auto-detection)<!-- ❌ NO Vuetify -->
+
+- **Zero Frontend Calculations**: All math via ERPNext controllers (`doc.calculate_taxes_and_totals()`)
+
+- **3-API Batch Queue**: Only 3 calls per invoice (CREATE → UPDATE → SUBMIT)<v-data-table>  <!-- FORBIDDEN -->```python- Target <100ms response time
+
+- **One Function Per File**: Strict API structure for maintainability
+
+- **Shift-Based Tracking**: Real-time cash/non-cash totals in navbar```
+
+- **Scoped CSS**: Vue SFC styles with `data-v-*` attributes (zero global CSS)
+
+- **Local-Only Assets**: No external CDN dependenciesfrappe.db.sql("""- `frappe.log_error()` ONLY for actual errors (not success)
+
+
+
+---**Rules**:
+
+
+
+## Common Pitfalls- Components <500 lines (split if larger) - Invoice.vue needs refactoring    SELECT SUM(amount) as total
+
+
+
+| ❌ WRONG | ✅ CORRECT |- Virtual scroll for lists >50 items
+
+|---------|-----------|
+
+| Hardcoded API paths | Use `API_MAP` constants |- No animations or heavy CSS    FROM `tabSales Invoice Payment`### 3. Event Bus (mitt)
+
+| `console.log()` everywhere | Only `console.error/warn` |
+
+| `SELECT *` queries | Specify fields: `fields=["name", "item_code"]` |- **CSS Architecture**: Scoped Vue SFC styles (`<style scoped>`) - NO global CSS
+
+| Wrong column names | Check with `DESCRIBE \`tabDocType\`;` |
+
+| Vuetify components | Pure HTML/CSS |- Local assets only (no external CDN)    WHERE parent IN (```javascript
+
+| `frappe.log_error()` for success | Only for actual errors |
+
+| Multiple API calls | Use batch queue system |### 6. Logging Policy (STRICT)        SELECT name FROM `tabSales Invoice` // Emit
+
+| Forgetting `beforeUnmount()` | Clean up listeners/timers |
+
+| Large components (>500 lines) | Split into smaller files |```javascript        WHERE posa_pos_opening_shift = %s AND docstatus = 1evntBus.emit('add_item', item);
+
+| External CDN | Local assets only |
+
+// ❌ NEVER
+
+---
+
+console.log("Fetching data...");    )
+
+## Key Files & Documentation
+
+
+
+**Essential Files**:
+
+1. **`api_mapper.js`** - ALL API endpoints (NEVER hardcode paths)// ✅ ONLY errors/warnings""", (shift_name,), as_dict=1)// Listen  
+
+2. **`posawesome.bundle.js`** - Bundle entry point
+
+3. **`hooks.py`** - Frappe integrationconsole.error('Error fetching cash total:', err);
+
+4. **`api/`** - All @frappe.whitelist() functions (one per file)
+
+5. **`components/Navbar.vue`** - Top nav + payment totalsconsole.warn('Deprecated API usage');```evntBus.on('add_item', this.handleAddItem);
+
+6. **`components/pos/Invoice.vue`** - Main invoice logic (needs refactoring to <500 lines)
+
+```
+
+**Documentation** (`docs/`):
+
+- `needed_tasks.md` - Current development tasks**Backend**: `frappe.log_error()` ONLY for actual errors (not success messages)
+
+- `backend_policy.md` - Backend coding standards
+
+- `frontend_policy.md` - Frontend coding standards**Performance**:// CRITICAL: Clean up in beforeUnmount()
+
+- `dev_common_commands.md` - Development commands
+
+- `security_features.md` - Security implementation---
+
+- `pos_lite_features.md` - Feature documentation
+
+- `technology stack_info.md` - Tech stack details- Target: <100ms response timebeforeUnmount() {
+
+
+
+---## Developer Workflows
+
+
+
+## Code Review Checklist- Use `ignore_version=True` + immediate `frappe.db.commit()`  evntBus.off('add_item', this.handleAddItem);
+
+
+
+Before committing:**Backend Changes** (Python):
+
+- [ ] Backend: Used specific fields in `frappe.get_doc()` - NO `SELECT *`
+
+- [ ] Backend: Verified column names via `DESCRIBE \`tabDocType\`;````bash- `frappe.log_error()` ONLY for actual errors (NOT success messages)  if (this._debounceTimer) clearTimeout(this._debounceTimer);
+
+- [ ] Backend: Used parametrized SQL queries with `%s`
+
+- [ ] Backend: NO `frappe.log_error()` for successful operationsfind . -name "*.pyc" -delete && find . -type d -name "**pycache**" -exec rm -rf {} + && bench restart
+
+- [ ] Frontend: Implemented 1s debounce for batch operations
+
+- [ ] Frontend: Cleaned up event listeners in `beforeUnmount()````  if (this.cashUpdateInterval) clearInterval(this.cashUpdateInterval);
+
+- [ ] Frontend: Used `API_MAP` constants - NEVER hardcoded paths
+
+- [ ] Frontend: NO `console.log()` - only `console.error/warn`
+
+- [ ] Frontend: Components <500 lines (split if larger)
+
+- [ ] Frontend: Pure HTML/CSS - NO Vuetify or frameworks**Frontend Changes** (Vue/JS):### 3. Event Bus (mitt)}
+
+- [ ] No caching (only temporary operation batches)
+
+- [ ] Response time <100ms (backend)```bash
+
+- [ ] All changes tested on SSH dev server
+
+- [ ] Changes align with requested task requirementscd ~/frappe-bench-15 && bench clear-cache && bench build --app posawesome```
+
+
+
+---```
+
+
+
+## Recent Updates (October 2025)```javascript
+
+
+
+- ✅ Payment totals in navbar (cash 💰 + non-cash 💳)**Debug DB Schema**:
+
+- ✅ Console.log cleanup (30+ removed)
+
+- ✅ Success logging cleanup (`frappe.log_error()` only for errors)```bashimport { evntBus } from './bus.js';**Common Events**: `add_item`, `update_customer`, `new_invoice`, `show_payment`, `show_mesage` (typo intentional)
+
+- ✅ Bundle organization (onscan.js → public/js/)
+
+- ✅ Vuetify removal (pure HTML/CSS replacement)bench mariadb
+
+- ✅ API migration (all @frappe.whitelist() → /api/)
+
+- ✅ Cache manager simplified (follows Frappe's native pattern)DESCRIBE `tabSales Invoice Payment`;  # Check actual column names
+
 
 ```
 
