@@ -23,54 +23,37 @@ def apply_auto_transaction_discount(doc):
             frappe.log_error(f"[DEBUG] No POS profile found", "POS Offers Debug")
             return False
 
-        # Get offers for this POS Profile directly from database
-        # We can't use get_offers_by_type_handler because doc.name is None (not saved yet)
+        # Get all auto offers for this POS Profile
         offers = frappe.get_all(
             "POS Offer",
             filters={
                 "disable": 0,
                 "auto": 1,
-                "offer_type": "grand_total",
                 "discount_type": "Discount Percentage",
                 "pos_profile": ["in", [profile, ""]],
             },
-            fields=["name", "discount_percentage", "min_amt", "max_amt"],
-            order_by="discount_percentage desc",
-            limit=1
+            fields=["name", "discount_percentage", "min_amt", "max_amt", "offer_type"],
+            order_by="discount_percentage desc"
         )
 
         frappe.log_error(f"[DEBUG] Found {len(offers)} auto offers", "POS Offers Debug")
 
-        if offers and len(offers) > 0:
-            auto_disc_offer = offers[0]
-            discount_percentage = flt(auto_disc_offer.get("discount_percentage"))
-
-            frappe.log_error(f"[DEBUG] Processing offer: {auto_disc_offer.name}, discount: {discount_percentage}%", "POS Offers Debug")
-
-            # Check min/max amount conditions if set
-            # Use flt() to safely handle None values (converts None to 0)
-            grand_total = flt(doc.grand_total)
-            min_amt = flt(auto_disc_offer.get("min_amt"))
-            max_amt = flt(auto_disc_offer.get("max_amt"))
-
-            frappe.log_error(f"[DEBUG] Amount check - grand_total: {grand_total}, min_amt: {min_amt}, max_amt: {max_amt}", "POS Offers Debug")
-
-            if min_amt > 0 and grand_total < min_amt:
-                frappe.log_error(f"[DEBUG] Offer rejected - grand_total {grand_total} < min_amt {min_amt}", "POS Offers Debug")
-                return False
-            if max_amt > 0 and grand_total > max_amt:
-                frappe.log_error(f"[DEBUG] Offer rejected - grand_total {grand_total} > max_amt {max_amt}", "POS Offers Debug")
-                return False
-
-            if discount_percentage > 0:
-                # Apply the discount percentage directly to the Sales Invoice doc
-                doc.additional_discount_percentage = discount_percentage
-                frappe.log_error(f"[DEBUG] Applied discount {discount_percentage}% to invoice", "POS Offers Debug")
-
-                # Return True to indicate success
-                return True
-        else:
-            frappe.log_error(f"[DEBUG] No applicable auto offers found", "POS Offers Debug")
+        # Check each offer for applicability
+        for offer in offers:
+            if is_offer_applicable(offer, doc):
+                discount_percentage = flt(offer.get("discount_percentage"))
+                
+                frappe.log_error(f"[DEBUG] Processing applicable offer: {offer.name}, discount: {discount_percentage}%", "POS Offers Debug")
+                
+                if discount_percentage > 0:
+                    # Apply the discount percentage directly to the Sales Invoice doc
+                    doc.additional_discount_percentage = discount_percentage
+                    frappe.log_error(f"[DEBUG] Applied discount {discount_percentage}% to invoice", "POS Offers Debug")
+                    
+                    # Return True to indicate success
+                    return True
+        
+        frappe.log_error(f"[DEBUG] No applicable auto offers found", "POS Offers Debug")
 
     except Exception as e:
         # Silent fail - don't break invoice creation
