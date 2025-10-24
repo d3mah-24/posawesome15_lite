@@ -37,11 +37,11 @@ def apply_auto_transaction_discount(doc):
         for offer in offers:
             if is_offer_applicable(offer, doc):
                 discount_percentage = flt(offer.get("discount_percentage"))
-                
+
                 if discount_percentage > 0:
                     # Apply the discount percentage directly to the Sales Invoice doc
                     doc.additional_discount_percentage = discount_percentage
-                    
+
                     # Return True to indicate success
                     return True
 
