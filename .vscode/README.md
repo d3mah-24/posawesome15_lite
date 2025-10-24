@@ -51,6 +51,20 @@ If extensions are not loading:
 1. Reload VSCode: `Ctrl+Shift+P` → "Reload Window"
 2. Check SSH connection: Extensions must be installed on the SSH host
 3. Verify extensions: `code --list-extensions`
+4. Run checker script: `.vscode/check-extensions.sh`
+
+### Checking Extensions
+
+To verify only approved extensions are installed:
+
+```bash
+.vscode/check-extensions.sh
+```
+
+This script will:
+- ✅ Check all required extensions are installed
+- ⚠️ Detect any unauthorized extensions
+- 💡 Provide commands to remove unauthorized extensions
 
 ### Maintenance
 
