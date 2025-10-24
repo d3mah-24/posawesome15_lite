@@ -20,6 +20,11 @@ def apply_auto_transaction_discount(doc):
         if not profile:
             return False
 
+        # Check if offers are enabled in POS Profile
+        pos_profile_doc = frappe.get_doc("POS Profile", profile)
+        if not pos_profile_doc.get("posa_auto_fetch_offers"):
+            return False
+
         # Get all auto offers for this POS Profile
         offers = frappe.get_all(
             "POS Offer",
