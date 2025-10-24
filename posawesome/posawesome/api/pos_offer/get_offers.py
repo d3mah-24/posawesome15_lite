@@ -16,14 +16,10 @@ def get_offers(profile):
     GET - Get all offers for POS Profile (مطابق للنسخة القديمة)
     """
     try:
-        frappe.log_error(f"[DEBUG] get_offers called with profile: {profile}", "Offers Debug - Get Offers Start")
-        
         pos_profile = frappe.get_doc("POS Profile", profile)
         company = pos_profile.company
         warehouse = pos_profile.warehouse
         date = nowdate()
-
-        frappe.log_error(f"[DEBUG] POS Profile details - Company: {company}, Warehouse: {warehouse}, Date: {date}", "Offers Debug - Profile Details")
 
         values = {
             "company": company,
@@ -32,7 +28,7 @@ def get_offers(profile):
             "valid_from": date,
             "valid_upto": date,
         }
-        
+
         # استخدام SQL مباشر مثل النسخة القديمة
         data = (
             frappe.db.sql(
@@ -52,11 +48,9 @@ def get_offers(profile):
             )
             or []
         )
-        
-        frappe.log_error(f"[DEBUG] Query returned {len(data)} offers. Offer names: {[o.get('name') for o in data]}", "Offers Debug - Query Results")
-        
+
         return data
-        
+
     except Exception as e:
         frappe.log_error(f"[ERROR] get_offers exception: {str(e)}\nProfile: {profile}", "Offers Debug - Exception")
         return []
