@@ -2,11 +2,11 @@
 
 ## 📝 Task 1: Auto Delete Draft Invoices
 
-**💰 Budget**: $15
-**👨‍💻 Developer**: Not Assigned  
-**💳 Payment**: Not Assigned  
-**🎯 Priority**: 🔥 High  
-**📊 Status**: ⏳ Pending
+**💰 Budget**: $10
+**👨‍💻 Developer**: Oscar
+**💳 Payment**: ✅ Payed USDT crypto
+**🎯 Priority**: 🔥 High
+**📊 Status**: ✅ Completed
 
 **🔧 Feature**: `pos_profile_posa_auto_delete_draft_invoices`
 
@@ -31,10 +31,10 @@ created during the shift.
 
 ## 🎁 Task 2: Offers and Coupons Implementation
 
-**💰 Budget**: $40  
-**👨‍💻 Developer**: Priyansh Vijay  
-**💳 Payment**: $40  
-**🎯 Priority**: 🔥 Normal  
+**💰 Budget**: $40
+**👨‍💻 Developer**: Priyansh Vijay
+**💳 Payment**: $40
+**🎯 Priority**: 🔥 Normal
 **📊 Status**: 🔄 In Progress
 
 **📖 Description**: Comprehensive offers and coupons system following POS Awesome Lite
@@ -68,7 +68,7 @@ architecture patterns with seamless frontend-backend integration.
 **🎯 Core Features to Analyze**:
 
 - 🏷️ Item-based discounts and promotional pricing
-- 👥 Customer-specific offers and loyalty programs  
+- 👥 Customer-specific offers and loyalty programs
 - 🎫 Coupon code validation and redemption
 - 📦 Bundle offers and buy-X-get-Y promotions
 - ⏰ Time-based offers (happy hour, seasonal)
@@ -87,10 +87,10 @@ architecture patterns with seamless frontend-backend integration.
 
 ## ⚡ Task 3: Performance Optimizations
 
-**💰 Budget**: $40  
-**👨‍💻 Developer**: Guby  
-**💳 Payment**: Crypto  
-**🎯 Priority**: 🔥 Normal  
+**💰 Budget**: $40
+**👨‍💻 Developer**: Guby
+**💳 Payment**: Crypto
+**🎯 Priority**: 🔥 Normal
 **📊 Status**: ⏳ Pending
 
 **📖 Description**: Comprehensive performance optimization across frontend and backend
@@ -159,10 +159,10 @@ following POS Awesome Lite architecture patterns.
 
 ## 🧹 Task 4: Code Cleanup and Localization
 
-**💰 Budget**: $40  
-**👨‍💻 Developer**: Oscar  
-**💳 Payment**: ✅ Crypto  
-**🎯 Priority**: 🔥 High  
+**💰 Budget**: $40
+**👨‍💻 Developer**: Oscar
+**💳 Payment**: ✅ Payed USDT crypto
+**🎯 Priority**: 🔥 High
 **📊 Status**: ✅ Completed
 
 **📖 Description**: Complete code cleanup and localization to ensure no external
@@ -195,10 +195,10 @@ dependencies and optimize the codebase.
 
 ## 🔘 Task 5: Pay Button Disabled Till Totals Updated
 
-**💰 Budget**: $10  
-**👨‍💻 Developer**: Priyansh Vijay  
-**💳 Payment**: 🔄 USDT crypto (Pending to add more tasks)
-**🎯 Priority**: 🔥 High  
+**💰 Budget**: $10
+**👨‍💻 Developer**: Priyansh Vijay
+**💳 Payment**: ✅ Payed USDT crypto
+**🎯 Priority**: 🔥 High
 **📊 Status**: ✅ Completed
 
 **🔧 Feature**: `pay_button_disabled_till_totals_updated`
@@ -229,10 +229,10 @@ are properly calculated and updated.
 ## 🎨 Task 6: Returns Dialog Design Customizations
 
 **💰 Budget**: $10
-**👨‍💻 Developer**: Priyansh Vijay  
-**💳 Payment**: 🔄 USDT crypto  
-**🎯 Priority**: 🔥 Normal  
-**📊 Status**: ⏳ Pending
+**👨‍💻 Developer**: Priyansh Vijay
+**💳 Payment**: ✅ Payed USDT crypto
+**🎯 Priority**: 🔥 Normal
+**📊 Status**: ✅ Completed
 
 **🔧 Feature**: `Returns.vue` dialog design customizations
 
