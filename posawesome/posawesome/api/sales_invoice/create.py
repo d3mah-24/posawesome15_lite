@@ -42,17 +42,17 @@ def apply_auto_transaction_discount(doc):
         for offer in offers:
             if is_offer_applicable(offer, doc):
                 discount_percentage = flt(offer.get("discount_percentage"))
-                
+
                 frappe.log_error(f"[DEBUG] Processing applicable offer: {offer.name}, discount: {discount_percentage}%", "POS Offers Debug")
-                
+
                 if discount_percentage > 0:
                     # Apply the discount percentage directly to the Sales Invoice doc
                     doc.additional_discount_percentage = discount_percentage
                     frappe.log_error(f"[DEBUG] Applied discount {discount_percentage}% to invoice", "POS Offers Debug")
-                    
+
                     # Return True to indicate success
                     return True
-        
+
         frappe.log_error(f"[DEBUG] No applicable auto offers found", "POS Offers Debug")
 
     except Exception as e:
