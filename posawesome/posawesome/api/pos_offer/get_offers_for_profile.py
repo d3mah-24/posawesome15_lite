@@ -28,13 +28,13 @@ def get_offers_for_profile(profile):
             "valid_from": date,
             "valid_upto": date,
         }
-        
+
         # استخدام Frappe ORM بدلاً من SQL
         filters = {
             "disable": 0,
             "company": company,
         }
-        
+
         # إضافة فلاتر اختيارية
         if profile:
             filters["pos_profile"] = ["in", ["", profile]]
@@ -44,13 +44,13 @@ def get_offers_for_profile(profile):
         else:
             # إذا كان المستودع فارغاً، ابحث عن العروض التي لها مستودع فارغ
             filters["warehouse"] = ""
-        
+
         # فلتر التاريخ - إصلاح المنطق
         if date:
             filters["valid_from"] = ["<=", date]
-            filters["valid_upto"] = [">=", date]
-        
-        
+            filters["valid_upto"] = ["in", [None, "", ">=", date]]
+
+
         # الحقول الأساسية المطلوبة فقط للواجهة الأمامية - مطابقة لجدول tabPOS Offer
         essential_fields = [
             "name",                    # اسم العرض (مطلوب للتعريف)
@@ -72,7 +72,7 @@ def get_offers_for_profile(profile):
             "replace_item",            # استبدال نفس المنتج (مطلوب للمنطق)
             "replace_cheapest_item"    # استبدال أرخص منتج (مطلوب للمنطق)
         ]
-        
+
         # جلب العروض مع جميع الفلاتر
         data = frappe.get_all(
             "POS Offer",
@@ -80,8 +80,8 @@ def get_offers_for_profile(profile):
             fields=essential_fields,
             order_by="auto DESC, title ASC"
         )
-        
+
         return data
-        
+
     except Exception as e:
         return []
