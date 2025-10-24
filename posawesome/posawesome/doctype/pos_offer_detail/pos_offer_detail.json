@@ -7,12 +7,8 @@
   "field_order": [
     "offer_name",
     "row_id",
-    "apply_on",
-    "offer",
-    "items",
-    "give_item",
-    "give_item_row_id",
-    "offer_applied"
+    "offer_type",
+    "discount_percentage"
   ],
   "fields": [
     {
@@ -29,39 +25,15 @@
       "label": "Row ID"
     },
     {
-      "fieldname": "apply_on",
+      "fieldname": "offer_type",
       "fieldtype": "Select",
-      "label": "Apply On",
-      "options": "Item\nItem Group\nBrand\nCustomer\nCustomer Group\nGrand Total"
+      "label": "Offer Type",
+      "options": "item_code\nitem_group\nbrand\ncustomer\ncustomer_group\ngrand_total"
     },
     {
-      "fieldname": "offer",
-      "fieldtype": "Select",
-      "label": "Offer",
-      "options": "Discount Percentage\nDiscount Amount\nRate\nGive Product\nLoyalty Point"
-    },
-    {
-      "fieldname": "items",
-      "fieldtype": "Int",
-      "label": "Items",
-      "default": 0
-    },
-    {
-      "fieldname": "give_item",
-      "fieldtype": "Link",
-      "label": "Give Item",
-      "options": "Item"
-    },
-    {
-      "fieldname": "give_item_row_id",
-      "fieldtype": "Data",
-      "label": "Give Item Row ID"
-    },
-    {
-      "default": "0",
-      "fieldname": "offer_applied",
-      "fieldtype": "Check",
-      "label": "Offer Applied"
+      "fieldname": "discount_percentage",
+      "fieldtype": "Percent",
+      "label": "Discount Percentage"
     }
   ],
   "istable": 1,

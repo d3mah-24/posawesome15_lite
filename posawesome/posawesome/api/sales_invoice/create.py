@@ -8,7 +8,7 @@ import json
 import frappe
 from frappe import _
 from frappe.utils import flt
-from ..pos_offer.offers import get_applicable_offers, is_offer_applicable
+from ..pos_offer.offers import get_applicable_offers, is_offer_applicable, apply_offer_to_invoice
 
 
 def apply_auto_transaction_discount(doc):
@@ -41,16 +41,11 @@ def apply_auto_transaction_discount(doc):
         # Check each offer for applicability
         for offer in offers:
             if is_offer_applicable(offer, doc):
-                discount_percentage = flt(offer.get("discount_percentage"))
+                frappe.log_error(f"[DEBUG] Processing applicable offer: {offer.name}", "POS Offers Debug")
 
-                frappe.log_error(f"[DEBUG] Processing applicable offer: {offer.name}, discount: {discount_percentage}%", "POS Offers Debug")
-
-                if discount_percentage > 0:
-                    # Apply the discount percentage directly to the Sales Invoice doc
-                    doc.additional_discount_percentage = discount_percentage
-                    frappe.log_error(f"[DEBUG] Applied discount {discount_percentage}% to invoice", "POS Offers Debug")
-
-                    # Return True to indicate success
+                # Apply offer using the new function
+                if apply_offer_to_invoice(doc, offer):
+                    frappe.log_error(f"[DEBUG] Successfully applied offer: {offer.name}", "POS Offers Debug")
                     return True
 
         frappe.log_error(f"[DEBUG] No applicable auto offers found", "POS Offers Debug")
