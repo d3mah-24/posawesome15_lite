@@ -16,10 +16,14 @@ def get_offers_for_profile(profile):
     GET - Get all offers for POS Profile
     """
     try:
+        frappe.log_error(f"[DEBUG] get_offers_for_profile called with profile: {profile}", "POS Offers Debug")
+
         pos_profile = frappe.get_doc("POS Profile", profile)
         company = pos_profile.company
         warehouse = pos_profile.warehouse
         date = nowdate()
+
+        frappe.log_error(f"[DEBUG] POS Profile data - company: {company}, warehouse: {warehouse}, date: {date}", "POS Offers Debug")
 
         # استخدام Frappe ORM بدلاً من SQL
         filters = {
@@ -72,6 +76,9 @@ def get_offers_for_profile(profile):
             fields=essential_fields,
             order_by="auto DESC, title ASC"
         )
+
+        frappe.log_error(f"[DEBUG] Found {len(data)} offers for profile {profile}", "POS Offers Debug")
+        frappe.log_error(f"[DEBUG] Offers data: {data}", "POS Offers Debug")
 
         return data
 
