@@ -7,60 +7,47 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "applicability_section",
+  "sec1",
+  "col1",
   "title",
-  "description",
-  "column_break_4",
   "disable",
-  "section_break_3",
-  "apply_on",
-  "offer",
+  "auto",
+  "col2",
+  "description",
+  "sec2",
+  "col3",
   "company",
   "pos_profile",
+  "col4",
   "warehouse",
-  "column_break_8",
-  "item",
+  "sec3",
+  "col5",
+  "offer_type",
+  "col6",
+  "item_code",
   "item_group",
   "brand",
-  "valid_from",
-  "valid_upto",
-  "coupon_based",
-  "auto",
-  "quantity_and_amount_section",
+  "grand_total",
+  "customer",
+  "customer_group",
+  "sec4",
+  "col7",
   "min_qty",
   "max_qty",
-  "column_break_16",
+  "col8",
   "min_amt",
   "max_amt",
-  "apply_for_section",
-  "apply_type",
-  "replace_item",
-  "replace_cheapest_item",
-  "column_break_15",
-  "apply_item_code",
-  "apply_item_group",
-  "less_then",
-  "product_discount_scheme_section",
-  "given_qty",
-  "price_discount_scheme_section",
+  "sec5",
+  "col9",
   "discount_type",
-  "column_break_26",
-  "rate",
-  "discount_amount",
-  "discount_percentage",
-  "loyalty_point_scheme_section",
-  "loyalty_program",
-  "loyalty_points"
+  "col10",
+  "discount_percentage"
  ],
  "fields": [
   {
-   "fieldname": "applicability_section",
-   "fieldtype": "Section Break"
-  },
-  {
    "fieldname": "title",
    "fieldtype": "Data",
-   "label": "Title",
+   "label": "title",
    "reqd": 1,
    "unique": 1
   },
@@ -71,16 +58,6 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Disable"
-  },
-  {
-   "default": "Item Code",
-   "fieldname": "apply_on",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Qualifying Transaction / Item",
-   "options": "\nItem Code\nItem Group\nBrand\nTransaction",
-   "reqd": 1
   },
   {
    "fieldname": "company",
@@ -107,165 +84,50 @@
    "search_index": 1
   },
   {
-   "fieldname": "column_break_8",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "item",
-   "fieldtype": "Link",
-   "label": "Apply Rule On Item Code",
-   "options": "Item"
-  },
-  {
    "fieldname": "item_group",
    "fieldtype": "Link",
-   "label": "Apply Rule On Item Group",
+   "label": "item_group",
    "options": "Item Group"
   },
   {
    "fieldname": "brand",
    "fieldtype": "Link",
-   "label": "Apply Rule On Brand",
+   "label": "brand",
    "options": "Brand"
   },
   {
    "default": "0",
    "fieldname": "min_qty",
    "fieldtype": "Float",
-   "label": "Min Quantity"
+   "label": "min_qty"
   },
   {
    "default": "0",
    "fieldname": "max_qty",
    "fieldtype": "Float",
-   "label": "Max Quantity"
-  },
-  {
-   "fieldname": "column_break_16",
-   "fieldtype": "Column Break"
+   "label": "max_qty"
   },
   {
    "fieldname": "min_amt",
    "fieldtype": "Float",
-   "label": "Min Amount"
+   "label": "min_amt"
   },
   {
    "fieldname": "max_amt",
    "fieldtype": "Float",
-   "label": "Max Amount"
+   "label": "max_amt"
   },
   {
-   "default": "Today",
-   "fieldname": "valid_from",
-   "fieldtype": "Date",
-   "label": "Valid From",
-   "reqd": 1
-  },
-  {
-   "fieldname": "valid_upto",
-   "fieldtype": "Date",
-   "label": "Valid Upto"
-  },
-  {
-   "fieldname": "apply_for_section",
-   "fieldtype": "Section Break",
-   "label": "Apply For"
-  },
-  {
-   "fieldname": "apply_type",
-   "fieldtype": "Select",
-   "label": "Apply Type",
-   "options": "\nItem Code\nItem Group"
-  },
-  {
-   "fieldname": "column_break_15",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "apply_item_code",
-   "fieldtype": "Link",
-   "label": "Item Code",
-   "options": "Item"
-  },
-  {
-   "fieldname": "apply_item_group",
-   "fieldtype": "Link",
-   "label": "Item Group",
-   "options": "Item Group"
-  },
-  {
-   "fieldname": "price_discount_scheme_section",
-   "fieldtype": "Section Break",
-   "label": "Price Discount Scheme "
-  },
-  {
+   "default": "Discount Percentage",
    "fieldname": "discount_type",
    "fieldtype": "Select",
-   "label": "Discount Type",
-   "options": "\nRate\nDiscount Percentage\nDiscount Amount"
-  },
-  {
-   "fieldname": "column_break_26",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "rate",
-   "fieldtype": "Float",
-   "label": "Rate"
-  },
-  {
-   "fieldname": "discount_amount",
-   "fieldtype": "Float",
-   "label": "Discount Amount"
+   "label": "discount_type",
+   "options": "Discount Percentage"
   },
   {
    "fieldname": "discount_percentage",
    "fieldtype": "Float",
-   "label": "Discount Percentage"
-  },
-  {
-   "fieldname": "product_discount_scheme_section",
-   "fieldtype": "Section Break",
-   "label": "Product Discount Scheme"
-  },
-  {
-   "fieldname": "loyalty_point_scheme_section",
-   "fieldtype": "Section Break",
-   "label": "Loyalty Point Scheme"
-  },
-  {
-   "fieldname": "loyalty_program",
-   "fieldtype": "Link",
-   "label": "Default Loyalty Program",
-   "options": "Loyalty Program"
-  },
-  {
-   "fieldname": "loyalty_points",
-   "fieldtype": "Int",
-   "label": "Loyalty Points"
-  },
-  {
-   "fieldname": "given_qty",
-   "fieldtype": "Float",
-   "label": "Given Quantity"
-  },
-  {
-   "fieldname": "quantity_and_amount_section",
-   "fieldtype": "Section Break",
-   "label": "Quantity and Amount Conditions"
-  },
-  {
-   "fieldname": "offer",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Promo Type",
-   "options": "Item Price\nGive Product\nGrand Total\nLoyalty Point",
-   "reqd": 1
-  },
-  {
-   "fieldname": "section_break_3",
-   "fieldtype": "Section Break"
+   "label": "discount_percentage"
   },
   {
    "default": "1",
@@ -276,42 +138,111 @@
   {
    "fieldname": "description",
    "fieldtype": "Small Text",
-   "label": "Description",
+   "label": "description",
    "reqd": 1
   },
   {
-   "fieldname": "column_break_4",
+   "fieldname": "sec1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "col1",
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "replace_item",
-   "fieldtype": "Check",
-   "label": "Replace Same Item"
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "replace_cheapest_item",
-   "fieldtype": "Check",
-   "label": "Replace Cheapest Item"
+   "fieldname": "sec2",
+   "fieldtype": "Section Break"
   },
   {
-   "fieldname": "less_then",
-   "fieldtype": "Float",
-   "label": "Item Rate Should Less Then"
+   "fieldname": "col3",
+   "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "coupon_based",
-   "fieldtype": "Check",
-   "label": "Coupon Code Based"
+   "fieldname": "col4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sec3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "col5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "offer_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "offer_type",
+   "options": "\nitem_code\nitem_group\nbrand\ngrand_total\ncustomer\ncustomer_group",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "item_code",
+   "options": "Item"
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "label": "grand_total"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "customer_group",
+   "fieldtype": "Link",
+   "label": "customer_group",
+   "options": "Customer Group"
+  },
+  {
+   "fieldname": "sec4",
+   "fieldtype": "Section Break",
+   "label": "Quantity and Amount Conditions"
+  },
+  {
+   "fieldname": "sec5",
+   "fieldtype": "Section Break",
+   "label": "Price Discount Scheme "
+  },
+  {
+   "fieldname": "col7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "col8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "col9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "col10",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
- "modified": "2021-07-25 17:09:55.634113",
+ "links": [],
+ "modified": "2025-10-24 16:07:47.450805",
  "modified_by": "Administrator",
  "module": "POSAwesome",
  "name": "POS Offer",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -381,9 +312,11 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "show_name_in_global_search": 1,
  "show_preview_popup": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
