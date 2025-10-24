@@ -7,14 +7,11 @@
 
     <div v-show="!dialog" class="pos-main-wrapper">
       <div class="pos-left-panel">
-        <div v-show="!payment && !offers && !coupons" class="panel-content">
+        <div v-show="!payment && !offers" class="panel-content">
           <ItemsSelector></ItemsSelector>
         </div>
         <div v-show="offers" class="panel-content">
           <PosOffers @offerApplied="handleOfferApplied" @offerRemoved="handleOfferRemoved"></PosOffers>
-        </div>
-        <div v-show="coupons" class="panel-content">
-          <PosCoupons></PosCoupons>
         </div>
         <div v-show="payment" class="panel-content">
           <Payments ref="payments" @request-print="onPrintRequest"></Payments>
@@ -38,7 +35,6 @@ import Invoice from "./Invoice.vue";
 import OpeningDialog from "./OpeningDialog.vue";
 import Payments from "./Payments.vue";
 import PosOffers from "./PosOffers.vue";
-import PosCoupons from "./PosCoupons.vue";
 import ClosingDialog from "./ClosingDialog.vue";
 import NewAddress from "./NewAddress.vue";
 import Returns from "./Returns.vue";
@@ -55,7 +51,6 @@ const EVENTS = {
   SET_POS_SETTINGS: "set_pos_settings",
   SHOW_PAYMENT: "show_payment",
   SHOW_OFFERS: "show_offers",
-  SHOW_COUPONS: "show_coupons",
   SHOW_MESSAGE: "show_mesage",
   OPEN_CLOSING_DIALOG: "open_closing_dialog",
   OPEN_CLOSING_DIALOG_EMIT: "open_ClosingDialog",
@@ -76,7 +71,6 @@ export default {
     ClosingDialog,
     Returns,
     PosOffers,
-    PosCoupons,
     NewAddress,
   },
 
@@ -87,7 +81,6 @@ export default {
       pos_opening_shift: null,
       payment: false,
       offers: false,
-      coupons: false,
       offerApplied: null,
       offerRemoved: false,
     };
@@ -221,10 +214,18 @@ export default {
     // ===== OFFERS METHODS =====
     async get_offers(pos_profile) {
       try {
-        // if (!this.pos_profile?.posa_auto_fetch_offers) {
-        //   console.log("Auto fetch offers is disabled in POS Profile settings");
-        //   return;
-        // }
+        // Check if auto fetch offers is enabled (handle different value types)
+        const offersEnabled = this.pos_profile?.posa_auto_fetch_offers !== 0 &&
+          this.pos_profile?.posa_auto_fetch_offers !== "0" &&
+          this.pos_profile?.posa_auto_fetch_offers !== false &&
+          this.pos_profile?.posa_auto_fetch_offers !== null &&
+          this.pos_profile?.posa_auto_fetch_offers !== undefined;
+
+        if (!offersEnabled) {
+          evntBus.emit(EVENTS.SET_OFFERS, []); // Clear offers
+          return;
+        }
+
         const response = await frappe.call({
           method: API_MAP.POS_OFFER.GET_OFFERS_FOR_PROFILE,
           args: {
@@ -293,7 +294,6 @@ export default {
 
       this.payment = panelType === "payment" && isActive;
       this.offers = panelType === "offers" && isActive;
-      this.coupons = panelType === "coupons" && isActive;
     },
 
     // ===== UTILITY METHODS =====
@@ -315,7 +315,6 @@ export default {
       // Panel switching events
       evntBus.on(EVENTS.SHOW_PAYMENT, this.handleShowPayment);
       evntBus.on(EVENTS.SHOW_OFFERS, this.handleShowOffers);
-      evntBus.on(EVENTS.SHOW_COUPONS, this.handleShowCoupons);
 
       // Closing shift events
       evntBus.on(EVENTS.OPEN_CLOSING_DIALOG, this.handleOpenClosingDialog);
@@ -327,7 +326,6 @@ export default {
       evntBus.$off(EVENTS.REGISTER_POS_DATA, this.handleRegisterPosData);
       evntBus.$off(EVENTS.SHOW_PAYMENT, this.handleShowPayment);
       evntBus.$off(EVENTS.SHOW_OFFERS, this.handleShowOffers);
-      evntBus.$off(EVENTS.SHOW_COUPONS, this.handleShowCoupons);
       evntBus.$off(EVENTS.OPEN_CLOSING_DIALOG, this.handleOpenClosingDialog);
       evntBus.$off(EVENTS.SUBMIT_CLOSING_POS, this.handleSubmitClosingPos);
       evntBus.$off(EVENTS.LOAD_POS_PROFILE);
@@ -351,10 +349,6 @@ export default {
 
     handleShowOffers(data) {
       this.switchPanel("offers", data);
-    },
-
-    handleShowCoupons(data) {
-      this.switchPanel("coupons", data);
     },
 
     handleOpenClosingDialog() {
