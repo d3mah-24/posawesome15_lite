@@ -1,5 +1,5 @@
 <template>
-  <div class="offers-wrapper">
+  <div v-if="offersEnabled" class="offers-wrapper">
     <!-- HEADER WITH STATS -->
     <div class="offers-header">
       <div class="header-content">
@@ -22,26 +22,13 @@
 
     <!-- OFFERS GRID -->
     <div class="offers-grid">
-      <div
-        v-for="(offer, idx) in pos_offers"
-        :key="idx"
-        class="offer-card-wrapper"
-      >
-        <div
-          class="offer-card"
-          :class="{ 'offer-active': offer.offer_applied }"
-          @click="toggleOffer(offer)"
-        >
+      <div v-for="(offer, idx) in pos_offers" :key="idx" class="offer-card-wrapper">
+        <div class="offer-card" :class="{ 'offer-active': offer.offer_applied }" @click="toggleOffer(offer)">
           <!-- OFFER IMAGE WITH OVERLAY -->
           <div class="offer-image-container">
-            <img
-              :src="
-                offer.image ||
-                '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
-              "
-              class="offer-image"
-              @error="handleImageError"
-            />
+            <img :src="offer.image ||
+              '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
+              " class="offer-image" @error="handleImageError" />
             <div class="offer-overlay">
               <div class="offer-name">{{ truncateName(offer.name, 15) }}</div>
             </div>
@@ -58,15 +45,13 @@
             <!-- DISCOUNT INFO -->
             <div class="discount-info">
               <div v-if="offer.discount_percentage" class="discount-main">
-                <span class="discount-value"
-                  >{{ offer.discount_percentage }}%</span
-                >
+                <span class="discount-value">{{ offer.discount_percentage }}%</span>
                 <span class="discount-label">OFF</span>
               </div>
               <div v-else-if="offer.discount_amount" class="discount-main">
                 <span class="discount-value">{{
                   formatCurrency(offer.discount_amount)
-                }}</span>
+                  }}</span>
                 <span class="discount-label">OFF</span>
               </div>
               <div v-else class="discount-main special">
@@ -76,15 +61,12 @@
             </div>
 
             <!-- WARNING MESSAGE -->
-            <div
-              v-if="
-                offer.offer === 'Grand Total' &&
-                !offer.offer_applied &&
-                discount_percentage_offer_name &&
-                discount_percentage_offer_name !== offer.name
-              "
-              class="warning-msg"
-            >
+            <div v-if="
+              offer.offer_type === 'Grand Total' &&
+              !offer.offer_applied &&
+              discount_percentage_offer_name &&
+              discount_percentage_offer_name !== offer.name
+            " class="warning-msg">
               <i class="mdi mdi-alert-circle warning-icon"></i>
               <span>Another offer active</span>
             </div>
@@ -92,17 +74,13 @@
             <!-- APPLY TOGGLE -->
             <div class="offer-toggle">
               <label class="toggle-switch">
-                <input
-                  type="checkbox"
-                  v-model="offer.offer_applied"
-                  @change="forceUpdateItem"
-                  :disabled="isOfferDisabled(offer)"
-                />
+                <input type="checkbox" v-model="offer.offer_applied" @change="forceUpdateItem"
+                  :disabled="isOfferDisabled(offer)" />
                 <span class="toggle-slider"></span>
               </label>
               <span class="toggle-text">{{
                 offer.offer_applied ? "Applied" : "Apply"
-              }}</span>
+                }}</span>
             </div>
           </div>
         </div>
@@ -111,6 +89,17 @@
 
     <!-- FOOTER -->
     <div class="offers-footer">
+      <button class="back-button" @click="back_to_invoice">
+        <i class="mdi mdi-arrow-left back-icon"></i>
+        <span>Back to Invoice</span>
+      </button>
+    </div>
+  </div>
+  <div v-else class="offers-disabled">
+    <div class="disabled-message">
+      <i class="mdi mdi-tag-off disabled-icon"></i>
+      <h3>Offers Disabled</h3>
+      <p>Offers are disabled in POS Profile settings</p>
       <button class="back-button" @click="back_to_invoice">
         <i class="mdi mdi-arrow-left back-icon"></i>
         <span>Back to Invoice</span>
@@ -130,7 +119,6 @@ const EVENT_NAMES = {
   SHOW_MESSAGE: "show_mesage",
   UPDATE_INVOICE_OFFERS: "update_invoice_offers",
   UPDATE_OFFERS_COUNTERS: "update_offers_counters",
-  UPDATE_POS_COUPONS: "update_pos_coupons",
   REGISTER_POS_PROFILE: "register_pos_profile",
   UPDATE_CUSTOMER: "update_customer",
   SET_OFFERS: "set_offers",
@@ -178,6 +166,17 @@ export default {
 
   // ===== SECTION 4: COMPUTED =====
   computed: {
+    offersEnabled() {
+      const value = this.pos_profile?.posa_auto_fetch_offers;
+
+      const enabled = value !== 0 &&
+        value !== "0" &&
+        value !== false &&
+        value !== null &&
+        value !== undefined;
+
+      return enabled;
+    },
     offersCount() {
       return this.pos_offers.length;
     },
@@ -211,12 +210,12 @@ export default {
 
     isOfferDisabled(offer) {
       return Boolean(
-        (offer.offer === "Give Product" &&
+        (offer.offer_type === "Give Product" &&
           !offer.give_item &&
           (!offer.replace_cheapest_item || !offer.replace_item)) ||
-          (offer.offer === "Grand Total" &&
-            this.discount_percentage_offer_name &&
-            this.discount_percentage_offer_name !== offer.name)
+        (offer.offer_type === "Grand Total" &&
+          this.discount_percentage_offer_name &&
+          this.discount_percentage_offer_name !== offer.name)
       );
     },
 
@@ -234,7 +233,7 @@ export default {
     handleManualOfferChange() {
       try {
         console.log("[DEBUG] handleManualOfferChange - Current offers:", this.pos_offers);
-        
+
         const appliedGrandTotalOffers = this.pos_offers.filter(
           (offer) =>
             offer.offer === OFFER_TYPES.GRAND_TOTAL && offer.offer_applied
@@ -278,7 +277,7 @@ export default {
       try {
         console.log("[DEBUG] updatePosOffers called with:", appliedOffers);
         console.log("[DEBUG] Current pos_offers before update:", this.pos_offers);
-        
+
         this.pos_offers.forEach((pos_offer) => {
           const wasApplied = pos_offer.offer_applied;
           pos_offer.offer_applied = appliedOffers.some(
@@ -287,12 +286,12 @@ export default {
               offer.offer_name === pos_offer.name ||
               offer.name === pos_offer.title
           );
-          
+
           if (wasApplied !== pos_offer.offer_applied) {
             console.log(`[DEBUG] Offer '${pos_offer.name}' status changed: ${wasApplied} -> ${pos_offer.offer_applied}`);
           }
         });
-        
+
         console.log("[DEBUG] pos_offers after update:", this.pos_offers);
       } catch (error) {
         console.error("[ERROR] updatePosOffers exception:", error);
@@ -393,17 +392,6 @@ export default {
       }
     },
 
-    updatePosCoupuns() {
-      try {
-        const applyedOffers = this.pos_offers.filter(
-          (offer) => offer.offer_applied && offer.coupon_based
-        );
-        evntBus.emit(EVENT_NAMES.UPDATE_POS_COUPONS, applyedOffers);
-      } catch (error) {
-        this.showMessage("Error updating coupons", "error");
-      }
-    },
-
     showMessage(text, color) {
       evntBus.emit(EVENT_NAMES.SHOW_MESSAGE, { text, color });
     },
@@ -416,7 +404,6 @@ export default {
       handler() {
         this.handelOffers();
         this.updateCounters();
-        this.updatePosCoupuns();
       },
     },
   },
@@ -476,7 +463,8 @@ export default {
   display: flex;
   flex-direction: column;
   height: 91vh;
-  background: #f8f9fa; /* Simple background - no gradient */
+  background: #f8f9fa;
+  /* Simple background - no gradient */
 }
 
 /* ===== HEADER ===== */
@@ -767,15 +755,15 @@ export default {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
   background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
 }
 
-.toggle-switch input:checked + .toggle-slider:before {
+.toggle-switch input:checked+.toggle-slider:before {
   transform: translateX(16px);
 }
 
-.toggle-switch input:disabled + .toggle-slider {
+.toggle-switch input:disabled+.toggle-slider {
   background-color: #e0e0e0;
   cursor: not-allowed;
   opacity: 0.5;
@@ -787,7 +775,7 @@ export default {
   color: #666;
 }
 
-.toggle-switch input:checked ~ .toggle-text {
+.toggle-switch input:checked~.toggle-text {
   color: #4caf50;
 }
 
@@ -829,5 +817,42 @@ export default {
   .offers-grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
+}
+
+/* ===== DISABLED MESSAGE ===== */
+.offers-disabled {
+  display: flex;
+  flex-direction: column;
+  height: 91vh;
+  background: #f8f9fa;
+  align-items: center;
+  justify-content: center;
+}
+
+.disabled-message {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+}
+
+.disabled-icon {
+  font-size: 48px;
+  color: #ccc;
+  margin-bottom: 16px;
+}
+
+.disabled-message h3 {
+  color: #666;
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+}
+
+.disabled-message p {
+  color: #999;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
 }
 </style>
