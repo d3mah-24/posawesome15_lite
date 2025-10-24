@@ -76,7 +76,11 @@ bench mariadb
 > DESCRIBE tabSalesInvoice;  # Confirm field names before queries
 ```
 
-## 🚨 Strict Rules (Will Break CI/CD)
+## � Debugging
+- Frontend: use console.log while developing to inspect state; remove before commit. In production, prefer console.error/console.warn only.
+- Backend: wrap risky code in try/except and call frappe.log_error(...) in except blocks; never log successful operations. Focus areas: `pos_offer/offers.get_offers`, `sales_invoice/*`.
+
+## �🚨 Strict Rules (Will Break CI/CD)
 
 ### Backend
 - ❌ No `SELECT *` queries - specify fields: `fields=["field1", "field2"]`
