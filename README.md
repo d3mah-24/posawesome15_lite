@@ -49,22 +49,22 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 
 ### 🛠️ **Development Resources**
 
-🔧 **Development Tools:** [dev_common_commands.md](docs/dev_common_commands.md)
-🛠️ **Development Tools:** [development_tools.md](docs/development_tools.md)
-📱 **POS Lite Features:** [pos_lite_features.md](docs/pos_lite_features.md)
-⌨️ **POS Shortcuts:** [pos_lite_shortcuts.md](docs/pos_lite_shortcuts.md)
+- 🔧 **Development Tools:** [dev_common_commands.md](docs/dev_common_commands.md)
+- 🛠️ **Development Tools:** [development_tools.md](docs/development_tools.md)
+- 📱 **POS Lite Features:** [pos_lite_features.md](docs/pos_lite_features.md)
+- ⌨️ **POS Shortcuts:** [pos_lite_shortcuts.md](docs/pos_lite_shortcuts.md)
 
 ### 🔧 **Configuration & Setup**
 
-⚙️ **POS Profile Config:** [pos_profile_config_readme.md](docs/pos_profile_config_readme.md)
-📊 **Technology Stack:** [technology stack_info.md](docs/technology stack_info.md)
-📱 **Barcode Scanner:** [barcode_scanner_lntegration.md](docs/barcode_scanner_lntegration.md)
+- ⚙️ **POS Profile Config:** [pos_profile_config_readme.md](docs/pos_profile_config_readme.md)
+- 📊 **Technology Stack:** [technology_stack_info.md](docs/technology_stack_info.md)
+- 📱 **Barcode Scanner:** [barcode_scanner_lntegration.md](docs/barcode_scanner_lntegration.md)
 
 ### 🛡️ **Security & Policies**
 
-🛡️ **Security Features:** [security_features.md](docs/security_features.md)
-🔒 **Backend Policy:** [backend_policy.md](docs/backend_policy.md)
-🎨 **Frontend Policy:** [frontend_policy.md](docs/frontend_policy.md)
+- 🛡️ **Security Features:** [security_features.md](docs/security_features.md)
+- 🔒 **Backend Policy:** [backend_policy.md](docs/backend_policy.md)
+- 🎨 **Frontend Policy:** [frontend_policy.md](docs/frontend_policy.md)
 
 ## 💰 Development Collaboration
 
