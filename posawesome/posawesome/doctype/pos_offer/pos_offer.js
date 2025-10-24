@@ -56,10 +56,6 @@ const controllers = (frm) => {
 	frm.toggle_display('brand', frm.doc.offer_type === 'brand');
 	frm.toggle_reqd('brand', frm.doc.offer_type === 'brand');
 
-	// Show grand_total field when offer_type is 'grand_total'
-	frm.toggle_display('grand_total', frm.doc.offer_type === 'grand_total');
-	frm.toggle_reqd('grand_total', frm.doc.offer_type === 'grand_total');
-
 	// Show customer field when offer_type is 'customer'
 	frm.toggle_display('customer', frm.doc.offer_type === 'customer');
 	frm.toggle_reqd('customer', frm.doc.offer_type === 'customer');
@@ -71,6 +67,10 @@ const controllers = (frm) => {
 	// Toggle discount fields
 	frm.toggle_display('discount_percentage', frm.doc.discount_type === 'Discount Percentage');
 	frm.toggle_reqd('discount_percentage', frm.doc.discount_type === 'Discount Percentage');
+
+	// Show date fields (always visible for validation)
+	frm.toggle_display('valid_from', true);
+	frm.toggle_display('valid_upto', true);
 };
 
 const set_filters = (frm) => {
