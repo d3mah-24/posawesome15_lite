@@ -73,10 +73,10 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - 🤝 **Collaboration:** Professional and transparent
 - 🌐 **Payment Methods:**
 - 💼 **International**:
-  -🟢 [Fiverr](https://fiverr.com)
-  -🔵 [Upwork](https://upwork.com)
-  -💰 Western Union
-  -₿ Crypto
+  - 🟢 [Fiverr](https://fiverr.com)
+  - 🔵 [Upwork](https://upwork.com)
+  - 💰 Western Union
+  - <img src="./imgs/tether_usdt.svg" width="16" height="16" alt="USDT"> Crypto
 - <img src="./imgs/Egypt.svg" width="16" height="16" alt="Egypt Flag"> **Egypt**: Phone cash wallets
 - <img src="./imgs/Saudi_Arabia.svg" width="16" height="16" alt="Saudi Arabia Flag"> **Saudi Arabia**: STC Pay, Alrajhi Bank Transfer
 
