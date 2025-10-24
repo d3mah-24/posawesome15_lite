@@ -173,7 +173,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "offer_type",
-   "options": "\nitem_code\nitem_group\nbrand\ncustomer\ncustomer_group",
+   "options": "\nitem_code\nitem_group\nbrand\ncustomer\ncustomer_group\ngrand_total",
    "reqd": 1
   },
   {
@@ -227,7 +227,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-24 18:28:07.966911",
+ "modified": "2025-10-24 19:14:41.848826",
  "modified_by": "Administrator",
  "module": "POSAwesome",
  "name": "POS Offer",
