@@ -214,6 +214,9 @@ export default {
     // ===== OFFERS METHODS =====
     async get_offers(pos_profile) {
       try {
+        console.log("[DEBUG] get_offers called with profile:", pos_profile);
+        console.log("[DEBUG] pos_profile object:", this.pos_profile);
+
         // Check if auto fetch offers is enabled (handle different value types)
         const offersEnabled = this.pos_profile?.posa_auto_fetch_offers !== 0 &&
           this.pos_profile?.posa_auto_fetch_offers !== "0" &&
@@ -221,11 +224,15 @@ export default {
           this.pos_profile?.posa_auto_fetch_offers !== null &&
           this.pos_profile?.posa_auto_fetch_offers !== undefined;
 
+        console.log("[DEBUG] get_offers - offersEnabled:", offersEnabled);
+
         if (!offersEnabled) {
+          console.log("[DEBUG] get_offers - Offers disabled, clearing offers");
           evntBus.emit(EVENTS.SET_OFFERS, []); // Clear offers
           return;
         }
 
+        console.log("[DEBUG] get_offers - Fetching offers from API");
         const response = await frappe.call({
           method: API_MAP.POS_OFFER.GET_OFFERS_FOR_PROFILE,
           args: {
@@ -233,13 +240,17 @@ export default {
           },
         });
 
+        console.log("[DEBUG] get_offers - API Response:", response);
+
         if (response.message) {
+          console.log("[DEBUG] get_offers - Found offers:", response.message.length);
           evntBus.emit(EVENTS.SET_OFFERS, response.message);
         } else {
+          console.log("[DEBUG] get_offers - No offers found");
           this.show_message("Failed to load offers", "error");
         }
       } catch (error) {
-        console.error("Pos.vue(get_offers): Error", error);
+        console.error("[ERROR] Pos.vue(get_offers): Error", error);
         this.show_message("Failed to load offers", "error");
       }
     },
