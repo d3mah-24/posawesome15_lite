@@ -1,311 +1,324 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "field:title",
- "creation": "2021-06-06 14:05:24.843820",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "sec1",
-  "col1",
-  "title",
-  "disable",
-  "auto",
-  "col2",
-  "description",
-  "sec2",
-  "col3",
-  "company",
-  "pos_profile",
-  "col4",
-  "warehouse",
-  "sec3",
-  "col6",
-  "offer_type",
-  "col7",
-  "item_code",
-  "item_group",
-  "brand",
-  "customer",
-  "customer_group",
-  "sec4",
-  "col8",
-  "min_qty",
-  "max_qty",
-  "col9",
-  "min_amt",
-  "max_amt",
-  "price_discount_scheme_section",
-  "discount_type",
-  "col11",
-  "discount_percentage"
- ],
- "fields": [
-  {
-   "fieldname": "title",
-   "fieldtype": "Data",
-   "label": "title",
-   "reqd": 1,
-   "unique": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "disable",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Disable"
-  },
-  {
-   "fieldname": "company",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "company",
-   "options": "Company",
-   "reqd": 1
-  },
-  {
-   "fieldname": "pos_profile",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "pos_profile",
-   "options": "POS Profile"
-  },
-  {
-   "fetch_from": "pos_profile.warehouse",
-   "fieldname": "warehouse",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "warehouse",
-   "options": "Warehouse",
-   "search_index": 1
-  },
-  {
-   "fieldname": "item_group",
-   "fieldtype": "Link",
-   "label": "item_group",
-   "options": "Item Group"
-  },
-  {
-   "fieldname": "brand",
-   "fieldtype": "Link",
-   "label": "brand",
-   "options": "Brand"
-  },
-  {
-   "default": "0",
-   "fieldname": "min_qty",
-   "fieldtype": "Float",
-   "label": "min_qty"
-  },
-  {
-   "default": "0",
-   "fieldname": "max_qty",
-   "fieldtype": "Float",
-   "label": "max_qty"
-  },
-  {
-   "fieldname": "min_amt",
-   "fieldtype": "Float",
-   "label": "min_amt"
-  },
-  {
-   "fieldname": "max_amt",
-   "fieldtype": "Float",
-   "label": "max_amt"
-  },
-  {
-   "default": "Discount Percentage",
-   "fieldname": "discount_type",
-   "fieldtype": "Select",
-   "label": "discount_type",
-   "options": "\nDiscount Percentage"
-  },
-  {
-   "fieldname": "discount_percentage",
-   "fieldtype": "Float",
-   "label": "discount_percentage"
-  },
-  {
-   "default": "1",
-   "fieldname": "auto",
-   "fieldtype": "Check",
-   "label": "Auto Apply"
-  },
-  {
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "description",
-   "reqd": 1
-  },
-  {
-   "fieldname": "sec1",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "col1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "col2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "sec2",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "col3",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "col4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "sec3",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "offer_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "offer_type",
-   "options": "\nitem_code\nitem_group\nbrand\ncustomer\ncustomer_group\ngrand_total",
-   "reqd": 1
-  },
-  {
-   "fieldname": "col6",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "item_code",
-   "fieldtype": "Link",
-   "label": "item_code",
-   "options": "Item"
-  },
-  {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "customer",
-   "options": "Customer"
-  },
-  {
-   "fieldname": "customer_group",
-   "fieldtype": "Link",
-   "label": "customer_group",
-   "options": "Customer Group"
-  },
-  {
-   "fieldname": "sec4",
-   "fieldtype": "Section Break",
-   "label": "Quantity and Amount Conditions"
-  },
-  {
-   "fieldname": "col7",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "col8",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "col9",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "col11",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "price_discount_scheme_section",
-   "fieldtype": "Section Break",
-   "label": "Price Discount Scheme"
-  }
- ],
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-10-24 19:14:41.848826",
- "modified_by": "Administrator",
- "module": "POSAwesome",
- "name": "POS Offer",
- "naming_rule": "By fieldname",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Sales User",
-   "share": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Sales Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Sales Master Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Accounts User",
-   "share": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Accounts Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "show_name_in_global_search": 1,
- "show_preview_popup": 1,
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "field:title",
+  "creation": "2021-06-06 14:05:24.843820",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "sec1",
+    "col1",
+    "title",
+    "disable",
+    "auto",
+    "col2",
+    "description",
+    "sec2",
+    "col3",
+    "company",
+    "pos_profile",
+    "col4",
+    "warehouse",
+    "sec3",
+    "col6",
+    "offer_type",
+    "col7",
+    "item_code",
+    "item_group",
+    "brand",
+    "customer",
+    "customer_group",
+    "grand_total",
+    "valid_from",
+    "valid_upto",
+    "sec4",
+    "col8",
+    "min_qty",
+    "max_qty",
+    "col9",
+    "min_amt",
+    "max_amt",
+    "price_discount_scheme_section",
+    "discount_type",
+    "col11",
+    "discount_percentage"
+  ],
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "title",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "default": "0",
+      "fieldname": "disable",
+      "fieldtype": "Check",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Disable"
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_standard_filter": 1,
+      "label": "company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "pos_profile",
+      "fieldtype": "Link",
+      "in_standard_filter": 1,
+      "label": "pos_profile",
+      "options": "POS Profile"
+    },
+    {
+      "fetch_from": "pos_profile.warehouse",
+      "fieldname": "warehouse",
+      "fieldtype": "Link",
+      "in_standard_filter": 1,
+      "label": "warehouse",
+      "options": "Warehouse",
+      "search_index": 1
+    },
+    {
+      "fieldname": "item_group",
+      "fieldtype": "Link",
+      "label": "item_group",
+      "options": "Item Group"
+    },
+    {
+      "fieldname": "brand",
+      "fieldtype": "Link",
+      "label": "brand",
+      "options": "Brand"
+    },
+    {
+      "default": "0",
+      "fieldname": "min_qty",
+      "fieldtype": "Float",
+      "label": "min_qty"
+    },
+    {
+      "default": "0",
+      "fieldname": "max_qty",
+      "fieldtype": "Float",
+      "label": "max_qty"
+    },
+    {
+      "fieldname": "min_amt",
+      "fieldtype": "Float",
+      "label": "min_amt"
+    },
+    {
+      "fieldname": "max_amt",
+      "fieldtype": "Float",
+      "label": "max_amt"
+    },
+    {
+      "default": "Discount Percentage",
+      "fieldname": "discount_type",
+      "fieldtype": "Select",
+      "label": "discount_type",
+      "options": "\nDiscount Percentage"
+    },
+    {
+      "fieldname": "discount_percentage",
+      "fieldtype": "Float",
+      "label": "discount_percentage"
+    },
+    {
+      "default": "1",
+      "fieldname": "auto",
+      "fieldtype": "Check",
+      "label": "Auto Apply"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "description",
+      "reqd": 1
+    },
+    {
+      "fieldname": "sec1",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "col1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "col2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "sec2",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "col3",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "col4",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "sec3",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "offer_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "offer_type",
+      "options": "\nitem_code\nitem_group\nbrand\ncustomer\ncustomer_group\ngrand_total",
+      "reqd": 1
+    },
+    {
+      "fieldname": "col6",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "item_code",
+      "fieldtype": "Link",
+      "label": "item_code",
+      "options": "Item"
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "customer",
+      "options": "Customer"
+    },
+    {
+      "fieldname": "customer_group",
+      "fieldtype": "Link",
+      "label": "customer_group",
+      "options": "Customer Group"
+    },
+    {
+      "fieldname": "valid_from",
+      "fieldtype": "Date",
+      "label": "Valid From"
+    },
+    {
+      "fieldname": "valid_upto",
+      "fieldtype": "Date",
+      "label": "Valid Upto"
+    },
+    {
+      "fieldname": "sec4",
+      "fieldtype": "Section Break",
+      "label": "Quantity and Amount Conditions"
+    },
+    {
+      "fieldname": "col7",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "col8",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "col9",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "col11",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "price_discount_scheme_section",
+      "fieldtype": "Section Break",
+      "label": "Price Discount Scheme"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2025-10-24 19:14:41.848826",
+  "modified_by": "Administrator",
+  "module": "POSAwesome",
+  "name": "POS Offer",
+  "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Sales User",
+      "share": 1
+    },
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Sales Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Sales Master Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts User",
+      "share": 1
+    },
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "row_format": "Dynamic",
+  "show_name_in_global_search": 1,
+  "show_preview_popup": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
 }
