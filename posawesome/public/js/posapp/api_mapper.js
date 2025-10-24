@@ -45,7 +45,8 @@ const API_MAP = {
   // POS Offer APIs (from Invoice.vue, Pos.vue)
   POS_OFFER: {
     GET_APPLICABLE_OFFERS: "posawesome.posawesome.api.pos_offer.offers.get_applicable_offers",
-    GET_OFFERS_FOR_PROFILE: "posawesome.posawesome.api.pos_offer.offers.get_offers"
+    GET_OFFERS_FOR_PROFILE: "posawesome.posawesome.api.pos_offer.offers.get_offers_for_profile",
+    APPLY_OFFERS_TO_INVOICE: "posawesome.posawesome.api.pos_offer.offers.get_offers"
   },
 
   // POS Opening Shift APIs (from OpeningDialog.vue, Pos.vue, Navbar.vue)
