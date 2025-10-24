@@ -5,22 +5,12 @@
       <div class="header-item">
         <div class="group-select-wrapper">
           <i class="mdi mdi-shape group-icon"></i>
-          <select
-            v-model="item_group"
-            @change="onItemGroupChange"
-            class="custom-group-select"
-          >
+          <select v-model="item_group" @change="onItemGroupChange" class="custom-group-select">
             <option v-for="group in items_group" :key="group" :value="group">
               {{ group }}
             </option>
           </select>
         </div>
-      </div>
-      <div class="header-item">
-        <button class="header-btn coupon-btn" @click="show_coupons">
-          <i class="mdi mdi-ticket-percent header-icon"></i>
-          <span>{{ couponsCount }} Coupons</span>
-        </button>
       </div>
       <div class="header-item">
         <button class="header-btn offer-btn" @click="show_offers">
@@ -42,20 +32,9 @@
             <div class="search-icon">
               <i class="mdi mdi-barcode barcode-icon"></i>
             </div>
-            <input
-              type="text"
-              class="custom-search-input barcode-input"
-              placeholder="Scan Barcode"
-              v-model="barcode_search"
-              @keyup.enter="handle_barcode_input"
-              ref="barcode_search"
-            />
-            <button
-              v-if="barcode_search"
-              class="clear-btn"
-              @click="barcode_search = ''"
-              type="button"
-            >
+            <input type="text" class="custom-search-input barcode-input" placeholder="Scan Barcode"
+              v-model="barcode_search" @keyup.enter="handle_barcode_input" ref="barcode_search" />
+            <button v-if="barcode_search" class="clear-btn" @click="barcode_search = ''" type="button">
               ×
             </button>
           </div>
@@ -69,21 +48,9 @@
             <div class="search-icon">
               <i class="mdi mdi-magnify search-icon-element"></i>
             </div>
-            <input
-              type="text"
-              class="custom-search-input name-input"
-              placeholder="Search Item"
-              v-model="debounce_search"
-              @keydown.esc="esc_event"
-              ref="debounce_search"
-              autofocus
-            />
-            <button
-              v-if="debounce_search"
-              class="clear-btn"
-              @click="debounce_search = ''"
-              type="button"
-            >
+            <input type="text" class="custom-search-input name-input" placeholder="Search Item"
+              v-model="debounce_search" @keydown.esc="esc_event" ref="debounce_search" autofocus />
+            <button v-if="debounce_search" class="clear-btn" @click="debounce_search = ''" type="button">
               ×
             </button>
           </div>
@@ -93,45 +60,25 @@
       <!-- Items display area -->
       <div class="items-display-area">
         <div class="items-content" v-if="items_view == 'card'">
-          <div
-            class="items-grid"
-            ref="itemsScrollArea"
-            :style="itemsScrollStyle"
-          >
-            <div
-              v-for="(item, idx) in filtred_items"
-              :key="idx"
-              class="item-grid-col"
-            >
+          <div class="items-grid" ref="itemsScrollArea" :style="itemsScrollStyle">
+            <div v-for="(item, idx) in filtred_items" :key="idx" class="item-grid-col">
               <div @click="add_item(item)" class="item-card">
                 <div class="item-image-wrapper">
-                  <img
-                    :src="
-                      item.image ||
-                      '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
-                    "
-                    class="item-image"
-                  />
-                  <div
-                    v-if="item.actual_qty !== undefined"
-                    class="stock-indicator"
-                  >
-                    <span
-                      :style="{
-                        color: item.actual_qty > 0 ? '#4CAF50' : '#F44336',
-                        fontWeight: 'bold',
-                      }"
-                    >
+                  <img :src="item.image ||
+                    '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
+                    " class="item-image" />
+                  <div v-if="item.actual_qty !== undefined" class="stock-indicator">
+                    <span :style="{
+                      color: item.actual_qty > 0 ? '#4CAF50' : '#F44336',
+                      fontWeight: 'bold',
+                    }">
                       Qty: {{ formatFloat(item.actual_qty) }}
                     </span>
                   </div>
                 </div>
 
                 <div class="item-card-text text-center">
-                  <div
-                    class="text-caption"
-                    style="font-weight: bold; margin-bottom: 4px"
-                  >
+                  <div class="text-caption" style="font-weight: bold; margin-bottom: 4px">
                     {{ item.item_name }}
                   </div>
 
@@ -150,27 +97,20 @@
           </div>
         </div>
         <div class="items-content" v-if="items_view == 'list'">
-          <div
-            class="items-scrollable"
-            ref="itemsScrollArea"
-            :style="itemsScrollStyle"
-          >
+          <div class="items-scrollable" ref="itemsScrollArea" :style="itemsScrollStyle">
             <table class="data-table">
               <thead>
                 <tr class="table-header">
-                  <th v-for="header in getItemsHeaders()" :key="header.value" class="table-header-cell" :style="{ textAlign: header.align || 'left' }">
+                  <th v-for="header in getItemsHeaders()" :key="header.value" class="table-header-cell"
+                    :style="{ textAlign: header.align || 'left' }">
                     {{ header.title || header.text }}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <tr 
-                  v-for="item in filtred_items" 
-                  :key="item.item_code"
-                  @click="add_item_table(item)"
-                  class="table-row"
-                >
-                  <td v-for="header in getItemsHeaders()" :key="header.value" class="table-cell" :style="{ textAlign: header.align || 'left' }">
+                <tr v-for="item in filtred_items" :key="item.item_code" @click="add_item_table(item)" class="table-row">
+                  <td v-for="header in getItemsHeaders()" :key="header.value" class="table-cell"
+                    :style="{ textAlign: header.align || 'left' }">
                     <span v-if="header.key === 'rate'" class="primary--text">
                       {{ formatCurrency(item.rate) }}
                     </span>
@@ -217,17 +157,17 @@ const EVENT_NAMES = {
   ADD_ITEM: "add_item",
   SET_ALL_ITEMS: "set_all_items",
   UPDATE_CUR_ITEMS_DETAILS: "update_cur_items_details",
-  
+
   // UI Events
   SHOW_OFFERS: "show_offers",
   SHOW_COUPONS: "show_coupons",
   SHOW_MESSAGE: "show_mesage",
-  
+
   // Configuration Events
   REGISTER_POS_PROFILE: "register_pos_profile",
   UPDATE_CUSTOMER: "update_customer",
   UPDATE_CUSTOMER_PRICE_LIST: "update_customer_price_list",
-  
+
   // Counter Events
   UPDATE_OFFERS_COUNTERS: "update_offers_counters",
   UPDATE_COUPONS_COUNTERS: "update_coupons_counters",
@@ -255,7 +195,7 @@ const BARCODE_TYPES = {
 // ===== COMPONENT =====
 export default {
   name: "ItemsSelector",
-  
+
   mixins: [format],
 
   // ===== DATA =====
@@ -264,45 +204,43 @@ export default {
       // POS Configuration
       pos_profile: null,
       flags: {},
-      
+
       // View State
       items_view: VIEW_MODES.LIST,
       item_group: "ALL",
       loading: false,
       search_loading: false,
-      
+
       // Items Data
       items_group: ["ALL"],
       items: [],
-      
+
       // Search State
       search: "",
       first_search: "",
       barcode_search: "",
-      
+
       // Pagination
       itemsPerPage: 1000,
-      
+
       // Counters
       offersCount: 0,
       appliedOffersCount: 0,
-      couponsCount: 0,
-      appliedCouponsCount: 0,
-      
+
       // Customer Data
       customer_price_list: null,
       customer: null,
-      
+
       // Item Operations
       qty: 1,
-      
+
       // UI State
       itemsScrollHeight: null,
-      
+
       // Internal Flags
       _suppressCustomerWatcher: false,
       _detailsReady: false,
-      
+
       // Caching & Performance
       _itemsMap: new Map(),
     };
@@ -340,7 +278,7 @@ export default {
       // Cache expensive operations
       const groupFilter = this.item_group !== "ALL";
       const hasSearch = this.search && this.search.length >= UI_CONFIG.SEARCH_MIN_LENGTH;
-      
+
       let filtred_list = [];
       let filtred_group_list = [];
 
@@ -405,14 +343,14 @@ export default {
     updateScrollableHeight() {
       const scrollRef = this.$refs.itemsScrollArea;
       const scrollEl = scrollRef ? scrollRef.$el || scrollRef : null;
-      
+
       if (!scrollEl || typeof scrollEl.getBoundingClientRect !== "function") {
         return;
       }
 
       const viewportHeight =
         window.innerHeight || document.documentElement?.clientHeight || 0;
-      
+
       if (!viewportHeight) {
         return;
       }
@@ -433,31 +371,31 @@ export default {
 
       this.process_barcode(this.barcode_search.trim());
       this.barcode_search = "";
-      
+
       const barcodeInput = document.querySelector('input[placeholder*="Barcode"]');
       if (barcodeInput) barcodeInput.value = "";
     },
 
     process_barcode(barcode_value) {
       // Single unified method - backend determines barcode type
-      
+
       frappe.call({
         method: API_MAP.ITEM.GET_BARCODE_ITEM,
-        args: { 
-          pos_profile: this.pos_profile, 
-          barcode_value: barcode_value 
+        args: {
+          pos_profile: this.pos_profile,
+          barcode_value: barcode_value
         },
         callback: (response) => {
-          
+
           if (response?.message?.item_code) {
-            
+
             // Add item to cart
             this.add_item_to_cart(response.message);
-            
+
             // Show success message with quantity info
             const qty = response.message.qty || 1;
             const qtyText = qty !== 1 ? ` (qty: ${qty})` : '';
-            
+
             evntBus.emit("show_mesage", {
               text: `Added ${response.message.item_name}${qtyText} to cart`,
               color: "success"
@@ -484,10 +422,6 @@ export default {
 
     show_offers() {
       evntBus.emit(EVENT_NAMES.SHOW_OFFERS, "true");
-    },
-
-    show_coupons() {
-      evntBus.emit(EVENT_NAMES.SHOW_COUPONS, "true");
     },
 
     onItemGroupChange() {
@@ -732,7 +666,7 @@ export default {
   },
 
   created: function () {
-    this.$nextTick(function () {});
+    this.$nextTick(function () { });
     evntBus.on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
       // Set customer without triggering watcher for first time
@@ -754,10 +688,6 @@ export default {
     evntBus.on("update_offers_counters", (data) => {
       this.offersCount = data.offersCount;
       this.appliedOffersCount = data.appliedOffersCount;
-    });
-    evntBus.on("update_coupons_counters", (data) => {
-      this.couponsCount = data.couponsCount;
-      this.appliedCouponsCount = data.appliedCouponsCount;
     });
     evntBus.on("update_customer_price_list", (data) => {
       this.customer_price_list = data;
@@ -781,15 +711,14 @@ export default {
     if (this._searchDebounceTimer) {
       clearTimeout(this._searchDebounceTimer);
     }
-    
+
     // Clean up event listeners
     evntBus.$off("register_pos_profile");
     evntBus.$off("update_cur_items_details");
     evntBus.$off("update_offers_counters");
-    evntBus.$off("update_coupons_counters");
     evntBus.$off("update_customer_price_list");
     evntBus.$off("update_customer");
-    
+
     // Remove window listener
     window.removeEventListener("resize", this.scheduleScrollHeightUpdate);
   },
@@ -903,12 +832,6 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.coupon-btn:hover {
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-  color: white;
-  border-color: #f57c00;
 }
 
 .offer-btn:hover {
@@ -1235,7 +1158,7 @@ export default {
   font-size: 0.75rem;
   font-weight: 600;
   color: #424242;
-  background: linear-gradient(180deg,rgba(255, 174, 0, 1) 0%, rgba(255, 174, 0, 0.33) 50%);
+  background: linear-gradient(180deg, rgba(255, 174, 0, 1) 0%, rgba(255, 174, 0, 0.33) 50%);
   border-bottom: 1px solid #e0e0e0;
   position: sticky;
   top: 0;
@@ -1351,9 +1274,11 @@ export default {
   0% {
     transform: translateX(0) scaleX(0);
   }
+
   40% {
     transform: translateX(0) scaleX(0.4);
   }
+
   100% {
     transform: translateX(100%) scaleX(0.5);
   }
