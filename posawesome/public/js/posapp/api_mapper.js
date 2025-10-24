@@ -1,6 +1,6 @@
 /**
  * POS Awesome API Mapper
- * 
+ *
  * Central map of all API endpoints actually used in frontend files
  * No invention or addition - just collecting what already exists
  */
@@ -9,13 +9,13 @@ const API_MAP = {
   // Sales Invoice APIs (from Invoice.vue)
   SALES_INVOICE: {
     CREATE: "posawesome.posawesome.api.sales_invoice.create.create_invoice",
-    UPDATE: "posawesome.posawesome.api.sales_invoice.update.update_invoice", 
+    UPDATE: "posawesome.posawesome.api.sales_invoice.update.update_invoice",
     SUBMIT: "posawesome.posawesome.api.sales_invoice.submit.submit_invoice",
     DELETE: "posawesome.posawesome.api.sales_invoice.delete.delete_invoice",
     GET_INVOICES_FOR_RETURN: "posawesome.posawesome.api.sales_invoice.get_return.get_invoices_for_return"
   },
 
-  // Customer APIs (from Customer.vue, UpdateCustomer.vue, Payments.vue, NewAddress.vue, PosCoupons.vue)
+  // Customer APIs (from Customer.vue, UpdateCustomer.vue, Payments.vue, NewAddress.vue)
   CUSTOMER: {
     GET_CUSTOMER: "posawesome.posawesome.api.customer.get_customer.get_customer",
     GET_MANY_CUSTOMERS: "posawesome.posawesome.api.customer.get_many_customers.get_many_customers",
