@@ -11,7 +11,7 @@
             </span>
             <button class="modal-close-btn" @click="invoicesDialog = false" style="color: white;">×</button>
           </div>
-          <div class="card-body">
+          <div class="card-body" style="max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column;">
           <div class="search-row">
             <div class="text-field-wrapper">
               <input
@@ -26,7 +26,7 @@
               Search
             </button>
           </div>
-          <div class="table-row">
+          <div class="table-row" style="flex: 1; min-height: 0;">
           <div class="table-col-full" style="max-height: 60vh; overflow-y: auto;">
               <div class="custom-data-table">
                 <!-- Loading State -->
@@ -34,21 +34,21 @@
                   <div class="loading-spinner"></div>
                   <span>Loading invoices...</span>
                 </div>
-                
+
                 <!-- Table Content -->
                 <div v-else>
                   <!-- No Data State -->
                   <div v-if="dialog_data.length === 0" class="no-data">
                     No invoices found
                   </div>
-                  
+
                   <!-- Table -->
                   <table v-else class="data-table">
                     <thead>
                       <tr>
                         <th class="select-header">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             :checked="selected.length === dialog_data.length && dialog_data.length > 0"
                             @change="toggleSelectAll"
                           />
@@ -61,8 +61,8 @@
                     <tbody>
                       <tr v-for="item in dialog_data" :key="item.name" class="table-row-item">
                         <td class="select-cell">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             :value="item.name"
                             v-model="selected"
                           />
@@ -81,7 +81,7 @@
             </div>
           </div>
           </div>
-          <div class="card-footer">
+          <div class="card-footer" style="flex-shrink: 0; margin-top: auto;">
           <div class="spacer"></div>
           <button class="btn btn-error" @click="close_dialog">Close</button>
           <button class="btn btn-success" @click="submit_dialog">
@@ -181,7 +181,7 @@ export default {
       // Search for invoices available for return
     search_invoices() {
       this.company = this.getCompany();
-      
+
       this.isLoading = true;
 
       frappe.call({
@@ -192,8 +192,8 @@ export default {
         },
         callback: (r) => {
           this.isLoading = false;
-          
-          this.dialog_data = r.message?.length > 0 
+
+          this.dialog_data = r.message?.length > 0
             ? r.message.map(item => ({
                 name: item.name,
                 customer: item.customer,
@@ -203,7 +203,7 @@ export default {
                 items: item.items || []
               }))
             : [];
-          
+
           this.displaySearchResultsMessage();
         },
         error: () => {
@@ -244,7 +244,7 @@ export default {
     validateReturnItems(return_items, original_invoice) {
       const original_items = original_invoice.items.map(i => i.item_code);
       const invalid_items = return_items.filter(item => !original_items.includes(item.item_code));
-      
+
       if (invalid_items.length > 0) {
         this.showMessage(
           `The following items are not in the original invoice: ${invalid_items.map(i => i.item_code).join(', ')}`,
@@ -296,7 +296,7 @@ export default {
 
       const return_doc = selectedItem;
       const original_invoice = await this.fetchOriginalInvoice(return_doc.name);
-      
+
       if (!original_invoice) {
         this.showMessage('Original invoice not found', 'error');
         return;
@@ -307,7 +307,7 @@ export default {
       }
 
       const invoice_doc = this.createReturnInvoiceDoc(return_doc);
-      
+
       evntBus.emit(EVENT_NAMES.LOAD_RETURN_INVOICE, { invoice_doc, return_doc });
       this.invoicesDialog = false;
     }
@@ -468,7 +468,7 @@ export default {
 .data-table td {
   padding: 8px 12px;
   border-bottom: 1px solid #e0e0e0;
-  white-space: nowrap; 
+  white-space: nowrap;
 }
 
 .data-table th {
@@ -554,7 +554,7 @@ export default {
   .data-table {
     font-size: 0.75rem;
   }
-  
+
   .data-table th,
   .data-table td {
     padding: 8px 12px;
@@ -630,7 +630,7 @@ export default {
 .custom-modal.small-modal {
   max-width: 775px;
   min-width: 750px;
-  max-height: 70vh;
+  max-height: 90vh;
 }
 
 .modal-close-btn {
@@ -675,7 +675,12 @@ export default {
     opacity: 1;
   }
 }
-
+/* Add this small block */
+.custom-modal.small-modal .card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 /* Responsive modal */
 @media (max-width: 900px) {
   .custom-modal.small-modal {
