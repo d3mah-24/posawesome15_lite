@@ -73,13 +73,13 @@ def get_offers(invoice_data):
 
 
 # ===== HELPER FUNCTIONS =====
-def check_offers_enabled_by_profile(pos_profile):
+def check_offers_enabled_by_profile(profile):
     """Helper: فحص تفعيل العروض في POS Profile"""
-    if not pos_profile:
+    if not profile:
         return False
 
     try:
-        pos_profile_doc = frappe.get_doc("POS Profile", pos_profile)
+        pos_profile_doc = frappe.get_doc("POS Profile", profile)
         return pos_profile_doc.get("posa_auto_fetch_offers")
     except:
         return False
@@ -461,7 +461,15 @@ def get_applicable_offers(invoice_name):
         }
 
         result = get_offers(invoice_data)
-        return result.get("applied_offers", [])
+
+        # Return the posa_offers array with offer_applied flag set
+        posa_offers = result.get("updated_invoice", {}).get("posa_offers", [])
+
+        # Add offer_applied flag to each offer
+        for offer in posa_offers:
+            offer["offer_applied"] = True
+
+        return posa_offers
 
     except Exception as e:
         frappe.log_error(f"Error in get_applicable_offers: {str(e)}", "POS Offers Error")
@@ -469,15 +477,15 @@ def get_applicable_offers(invoice_name):
 
 
 @frappe.whitelist()
-def get_offers_for_profile(pos_profile):
+def get_offers_for_profile(profile):
     """Legacy API - redirects to centralized API"""
     try:
         # فحص تفعيل العروض
-        if not check_offers_enabled_by_profile(pos_profile):
+        if not check_offers_enabled_by_profile(profile):
             return []
 
         # جلب العروض المناسبة للـ POS Profile
-        pos_profile_doc = frappe.get_doc("POS Profile", pos_profile)
+        pos_profile_doc = frappe.get_doc("POS Profile", profile)
         company = pos_profile_doc.company
         warehouse = pos_profile_doc.warehouse
         date = nowdate()
@@ -487,7 +495,7 @@ def get_offers_for_profile(pos_profile):
             filters={
                 "disable": 0,
                 "company": company,
-                "pos_profile": ["in", [pos_profile, ""]],
+                "pos_profile": ["in", [profile, ""]],
                 "warehouse": ["in", [warehouse, ""]],
                 "valid_from": ["<=", date],
                 "valid_upto": [">=", date]
