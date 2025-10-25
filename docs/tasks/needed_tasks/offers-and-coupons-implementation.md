@@ -1,4 +1,4 @@
-# 🎁 Task 2: Offers and Coupons Implementation
+# 🎁 Task 2: Offers Implementation
 
 **💰 Budget**: $40
 
@@ -12,24 +12,23 @@
 
 **📖 Description**:
 
-- Comprehensive offers
-- Comprehensive coupons system
+- Comprehensive offers system
 - Following POS Awesome Lite architecture patterns
 - With seamless frontend-backend integration
 
 **📦 Deliverables**:
 
-1. **📊 OFFERS_AND_COUPONS_ANALYSIS.md**
+1. **📊 OFFERS_ANALYSIS.md**
    - Complete analysis of offer/discount types
    - Current system state analysis
    - Integration points analysis
-1. **📋 OFFERS_AND_COUPONS_IMPLEMENTATION_STEPS.md**
+1. **📋 OFFERS_IMPLEMENTATION_STEPS.md**
    - Step-by-step implementation plan
    - Following 3-API batch queue system
-1. **🔄 OFFERS_AND_COUPONS_DATA_FLOW.md**
+1. **🔄 OFFERS_DATA_FLOW.md**
    - Data flow diagrams
    - Showing Vue.js frontend ↔ ERPNext backend integration
-1. **✅ OFFERS_AND_COUPONS_SUCCESS_TEST_RESULTS.md**
+1. **✅ OFFERS_SUCCESS_TEST_RESULTS.md**
    - Test scenarios
    - Validation results
 
@@ -65,9 +64,6 @@
   - Promotional pricing
 - 👥 Customer-specific offers:
   - Loyalty programs
-- 🎫 Coupon code:
-  - Validation
-  - Redemption
 - 📦 Bundle offers:
   - Buy-X-get-Y promotions
 - ⏰ Time-based offers:
