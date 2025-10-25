@@ -29,8 +29,8 @@ doctype_js = {
 
 doc_events = {
     "Sales Invoice": {
-        "before_submit": "posawesome.posawesome.api.sales_invoice.before_submit.before_submit",
-        "before_cancel": "posawesome.posawesome.api.sales_invoice.before_cancel.before_cancel",
+        "before_submit": "posawesome.posawesome.api.before_submit.before_submit",
+        "before_cancel": "posawesome.posawesome.api.before_cancel.before_cancel",
     },
 }
 
