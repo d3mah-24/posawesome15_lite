@@ -71,113 +71,125 @@ def apply_auto_transaction_discount(doc):
 def update_invoice(data):
     """
     Update Sales Invoice using ERPNext native methods only.
-    Uses Sales Invoice + is_pos=1 + update_stock=1 approach.
+    - Accepts posa_offers from UI, resolves to real POS Offer names.
+    - Clears/sets Sales Invoice.offer_name safely.
+    - Never looks up a "None" offer.
     """
     try:
-        # Parse JSON data
         if isinstance(data, str):
             data = json.loads(data)
     except (json.JSONDecodeError, ValueError) as e:
         frappe.throw(_("Invalid JSON data: {0}").format(str(e)))
 
     try:
-        if not data.get("name"):
+        name = (data or {}).get("name")
+        if not name:
             frappe.throw(_("Invoice name is required for update operations"))
 
-        # Get existing Sales Invoice document
-        doc = frappe.get_doc("Sales Invoice", data.get("name"))
+        doc = frappe.get_doc("Sales Invoice", name)
 
-        # Verify it's still a draft
         if doc.docstatus != 0:
             frappe.throw(_("Cannot update submitted Sales Invoice"))
 
-        # Handle empty items (deletion case)
+        # Deletion case (empty items sent explicitly)
         if data.get("items") is not None and not data.get("items"):
             frappe.delete_doc("Sales Invoice", doc.name, ignore_permissions=True, force=True)
             frappe.db.commit()
             return {"message": "Invoice deleted successfully"}
 
-        # Update document with new data (client now sends all required fields including price_list_rate)
-        doc.set("posa_offers", [])
-
-        # 2) Extract and remove posa_offers from incoming data
+        # Extract incoming offers (list of dicts) and remove from payload
         selected_offers = data.get("posa_offers") or []
         if "posa_offers" in data:
             del data["posa_offers"]
 
-        # 3) Now update the document safely
+        # Reset child table on the doc before applying new offers
+        doc.set("posa_offers", [])
+
+        # Update other fields first
         doc.update(data)
 
-        # 3) resolve and apply offers safely
-                # 3) resolve and apply offers safely
-        try:
-            for sel in selected_offers:
-                if not isinstance(sel, dict):
-                    continue
+        # Resolve offer names and apply
+        resolved_offers = []
+        for sel in selected_offers:
+            if not isinstance(sel, dict):
+                continue
 
-                # Try to get the actual document name
-                offer_name = sel.get("offer_name") or sel.get("name")
+            offer_name = (sel.get("offer_name") or sel.get("name") or "") and str(
+                sel.get("offer_name") or sel.get("name")
+            ).strip()
 
-                # If not found, try to look up by title
-                if not offer_name or offer_name == "None" or str(offer_name).strip() == "":
-                  title = sel.get("title")
-                  if title:
-                      try:
-                          offer_docs = frappe.get_all("POS Offer", filters={"title": title}, fields=["name"])
-                          if offer_docs:
-                             offer_name = offer_docs[0].name
-                          else:
-                              # Skip if no offer found with this title
-                             continue
-                      except:
-                          continue
+            # Fallback: resolve by title if provided
+            if not offer_name:
+                title = (sel.get("title") or "").strip()
+                if title:
+                    found = frappe.get_all(
+                        "POS Offer",
+                        filters={"title": title},
+                        fields=["name"],
+                        limit=1,
+                    )
+                    if found:
+                        offer_name = found[0]["name"]
 
-                # Validate that the offer actually exists before applying
-                if not offer_name or offer_name == "None" or str(offer_name).strip() == "":
-                    continue
+            if not offer_name:
+                continue
 
-                try:
-                    # Check if POS Offer document exists
-                    if not frappe.db.exists("POS Offer", offer_name):
-                        frappe.log_error(f"POS Offer not found: {offer_name}", "POS Offers")
-                        continue
+            # Verify the POS Offer exists
+            exists = frappe.get_all(
+                "POS Offer",
+                filters={"name": offer_name},
+                fields=["name"],
+                limit=1,
+            )
+            if not exists:
+                # skip silently; do not break invoice updates
+                continue
 
-                    offer_doc = frappe.get_doc("POS Offer", offer_name)
-                    apply_offer_to_invoice(doc, offer_doc)
-                except Exception as e:
-                    frappe.log_error(f"Error applying offer {offer_name}: {str(e)}", "POS Offers")
+            # Keep track and append child row for UI/submit visibility
+            resolved_offers.append(offer_name)
+            doc.append("posa_offers", {"offer_name": offer_name})
 
-        except Exception as e:
-            frappe.log_error(f"Error processing manual POS offers: {str(e)}", "POS Offers")
-        # Ensure POS settings are maintained
+            # Apply offer effects to the doc (uses server-side logic only)
+            try:
+                offer_doc = frappe.get_doc("POS Offer", offer_name)
+                apply_offer_to_invoice(doc, offer_doc)
+            except Exception as e:
+                frappe.log_error(f"Error applying offer {offer_name}: {str(e)}", "POS Offers")
+
+        # Maintain POS flags
         doc.is_pos = 1
         doc.update_stock = 1
 
-        # Apply auto transaction discount if applicable
+        # Sync legacy single link field if it exists
+        primary_offer = resolved_offers[0] if resolved_offers else None
+        if getattr(doc, "meta", None) and doc.meta.has_field("offer_name"):
+            if primary_offer:
+                doc.offer_name = primary_offer
+            else:
+                # Allow draft updates without an offer; submit can re-validate
+                doc.offer_name = None
+                doc.flags.ignore_mandatory = True
+
+        # Auto transaction discount (server-side check only)
         if apply_auto_transaction_discount(doc):
-            # Rerun calculation to adopt the discount injected by the custom function above
             doc.calculate_taxes_and_totals()
 
-        # Let ERPNext handle all calculations using native methods
+        # Native calculations
         doc.calculate_taxes_and_totals()
 
-        # Calculate total item discounts (for live display in POS)
+        # POS live-display helper
         _calculate_item_discount_total(doc)
 
-        # Save using ERPNext native save
-        doc.save()
+        # Fast save; allow draft updates even when offer_name is empty
+        doc.save(ignore_version=True)
         frappe.db.commit()
 
-        # Return updated document
         return doc.as_dict()
 
     except frappe.exceptions.ValidationError as ve:
-        # Handle validation errors gracefully
         frappe.logger().error(f"Validation error in update_invoice: {str(ve)}")
         frappe.throw(_("Validation error: {0}").format(str(ve)))
-
     except Exception as e:
-        # Log and re-raise any other errors
         frappe.logger().error(f"Error in update_invoice: {str(e)}")
         frappe.throw(_("Error updating invoice: {0}").format(str(e)))
 
