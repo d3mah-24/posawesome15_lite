@@ -24,9 +24,7 @@ const API_MAP = {
     UPDATE_CUSTOMER: "posawesome.posawesome.api.customer.update_customer.update_customer",
     CREATE_CUSTOMER_ADDRESS: "posawesome.posawesome.api.customer.create_customer_address.create_customer_address",
     GET_CUSTOMER_CREDIT: "posawesome.posawesome.api.customer.get_customer_credit.get_customer_credit",
-    GET_ADDRESSES: "posawesome.posawesome.api.customer.get_many_customer_addresses.get_many_customer_addresses",
-    GET_CUSTOMER_COUPONS: "posawesome.posawesome.api.customer.get_customer_coupons.get_customer_coupons",
-    GET_POS_COUPON: "posawesome.posawesome.api.customer.get_customer_coupons.get_pos_coupon"
+    GET_ADDRESSES: "posawesome.posawesome.api.customer.get_many_customer_addresses.get_many_customer_addresses"
   },
 
   // POS Profile APIs (from Invoice.vue)
