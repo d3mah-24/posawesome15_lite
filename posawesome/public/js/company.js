@@ -7,7 +7,6 @@ frappe.ui.form.on('Company', {
             return {
                 filters: {
                     "company": frm.doc.name,
-                    "coupon_based": 1,
                     "disable": 0,
                 }
             };
@@ -16,7 +15,6 @@ frappe.ui.form.on('Company', {
             return {
                 filters: {
                     "company": frm.doc.name,
-                    "coupon_based": 1,
                     "disable": 0,
                 }
             };
