@@ -13,8 +13,7 @@ frappe.ui.form.on('POS Profile', {
             // Disable other options
             frm.set_value('posa_allow_user_to_edit_item_discount', 0);
             frm.set_value('posa_auto_fetch_offers', 0);
-            frm.set_value('posa_fetch_coupon', 0);
-            
+
             frappe.show_alert({
                 message: 'Additional discount enabled - other options disabled',
                 indicator: 'green'
@@ -27,8 +26,7 @@ frappe.ui.form.on('POS Profile', {
             // Disable other options
             frm.set_value('posa_allow_user_to_edit_additional_discount', 0);
             frm.set_value('posa_auto_fetch_offers', 0);
-            frm.set_value('posa_fetch_coupon', 0);
-            
+
             frappe.show_alert({
                 message: 'Item discount enabled - other options disabled',
                 indicator: 'blue'
@@ -41,8 +39,7 @@ frappe.ui.form.on('POS Profile', {
             // Disable other options
             frm.set_value('posa_allow_user_to_edit_additional_discount', 0);
             frm.set_value('posa_allow_user_to_edit_item_discount', 0);
-            frm.set_value('posa_fetch_coupon', 0);
-            
+
             frappe.show_alert({
                 message: 'Auto offers enabled - other options disabled',
                 indicator: 'orange'
@@ -50,17 +47,4 @@ frappe.ui.form.on('POS Profile', {
         }
     },
 
-    posa_fetch_coupon: function(frm) {
-        if (frm.doc.posa_fetch_coupon) {
-            // Disable other options
-            frm.set_value('posa_allow_user_to_edit_additional_discount', 0);
-            frm.set_value('posa_allow_user_to_edit_item_discount', 0);
-            frm.set_value('posa_auto_fetch_offers', 0);
-            
-            frappe.show_alert({
-                message: 'Coupons enabled - other options disabled',
-                indicator: 'purple'
-            });
-        }
-    }
 });
