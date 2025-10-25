@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import json
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import flt,nowdate
 from ..pos_offer.offers import get_applicable_offers, is_offer_applicable, apply_offer_to_invoice
 from .update import _calculate_item_discount_total
 
@@ -41,7 +41,8 @@ def apply_auto_transaction_discount(doc):
         # If auto offers are already applied, don't apply again
         if existing_auto_offers:
             return False
-
+        total_qty = sum(flt(item.qty) for item in doc.items)
+        total_amount = sum(flt(item.qty) * flt(item.rate) for item in doc.items)
         # Get all auto offers for this POS Profile
         offers = frappe.get_all(
             "POS Offer",
@@ -49,9 +50,15 @@ def apply_auto_transaction_discount(doc):
                 "disable": 0,
                 "auto": 1,
                 "discount_type": "Discount Percentage",
+                "company": doc.company,
                 "pos_profile": ["in", [profile, ""]],
+                "valid_from": ["<=", doc.posting_date or nowdate()],
+                "valid_upto": [">=", doc.posting_date or nowdate()],
+                "min_qty": ["<=", total_qty],
+                "max_qty": [">=", total_qty],
+                "max_amt": [">=", total_amount]
             },
-            fields=["name", "discount_percentage", "min_amt", "max_amt", "offer_type"],
+            fields=["name", "discount_percentage", "min_qty", "max_qty", "min_amt", "max_amt", "offer_type"],
             order_by="discount_percentage desc"
         )
 
@@ -90,9 +97,56 @@ def create_invoice(data):
         # Create new Sales Invoice document using ERPNext
         doc = frappe.new_doc("Sales Invoice")
 
-        # Update with provided data
-        doc.update(data)
 
+        doc.set("posa_offers", [])
+
+        # 2) Extract and remove posa_offers from incoming data
+        selected_offers = data.get("posa_offers") or []
+        if "posa_offers" in data:
+            del data["posa_offers"]
+
+        # 3) Now update the document safely
+        doc.update(data)
+        # 3) resolve and apply offers safely
+                # 3) resolve and apply offers safely
+        try:
+            for sel in selected_offers:
+                if not isinstance(sel, dict):
+                    continue
+
+                # Try to get the actual document name
+                offer_name = sel.get("offer_name") or sel.get("name")
+
+                # If not found, try to look up by title
+                if not offer_name or offer_name == "None" or str(offer_name).strip() == "":
+                    title = sel.get("title")
+                    if title:
+                        try:
+                            offer_docs = frappe.get_all("POS Offer", filters={"title": title}, fields=["name"])
+                            if offer_docs:
+                                offer_name = offer_docs[0].name
+                            else:
+                                continue
+                        except:
+                            continue
+
+                # Validate that the offer actually exists before applying
+                if not offer_name or offer_name == "None" or str(offer_name).strip() == "":
+                    continue
+
+                try:
+                    # Check if POS Offer document exists
+                    if not frappe.db.exists("POS Offer", offer_name):
+                        frappe.log_error(f"POS Offer not found: {offer_name}", "POS Offers")
+                        continue
+
+                    offer_doc = frappe.get_doc("POS Offer", offer_name)
+                    apply_offer_to_invoice(doc, offer_doc)
+                except Exception as e:
+                    frappe.log_error(f"Error applying offer {offer_name}: {str(e)}", "POS Offers")
+
+        except Exception as e:
+            frappe.log_error(f"Error processing manual POS offers: {str(e)}", "POS Offers")
         # Ensure POS settings are set
         doc.is_pos = 1
         doc.update_stock = 1
