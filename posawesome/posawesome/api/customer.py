@@ -281,13 +281,6 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
         limit = min(int(limit or 50), 200)  # Cap at 200 for performance
         offset = int(offset or 0)
 
-        # Redis caching for POS Profile data (Backend Improvement Policy)
-        cache_key = None
-        if pos_profile and not search_term:
-            cache_key = f"pos_customers_{pos_profile}_{limit}_{offset}"
-            cached_result = frappe.cache().get_value(cache_key)
-            if cached_result:
-                return cached_result
 
         # Base query filters
         query_filters = {
@@ -362,10 +355,6 @@ def get_many_customers(pos_profile=None, search_term=None, limit=50, offset=0):
                 start=offset,
                 order_by="customer_name asc"
             )
-
-        # Cache results for better performance (Backend Improvement Policy)
-        if cache_key and customers:
-            frappe.cache().set_value(cache_key, customers, expires_in_sec=300)  # 5-minute cache
 
         return customers
 
