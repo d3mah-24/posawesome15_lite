@@ -8,11 +8,11 @@
 const API_MAP = {
   // Sales Invoice APIs (from Invoice.vue)
   SALES_INVOICE: {
-    CREATE: "posawesome.posawesome.api.sales_invoice.create.create_invoice",
-    UPDATE: "posawesome.posawesome.api.sales_invoice.update.update_invoice",
-    SUBMIT: "posawesome.posawesome.api.sales_invoice.submit.submit_invoice",
-    DELETE: "posawesome.posawesome.api.sales_invoice.delete.delete_invoice",
-    GET_INVOICES_FOR_RETURN: "posawesome.posawesome.api.sales_invoice.get_return.get_invoices_for_return"
+    CREATE: "posawesome.posawesome.api.sales_invoice.sales_invoice.create_invoice",
+    UPDATE: "posawesome.posawesome.api.sales_invoice.sales_invoice.update_invoice",
+    SUBMIT: "posawesome.posawesome.api.sales_invoice.sales_invoice.submit_invoice",
+    DELETE: "posawesome.posawesome.api.sales_invoice.sales_invoice.delete_invoice",
+    GET_INVOICES_FOR_RETURN: "posawesome.posawesome.api.sales_invoice.sales_invoice.get_invoices_for_return"
   },
 
   // Customer APIs (from Customer.vue, UpdateCustomer.vue, Payments.vue, NewAddress.vue)
