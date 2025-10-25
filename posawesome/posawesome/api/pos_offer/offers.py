@@ -13,10 +13,10 @@ from frappe.utils import nowdate, flt
 @frappe.whitelist()
 def get_offers(invoice_data):
     """
-    🎯 الدالة المركزية التي تطبق العروض مباشرة على الفاتورة
+    🎯 Central function that applies offers directly to invoice
 
     Args:
-        invoice_data: dict - بيانات الفاتورة مع العناصر
+        invoice_data: dict - Invoice data with items
 
     Returns:
         dict: {
@@ -27,7 +27,7 @@ def get_offers(invoice_data):
         }
     """
     try:
-        # فحص تفعيل العروض في POS Profile
+        # Check if offers are enabled in POS Profile
         if not check_offers_enabled_by_profile(invoice_data.get("pos_profile")):
             return {
                 "enabled": False,
@@ -36,7 +36,7 @@ def get_offers(invoice_data):
                 "updated_invoice": invoice_data
             }
 
-        # جلب كل العروض المناسبة
+        # Get all applicable offers
         applicable_offers = get_applicable_offers_for_invoice_data(invoice_data)
 
         if not applicable_offers:
@@ -47,7 +47,7 @@ def get_offers(invoice_data):
                 "updated_invoice": invoice_data
             }
 
-        # تطبيق العروض على الفاتورة
+        # Apply offers to invoice
         updated_invoice = invoice_data.copy()
         applied_offers = []
 
@@ -83,7 +83,7 @@ def get_offers(invoice_data):
 
 # ===== HELPER FUNCTIONS =====
 def check_offers_enabled_by_profile(profile):
-    """Helper: فحص تفعيل العروض في POS Profile"""
+    """Helper: Check if offers are enabled in POS Profile"""
     if not profile:
         return False
 
@@ -95,18 +95,18 @@ def check_offers_enabled_by_profile(profile):
 
 
 def get_applicable_offers_for_invoice_data(invoice_data):
-    """Helper: جلب العروض المناسبة لبيانات الفاتورة"""
+    """Helper: Get applicable offers for invoice data"""
     try:
-        # استخراج البيانات المطلوبة من الفاتورة
+        # Extract required data from invoice
         company = invoice_data.get("company")
         pos_profile = invoice_data.get("pos_profile")
         warehouse = invoice_data.get("set_warehouse")
         posting_date = invoice_data.get("posting_date") or nowdate()
 
-        # حساب إجمالي الكمية
+        # Calculate total quantity
         total_qty = sum(flt(item.get("qty", 0)) for item in invoice_data.get("items", []))
 
-        # جلب العروض المناسبة
+        # Get applicable offers
         offers = frappe.get_all(
             "POS Offer",
             filters={
@@ -120,7 +120,7 @@ def get_applicable_offers_for_invoice_data(invoice_data):
             order_by="auto desc, discount_percentage desc, title asc"
         )
 
-        # فحص العروض المناسبة
+        # Check applicable offers
         applicable = []
         for offer in offers:
             if check_offer_applicable_for_data(offer, invoice_data, total_qty):
@@ -134,20 +134,27 @@ def get_applicable_offers_for_invoice_data(invoice_data):
 
 
 def check_offer_applicable_for_data(offer, invoice_data, total_qty):
-    """Helper: فحص انطباق العرض على بيانات الفاتورة"""
+    """Helper: Check if offer is applicable for invoice data"""
     try:
-        # فحص الكمية
+        # Check quantity
         if offer.get('min_qty') and total_qty < flt(offer.min_qty):
             return False
 
         if offer.get('max_qty') and total_qty > flt(offer.max_qty):
             return False
+        total_amount = sum(flt(item.get("qty", 0)) * flt(item.get("rate", 0))
+                          for item in invoice_data.get("items", []))
 
-        # فحص نوع العرض
+        if offer.get('min_amt') and total_amount < flt(offer.min_amt):
+            return False
+
+        if offer.get('max_amt') and total_amount > flt(offer.max_amt):
+            return False
+        # Check offer type
         offer_type = offer.get('offer_type')
 
         if not offer_type or offer_type == "":
-            return True  # عرض عام
+            return True  # General offer
 
         if offer_type == "grand_total":
             return True
@@ -176,7 +183,7 @@ def check_offer_applicable_for_data(offer, invoice_data, total_qty):
 
 # ===== CHECK FUNCTIONS FOR INVOICE DATA =====
 def check_item_code_in_invoice(offer, invoice_data):
-    """Helper: فحص وجود منتج محدد في الفاتورة"""
+    """Helper: Check if specific item exists in invoice"""
     if not offer.get('item_code'):
         return False
 
@@ -188,7 +195,7 @@ def check_item_code_in_invoice(offer, invoice_data):
 
 
 def check_item_group_in_invoice(offer, invoice_data):
-    """Helper: فحص وجود مجموعة منتجات في الفاتورة"""
+    """Helper: Check if item group exists in invoice"""
     if not offer.get('item_group'):
         return False
 
@@ -200,7 +207,7 @@ def check_item_group_in_invoice(offer, invoice_data):
 
 
 def check_brand_in_invoice(offer, invoice_data):
-    """Helper: فحص وجود براند محدد في الفاتورة"""
+    """Helper: Check if specific brand exists in invoice"""
     if not offer.get('brand'):
         return False
 
@@ -212,7 +219,7 @@ def check_brand_in_invoice(offer, invoice_data):
 
 
 def check_customer_match(offer, invoice_data):
-    """Helper: فحص تطابق العميل"""
+    """Helper: Check customer match"""
     if not offer.get('customer'):
         return False
 
@@ -220,7 +227,7 @@ def check_customer_match(offer, invoice_data):
 
 
 def check_customer_group_match(offer, invoice_data):
-    """Helper: فحص تطابق مجموعة العملاء"""
+    """Helper: Check customer group match"""
     if not offer.get('customer_group'):
         return False
 
@@ -233,7 +240,7 @@ def check_customer_group_match(offer, invoice_data):
 
 # ===== APPLY OFFER FUNCTIONS =====
 def apply_offer_by_type(offer, invoice_data):
-    """Helper: تطبيق العرض حسب النوع"""
+    """Helper: Apply offer by type"""
     try:
         offer_type = offer.get('offer_type')
 
@@ -263,7 +270,7 @@ def apply_offer_by_type(offer, invoice_data):
 
 
 def apply_discount_percentage_on_grand_total(offer, invoice_data):
-    """Helper: تطبيق خصم على الإجمالي"""
+    """Helper: Apply discount on grand total"""
     try:
         discount_percentage = offer.get("discount_percentage")
         offer_name = offer.get("name")
@@ -277,10 +284,10 @@ def apply_discount_percentage_on_grand_total(offer, invoice_data):
                 if existing_offer.get("offer_name") == offer_name:
                     return False  # Already applied
 
-        # تطبيق الخصم على الإجمالي
+        # Apply discount on grand total
         invoice_data["additional_discount_percentage"] = flt(discount_percentage)
 
-        # تسجيل العرض
+        # Record the offer
         if "posa_offers" not in invoice_data:
             invoice_data["posa_offers"] = []
 
@@ -299,7 +306,7 @@ def apply_discount_percentage_on_grand_total(offer, invoice_data):
 
 
 def apply_discount_percentage_on_item_code(offer, invoice_data):
-    """Helper: تطبيق خصم على منتج محدد"""
+    """Helper: Apply discount on specific item"""
     try:
         discount_percentage = offer.get("discount_percentage")
         item_code = offer.get("item_code")
@@ -314,7 +321,7 @@ def apply_discount_percentage_on_item_code(offer, invoice_data):
                 if existing_offer.get("offer_name") == offer_name:
                     return False  # Already applied
 
-        # تطبيق الخصم على العناصر المطابقة
+        # Apply discount on matching items
         applied = False
         for item in invoice_data.get("items", []):
             if item.get("item_code") == item_code:
@@ -322,7 +329,7 @@ def apply_discount_percentage_on_item_code(offer, invoice_data):
                 applied = True
 
         if applied:
-            # تسجيل العرض
+            # Record the offer
             if "posa_offers" not in invoice_data:
                 invoice_data["posa_offers"] = []
 
@@ -341,7 +348,7 @@ def apply_discount_percentage_on_item_code(offer, invoice_data):
 
 
 def apply_discount_percentage_on_item_group(offer, invoice_data):
-    """Helper: تطبيق خصم على مجموعة منتجات"""
+    """Helper: Apply discount on item group"""
     try:
         discount_percentage = offer.get("discount_percentage")
         item_group = offer.get("item_group")
@@ -356,7 +363,7 @@ def apply_discount_percentage_on_item_group(offer, invoice_data):
                 if existing_offer.get("offer_name") == offer_name:
                     return False  # Already applied
 
-        # تطبيق الخصم على العناصر المطابقة
+        # Apply discount on matching items
         applied = False
         for item in invoice_data.get("items", []):
             if item.get("item_group") == item_group:
@@ -364,7 +371,7 @@ def apply_discount_percentage_on_item_group(offer, invoice_data):
                 applied = True
 
         if applied:
-            # تسجيل العرض
+            # Record the offer
             if "posa_offers" not in invoice_data:
                 invoice_data["posa_offers"] = []
 
@@ -383,7 +390,7 @@ def apply_discount_percentage_on_item_group(offer, invoice_data):
 
 
 def apply_discount_percentage_on_brand(offer, invoice_data):
-    """Helper: تطبيق خصم على براند محدد"""
+    """Helper: Apply discount on specific brand"""
     try:
         discount_percentage = offer.get("discount_percentage")
         brand = offer.get("brand")
@@ -398,7 +405,7 @@ def apply_discount_percentage_on_brand(offer, invoice_data):
                 if existing_offer.get("offer_name") == offer_name:
                     return False  # Already applied
 
-        # تطبيق الخصم على العناصر المطابقة
+        # Apply discount on matching items
         applied = False
         for item in invoice_data.get("items", []):
             if item.get("brand") == brand:
@@ -406,7 +413,7 @@ def apply_discount_percentage_on_brand(offer, invoice_data):
                 applied = True
 
         if applied:
-            # تسجيل العرض
+            # Record the offer
             if "posa_offers" not in invoice_data:
                 invoice_data["posa_offers"] = []
 
@@ -428,7 +435,7 @@ def apply_discount_percentage_on_brand(offer, invoice_data):
 def is_offer_applicable(offer, invoice):
     """Legacy function - redirects to helper"""
     try:
-        # تحويل invoice doc إلى invoice_data
+        # Convert invoice doc to invoice_data
         invoice_data = {
             "company": invoice.company,
             "pos_profile": invoice.pos_profile,
@@ -447,9 +454,9 @@ def is_offer_applicable(offer, invoice):
 
 
 def apply_offer_to_invoice(doc, offer):
-    """Legacy function - تطبيق العرض على document"""
+    """Legacy function - Apply offer to document"""
     try:
-        # تحويل doc إلى invoice_data
+        # Convert doc to invoice_data
         invoice_data = {
             "company": doc.company,
             "pos_profile": doc.pos_profile,
@@ -460,18 +467,18 @@ def apply_offer_to_invoice(doc, offer):
             "posa_offers": [{"offer_name": offer_row.offer_name, "offer_type": offer_row.offer_type, "discount_percentage": offer_row.discount_percentage, "row_id": offer_row.row_id} for offer_row in doc.get("posa_offers", [])]
         }
 
-        # تطبيق العرض
+        # Apply the offer
         if apply_offer_by_type(offer, invoice_data):
-            # تطبيق التغييرات على document
+            # Apply changes to document
             if "additional_discount_percentage" in invoice_data:
                 doc.additional_discount_percentage = invoice_data["additional_discount_percentage"]
 
-            # تطبيق خصومات العناصر
+            # Apply item discounts
             for i, item in enumerate(doc.items):
                 if i < len(invoice_data["items"]) and "discount_percentage" in invoice_data["items"][i]:
                     item.discount_percentage = invoice_data["items"][i]["discount_percentage"]
 
-            # تسجيل العرض
+            # Record the offer
             if "posa_offers" in invoice_data:
                 for offer_data in invoice_data["posa_offers"]:
                     # Check if this offer is already in the document
@@ -517,11 +524,11 @@ def get_applicable_offers(invoice_name):
 def get_offers_for_profile(profile):
     """Legacy API - redirects to centralized API"""
     try:
-        # فحص تفعيل العروض
+        # Check if offers are enabled
         if not check_offers_enabled_by_profile(profile):
             return []
 
-        # جلب العروض المناسبة للـ POS Profile
+        # Get applicable offers for POS Profile
         pos_profile_doc = frappe.get_doc("POS Profile", profile)
         company = pos_profile_doc.company
         warehouse = pos_profile_doc.warehouse
