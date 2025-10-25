@@ -51,7 +51,16 @@ def get_offers(invoice_data):
         updated_invoice = invoice_data.copy()
         applied_offers = []
 
+        # Get existing offers to avoid duplicates
+        existing_offers = set()
+        if "posa_offers" in updated_invoice and updated_invoice["posa_offers"]:
+            existing_offers = {offer.get("offer_name") for offer in updated_invoice["posa_offers"] if offer.get("offer_name")}
+
         for offer in applicable_offers:
+            # Skip if offer is already applied
+            if offer.get("name") in existing_offers:
+                continue
+
             if apply_offer_by_type(offer, updated_invoice):
                 applied_offers.append(offer)
 
@@ -257,8 +266,16 @@ def apply_discount_percentage_on_grand_total(offer, invoice_data):
     """Helper: تطبيق خصم على الإجمالي"""
     try:
         discount_percentage = offer.get("discount_percentage")
-        if not discount_percentage:
+        offer_name = offer.get("name")
+
+        if not discount_percentage or not offer_name:
             return False
+
+        # Check if offer is already applied
+        if "posa_offers" in invoice_data and invoice_data["posa_offers"]:
+            for existing_offer in invoice_data["posa_offers"]:
+                if existing_offer.get("offer_name") == offer_name:
+                    return False  # Already applied
 
         # تطبيق الخصم على الإجمالي
         invoice_data["additional_discount_percentage"] = flt(discount_percentage)
@@ -268,7 +285,7 @@ def apply_discount_percentage_on_grand_total(offer, invoice_data):
             invoice_data["posa_offers"] = []
 
         invoice_data["posa_offers"].append({
-            "offer_name": offer.get("name"),
+            "offer_name": offer_name,
             "offer_type": offer.get("offer_type"),
             "discount_percentage": discount_percentage,
             "row_id": ""
@@ -286,9 +303,16 @@ def apply_discount_percentage_on_item_code(offer, invoice_data):
     try:
         discount_percentage = offer.get("discount_percentage")
         item_code = offer.get("item_code")
+        offer_name = offer.get("name")
 
-        if not discount_percentage or not item_code:
+        if not discount_percentage or not item_code or not offer_name:
             return False
+
+        # Check if offer is already applied
+        if "posa_offers" in invoice_data and invoice_data["posa_offers"]:
+            for existing_offer in invoice_data["posa_offers"]:
+                if existing_offer.get("offer_name") == offer_name:
+                    return False  # Already applied
 
         # تطبيق الخصم على العناصر المطابقة
         applied = False
@@ -303,7 +327,7 @@ def apply_discount_percentage_on_item_code(offer, invoice_data):
                 invoice_data["posa_offers"] = []
 
             invoice_data["posa_offers"].append({
-                "offer_name": offer.get("name"),
+                "offer_name": offer_name,
                 "offer_type": offer.get("offer_type"),
                 "discount_percentage": discount_percentage,
                 "row_id": item_code
@@ -321,9 +345,16 @@ def apply_discount_percentage_on_item_group(offer, invoice_data):
     try:
         discount_percentage = offer.get("discount_percentage")
         item_group = offer.get("item_group")
+        offer_name = offer.get("name")
 
-        if not discount_percentage or not item_group:
+        if not discount_percentage or not item_group or not offer_name:
             return False
+
+        # Check if offer is already applied
+        if "posa_offers" in invoice_data and invoice_data["posa_offers"]:
+            for existing_offer in invoice_data["posa_offers"]:
+                if existing_offer.get("offer_name") == offer_name:
+                    return False  # Already applied
 
         # تطبيق الخصم على العناصر المطابقة
         applied = False
@@ -338,7 +369,7 @@ def apply_discount_percentage_on_item_group(offer, invoice_data):
                 invoice_data["posa_offers"] = []
 
             invoice_data["posa_offers"].append({
-                "offer_name": offer.get("name"),
+                "offer_name": offer_name,
                 "offer_type": offer.get("offer_type"),
                 "discount_percentage": discount_percentage,
                 "row_id": item_group
@@ -356,9 +387,16 @@ def apply_discount_percentage_on_brand(offer, invoice_data):
     try:
         discount_percentage = offer.get("discount_percentage")
         brand = offer.get("brand")
+        offer_name = offer.get("name")
 
-        if not discount_percentage or not brand:
+        if not discount_percentage or not brand or not offer_name:
             return False
+
+        # Check if offer is already applied
+        if "posa_offers" in invoice_data and invoice_data["posa_offers"]:
+            for existing_offer in invoice_data["posa_offers"]:
+                if existing_offer.get("offer_name") == offer_name:
+                    return False  # Already applied
 
         # تطبيق الخصم على العناصر المطابقة
         applied = False
@@ -373,7 +411,7 @@ def apply_discount_percentage_on_brand(offer, invoice_data):
                 invoice_data["posa_offers"] = []
 
             invoice_data["posa_offers"].append({
-                "offer_name": offer.get("name"),
+                "offer_name": offer_name,
                 "offer_type": offer.get("offer_type"),
                 "discount_percentage": discount_percentage,
                 "row_id": brand
@@ -418,7 +456,8 @@ def apply_offer_to_invoice(doc, offer):
             "set_warehouse": doc.set_warehouse,
             "posting_date": doc.posting_date,
             "customer": doc.customer,
-            "items": [{"item_code": item.item_code, "item_group": item.item_group, "brand": getattr(item, 'brand', None), "qty": item.qty} for item in doc.items]
+            "items": [{"item_code": item.item_code, "item_group": item.item_group, "brand": getattr(item, 'brand', None), "qty": item.qty} for item in doc.items],
+            "posa_offers": [{"offer_name": offer_row.offer_name, "offer_type": offer_row.offer_type, "discount_percentage": offer_row.discount_percentage, "row_id": offer_row.row_id} for offer_row in doc.get("posa_offers", [])]
         }
 
         # تطبيق العرض
@@ -435,7 +474,10 @@ def apply_offer_to_invoice(doc, offer):
             # تسجيل العرض
             if "posa_offers" in invoice_data:
                 for offer_data in invoice_data["posa_offers"]:
-                    doc.append("posa_offers", offer_data)
+                    # Check if this offer is already in the document
+                    existing_offers = [row.offer_name for row in doc.get("posa_offers", [])]
+                    if offer_data["offer_name"] not in existing_offers:
+                        doc.append("posa_offers", offer_data)
 
             return True
 
@@ -448,26 +490,21 @@ def apply_offer_to_invoice(doc, offer):
 
 @frappe.whitelist()
 def get_applicable_offers(invoice_name):
-    """Legacy API - redirects to centralized API"""
+    """Get applied offers for an existing invoice"""
     try:
         doc = frappe.get_doc("Sales Invoice", invoice_name)
-        invoice_data = {
-            "company": doc.company,
-            "pos_profile": doc.pos_profile,
-            "set_warehouse": doc.set_warehouse,
-            "posting_date": doc.posting_date,
-            "customer": doc.customer,
-            "items": [{"item_code": item.item_code, "item_group": item.item_group, "brand": getattr(item, 'brand', None), "qty": item.qty} for item in doc.items]
-        }
 
-        result = get_offers(invoice_data)
-
-        # Return the posa_offers array with offer_applied flag set
-        posa_offers = result.get("updated_invoice", {}).get("posa_offers", [])
-
-        # Add offer_applied flag to each offer
-        for offer in posa_offers:
-            offer["offer_applied"] = True
+        # Return the existing posa_offers from the invoice with offer_applied flag set
+        posa_offers = []
+        for offer in doc.get("posa_offers", []):
+            offer_data = {
+                "offer_name": offer.offer_name,
+                "row_id": offer.row_id,
+                "offer_type": offer.offer_type,
+                "discount_percentage": offer.discount_percentage,
+                "offer_applied": True
+            }
+            posa_offers.append(offer_data)
 
         return posa_offers
 
