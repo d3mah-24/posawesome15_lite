@@ -529,6 +529,10 @@ def get_offers_for_profile(profile):
 
         offers = frappe.get_all(
             "POS Offer",
+            fields=["name", "title", "description", "offer_type", "discount_type",
+                    "discount_percentage", "min_qty", "max_qty",
+                    "min_amt", "max_amt", "auto", "item_code", "item_group",
+                    "brand", "customer", "customer_group", "valid_from", "valid_upto"],
             filters={
                 "disable": 0,
                 "company": company,
