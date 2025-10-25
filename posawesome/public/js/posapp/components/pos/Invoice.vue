@@ -544,10 +544,6 @@ export default {
     create_invoice(doc) {
       const vm = this;
       return new Promise((resolve, reject) => {
-        console.log("[DEBUG] Creating invoice with posa_offers:", this.posa_offers);
-        console.log("[DEBUG] Full doc data:", doc);
-        console.log("[DEBUG] POS Profile:", this.pos_profile);
-
         frappe.call({
           method: API_MAP.SALES_INVOICE.CREATE,
           args: {
@@ -555,10 +551,6 @@ export default {
           },
           async: true,
           callback: function (r) {
-            console.log("[DEBUG] API Response (Create Invoice):", r);
-            console.log("[DEBUG] API Response message:", r.message);
-            console.log("[DEBUG] API Response message.name:", r.message?.name);
-
             vm._processOffers();
             if (r.message !== undefined) {
               if (r.message === null) {
@@ -568,10 +560,6 @@ export default {
               } else {
 
                 vm.invoice_doc = r.message;
-
-                console.log("Invoice created with name:", vm.invoice_doc?.name);
-                console.log("Full invoice_doc:", vm.invoice_doc);
-
 
                 // Emit event for navbar to update invoice display
                 evntBus.emit("update_invoice_doc", vm.invoice_doc);
@@ -587,6 +575,12 @@ export default {
                     evntBus.emit("update_pos_offers", appliedOffers);
                   }
                 }
+
+                // Sync additional_discount_percentage from server response
+                if (r.message.additional_discount_percentage !== undefined) {
+                  vm.additional_discount_percentage = flt(r.message.additional_discount_percentage);
+                }
+
                 vm._processOffers();
 
                 // Resolve the promise with the created invoice
@@ -604,9 +598,6 @@ export default {
     },
 
     async auto_update_invoice(doc = null, reason = "auto") {
-      console.log("Auto-updating invoice, reason:", reason);
-      console.log("Auto-updating invoice, doc:", doc);
-
       if (this.invoice_doc?.submitted_for_payment) {
         return;
       }
@@ -666,7 +657,6 @@ export default {
                 : result.items || [],
           };
         }
-        console.log("Auto-update result this.invoice_doc:", this.invoice_doc);
 
         // === CRITICAL FIX: ENSURE LOCAL STATE REFLECTS SERVER'S CALCULATION ===
         this.additional_discount_percentage = this.invoice_doc.additional_discount_percentage || 0;
@@ -840,7 +830,10 @@ export default {
         });
 
 
-        this.posa_offers = data.posa_offers || [];
+        this.posa_offers = (data.posa_offers || []).map(offer => ({
+          ...offer,
+          offer_applied: true
+        }));
         this.items.forEach((item) => {
           item.base_rate = item.base_rate || item.price_list_rate;
           if (!item.posa_row_id) {
@@ -1011,16 +1004,17 @@ export default {
 
                 // Update posa_offers from backend response
                 if (r.message.posa_offers) {
-                  console.log("Updating posa_offers from API response", r.message.posa_offers);
-
-                  vm.posa_offers = r.message.posa_offers;
+                  // Mark all offers from backend as applied since they are saved in the invoice
+                  vm.posa_offers = r.message.posa_offers.map(offer => ({
+                    ...offer,
+                    offer_applied: true
+                  }));
 
                   // Handle Transaction-level Percentage Discount Offers
                   let transactionDiscount = 0;
                   const appliedTransactionOffer = vm.posa_offers.find(
                     (offer) => offer.offer_applied
                   );
-                  console.log("Applied Transaction Offer:", appliedTransactionOffer);
 
                   if (appliedTransactionOffer) {
                     transactionDiscount = flt(appliedTransactionOffer.discount_percentage);
@@ -1543,9 +1537,7 @@ export default {
     },
 
     handleOffers() {
-      console.log("Handling offers for invoice:", this.invoice_doc?.name, "with items:", this.items);
-
-      if (this.invoice_doc?.name && this.items && this.items.length > 1) {
+      if (this.invoice_doc?.name && this.items && this.items.length >= 1) {
         this._processOffers();
       }
     },
@@ -1553,10 +1545,10 @@ export default {
     _processOffers() {
       if (!this.invoice_doc?.name) return;
 
-      // Debug logging to check the field value
-      console.log("[DEBUG] _processOffers - pos_profile:", this.pos_profile);
-      console.log("[DEBUG] _processOffers - posa_auto_fetch_offers value:", this.pos_profile?.posa_auto_fetch_offers);
-      console.log("[DEBUG] _processOffers - posa_auto_fetch_offers type:", typeof this.pos_profile?.posa_auto_fetch_offers);
+      // Skip processing if offers are already applied from backend response
+      if (this.posa_offers && this.posa_offers.length > 0) {
+        return;
+      }
 
       // Check if offers are enabled in POS Profile (handle different value types)
       const offersEnabled = this.pos_profile?.posa_auto_fetch_offers !== 0 &&
@@ -1565,15 +1557,12 @@ export default {
         this.pos_profile?.posa_auto_fetch_offers !== null &&
         this.pos_profile?.posa_auto_fetch_offers !== undefined;
 
-      console.log("[DEBUG] _processOffers - offersEnabled:", offersEnabled);
-
       if (!offersEnabled) {
-        console.log("[DEBUG] _processOffers - Offers disabled, skipping processing");
         return; // Skip offers processing
       }
 
-      // Skip offers processing if no items or only one item
-      if (!this.items || this.items.length <= 1) {
+      // Skip offers processing if no items
+      if (!this.items || this.items.length < 1) {
         return;
       }
 
@@ -1828,13 +1817,9 @@ export default {
     });
 
     evntBus.on("set_offers", (data) => {
-      console.log("check offere data ", data);
-
       this.posOffers = data;
     });
     evntBus.on("update_invoice_offers", (data) => {
-      console.log("updateInvoiceOffers ", data);
-
       this.updateInvoiceOffers(data);
     });
     evntBus.on("set_all_items", (data) => {
