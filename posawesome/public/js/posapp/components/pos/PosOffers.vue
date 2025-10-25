@@ -51,7 +51,7 @@
               <div v-else-if="offer.discount_amount" class="discount-main">
                 <span class="discount-value">{{
                   formatCurrency(offer.discount_amount)
-                  }}</span>
+                }}</span>
                 <span class="discount-label">OFF</span>
               </div>
               <div v-else class="discount-main special">
@@ -80,7 +80,7 @@
               </label>
               <span class="toggle-text">{{
                 offer.offer_applied ? "Applied" : "Apply"
-                }}</span>
+              }}</span>
             </div>
           </div>
         </div>
@@ -169,16 +169,12 @@ export default {
     offersEnabled() {
       const value = this.pos_profile?.posa_auto_fetch_offers;
 
-      console.log("[DEBUG] PosOffers - posa_auto_fetch_offers value:", value);
-      console.log("[DEBUG] PosOffers - posa_auto_fetch_offers type:", typeof value);
-
       const enabled = value !== 0 &&
         value !== "0" &&
         value !== false &&
         value !== null &&
         value !== undefined;
 
-      console.log("[DEBUG] PosOffers - offersEnabled:", enabled);
       return enabled;
     },
     offersCount() {
@@ -236,32 +232,24 @@ export default {
 
     handleManualOfferChange() {
       try {
-        console.log("[DEBUG] handleManualOfferChange - Current offers:", this.pos_offers);
-
         const appliedGrandTotalOffers = this.pos_offers.filter(
           (offer) =>
             offer.offer === OFFER_TYPES.GRAND_TOTAL && offer.offer_applied
         );
 
-        console.log("[DEBUG] Applied Grand Total Offers count:", appliedGrandTotalOffers.length, appliedGrandTotalOffers);
-
         if (appliedGrandTotalOffers.length > 1) {
-          console.log("[DEBUG] Multiple Grand Total offers detected, applying best one");
           this.applyBestGrandTotalOffer();
         } else if (appliedGrandTotalOffers.length === 1) {
-          console.log("[DEBUG] Single Grand Total offer applied:", appliedGrandTotalOffers[0].name);
           this.discount_percentage_offer_name = appliedGrandTotalOffers[0].name;
           this.pos_offers.forEach((offer) => {
             if (
               offer.offer === OFFER_TYPES.GRAND_TOTAL &&
               offer.name !== appliedGrandTotalOffers[0].name
             ) {
-              console.log("[DEBUG] Disabling other Grand Total offer:", offer.name);
               offer.offer_applied = false;
             }
           });
         } else {
-          console.log("[DEBUG] No Grand Total offers applied, clearing discount_percentage_offer_name");
           this.discount_percentage_offer_name = null;
         }
       } catch (error) {
@@ -279,9 +267,6 @@ export default {
 
     updatePosOffers(appliedOffers) {
       try {
-        console.log("[DEBUG] updatePosOffers called with:", appliedOffers);
-        console.log("[DEBUG] Current pos_offers before update:", this.pos_offers);
-
         this.pos_offers.forEach((pos_offer) => {
           const wasApplied = pos_offer.offer_applied;
           pos_offer.offer_applied = appliedOffers.some(
@@ -290,13 +275,7 @@ export default {
               offer.offer_name === pos_offer.name ||
               offer.name === pos_offer.title
           );
-
-          if (wasApplied !== pos_offer.offer_applied) {
-            console.log(`[DEBUG] Offer '${pos_offer.name}' status changed: ${wasApplied} -> ${pos_offer.offer_applied}`);
-          }
         });
-
-        console.log("[DEBUG] pos_offers after update:", this.pos_offers);
       } catch (error) {
         console.error("[ERROR] updatePosOffers exception:", error);
       }
@@ -336,7 +315,7 @@ export default {
     removeOffers(offers_id_list) {
       try {
         this.pos_offers = this.pos_offers.filter(
-          (offer) => !offers_id_list.includes(offer.row_id)
+          (offer) => !offers_id_list.includes(offer.name || offer.offer_name)
         );
       } catch (error) {
         this.showMessage("Error removing offers", "error");
@@ -426,13 +405,10 @@ export default {
       });
 
       evntBus.on(EVENT_NAMES.SET_OFFERS, (data) => {
-        console.log("[DEBUG] SET_OFFERS event received:", data);
         this.pos_offers = data.map((offer) => ({
           ...offer,
-          row_id: offer.row_id || this.makeid(20),
           offer_applied: !!offer.auto,
         }));
-        console.log("[DEBUG] pos_offers set to:", this.pos_offers);
       });
 
       evntBus.on(EVENT_NAMES.UPDATE_POS_OFFERS, (data) => {
