@@ -17,7 +17,7 @@
 
 - Control show/hide discount price and discount percentage columns in POS interface
 - Insert discounted price (limited to allowed max percentage)
-- Insert discount percentage (limited to allowed max percentage)  
+- Insert discount percentage (limited to allowed max percentage)
 - Sales invoice shows total items discount amount (simplified for invoice print format)
 
 **💰 Easy Invoice Discount Control**
@@ -26,15 +26,13 @@
 - Insert discount percentage (limited to allowed max percentage)
 - Sales invoice shows total Invoice discount amount & Percentage (simplified for invoice print format)
 
-**🎯 Offers & Coupons**
+**🎯 Offers**
 
 - **POS Offers** - Apply on: Item, Item Group, Brand, Transaction
 - **Offer Types:** Product/Give Product, Discount (%), Discount (Amount)
 - Min/Max quantity and amount triggers
 - Date-based offer validity (from/to)
 - Auto-apply offers or manual selection
-- Coupon-based offers
-- Gift coupons from referral codes
 - Replace item or replace cheapest item options
 
 **👥 Customer Management**
