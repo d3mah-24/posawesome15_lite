@@ -401,7 +401,7 @@ export default {
   margin-top: 3px !important;
 }
 
-/* ===== LEFT PANEL (Items/Offers/Coupons/Payments) ===== */
+/* ===== LEFT PANEL (Items/Offers/Payments) ===== */
 .pos-left-panel {
   flex: 1;
   display: flex;
