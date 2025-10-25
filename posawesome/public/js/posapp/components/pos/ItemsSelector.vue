@@ -160,7 +160,6 @@ const EVENT_NAMES = {
 
   // UI Events
   SHOW_OFFERS: "show_offers",
-  SHOW_COUPONS: "show_coupons",
   SHOW_MESSAGE: "show_mesage",
 
   // Configuration Events
@@ -170,7 +169,6 @@ const EVENT_NAMES = {
 
   // Counter Events
   UPDATE_OFFERS_COUNTERS: "update_offers_counters",
-  UPDATE_COUPONS_COUNTERS: "update_coupons_counters",
 };
 
 const UI_CONFIG = {
