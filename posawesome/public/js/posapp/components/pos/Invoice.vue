@@ -1618,9 +1618,6 @@ export default {
       return item;
     },
 
-    checkOfferCoupon(offer) {
-      return true;
-    },
 
     getItemOffer(offer) {
       // Deprecated: item-level offer processing is handled server-side automatically
@@ -1658,8 +1655,6 @@ export default {
         give_item: offer.give_item,
         give_item_row_id: offer.give_item_row_id,
         offer_applied: offer.offer_applied,
-        coupon_based: offer.coupon_based,
-        coupon: offer.coupon,
       };
       this.posa_offers.push(newOffer);
     },
@@ -1812,7 +1807,7 @@ export default {
           -data.additional_discount_percentage;
         this.return_doc = data;
       } else {
-        evntBus.emit("set_pos_coupons", data.posa_coupons);
+        // Additional processing if needed
       }
     });
 
