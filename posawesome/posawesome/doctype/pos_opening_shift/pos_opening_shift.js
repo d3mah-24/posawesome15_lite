@@ -8,7 +8,7 @@
 			$('head').append(`
 				<style>
 					/* Override any custom backgrounds on ERP doctype forms */
-					.form-section, .form-layout, .layout-section, 
+					.form-section, .form-layout, .layout-section,
 					.form-section .form-column, .form-layout .form-column,
 					.layout-section .form-column, .form-section .form-column .form-column,
 					.form-layout .form-column .form-column, .layout-section .form-column .form-column {
@@ -18,7 +18,7 @@
 					}
 				</style>
 			`);
-			
+
 			if (frm.doc.docstatus == 0) {
 				frm.trigger('set_posting_date_read_only');
 				frm.set_value('period_start_date', frappe.datetime.now_datetime());
@@ -26,7 +26,7 @@
 			}
 			frm.set_query("user", function(doc) {
 				return {
-					query: "posawesome.posawesome.api.pos_opening_shift.get_profile_users.get_profile_users",
+					query: "posawesome.posawesome.doctype.pos_opening_shift.pos_opening_shift.get_profile_users",
 					filters: { 'parent': doc.pos_profile }
 				};
 			});
@@ -48,7 +48,7 @@
 					frm.set_value('posting_date', frappe.datetime.nowdate());
 			}
 			frm.trigger('set_posting_date_read_only');
-			
+
 			// Make user field read-only if POS Profile is not selected
 			if (!frm.doc.pos_profile) {
 				frm.set_df_property('user', 'read_only', 1);
@@ -79,7 +79,7 @@
 								}
 							});
 						}).addClass("btn-primary");
-					} 
+					}
 					else if (frm.doc.status === 'Open') {
 						frm.add_custom_button(__('🔒 Close Shift'), function() {
 							frappe.call({
@@ -131,10 +131,10 @@
 			if (frm.doc.pos_profile) {
 				// Clear user field when POS Profile changes
 				frm.set_value('user', '');
-				
+
 				// Make user field editable
 				frm.set_df_property('user', 'read_only', 0);
-				
+
 				frappe.db.get_doc("POS Profile", frm.doc.pos_profile)
 					.then(({ payments }) => {
 						if (payments.length) {
