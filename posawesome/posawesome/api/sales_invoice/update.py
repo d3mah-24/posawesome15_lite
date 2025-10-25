@@ -98,8 +98,57 @@ def update_invoice(data):
             return {"message": "Invoice deleted successfully"}
 
         # Update document with new data (client now sends all required fields including price_list_rate)
+        doc.set("posa_offers", [])
+
+        # 2) Extract and remove posa_offers from incoming data
+        selected_offers = data.get("posa_offers") or []
+        if "posa_offers" in data:
+            del data["posa_offers"]
+
+        # 3) Now update the document safely
         doc.update(data)
 
+        # 3) resolve and apply offers safely
+                # 3) resolve and apply offers safely
+        try:
+            for sel in selected_offers:
+                if not isinstance(sel, dict):
+                    continue
+
+                # Try to get the actual document name
+                offer_name = sel.get("offer_name") or sel.get("name")
+
+                # If not found, try to look up by title
+                if not offer_name or offer_name == "None" or str(offer_name).strip() == "":
+                  title = sel.get("title")
+                  if title:
+                      try:
+                          offer_docs = frappe.get_all("POS Offer", filters={"title": title}, fields=["name"])
+                          if offer_docs:
+                             offer_name = offer_docs[0].name
+                          else:
+                              # Skip if no offer found with this title
+                             continue
+                      except:
+                          continue
+
+                # Validate that the offer actually exists before applying
+                if not offer_name or offer_name == "None" or str(offer_name).strip() == "":
+                    continue
+
+                try:
+                    # Check if POS Offer document exists
+                    if not frappe.db.exists("POS Offer", offer_name):
+                        frappe.log_error(f"POS Offer not found: {offer_name}", "POS Offers")
+                        continue
+
+                    offer_doc = frappe.get_doc("POS Offer", offer_name)
+                    apply_offer_to_invoice(doc, offer_doc)
+                except Exception as e:
+                    frappe.log_error(f"Error applying offer {offer_name}: {str(e)}", "POS Offers")
+
+        except Exception as e:
+            frappe.log_error(f"Error processing manual POS offers: {str(e)}", "POS Offers")
         # Ensure POS settings are maintained
         doc.is_pos = 1
         doc.update_stock = 1
