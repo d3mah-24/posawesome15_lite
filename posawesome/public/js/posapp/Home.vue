@@ -9,34 +9,15 @@
   </div>
 </template>
 
-<script>
-import Navbar from "./components/Navbar.vue";
-import POS from "./components/pos/Pos.vue";
-
-export default {
-  data: function () {
-    return {
-      page: "POS",
-    };
-  },
-  components: {
-    Navbar,
-    POS,
-  },
-  methods: {
-    setPage(page) {
-      this.page = page;
-    },
-  },
-};
-</script>
+<script src="./Home.js" />
 
 <style scoped>
 .container1 {
   margin: 0 auto;
   max-width: 100%;
   width: 100%;
-  min-height: calc(100vh - 32px); /* Updated to match actual navbar height */
+  min-height: calc(100vh - 32px);
+  /* Updated to match actual navbar height */
 }
 
 /* For very small screens, remove margins and use full width */
@@ -44,7 +25,8 @@ export default {
   .container1 {
     width: 100%;
     margin: 0;
-    min-height: calc(100vh - 32px); /* Updated to match actual navbar height */
+    min-height: calc(100vh - 32px);
+    /* Updated to match actual navbar height */
     overflow: hidden;
   }
 }
@@ -52,13 +34,15 @@ export default {
 /* For mobile devices */
 @media (max-width: 768px) {
   .container1 {
-    min-height: calc(100vh - 32px); /* Updated to match actual navbar height */
+    min-height: calc(100vh - 32px);
+    /* Updated to match actual navbar height */
   }
 }
 
 /* Optimized for cashier screens - no browser zoom needed */
 .app-container {
-  font-size: 0.8rem; /* Slightly larger for better readability */
+  font-size: 0.8rem;
+  /* Slightly larger for better readability */
 }
 
 .btn {
@@ -99,7 +83,7 @@ export default {
   margin: -2px;
 }
 
-.d-flex > * {
+.d-flex>* {
   padding: 2px;
 }
 
