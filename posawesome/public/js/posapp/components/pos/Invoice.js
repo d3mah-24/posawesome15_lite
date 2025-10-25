@@ -1416,10 +1416,25 @@ export default {
       evntBus.emit("update_pos_offers", offers);
     },
 
+
     updateInvoiceOffers(offers) {
-      this.posa_offers = offers || [];
-      this.debounced_auto_update("offers");
+      // Normalize -> keep only valid offers; avoid { offer_name: null }
+      const arr = Array.isArray(offers) ? offers : (offers ? [offers] : []);
+
+      const cleaned = arr
+        .filter(o => o && (o.offer_name || o.name || o.title))
+        .map(o => {
+          const name = (o.offer_name || o.name || '').toString().trim();
+          const title = (o.title || '').toString().trim();
+          const row_id = o.row_id; // keep if present for UI remove-by-row_id
+          if (name) return { offer_name: name, row_id, offer_applied: true };
+          return { title, row_id, offer_applied: true };
+        });
+
+      this.posa_offers = cleaned;           // backend reads posa_offers
+      this.debounced_auto_update("offers"); // triggers update call
     },
+
 
     removeApplyOffer(invoiceOffer) {
 
