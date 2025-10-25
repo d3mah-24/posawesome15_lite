@@ -34,6 +34,40 @@ frappe.ui.form.on('POS Offer', {
 		}
 	},
 	offer_type: function (frm) {
+		// Clear fields based on offer_type to prevent conflicts
+		if (frm.doc.offer_type === 'grand_total') {
+			frm.set_value('item_code', '');
+			frm.set_value('item_group', '');
+			frm.set_value('brand', '');
+			frm.set_value('customer', '');
+			frm.set_value('customer_group', '');
+		} else if (frm.doc.offer_type === 'item_code') {
+			frm.set_value('item_group', '');
+			frm.set_value('brand', '');
+			frm.set_value('customer', '');
+			frm.set_value('customer_group', '');
+		} else if (frm.doc.offer_type === 'item_group') {
+			frm.set_value('item_code', '');
+			frm.set_value('brand', '');
+			frm.set_value('customer', '');
+			frm.set_value('customer_group', '');
+		} else if (frm.doc.offer_type === 'brand') {
+			frm.set_value('item_code', '');
+			frm.set_value('item_group', '');
+			frm.set_value('customer', '');
+			frm.set_value('customer_group', '');
+		} else if (frm.doc.offer_type === 'customer') {
+			frm.set_value('item_code', '');
+			frm.set_value('item_group', '');
+			frm.set_value('brand', '');
+			frm.set_value('customer_group', '');
+		} else if (frm.doc.offer_type === 'customer_group') {
+			frm.set_value('item_code', '');
+			frm.set_value('item_group', '');
+			frm.set_value('brand', '');
+			frm.set_value('customer', '');
+		}
+
 		controllers(frm);
 	},
 	discount_type: function (frm) {
