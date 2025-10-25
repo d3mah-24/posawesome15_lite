@@ -9,24 +9,37 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 from ..pos_offer.offers import get_applicable_offers, is_offer_applicable, apply_offer_to_invoice
+from .update import _calculate_item_discount_total
 
 
 def apply_auto_transaction_discount(doc):
     """Finds auto transaction discount and applies it to the Sales Invoice doc."""
 
     try:
-        frappe.log_error(f"[DEBUG] apply_auto_transaction_discount called for profile: {doc.pos_profile}", "POS Offers Debug")
-
         # Get all offers for the profile
         profile = doc.pos_profile
         if not profile:
-            frappe.log_error(f"[DEBUG] No POS profile found", "POS Offers Debug")
             return False
 
         # Check if offers are enabled in POS Profile
         pos_profile_doc = frappe.get_doc("POS Profile", profile)
         if not pos_profile_doc.get("posa_auto_fetch_offers"):
-            frappe.log_error(f"[DEBUG] Offers disabled for POS Profile: {profile}", "POS Offers Debug")
+            return False
+
+        # Check if auto offers are already applied to this invoice (shouldn't happen during creation, but check anyway)
+        existing_auto_offers = []
+        if hasattr(doc, 'posa_offers') and doc.posa_offers:
+            # Get the offer documents to check if they're auto offers
+            for posa_offer in doc.posa_offers:
+                try:
+                    offer_doc = frappe.get_doc("POS Offer", posa_offer.offer_name)
+                    if offer_doc.get("auto") == 1:
+                        existing_auto_offers.append(posa_offer.offer_name)
+                except:
+                    continue
+
+        # If auto offers are already applied, don't apply again
+        if existing_auto_offers:
             return False
 
         # Get all auto offers for this POS Profile
@@ -42,19 +55,12 @@ def apply_auto_transaction_discount(doc):
             order_by="discount_percentage desc"
         )
 
-        frappe.log_error(f"[DEBUG] Found {len(offers)} auto offers", "POS Offers Debug")
-
         # Check each offer for applicability
         for offer in offers:
             if is_offer_applicable(offer, doc):
-                frappe.log_error(f"[DEBUG] Processing applicable offer: {offer.name}", "POS Offers Debug")
-
                 # Apply offer using the new function
                 if apply_offer_to_invoice(doc, offer):
-                    frappe.log_error(f"[DEBUG] Successfully applied offer: {offer.name}", "POS Offers Debug")
                     return True
-
-        frappe.log_error(f"[DEBUG] No applicable auto offers found", "POS Offers Debug")
 
     except Exception as e:
         # Silent fail - don't break invoice creation
@@ -94,20 +100,17 @@ def create_invoice(data):
         # Use ERPNext native methods
         doc.set_missing_values()
 
-        # Debug offers logic
-        frappe.log_error(f"[DEBUG] Before auto discount - grand_total: {doc.grand_total}, pos_profile: {doc.pos_profile}", "POS Offers Debug")
-
         if apply_auto_transaction_discount(doc):
-             frappe.log_error(f"[DEBUG] Auto discount applied successfully", "POS Offers Debug")
              # Rerun calculation to adopt the discount injected by the custom function above
              doc.calculate_taxes_and_totals()
         else:
-             frappe.log_error(f"[DEBUG] No auto discount applied", "POS Offers Debug")
+             pass
 
         # Calculate taxes and totals using ERPNext native methods
         doc.calculate_taxes_and_totals()
 
-        frappe.log_error(f"[DEBUG] After calculation - grand_total: {doc.grand_total}, additional_discount_percentage: {doc.additional_discount_percentage}", "POS Offers Debug")
+        # Calculate total item discounts (for live display in POS)
+        _calculate_item_discount_total(doc)
 
         # Save the document to get a proper name
         doc.save()
@@ -210,6 +213,10 @@ def _add_item_to_existing_invoice(invoice_name, item_code, qty):
 
         # Use ERPNext native methods
         doc.calculate_taxes_and_totals()
+
+        # Calculate total item discounts (for live display in POS)
+        _calculate_item_discount_total(doc)
+
         doc.save()
 
         return doc.as_dict()
@@ -251,6 +258,10 @@ def _create_new_invoice_with_item(item_code, qty, customer=None, pos_profile=Non
         # Use ERPNext native methods
         doc.set_missing_values()
         doc.calculate_taxes_and_totals()
+
+        # Calculate total item discounts (for live display in POS)
+        _calculate_item_discount_total(doc)
+
         doc.save()
 
         return doc.as_dict()
