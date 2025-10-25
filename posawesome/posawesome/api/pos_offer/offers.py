@@ -105,7 +105,8 @@ def get_applicable_offers_for_invoice_data(invoice_data):
 
         # Calculate total quantity
         total_qty = sum(flt(item.get("qty", 0)) for item in invoice_data.get("items", []))
-
+        total_amount = sum(flt(item.get("qty", 0)) * flt(item.get("rate", 0))
+                          for item in invoice_data.get("items", []))
         # Get applicable offers
         offers = frappe.get_all(
             "POS Offer",
@@ -115,7 +116,11 @@ def get_applicable_offers_for_invoice_data(invoice_data):
                 "pos_profile": ["in", [pos_profile, ""]],
                 "warehouse": ["in", [warehouse, ""]],
                 "valid_from": ["<=", posting_date],
-                "valid_upto": [">=", posting_date]
+                "valid_upto": [">=", posting_date],
+                "min_qty": ["<=", total_qty],
+                "max_qty": [">=", total_qty],
+                "min_amt": ["<=", total_amount],
+                "max_amt": [">=", total_amount]
             },
             order_by="auto desc, discount_percentage desc, title asc"
         )
@@ -288,15 +293,16 @@ def apply_discount_percentage_on_grand_total(offer, invoice_data):
         invoice_data["additional_discount_percentage"] = flt(discount_percentage)
 
         # Record the offer
-        if "posa_offers" not in invoice_data:
-            invoice_data["posa_offers"] = []
+        if offer_name and str(offer_name).strip():
+            if "posa_offers" not in invoice_data:
+                invoice_data["posa_offers"] = []
 
-        invoice_data["posa_offers"].append({
-            "offer_name": offer_name,
-            "offer_type": offer.get("offer_type"),
-            "discount_percentage": discount_percentage,
-            "row_id": ""
-        })
+            invoice_data["posa_offers"].append({
+                "offer_name": offer_name,
+                "offer_type": offer.get("offer_type"),
+                "discount_percentage": discount_percentage,
+                "row_id": ""
+            })
 
         return True
 
@@ -328,7 +334,7 @@ def apply_discount_percentage_on_item_code(offer, invoice_data):
                 item["discount_percentage"] = flt(discount_percentage)
                 applied = True
 
-        if applied:
+        if applied and offer_name and str(offer_name).strip():
             # Record the offer
             if "posa_offers" not in invoice_data:
                 invoice_data["posa_offers"] = []
@@ -370,7 +376,7 @@ def apply_discount_percentage_on_item_group(offer, invoice_data):
                 item["discount_percentage"] = flt(discount_percentage)
                 applied = True
 
-        if applied:
+        if applied and offer_name and str(offer_name).strip():
             # Record the offer
             if "posa_offers" not in invoice_data:
                 invoice_data["posa_offers"] = []
@@ -412,7 +418,7 @@ def apply_discount_percentage_on_brand(offer, invoice_data):
                 item["discount_percentage"] = flt(discount_percentage)
                 applied = True
 
-        if applied:
+        if applied and offer_name and str(offer_name).strip():
             # Record the offer
             if "posa_offers" not in invoice_data:
                 invoice_data["posa_offers"] = []
@@ -456,6 +462,9 @@ def is_offer_applicable(offer, invoice):
 def apply_offer_to_invoice(doc, offer):
     """Legacy function - Apply offer to document"""
     try:
+        if not offer or not offer.name:
+            frappe.log_error(f"Invalid offer provided: {offer}", "POS Offers Error")
+            return False
         # Convert doc to invoice_data
         invoice_data = {
             "company": doc.company,
@@ -479,12 +488,15 @@ def apply_offer_to_invoice(doc, offer):
                     item.discount_percentage = invoice_data["items"][i]["discount_percentage"]
 
             # Record the offer
+            # Record the offer
             if "posa_offers" in invoice_data:
                 for offer_data in invoice_data["posa_offers"]:
-                    # Check if this offer is already in the document
-                    existing_offers = [row.offer_name for row in doc.get("posa_offers", [])]
-                    if offer_data["offer_name"] not in existing_offers:
-                        doc.append("posa_offers", offer_data)
+                    # Validate offer_name before appending
+                    if offer_data.get("offer_name") and str(offer_data["offer_name"]).strip():
+                        # Check if this offer is already in the document
+                        existing_offers = [row.offer_name for row in doc.get("posa_offers", [])]
+                        if offer_data["offer_name"] not in existing_offers:
+                            doc.append("posa_offers", offer_data)
 
             return True
 
