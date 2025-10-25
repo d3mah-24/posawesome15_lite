@@ -25,6 +25,22 @@ def apply_auto_transaction_discount(doc):
         if not pos_profile_doc.get("posa_auto_fetch_offers"):
             return False
 
+        # Check if auto offers are already applied to this invoice
+        existing_auto_offers = []
+        if hasattr(doc, 'posa_offers') and doc.posa_offers:
+            # Get the offer documents to check if they're auto offers
+            for posa_offer in doc.posa_offers:
+                try:
+                    offer_doc = frappe.get_doc("POS Offer", posa_offer.offer_name)
+                    if offer_doc.get("auto") == 1:
+                        existing_auto_offers.append(posa_offer.offer_name)
+                except:
+                    continue
+
+        # If auto offers are already applied, don't apply again
+        if existing_auto_offers:
+            return False
+
         # Get all auto offers for this POS Profile
         offers = frappe.get_all(
             "POS Offer",
