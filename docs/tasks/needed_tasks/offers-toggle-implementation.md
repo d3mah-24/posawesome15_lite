@@ -35,7 +35,7 @@
 - Field: `posa_auto_fetch_offers` in POS Profile
 - Type: Check (checkbox)
 - Default: 1 (enabled)
-- Location: After `posa_fetch_coupon` field
+- Location: After offer-related fields
 
 **✅ Frontend Logic** (Implemented):
 - **Pos.vue**: Added check in `get_offers()` method
