@@ -8,78 +8,52 @@
             <button class="modal-close-btn" @click="addressDialog = false">×</button>
           </div>
           <div class="card-body">
-          <div class="form-container">
-            <div class="form-row">
-              <div class="form-col form-col-12">
-                <div class="text-field-wrapper">
-                  <label class="text-field-label">Address Title</label>
-                  <input
-                    type="text"
-                    class="custom-text-field compact"
-                    v-model="address.name"
-                    placeholder="Enter address title"
-                  />
+            <div class="form-container">
+              <div class="form-row">
+                <div class="form-col form-col-12">
+                  <div class="text-field-wrapper">
+                    <label class="text-field-label">Address Title</label>
+                    <input type="text" class="custom-text-field compact" v-model="address.name"
+                      placeholder="Enter address title" />
+                  </div>
                 </div>
-              </div>
-              <div class="form-col form-col-12">
-                <div class="text-field-wrapper">
-                  <label class="text-field-label">Address Line 1</label>
-                  <input
-                    type="text"
-                    class="custom-text-field compact"
-                    v-model="address.address_line1"
-                    placeholder="Enter address line 1"
-                  />
+                <div class="form-col form-col-12">
+                  <div class="text-field-wrapper">
+                    <label class="text-field-label">Address Line 1</label>
+                    <input type="text" class="custom-text-field compact" v-model="address.address_line1"
+                      placeholder="Enter address line 1" />
+                  </div>
                 </div>
-              </div>
-              <div class="form-col form-col-12">
-                <div class="text-field-wrapper">
-                  <label class="text-field-label">Address Line 2</label>
-                  <input
-                    type="text"
-                    class="custom-text-field compact"
-                    v-model="address.address_line2"
-                    placeholder="Enter address line 2"
-                  />
+                <div class="form-col form-col-12">
+                  <div class="text-field-wrapper">
+                    <label class="text-field-label">Address Line 2</label>
+                    <input type="text" class="custom-text-field compact" v-model="address.address_line2"
+                      placeholder="Enter address line 2" />
+                  </div>
                 </div>
-              </div>
-              <div class="form-col form-col-6">
-                <div class="text-field-wrapper">
-                  <label class="text-field-label">City</label>
-                  <input
-                    type="text"
-                    class="custom-text-field compact"
-                    v-model="address.city"
-                    placeholder="Enter city"
-                  />
+                <div class="form-col form-col-6">
+                  <div class="text-field-wrapper">
+                    <label class="text-field-label">City</label>
+                    <input type="text" class="custom-text-field compact" v-model="address.city"
+                      placeholder="Enter city" />
+                  </div>
                 </div>
-              </div>
-              <div class="form-col form-col-6">
-                <div class="text-field-wrapper">
-                  <label class="text-field-label">State</label>
-                  <input
-                    type="text"
-                    class="custom-text-field compact"
-                    v-model="address.state"
-                    placeholder="Enter state"
-                  />
+                <div class="form-col form-col-6">
+                  <div class="text-field-wrapper">
+                    <label class="text-field-label">State</label>
+                    <input type="text" class="custom-text-field compact" v-model="address.state"
+                      placeholder="Enter state" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          </div>
           <div class="card-footer">
             <div class="spacer"></div>
-            <button 
-              class="btn btn-outlined btn-cancel compact-btn" 
-              @click="close_dialog"
-            >
+            <button class="btn btn-outlined btn-cancel compact-btn" @click="close_dialog">
               Cancel
             </button>
-            <button 
-              class="btn btn-primary compact-btn" 
-              @click="submit_dialog"
-            >
+            <button class="btn btn-primary compact-btn" @click="submit_dialog">
               Confirm
             </button>
           </div>
@@ -89,58 +63,7 @@
   </div>
 </template>
 
-<script>
-import { evntBus } from '../../bus';
-import { API_MAP } from "../../api_mapper.js";
-export default {
-  data: () => ({
-    addressDialog: false,
-    address: {},
-    customer: '',
-  }),
-
-  methods: {
-    close_dialog() {
-      this.addressDialog = false;
-    },
-
-    submit_dialog() {
-      const vm = this;
-      this.address.customer = this.customer;
-      this.address.doctype = 'Customer';
-      frappe.call({
-        method: API_MAP.CUSTOMER.CREATE_CUSTOMER_ADDRESS,
-        args: {
-          args: this.address,
-        },
-        callback: (r) => {
-          if (!r.exc) {
-            evntBus.emit('add_the_new_address', r.message);
-            evntBus.emit('show_mesage', {
-              text: 'Customer address created successfully.',
-              color: 'success',
-            });
-            vm.addressDialog = false;
-            vm.customer = '';
-            vm.address = {};
-          }
-        },
-      });
-    },
-  },
-  created: function () {
-    evntBus.on('open_new_address', (data) => {
-      this.addressDialog = true;
-      this.customer = data;
-    });
-  },
-
-  beforeDestroy() {
-    // Clean up event listener
-    evntBus.$off('open_new_address');
-  }
-};
-</script>
+<script src="./NewAddress.js" />
 
 <style scoped>
 /* Dialog Row Container */
@@ -268,7 +191,7 @@ export default {
   margin: -2px !important;
 }
 
-.row.dense > .col {
+.row.dense>.col {
   padding: 2px !important;
 }
 
@@ -286,17 +209,17 @@ export default {
   border: 1px solid;
   transition: all 0.2s ease;
   line-height: 1.5;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .btn:active {
   transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary {
@@ -331,11 +254,11 @@ export default {
 }
 
 /* Outlined text fields styling */
-.v-text-field--outlined > .v-input__control > .v-input__slot {
+.v-text-field--outlined>.v-input__control>.v-input__slot {
   border-radius: 6px !important;
 }
 
-.v-select--outlined > .v-input__control > .v-input__slot {
+.v-select--outlined>.v-input__control>.v-input__slot {
   border-radius: 6px !important;
 }
 
@@ -440,6 +363,7 @@ export default {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -450,6 +374,7 @@ export default {
     transform: translateY(-20px) scale(0.95);
     opacity: 0;
   }
+
   to {
     transform: translateY(0) scale(1);
     opacity: 1;
