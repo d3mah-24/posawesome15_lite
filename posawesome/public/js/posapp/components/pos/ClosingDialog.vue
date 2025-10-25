@@ -29,48 +29,37 @@
               <div class="header-cell amount-col" v-if="!pos_profile.posa_hide_expected_amount">Expected</div>
               <div class="header-cell amount-col" v-if="!pos_profile.posa_hide_expected_amount">Diff</div>
             </div>
-            
+
             <div class="table-body">
-              <div 
-                v-for="(item, index) in dialog_data.payment_reconciliation" 
-                :key="item.mode_of_payment"
-                class="table-row"
-              >
+              <div v-for="(item, index) in dialog_data.payment_reconciliation" :key="item.mode_of_payment"
+                class="table-row">
                 <div class="table-cell method-col">
                   <div class="payment-method">
-                    <i 
-                      class="mdi payment-icon"
-                      :class="getPaymentIcon(item.mode_of_payment).icon"
-                      :style="{ color: getPaymentIcon(item.mode_of_payment).color }"
-                    ></i>
+                    <i class="mdi payment-icon" :class="getPaymentIcon(item.mode_of_payment).icon"
+                      :style="{ color: getPaymentIcon(item.mode_of_payment).color }"></i>
                     <span class="method-name">{{ item.mode_of_payment }}</span>
                   </div>
                 </div>
-                
+
                 <div class="table-cell amount-col">
                   <span class="amount">{{ formatCurrency(item.opening_amount) }}</span>
                 </div>
-                
+
                 <div class="table-cell amount-col">
                   <div class="editable-amount" v-if="item.editing">
-                    <input 
-                      v-model="item.closing_amount"
-                      type="number"
-                      class="amount-input"
-                      @blur="item.editing = false"
-                      @keyup.enter="item.editing = false"
-                    />
+                    <input v-model="item.closing_amount" type="number" class="amount-input" @blur="item.editing = false"
+                      @keyup.enter="item.editing = false" />
                   </div>
                   <div v-else class="amount-display" @click="item.editing = true">
                     <span class="amount clickable">{{ formatCurrency(item.closing_amount) }}</span>
                     <i class="mdi mdi-pencil edit-icon"></i>
                   </div>
                 </div>
-                
+
                 <div class="table-cell amount-col" v-if="!pos_profile.posa_hide_expected_amount">
                   <span class="amount">{{ formatCurrency(item.expected_amount) }}</span>
                 </div>
-                
+
                 <div class="table-cell amount-col" v-if="!pos_profile.posa_hide_expected_amount">
                   <span class="amount" :class="getDifferenceClass(item.expected_amount - item.closing_amount)">
                     {{ formatCurrency(item.expected_amount - item.closing_amount) }}
@@ -87,11 +76,7 @@
             <i class="mdi mdi-close cancel-icon"></i>
             Cancel
           </button>
-          <button 
-            v-if="isClosingAllowed"
-            class="action-btn submit-btn" 
-            @click="submit_dialog"
-          >
+          <button v-if="isClosingAllowed" class="action-btn submit-btn" @click="submit_dialog">
             <i class="mdi mdi-check submit-icon"></i>
             Submit
           </button>
@@ -105,265 +90,7 @@
   </div>
 </template>
 
-<script>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { evntBus } from '../../bus';
-import format from '../../format';
-import { API_MAP } from "../../api_mapper.js";
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// CONSTANTS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-/**
- * Event names for bus communication
- */
-const EVENT_NAMES = {
-  OPEN_CLOSING_DIALOG: 'open_ClosingDialog',
-  REGISTER_POS_PROFILE: 'register_pos_profile',
-  SUBMIT_CLOSING_POS: 'submit_closing_pos',
-};
-
-/**
- * Payment method icons and colors
- */
-const PAYMENT_ICONS = {
-  Cash: { icon: 'mdi-cash', color: '#4CAF50' },
-  Card: { icon: 'mdi-credit-card', color: '#2196F3' },
-  'Credit Card': { icon: 'mdi-credit-card', color: '#2196F3' },
-  'Debit Card': { icon: 'mdi-credit-card-outline', color: '#FF9800' },
-  'Bank Transfer': { icon: 'mdi-bank-transfer', color: '#9C27B0' },
-  'Mobile Payment': { icon: 'mdi-cellphone', color: '#E91E63' },
-  'Digital Wallet': { icon: 'mdi-wallet', color: '#00BCD4' },
-  Check: { icon: 'mdi-checkbook', color: '#795548' },
-  Voucher: { icon: 'mdi-ticket', color: '#FF5722' },
-};
-
-/**
- * Default payment icon for unknown methods
- */
-const DEFAULT_PAYMENT_ICON = { icon: 'mdi-currency-usd', color: '#607D8B' };
-
-/**
- * Table column headers configuration
- */
-const TABLE_HEADERS = {
-  PAYMENT_METHOD: {
-    title: 'Payment Method',
-    key: 'mode_of_payment',
-    align: 'start',
-    sortable: true,
-  },
-  SYSTEM_TOTAL: {
-    title: 'System Total',
-    align: 'end',
-    sortable: true,
-    key: 'opening_amount',
-  },
-  ACTUAL_COUNT: {
-    title: 'Actual Count',
-    key: 'closing_amount',
-    align: 'end',
-    sortable: true,
-  },
-  EXPECTED_TOTAL: {
-    title: 'Expected Total',
-    key: 'expected_amount',
-    align: 'end',
-    sortable: false,
-  },
-  DIFFERENCE: {
-    title: 'Difference',
-    key: 'difference',
-    align: 'end',
-    sortable: false,
-  },
-};
-
-/**
- * Validation rules
- */
-const VALIDATION_RULES = {
-  MAX_CHARS: (v) => v.length <= 20 || 'Input too long!',
-};
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// COMPONENT
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-export default {
-  name: 'ClosingDialog',
-  
-  mixins: [format],
-  
-  setup() {
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STATE
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
-    const closingDialog = ref(false);
-    const itemsPerPage = ref(20);
-    const dialog_data = ref({ payment_reconciliation: [] });
-    const pos_profile = ref(null);
-    const headers = ref([
-      TABLE_HEADERS.PAYMENT_METHOD,
-      TABLE_HEADERS.SYSTEM_TOTAL,
-      TABLE_HEADERS.ACTUAL_COUNT,
-    ]);
-
-    // Time control
-    const isClosingAllowed = ref(true);
-    const closingTimeMessage = ref('');
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // DIALOG ACTIONS
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    /**
-     * Close the closing dialog
-     * Resets dialog visibility to false
-     */
-    const close_dialog = () => {
-      closingDialog.value = false;
-    };
-
-    /**
-     * Submit closing dialog data
-     * Emits submit event with payment reconciliation data
-     */
-    const submit_dialog = () => {
-      evntBus.emit(EVENT_NAMES.SUBMIT_CLOSING_POS, dialog_data.value);
-      closingDialog.value = false;
-    };
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // HELPER METHODS
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    /**
-     * Get payment method icon and color
-     * @param {string} paymentMethod - Payment method name
-     * @returns {Object} Icon configuration with icon name and color
-     */
-    const getPaymentIcon = (paymentMethod) => {
-      const method = Object.keys(PAYMENT_ICONS).find((key) =>
-        paymentMethod.toLowerCase().includes(key.toLowerCase())
-      );
-
-      return method ? PAYMENT_ICONS[method] : DEFAULT_PAYMENT_ICON;
-    };
-
-    /**
-     * Get CSS class for difference amount
-     * @param {number} difference - Difference value
-     * @returns {string} CSS class name
-     */
-    const getDifferenceClass = (difference) => {
-      if (difference > 0) return 'positive-diff';
-      if (difference < 0) return 'negative-diff';
-      return 'zero-diff';
-    };
-
-    /**
-     * Check if closing POS is allowed based on time controls
-     * Validates against configured closing time window if enabled
-     */
-    const checkClosingTimeAllowed = () => {
-      if (!pos_profile.value?.name) {
-        isClosingAllowed.value = true;
-        return;
-      }
-
-      // Call server-side whitelist function
-      frappe.call({
-        method: API_MAP.POS_CLOSING_SHIFT.CHECK_CLOSING_TIME_ALLOWED,
-        args: {
-          pos_profile: pos_profile.value.name
-        },
-        callback: function(r) {
-          if (r.message) {
-            isClosingAllowed.value = r.message.allowed;
-            if (!r.message.allowed) {
-              closingTimeMessage.value = r.message.message;
-            }
-          } else {
-            isClosingAllowed.value = false;
-            closingTimeMessage.value = 'Error checking closing time permissions';
-          }
-        }
-      });
-    };    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // EVENT HANDLERS
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    /**
-     * Handle opening closing dialog event
-     * @param {Object} data - Payment reconciliation data
-     */
-    const openClosingDialogHandler = (data) => {
-      closingDialog.value = true;
-      dialog_data.value = data;
-      checkClosingTimeAllowed();
-    };
-
-    /**
-     * Handle POS profile registration
-     * Configures table headers based on profile settings
-     * @param {Object} data - Profile data with pos_profile
-     */
-    const registerPosProfileHandler = (data) => {
-      pos_profile.value = data.pos_profile;
-      
-      if (!pos_profile.value.posa_hide_expected_amount) {
-        headers.value.push(TABLE_HEADERS.EXPECTED_TOTAL);
-        headers.value.push(TABLE_HEADERS.DIFFERENCE);
-      }
-    };
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // LIFECYCLE HOOKS
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    onMounted(() => {
-      evntBus.on(EVENT_NAMES.OPEN_CLOSING_DIALOG, openClosingDialogHandler);
-      evntBus.on(EVENT_NAMES.REGISTER_POS_PROFILE, registerPosProfileHandler);
-    });
-
-    onBeforeUnmount(() => {
-      evntBus.off(EVENT_NAMES.OPEN_CLOSING_DIALOG, openClosingDialogHandler);
-      evntBus.off(EVENT_NAMES.REGISTER_POS_PROFILE, registerPosProfileHandler);
-    });
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // EXPOSE
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    return {
-      // State
-      closingDialog,
-      itemsPerPage,
-      dialog_data,
-      pos_profile,
-      headers,
-      
-      // Time control
-      isClosingAllowed,
-      closingTimeMessage,
-      
-      // Validation
-      max25chars: VALIDATION_RULES.MAX_CHARS,
-      
-      // Actions
-      close_dialog,
-      submit_dialog,
-      
-      // Helpers
-      getPaymentIcon,
-      getDifferenceClass,
-    };
-  },
-};
-</script>
+<script src="./ClosingDialog.js" />
 
 <style scoped>
 /* ===== CENTRALIZED POS STYLING ===== */
@@ -395,6 +122,7 @@ export default {
     opacity: 0;
     transform: scale(0.95) translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -420,7 +148,7 @@ export default {
   right: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
   transform: rotate(45deg);
   pointer-events: none;
 }
@@ -456,7 +184,7 @@ export default {
   font-size: 16px;
   font-weight: 700;
   color: white;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 2;
 }
@@ -602,9 +330,17 @@ export default {
 }
 
 /* Difference Colors */
-.positive-diff { color: #059669; }
-.negative-diff { color: #dc2626; }
-.zero-diff { color: #64748b; }
+.positive-diff {
+  color: #059669;
+}
+
+.negative-diff {
+  color: #dc2626;
+}
+
+.zero-diff {
+  color: #64748b;
+}
 
 /* Compact Footer */
 .dialog-footer {
@@ -683,29 +419,29 @@ export default {
     margin: 8px;
     max-width: calc(100vw - 16px);
   }
-  
+
   .dialog-header {
     padding: 8px 10px;
   }
-  
+
   .dialog-title {
     font-size: 13px;
   }
-  
+
   .dialog-content {
     padding: 6px;
   }
-  
+
   .table-header,
   .table-row {
     font-size: 10px;
   }
-  
+
   .header-cell,
   .table-cell {
     padding: 4px 6px;
   }
-  
+
   .action-btn {
     padding: 5px 10px;
     font-size: 11px;
@@ -731,6 +467,7 @@ export default {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -741,6 +478,7 @@ export default {
     transform: translateY(-20px) scale(0.95);
     opacity: 0;
   }
+
   to {
     transform: translateY(0) scale(1);
     opacity: 1;
