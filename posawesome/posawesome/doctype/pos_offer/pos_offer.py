@@ -8,6 +8,39 @@ from frappe.model.document import Document
 
 class POSOffer(Document):
     def validate(self):
+        # Clear non-relevant fields based on offer_type to prevent conflicts
+        if self.offer_type == "grand_total":
+            self.item_code = None
+            self.item_group = None
+            self.brand = None
+            self.customer = None
+            self.customer_group = None
+        elif self.offer_type == "item_code":
+            self.item_group = None
+            self.brand = None
+            self.customer = None
+            self.customer_group = None
+        elif self.offer_type == "item_group":
+            self.item_code = None
+            self.brand = None
+            self.customer = None
+            self.customer_group = None
+        elif self.offer_type == "brand":
+            self.item_code = None
+            self.item_group = None
+            self.customer = None
+            self.customer_group = None
+        elif self.offer_type == "customer":
+            self.item_code = None
+            self.item_group = None
+            self.brand = None
+            self.customer_group = None
+        elif self.offer_type == "customer_group":
+            self.item_code = None
+            self.item_group = None
+            self.brand = None
+            self.customer = None
+
         # Validate required fields
         if not self.title:
             frappe.throw("Title is required")
