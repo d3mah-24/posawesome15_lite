@@ -1404,7 +1404,7 @@ export default {
         });
 
       this.posa_offers = cleaned;           // backend reads posa_offers
-      
+
       // ===== APPLY MANUALLY TOGGLED OFFERS =====
       this.applyManuallyToggledOffers(cleaned);
     },
@@ -1418,14 +1418,14 @@ export default {
       }
 
       // Find transaction-level offers
-      const transactionOffers = offers.filter(o => 
+      const transactionOffers = offers.filter(o =>
         ['grand_total', 'customer', 'customer_group', ''].includes(o.offer_type || '') &&
         o.discount_percentage
       );
 
       if (transactionOffers.length > 0) {
         // Sort by discount percentage (highest first)
-        transactionOffers.sort((a, b) => 
+        transactionOffers.sort((a, b) =>
           flt(b.discount_percentage) - flt(a.discount_percentage)
         );
 
@@ -1450,7 +1450,7 @@ export default {
       // Apply item-level offers
       itemOffers.forEach(offer => {
         const discountPercent = flt(offer.discount_percentage);
-        
+
         this.items.forEach(item => {
           let shouldApply = false;
 
@@ -1466,7 +1466,7 @@ export default {
             // Only apply if offer discount is better than current
             if (discountPercent > flt(item.discount_percentage || 0)) {
               item.discount_percentage = discountPercent;
-              
+
               // Recalculate item price
               const list_price = flt(item.price_list_rate) || 0;
               if (list_price > 0) {
@@ -1505,7 +1505,7 @@ export default {
 
         if (shouldApply && discountPercent > flt(item.discount_percentage || 0)) {
           item.discount_percentage = discountPercent;
-          
+
           // Recalculate item price
           const list_price = flt(item.price_list_rate) || 0;
           if (list_price > 0) {
@@ -2031,17 +2031,36 @@ export default {
     },
     offerApplied: {
       handler(newVal, oldVal) {
-        if (newVal && newVal.discount_percentage) {
+        if (!newVal) return;
+
+        const offer = newVal;
+
+        // Transaction-level offer (grand_total, customer, customer_group)
+        if (offer.discount_percentage &&
+            ['grand_total', 'customer', 'customer_group', ''].includes(offer.offer_type || '')) {
 
           // Update both discount fields
-          this.additional_discount_percentage = parseFloat(newVal.discount_percentage);
-          this.offer_discount_percentage = parseFloat(newVal.discount_percentage);
+          this.additional_discount_percentage = parseFloat(offer.discount_percentage);
+          this.offer_discount_percentage = parseFloat(offer.discount_percentage);
 
           // Trigger backend sync
           this.$nextTick(() => {
             this.update_discount_umount();
           });
-        } else if (newVal === null && oldVal !== null) {
+          return;
+        }
+
+        // Item-level offer
+        if (offer.offer_type &&
+            ['item_code', 'item_group', 'brand'].includes(offer.offer_type) &&
+            offer.discount_percentage) {
+
+          this.applyItemOffer(offer);
+          return;
+        }
+
+        // Other offer types or when reset to null
+        if (newVal === null && oldVal !== null) {
           // Offer was reset to null (preparing for new application)
         }
       },
@@ -2051,14 +2070,17 @@ export default {
     offerRemoved: {
       handler(newVal) {
         if (newVal === true) {
-          // Reset discount fields
-          this.additional_discount_percentage = 0;
-          this.offer_discount_percentage = 0;
+          // Clear transaction-level discounts
+          if (this.offer_discount_percentage > 0) {
+            this.additional_discount_percentage = 0;
+            this.offer_discount_percentage = 0;
+            this.$nextTick(() => {
+              this.update_discount_umount();
+            });
+          }
 
-          // Trigger backend sync
-          this.$nextTick(() => {
-            this.update_discount_umount();
-          });
+          // Note: Item-level discounts remain (user may re-toggle)
+          // To fully clear, would need to track which items were affected
         }
       },
       immediate: false
