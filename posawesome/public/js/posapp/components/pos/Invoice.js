@@ -349,6 +349,7 @@ export default {
       this.invoice_doc.posa_item_discount_total = doc.posa_item_discount_total;
       this.invoice_doc.discount_amount = doc.discount_amount;
       this.invoice_doc.net_total = doc.net_total;
+      this.invoice_doc.total_taxes_and_charges = doc.total_taxes_and_charges;
       this.invoice_doc.grand_total = doc.grand_total;
       this.invoice_doc.rounded_total = doc.rounded_total;
 
@@ -1241,16 +1242,19 @@ export default {
       const taxType = this.pos_profile?.posa_tax_type;
       const taxPercent = flt(this.pos_profile?.posa_tax_percent) || 0;
 
+      // Normalize tax type to handle both "Tax Inclusive" and "Inclusive" formats
+      const normalizedTaxType = taxType?.replace('Tax ', '');
+
       // Validation: Check if tax configuration is valid
-      if (applyTax && taxType && (taxType === 'Inclusive' || taxType === 'Exclusive') && !isNaN(taxPercent) && taxPercent > 0) {
+      if (applyTax && normalizedTaxType && (normalizedTaxType === 'Inclusive' || normalizedTaxType === 'Exclusive') && !isNaN(taxPercent) && taxPercent > 0) {
         // Calculate tax using shared utility function
-        const taxAmount = this.calculateTax(doc.net_total, taxType, taxPercent);
-
+        const taxAmount = this.calculateTax(doc.net_total, normalizedTaxType, taxPercent);
+        
         doc.total_taxes_and_charges = flt(taxAmount, this.currency_precision);
-
+        
         // For inclusive tax, grand_total = net_total (tax already included)
         // For exclusive tax, grand_total = net_total + tax
-        if (taxType === 'Exclusive') {
+        if (normalizedTaxType === 'Exclusive') {
           doc.grand_total = flt(doc.net_total + taxAmount, this.currency_precision);
         } else {
           doc.grand_total = flt(doc.net_total, this.currency_precision);
