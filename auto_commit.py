@@ -16,8 +16,9 @@ if not files:
 for f in files:
     ext = f[f.rfind('.'):] if '.' in f else ''
     emoji = EMOJI.get(ext, '📄')
+    filename = f.split('/')[-1]  # Get only filename without path
     subprocess.run(f"git add {f}", shell=True)
-    subprocess.run(f'git commit -m "{emoji} {f}"', shell=True)
+    subprocess.run(f'git commit -m "{emoji} {filename}"', shell=True)
 
 # Check if no more changes, then push
 if not subprocess.getoutput("git status --porcelain"):
