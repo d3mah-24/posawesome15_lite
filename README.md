@@ -55,7 +55,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - 🔒 **Backend Policy:** [backend_policy.md](docs/backend_policy.md)
 - 🎨 **Frontend Policy:** [frontend_policy.md](docs/frontend_policy.md)
 
-### 📋 Tasks Tracking
+### 📋 Tasks   Tracking
 
 - 📋 **Needed Tasks:** [docs/tasks/needed_tasks/](docs/tasks/needed_tasks/)
 - ✅ **Completed Tasks:** [docs/tasks/completed_tasks/](docs/tasks/completed_tasks/)
