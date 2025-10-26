@@ -1252,13 +1252,8 @@ export default {
 
         doc.total_taxes_and_charges = flt(taxAmount, this.currency_precision);
 
-        // For inclusive tax, grand_total = net_total (tax already included)
-        // For exclusive tax, grand_total = net_total + tax
-        if (normalizedTaxType === 'Exclusive') {
-          doc.grand_total = flt(doc.net_total + taxAmount, this.currency_precision);
-        } else {
-          doc.grand_total = flt(doc.net_total, this.currency_precision);
-        }
+        // For both inclusive and exclusive tax: grand_total = net_total + tax
+        doc.grand_total = flt(doc.net_total + taxAmount, this.currency_precision);
       } else {
         // No tax or invalid configuration
         doc.total_taxes_and_charges = 0;
