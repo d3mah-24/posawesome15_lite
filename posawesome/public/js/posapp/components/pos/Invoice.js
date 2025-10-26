@@ -333,7 +333,15 @@ export default {
 
     hasValidPayments(invoice_doc = null) {
       const doc = invoice_doc || this.invoice_doc;
-      return doc?.payments?.some((p) => this.flt(p.amount) > 0) || false;
+      const hasValid = doc?.payments?.some((p) => Math.abs(this.flt(p.amount)) > 0) || false;
+
+      console.log("Invoice.js - hasValidPayments():", {
+        hasValid: hasValid,
+        payments: doc?.payments?.map(p => ({ mode: p.mode_of_payment, amount: p.amount })),
+        is_return: doc?.is_return
+      });
+
+      return hasValid;
     },
 
     async create_draft_invoice() {
@@ -474,7 +482,6 @@ export default {
           }
         });
       }
-      return old_invoice;
     },
 
     get_invoice_doc(reason = "auto") {
@@ -1324,7 +1331,8 @@ export default {
         customer: doc.customer,
         items_count: doc.items?.length || 0,
         grand_total: doc.grand_total,
-        payment_count: doc.payments?.length || 0
+        payment_count: doc.payments?.length || 0,
+        is_return: doc.is_return
       });
 
       // Calculate totals locally (like ERPNext does)
