@@ -164,7 +164,7 @@
         <div class="summary-field readonly-field info-field">
           <label>tax</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.total_taxes_and_charges || 0) }}
+            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(computedTaxAmount) }}
           </div>
         </div>
 
