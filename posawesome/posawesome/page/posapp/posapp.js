@@ -22,7 +22,7 @@ frappe.pages['posapp'].on_page_load = function (wrapper) {
 window.addEventListener('posProfileLoaded', function(e) {
 	const posProfile = e.detail.pos_profile;
 	const language = posProfile && posProfile.posa_language ? posProfile.posa_language : 'en';
-	
+
 	// Get translations based on language
 	const translations = getTranslationsForLanguage(language);
 	if (translations) {
@@ -226,7 +226,7 @@ function getTranslationsForLanguage(language) {
 			"Logout": "Sair"
 		}
 	};
-	
+
 	return TRANSLATIONS[language] || null;
 }
 
