@@ -889,7 +889,7 @@ export default {
               evntBus.emit("set_customer_info_to_edit", vm.customer_info);
             }
             vm.update_price_list();
-            
+
             // ===== RECALCULATE OFFERS WITH CUSTOMER INFO =====
             vm.calculateAndApplyOffers();
           },
@@ -1907,6 +1907,10 @@ export default {
       clearTimeout(this._autoUpdateTimer);
       this._autoUpdateTimer = null;
     }
+
+    // Clear offer cache
+    this._sessionOffers = [];
+    this._lastCustomer = null;
   },
   // ===== SECTION 6: WATCH =====
   watch: {
