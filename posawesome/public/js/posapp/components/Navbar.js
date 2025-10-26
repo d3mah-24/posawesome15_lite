@@ -59,13 +59,27 @@ export default {
     },
     invoiceNumberClass() {
       if (!this.invoice_doc || !this.invoice_doc.name) {
-        return "no-invoice";
+        // Check current mode for class
+        if (this.invoice_doc?.is_return) {
+          return "return-invoice-mode";
+        }
+        if (this.quick_return_value) {
+          return "quick-return-mode";
+        }
+        return "sales-invoice-mode";
       }
       return this.invoice_doc.is_return ? "return-invoice" : "regular-invoice";
     },
     invoiceIconColor() {
       if (!this.invoice_doc || !this.invoice_doc.name) {
-        return "grey";
+        // Check current mode for color
+        if (this.invoice_doc?.is_return) {
+          return "#757575"; // Grey for Return Invoice Mode
+        }
+        if (this.quick_return_value) {
+          return "#9c27b0"; // Purple for Quick Return Mode
+        }
+        return "#4caf50"; // Green for Sales Invoice Mode
       }
       return this.invoice_doc.is_return ? "error" : "primary";
     },
