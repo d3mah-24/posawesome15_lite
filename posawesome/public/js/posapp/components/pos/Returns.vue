@@ -42,9 +42,7 @@
                       <thead>
                         <tr>
                           <th class="select-header">
-                            <input type="checkbox"
-                              :checked="selected.length === dialog_data.length && dialog_data.length > 0"
-                              @change="toggleSelectAll" />
+                            Select
                           </th>
                           <th v-for="header in headers" :key="header.key" :class="header.align">
                             {{ header.title }}
@@ -54,7 +52,7 @@
                       <tbody>
                         <tr v-for="item in dialog_data" :key="item.name" class="table-row-item">
                           <td class="select-cell">
-                            <input type="checkbox" :value="item.name" v-model="selected" />
+                            <input type="radio" :value="item.name" v-model="selected" name="invoice" />
                           </td>
                           <td class="text-start">{{ item.customer }}</td>
                           <td class="text-start">{{ item.posting_date }}</td>
