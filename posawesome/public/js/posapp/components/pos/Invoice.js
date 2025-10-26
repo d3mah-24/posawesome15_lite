@@ -430,6 +430,9 @@ export default {
         this.invoice_doc = data;
         this.items = data.items || [];
 
+        // Emit invoice_doc to Navbar for display
+        evntBus.emit("update_invoice_doc", data);
+
         // Update items with POS-specific fields if needed
         this.items.forEach((item) => {
           if (!item.posa_row_id) {
