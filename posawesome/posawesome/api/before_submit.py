@@ -17,7 +17,7 @@ def before_submit(doc, method):
     # Only run for POS invoices
     if not getattr(doc, 'is_pos', False):
         return
-    
+
     # Basic payment validation (ERPNext usually handles this)
     _validate_payments(doc)
 
@@ -26,11 +26,15 @@ def _validate_payments(doc):
     """
     Basic payment validation.
     ERPNext handles most payment logic.
+    Supports both regular invoices (positive amounts) and return invoices (negative amounts).
     """
     if not doc.payments:
         frappe.throw(_("At least one payment is required for POS Invoice"))
-    
-    # Simple total validation
+
+    # Validate that payment total is non-zero (supports both positive and negative for returns)
     total_payments = sum(flt(payment.amount) for payment in doc.payments)
-    if total_payments <= 0:
-        frappe.throw(_("Payment amount must be greater than zero"))
+    total_grand = flt(doc.grand_total)
+
+    # Check if total payments matches grand total (handles both positive and negative)
+    if abs(total_payments - total_grand) > 0.01:
+        frappe.throw(_("Payment amount must match the invoice total"))
