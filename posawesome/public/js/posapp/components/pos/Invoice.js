@@ -180,6 +180,24 @@ export default {
   },
 
   methods: {
+    // Shared tax calculation utility - ensures consistency between frontend and backend
+    calculateTax(subtotal, taxType, taxPercent) {
+      if (!taxPercent || taxPercent === 0) return 0;
+      
+      let taxAmount = 0;
+      if (taxType === 'Inclusive') {
+        // For inclusive tax: extract tax from the total
+        // Formula: tax = total - (total / (1 + rate/100))
+        taxAmount = subtotal - (subtotal / (1 + taxPercent / 100));
+      } else if (taxType === 'Exclusive') {
+        // For exclusive tax: add tax to the total
+        // Formula: tax = total * (rate/100)
+        taxAmount = subtotal * (taxPercent / 100);
+      }
+      
+      return flt(taxAmount, this.currency_precision);
+    },
+
     onQtyChange(item) {
       const newQty = Number(item.qty) || 0;
       item.qty = newQty;
@@ -1202,9 +1220,32 @@ export default {
       doc.discount_amount = additional_discount;
       doc.net_total = total - additional_discount;
 
-      // For now, set tax to 0 (Backend will calculate it properly)
-      doc.total_taxes_and_charges = 0;
-      doc.grand_total = doc.net_total;
+      // ===== FRONTEND TAX CALCULATION =====
+      // Retrieve tax configuration from POS Profile with validation
+      const applyTax = this.pos_profile?.posa_apply_tax;
+      const taxType = this.pos_profile?.posa_tax_type;
+      const taxPercent = flt(this.pos_profile?.posa_tax_percent) || 0;
+
+      // Validation: Check if tax configuration is valid
+      if (applyTax && taxType && (taxType === 'Inclusive' || taxType === 'Exclusive') && !isNaN(taxPercent) && taxPercent > 0) {
+        // Calculate tax using shared utility function
+        const taxAmount = this.calculateTax(doc.net_total, taxType, taxPercent);
+        
+        doc.total_taxes_and_charges = flt(taxAmount, this.currency_precision);
+        
+        // For inclusive tax, grand_total = net_total (tax already included)
+        // For exclusive tax, grand_total = net_total + tax
+        if (taxType === 'Exclusive') {
+          doc.grand_total = flt(doc.net_total + taxAmount, this.currency_precision);
+        } else {
+          doc.grand_total = flt(doc.net_total, this.currency_precision);
+        }
+      } else {
+        // No tax or invalid configuration
+        doc.total_taxes_and_charges = 0;
+        doc.grand_total = doc.net_total;
+      }
+
       doc.rounded_total = Math.round(doc.grand_total * 2) / 2;
     },
 
