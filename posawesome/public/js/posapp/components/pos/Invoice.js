@@ -199,6 +199,9 @@ export default {
   },
 
   methods: {
+     t(key) {
+      return window.posTranslations.t(key);
+    },
     // Shared tax calculation utility - ensures consistency between frontend and backend
     calculateTax(subtotal, taxType, taxPercent) {
       if (!taxPercent || taxPercent === 0) return 0;
