@@ -1404,8 +1404,120 @@ export default {
         });
 
       this.posa_offers = cleaned;           // backend reads posa_offers
-      // في نهج __islocal: لا نحتاج تحديثات تلقائية
-      // updates stay local until Print
+      
+      // ===== APPLY MANUALLY TOGGLED OFFERS =====
+      this.applyManuallyToggledOffers(cleaned);
+    },
+
+    /**
+     * Apply manually toggled offers from PosOffers component
+     */
+    applyManuallyToggledOffers(offers) {
+      if (!offers || offers.length === 0) {
+        return;
+      }
+
+      // Find transaction-level offers
+      const transactionOffers = offers.filter(o => 
+        ['grand_total', 'customer', 'customer_group', ''].includes(o.offer_type || '') &&
+        o.discount_percentage
+      );
+
+      if (transactionOffers.length > 0) {
+        // Sort by discount percentage (highest first)
+        transactionOffers.sort((a, b) => 
+          flt(b.discount_percentage) - flt(a.discount_percentage)
+        );
+
+        // Apply best transaction offer
+        const bestOffer = transactionOffers[0];
+        this.additional_discount_percentage = flt(bestOffer.discount_percentage);
+        this.offer_discount_percentage = flt(bestOffer.discount_percentage);
+      } else {
+        // Clear if all transaction offers removed
+        if (this.offer_discount_percentage > 0) {
+          this.additional_discount_percentage = 0;
+          this.offer_discount_percentage = 0;
+        }
+      }
+
+      // Find item-level offers
+      const itemOffers = offers.filter(o =>
+        ['item_code', 'item_group', 'brand'].includes(o.offer_type) &&
+        o.discount_percentage
+      );
+
+      // Apply item-level offers
+      itemOffers.forEach(offer => {
+        const discountPercent = flt(offer.discount_percentage);
+        
+        this.items.forEach(item => {
+          let shouldApply = false;
+
+          if (offer.offer_type === 'item_code' && item.item_code === offer.item_code) {
+            shouldApply = true;
+          } else if (offer.offer_type === 'item_group' && item.item_group === offer.item_group) {
+            shouldApply = true;
+          } else if (offer.offer_type === 'brand' && item.brand === offer.brand) {
+            shouldApply = true;
+          }
+
+          if (shouldApply) {
+            // Only apply if offer discount is better than current
+            if (discountPercent > flt(item.discount_percentage || 0)) {
+              item.discount_percentage = discountPercent;
+              
+              // Recalculate item price
+              const list_price = flt(item.price_list_rate) || 0;
+              if (list_price > 0) {
+                const discount_amount = (list_price * discountPercent) / 100;
+                item.rate = flt(list_price - discount_amount, this.currency_precision);
+                item.amount = this.calculateItemAmount(item);
+              }
+            }
+          }
+        });
+      });
+
+      // Update totals
+      this.updateInvoiceDocLocally();
+    },
+
+    /**
+     * Apply offer to specific items (called from watchers)
+     */
+    applyItemOffer(offer) {
+      const discountPercent = flt(offer.discount_percentage);
+      const offerType = offer.offer_type;
+
+      if (!discountPercent || !offerType) return;
+
+      this.items.forEach(item => {
+        let shouldApply = false;
+
+        if (offerType === 'item_code' && item.item_code === offer.item_code) {
+          shouldApply = true;
+        } else if (offerType === 'item_group' && item.item_group === offer.item_group) {
+          shouldApply = true;
+        } else if (offerType === 'brand' && item.brand === offer.brand) {
+          shouldApply = true;
+        }
+
+        if (shouldApply && discountPercent > flt(item.discount_percentage || 0)) {
+          item.discount_percentage = discountPercent;
+          
+          // Recalculate item price
+          const list_price = flt(item.price_list_rate) || 0;
+          if (list_price > 0) {
+            const discount_amount = (list_price * discountPercent) / 100;
+            item.rate = flt(list_price - discount_amount, this.currency_precision);
+            item.amount = this.calculateItemAmount(item);
+          }
+        }
+      });
+
+      // Update totals
+      this.updateInvoiceDocLocally();
     },
 
 
