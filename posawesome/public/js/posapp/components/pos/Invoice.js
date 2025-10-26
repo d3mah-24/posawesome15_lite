@@ -177,13 +177,28 @@ export default {
       // Allow printing if there are valid payments OR default payment mode is available
       return this.hasValidPayments() || !!this.defaultPaymentMode;
     },
+
+    // Computed property for real-time tax amount display
+    computedTaxAmount() {
+      return flt(this.invoice_doc?.total_taxes_and_charges || 0, this.currency_precision);
+    },
+
+    // Computed property for net total (before tax)
+    computedNetTotal() {
+      return flt(this.invoice_doc?.net_total || 0, this.currency_precision);
+    },
+
+    // Computed property for grand total (after tax)
+    computedGrandTotalWithTax() {
+      return flt(this.invoice_doc?.grand_total || 0, this.currency_precision);
+    },
   },
 
   methods: {
     // Shared tax calculation utility - ensures consistency between frontend and backend
     calculateTax(subtotal, taxType, taxPercent) {
       if (!taxPercent || taxPercent === 0) return 0;
-      
+
       let taxAmount = 0;
       if (taxType === 'Inclusive') {
         // For inclusive tax: extract tax from the total
@@ -194,7 +209,7 @@ export default {
         // Formula: tax = total * (rate/100)
         taxAmount = subtotal * (taxPercent / 100);
       }
-      
+
       return flt(taxAmount, this.currency_precision);
     },
 
@@ -1230,9 +1245,9 @@ export default {
       if (applyTax && taxType && (taxType === 'Inclusive' || taxType === 'Exclusive') && !isNaN(taxPercent) && taxPercent > 0) {
         // Calculate tax using shared utility function
         const taxAmount = this.calculateTax(doc.net_total, taxType, taxPercent);
-        
+
         doc.total_taxes_and_charges = flt(taxAmount, this.currency_precision);
-        
+
         // For inclusive tax, grand_total = net_total (tax already included)
         // For exclusive tax, grand_total = net_total + tax
         if (taxType === 'Exclusive') {
