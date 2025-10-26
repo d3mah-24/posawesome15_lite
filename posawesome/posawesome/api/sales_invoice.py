@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Sales Invoice API - Consolidated
-All sales invoice operations using ERPNext native methods only.
+Sales Invoice API - ERPNext Native Workflow Only
+Following ERPNext sales_invoice.py approach: __islocal -> insert() -> submit()
 """
 from __future__ import unicode_literals
 import json
 import frappe
 from frappe import _
-from frappe.utils import flt, nowdate
-from posawesome.posawesome.doctype.pos_offer.pos_offer import is_offer_applicable, apply_offer_to_invoice
+from frappe.utils import flt
 
 
 # ===== DELETE OPERATIONS =====
@@ -56,320 +55,6 @@ def delete_invoice(invoice_name):
         frappe.throw(_("Error deleting invoice: {0}").format(str(e)))
 
 
-# ===== CREATE OPERATIONS =====
-
-def apply_auto_transaction_discount(doc):
-    """Finds auto transaction discount and applies it to the Sales Invoice doc."""
-
-    try:
-        # Get all offers for the profile
-        profile = doc.pos_profile
-        if not profile:
-            return False
-
-        # Check if offers are enabled in POS Profile
-        pos_profile_doc = frappe.get_doc("POS Profile", profile)
-        if not pos_profile_doc.get("posa_auto_fetch_offers"):
-            return False
-
-        # Check if auto offers are already applied to this invoice (shouldn't happen during creation, but check anyway)
-        existing_auto_offers = []
-        if hasattr(doc, 'posa_offers') and doc.posa_offers:
-            # Get the offer documents to check if they're auto offers
-            for posa_offer in doc.posa_offers:
-                try:
-                    offer_doc = frappe.get_doc("POS Offer", posa_offer.offer_name)
-                    if offer_doc.get("auto") == 1:
-                        existing_auto_offers.append(posa_offer.offer_name)
-                except:
-                    continue
-
-        # If auto offers are already applied, don't apply again
-        if existing_auto_offers:
-            return False
-        total_qty = sum(flt(item.qty) for item in doc.items)
-        total_amount = sum(flt(item.qty) * flt(item.rate) for item in doc.items)
-        # Get all auto offers for this POS Profile
-        offers = frappe.get_all(
-            "POS Offer",
-            filters={
-                "disable": 0,
-                "auto": 1,
-                "discount_type": "Discount Percentage",
-                "company": doc.company,
-                "pos_profile": ["in", [profile, ""]],
-                "valid_from": ["<=", doc.posting_date or nowdate()],
-                "valid_upto": [">=", doc.posting_date or nowdate()],
-                "min_qty": ["<=", total_qty],
-                "max_qty": [">=", total_qty],
-                "max_amt": [">=", total_amount]
-            },
-            fields=["name", "discount_percentage", "min_qty", "max_qty", "min_amt", "max_amt", "offer_type"],
-            order_by="discount_percentage desc"
-        )
-
-        # Check each offer for applicability
-        for offer in offers:
-            if is_offer_applicable(offer, doc):
-                # Apply offer using the new function
-                if apply_offer_to_invoice(doc, offer):
-                    return True
-
-    except Exception as e:
-        # Silent fail - don't break invoice creation
-        frappe.log_error(f"Auto discount error: {str(e)}", "Auto Discount Error")
-
-    return False
-
-@frappe.whitelist()
-def create_invoice(data):
-    """
-    Create new Sales Invoice using ERPNext native methods only.
-    Uses frappe.new_doc('Sales Invoice') with is_pos=1.
-    """
-    try:
-        # Parse JSON data
-        if isinstance(data, str):
-            data = json.loads(data)
-    except (json.JSONDecodeError, ValueError) as e:
-        frappe.log_error(f"[ERROR] Invalid JSON data: {str(e)}", "POS Invoice Error")
-        frappe.throw(_("Invalid JSON data: {0}").format(str(e)))
-
-    try:
-        # Validate that we're creating new (not updating existing)
-        if data.get("name"):
-            frappe.throw(_("Cannot specify name when creating new invoice"))
-
-        # Create new Sales Invoice document using ERPNext
-        doc = frappe.new_doc("Sales Invoice")
-
-        doc.set("posa_offers", [])
-
-        # 2) Extract and remove posa_offers from incoming data
-        selected_offers = data.get("posa_offers") or []
-        if "posa_offers" in data:
-            del data["posa_offers"]
-
-        # 3) Now update the document safely
-        doc.update(data)
-        # 3) resolve and apply offers safely
-                # 3) resolve and apply offers safely
-        try:
-            for sel in selected_offers:
-                if not isinstance(sel, dict):
-                    continue
-
-                # Try to get the actual document name
-                offer_name = sel.get("offer_name") or sel.get("name")
-
-                # If not found, try to look up by title
-                if not offer_name or offer_name == "None" or str(offer_name).strip() == "":
-                    title = sel.get("title")
-                    if title:
-                        try:
-                            offer_docs = frappe.get_all("POS Offer", filters={"title": title}, fields=["name"])
-                            if offer_docs:
-                                offer_name = offer_docs[0].name
-                            else:
-                                continue
-                        except:
-                            continue
-
-                # Validate that the offer actually exists before applying
-                if not offer_name or offer_name == "None" or str(offer_name).strip() == "":
-                    continue
-
-                try:
-                    # Check if POS Offer document exists
-                    if not frappe.db.exists("POS Offer", offer_name):
-                        frappe.log_error(f"POS Offer not found: {offer_name}", "POS Offers")
-                        continue
-
-                    offer_doc = frappe.get_doc("POS Offer", offer_name)
-                    apply_offer_to_invoice(doc, offer_doc)
-                except Exception as e:
-                    frappe.log_error(f"Error applying offer {offer_name}: {str(e)}", "POS Offers")
-
-        except Exception as e:
-            frappe.log_error(f"Error processing manual POS offers: {str(e)}", "POS Offers")
-        # Ensure POS settings are set
-        doc.is_pos = 1
-        doc.update_stock = 1
-
-        # Use ERPNext native methods
-        doc.set_missing_values()
-
-        if apply_auto_transaction_discount(doc):
-             # Rerun calculation to adopt the discount injected by the custom function above
-             doc.calculate_taxes_and_totals()
-        else:
-             pass
-
-        # Calculate taxes and totals using ERPNext native methods
-        doc.calculate_taxes_and_totals()
-
-        # Calculate total item discounts (for live display in POS)
-        _calculate_item_discount_total(doc)
-
-        # Save the document to get a proper name
-        doc.save()
-
-        # Return created document
-        return doc.as_dict()
-
-    except frappe.exceptions.ValidationError as ve:
-        frappe.logger().error(f"Validation error in create_invoice: {str(ve)}")
-        frappe.throw(_("Validation error: {0}").format(str(ve)))
-
-    except Exception as e:
-        frappe.logger().error(f"Error in create_invoice: {str(e)}")
-        frappe.throw(_("Error creating invoice: {0}").format(str(e)))
-
-
-@frappe.whitelist()
-def add_item_to_invoice(item_code, qty=1, customer=None, pos_profile=None):
-    """
-    Add item to existing draft invoice or create new one if none exists.
-    Uses ERPNext native methods only.
-    """
-    try:
-        if not item_code:
-            frappe.throw(_("Item code is required"))
-
-        qty = float(qty) if qty else 1.0
-
-        # Find existing draft invoice for current user
-        existing_draft = _find_existing_draft(customer, pos_profile)
-
-        if existing_draft:
-            return _add_item_to_existing_invoice(existing_draft, item_code, qty)
-        else:
-            return _create_new_invoice_with_item(item_code, qty, customer, pos_profile)
-
-    except Exception as e:
-        frappe.logger().error(f"Error in add_item_to_invoice: {str(e)}")
-        frappe.throw(_("Error adding item: {0}").format(str(e)))
-
-
-def _find_existing_draft(customer=None, pos_profile=None):
-    """
-    Find existing draft invoice for current user.
-    """
-    try:
-        filters = {
-            "docstatus": 0,  # Draft only
-            "owner": frappe.session.user,
-        }
-
-        if customer:
-            filters["customer"] = customer
-        if pos_profile:
-            filters["pos_profile"] = pos_profile
-
-        draft_invoices = frappe.get_all(
-            "Sales Invoice",
-            filters=filters,
-            fields=["name"],
-            order_by="creation desc",
-            limit=1
-        )
-
-        return draft_invoices[0].name if draft_invoices else None
-
-    except Exception:
-        return None
-
-
-def _add_item_to_existing_invoice(invoice_name, item_code, qty):
-    """
-    Add item to existing invoice using ERPNext native methods.
-    """
-    try:
-        # Get existing document
-        doc = frappe.get_doc("Sales Invoice", invoice_name)
-
-        # Check if item already exists
-        existing_item = None
-        for item in doc.items:
-            if item.item_code == item_code:
-                existing_item = item
-                break
-
-        if existing_item:
-            # Item exists - increment quantity
-            existing_item.qty += qty
-        else:
-            # Item doesn't exist - add new item row
-            item_doc = frappe.get_doc("Item", item_code)
-
-            doc.append("items", {
-                "item_code": item_code,
-                "item_name": item_doc.item_name,
-                "qty": qty,
-                "uom": item_doc.stock_uom,
-                "rate": item_doc.standard_rate or 0,
-            })
-
-        # Use ERPNext native methods
-        doc.calculate_taxes_and_totals()
-
-        # Calculate total item discounts (for live display in POS)
-        _calculate_item_discount_total(doc)
-
-        doc.save()
-
-        return doc.as_dict()
-
-    except Exception as e:
-        frappe.logger().error(f"Error adding item to existing invoice: {str(e)}")
-        frappe.throw(_("Error adding item to invoice: {0}").format(str(e)))
-
-
-def _create_new_invoice_with_item(item_code, qty, customer=None, pos_profile=None):
-    """
-    Create new invoice with specified item using ERPNext native methods.
-    """
-    try:
-        item_doc = frappe.get_doc("Item", item_code)
-
-        # Create new Sales Invoice
-        doc = frappe.new_doc("Sales Invoice")
-
-        # Set basic fields
-        if customer:
-            doc.customer = customer
-        if pos_profile:
-            doc.pos_profile = pos_profile
-
-        # Set POS settings
-        doc.is_pos = 1
-        doc.update_stock = 1
-
-        # Add item
-        doc.append("items", {
-            "item_code": item_code,
-            "item_name": item_doc.item_name,
-            "qty": qty,
-            "uom": item_doc.stock_uom,
-            "rate": item_doc.standard_rate or 0,
-        })
-
-        # Use ERPNext native methods
-        doc.set_missing_values()
-        doc.calculate_taxes_and_totals()
-
-        # Calculate total item discounts (for live display in POS)
-        _calculate_item_discount_total(doc)
-
-        doc.save()
-
-        return doc.as_dict()
-
-    except Exception as e:
-        frappe.logger().error(f"Error creating new invoice with item: {str(e)}")
-        frappe.throw(_("Error creating invoice with item: {0}").format(str(e)))
-
-
 # ===== GET RETURN OPERATIONS =====
 
 @frappe.whitelist()
@@ -393,7 +78,7 @@ def get_invoices_for_return(invoice_name, company):
             filters=filters,
             fields=["name", "customer", "grand_total", "outstanding_amount", "posting_date", "currency"],
             order_by="posting_date desc",
-            limit=50  # Increased limit
+            limit=50
         )
 
         # Get items data for each invoice with essential fields
@@ -416,309 +101,88 @@ def get_invoices_for_return(invoice_name, company):
         return []
 
 
-# ===== INVOICE RESPONSE HELPERS =====
-
-def get_minimal_invoice_response(invoice_doc):
-    """
-    Return only essential data needed by POS frontend to minimize response size
-    This dramatically reduces the response size from ~50KB to ~5KB
-    """
-    try:
-        # Essential invoice fields only
-        minimal_response = {
-            "name": invoice_doc.name,
-            "is_return": invoice_doc.is_return or 0,
-            "docstatus": invoice_doc.docstatus,
-
-            # Financial totals (required for POS display)
-            "total": invoice_doc.total or 0,
-            "net_total": invoice_doc.net_total or 0,
-            "grand_total": invoice_doc.grand_total or 0,
-            "total_taxes_and_charges": invoice_doc.total_taxes_and_charges or 0,
-            "discount_amount": invoice_doc.discount_amount or 0,
-            "additional_discount_percentage": invoice_doc.additional_discount_percentage or 0,
-
-            # Items with only essential fields
-            "items": []
-        }
-
-        # Add minimal item data
-        for item in invoice_doc.items:
-            minimal_item = {
-                "name": item.name,
-                "item_code": item.item_code,
-                "item_name": item.item_name,
-                "qty": item.qty or 0,
-                "rate": item.rate or 0,
-                "price_list_rate": item.price_list_rate or 0,
-                "base_rate": getattr(item, 'base_rate', item.price_list_rate or item.rate or 0),
-                "amount": item.amount or 0,
-                "discount_percentage": item.discount_percentage or 0,
-                "discount_amount": item.discount_amount or 0,
-                "uom": item.uom,
-
-                # POS specific fields
-                "posa_row_id": getattr(item, 'posa_row_id', ''),
-                "posa_offers": getattr(item, 'posa_offers', '[]'),
-                "posa_offer_applied": getattr(item, 'posa_offer_applied', 0),
-                "posa_is_offer": getattr(item, 'posa_is_offer', 0),
-                "posa_is_replace": getattr(item, 'posa_is_replace', 0),
-                "is_free_item": getattr(item, 'is_free_item', 0),
-
-                # Batch/Serial if exists
-                "batch_no": getattr(item, 'batch_no', ''),
-                "serial_no": getattr(item, 'serial_no', ''),
-            }
-
-            minimal_response["items"].append(minimal_item)
-
-        # Add payments if any
-        minimal_response["payments"] = []
-        if invoice_doc.payments:
-            for payment in invoice_doc.payments:
-                minimal_payment = {
-                    "mode_of_payment": payment.mode_of_payment,
-                    "amount": payment.amount or 0,
-                    "account": getattr(payment, 'account', ''),
-                }
-                minimal_response["payments"].append(minimal_payment)
-
-        # Add posa_offers if any
-        minimal_response["posa_offers"] = []
-        if hasattr(invoice_doc, 'posa_offers') and invoice_doc.posa_offers:
-            for offer in invoice_doc.posa_offers:
-                minimal_offer = {
-                    "name": offer.name,
-                    "offer_name": getattr(offer, 'offer_name', ''),
-                    "apply_on": getattr(offer, 'apply_on', ''),
-                    "offer": getattr(offer, 'offer', ''),
-                    "offer_applied": getattr(offer, 'offer_applied', 0),
-                    "row_id": getattr(offer, 'row_id', ''),
-                }
-                minimal_response["posa_offers"].append(minimal_offer)
-
-        return minimal_response
-
-    except Exception as e:
-        raise
-
-
-# ===== SUBMIT OPERATIONS =====
+# ===== CREATE AND SUBMIT OPERATION =====
+# This is the ONLY method used for creating POS invoices
+# Following ERPNext native workflow: __islocal -> insert() -> submit()
 
 @frappe.whitelist()
-def submit_invoice(data=None, name=None, invoice=None, invoice_data=None):
+def create_and_submit_invoice(invoice_doc):
     """
-    Submit Sales Invoice using ERPNext native methods only.
-    Uses ERPNext's standard submission workflow.
+    Create and submit Sales Invoice using ERPNext native workflow 100%.
+
+    This follows the exact same flow as ERPNext's sales_invoice.py:
+    1. frappe.get_doc() - Create document from dict
+    2. doc.set_missing_values() - Fill missing values (native)
+    3. doc.validate() - Full validation (native)
+    4. doc.insert() - Save draft (native)
+    5. doc.submit() - Submit document (native)
+
+    No custom logic - only ERPNext native methods!
+
+    This is for the __islocal scenario:
+    - Invoice stays local (__islocal = 1) during all operations
+    - When Print is clicked, send entire doc to server
+    - Server: uses native workflow to insert() then submit() immediately
+
+    Args:
+        invoice_doc (dict): Complete Sales Invoice document as JSON/dict
+
+    Returns:
+        dict: Submitted invoice as dict
     """
     try:
-        # Determine invoice name from any parameter
-        invoice_name = name or (
-            (json.loads(data) if isinstance(data, str) else data or {}).get("name") if data else None
-        ) or (
-            (json.loads(invoice) if isinstance(invoice, str) else invoice or {}).get("name") if invoice else None
-        ) or (
-            (json.loads(invoice_data) if isinstance(invoice_data, str) else invoice_data or {}).get("name") if invoice_data else None
+        # Parse invoice_doc if it's a string
+        if isinstance(invoice_doc, str):
+            invoice_doc = json.loads(invoice_doc)
+
+        # Debug: Log function name and important data
+        customer = invoice_doc.get('customer', 'Unknown')
+        items_count = len(invoice_doc.get('items', []))
+        grand_total = invoice_doc.get('grand_total', 0)
+
+        frappe.log_error(
+            f"create_and_submit_invoice() - Customer: {customer}, Items: {items_count}, Total: {grand_total}",
+            "POS Invoice Debug"
         )
 
-        if not invoice_name:
-            frappe.throw(_("Invoice name is required for submission"))
+        # Create new document from dict - using ERPNext native method
+        doc = frappe.get_doc(invoice_doc)
 
-        # Get Sales Invoice document
-        doc = frappe.get_doc("Sales Invoice", invoice_name)
-
-        # Check if already submitted
-        if doc.docstatus == 1:
-            frappe.throw(_("Invoice is already submitted"))
-        elif doc.docstatus == 2:
-            frappe.throw(_("Cannot submit cancelled invoice"))
-
-        # Update with any new data if provided
-        if data:
-            data_dict = json.loads(data) if isinstance(data, str) else data
-            doc.update(data_dict)
-
-        # Ensure POS settings are maintained
-        doc.is_pos = 1
-        doc.update_stock = 1
-
-        # Use ERPNext native methods for calculation and submission
-        doc.calculate_taxes_and_totals()
-        doc.validate()
-        doc.save()
-        doc.submit()
-
-        # Return submitted document
-        return {
-            "success": True,
-            "message": "Invoice submitted successfully",
-            "invoice": doc.as_dict()
-        }
-
-    except frappe.exceptions.ValidationError as ve:
-        frappe.logger().error(f"Validation error in submit_invoice: {str(ve)}")
-        frappe.throw(_("Validation error: {0}").format(str(ve)))
-
-    except Exception as e:
-        frappe.logger().error(f"Error in submit_invoice: {str(e)}")
-        frappe.throw(_("Error submitting invoice: {0}").format(str(e)))
-
-
-# ===== UPDATE OPERATIONS =====
-
-@frappe.whitelist()
-def update_invoice(data):
-    """
-    Update Sales Invoice using ERPNext native methods only.
-    - Accepts posa_offers from UI and applies them server-side.
-    - Keeps ignore_pricing_rule=1 while applying offers so item discounts stick.
-    """
-    import json
-    import frappe
-
-    try:
-        if isinstance(data, str):
-            data = json.loads(data)
-    except (json.JSONDecodeError, ValueError) as e:
-        frappe.throw(_("Invalid JSON data: {0}").format(str(e)))
-
-    try:
-        name = (data or {}).get("name")
-        if not name:
-            frappe.throw(_("Invoice name is required for update operations"))
-
-        doc = frappe.get_doc("Sales Invoice", name)
-        if doc.docstatus != 0:
-            frappe.throw(_("Cannot update submitted Sales Invoice"))
-
-        # Delete draft when explicit empty items are sent
-        if data.get("items") is not None and not data.get("items"):
-            frappe.delete_doc("Sales Invoice", doc.name, ignore_permissions=True, force=True)
-            frappe.db.commit()
-            return {"message": "Invoice deleted successfully"}
-
-        # Extract selected offers from payload and remove them from doc.update
-        selected_offers = data.get("posa_offers") or []
-        if "posa_offers" in data:
-            del data["posa_offers"]
-
-        # Clean offers (only keep those with a name or title)
-        cleaned_offers = []
-        for sel in (selected_offers if isinstance(selected_offers, list) else [selected_offers]):
-            if not isinstance(sel, dict):
-                continue
-            nm = (sel.get("offer_name") or sel.get("name") or "").strip()
-            title = (sel.get("title") or "").strip()
-            if nm:
-                cleaned_offers.append({"offer_name": nm})
-            elif title:
-                cleaned_offers.append({"title": title})
-
-        # Refresh child table and update basic fields
-        doc.set("posa_offers", [])
-        doc.update(data)
-
-        # POS flags and source
+        # Set POS flags
         doc.is_pos = 1
         doc.update_stock = 1
         doc.flags.from_pos_page = True
 
-        # Force ignore_pricing_rule when we are applying manual offers
-        if cleaned_offers:
-            doc.ignore_pricing_rule = 1
-        elif "ignore_pricing_rule" in data:
-            # Honor explicit field even when no offers were sent
-            doc.ignore_pricing_rule = 1 if data.get("ignore_pricing_rule") else 0
+        # Step 1: Use ERPNext native set_missing_values() - fills all default values
+        # This is called from SellingController and sets customer, warehouse, etc.
+        doc.set_missing_values()
+        frappe.log_error(f"After set_missing_values() - Doc: {doc.doctype}", "POS Invoice Debug")
 
-        # Resolve each offer and apply to the invoice
-        resolved = []
-        for sel in cleaned_offers:
-            offer_name = sel.get("offer_name")
-            if not offer_name and sel.get("title"):
-                # Resolve by title
-                found = frappe.get_all(
-                    "POS Offer",
-                    filters={"title": sel["title"]},
-                    fields=["name"],
-                    limit=1,
-                )
-                offer_name = found[0]["name"] if found else None
+        # Step 2: Use ERPNext native validate() - full validation
+        # This validates customer, items, taxes, payments, etc.
+        doc.validate()
+        frappe.log_error(f"After validate() - Docstatus: {doc.docstatus}", "POS Invoice Debug")
 
-            if not offer_name:
-                continue
+        # Step 3: Use ERPNext native insert() - save draft
+        # This saves the document and sets docstatus = 0
+        doc.insert()
+        invoice_name = doc.name
+        frappe.log_error(f"After insert() - Invoice name: {invoice_name}", "POS Invoice Debug")
 
-            exists = frappe.get_all("POS Offer", filters={"name": offer_name}, fields=["name"], limit=1)
-            if not exists:
-                # Skip invalid offers silently (don't break updates)
-                continue
+        # Step 4: Use ERPNext native submit() - submit document
+        # This runs before_submit() then on_submit() hooks
+        doc.submit()
+        frappe.log_error(f"After submit() - Invoice {invoice_name} submitted successfully", "POS Invoice Debug")
 
-            # Track and mirror into child table for UI
-            resolved.append(offer_name)
-            doc.append("posa_offers", {"offer_name": offer_name})
-
-            # Apply server-side logic
-            try:
-                offer_doc = frappe.get_doc("POS Offer", offer_name)
-                apply_offer_to_invoice(doc, offer_doc)
-            except Exception as e:
-                frappe.log_error(f"Error applying offer {offer_name}: {str(e)}", "POS Offers")
-
-        # Legacy single link sync (optional)
-        if getattr(doc, "meta", None) and doc.meta.has_field("offer_name"):
-            doc.offer_name = resolved[0] if resolved else None
-            if not resolved:
-                # don't fail on missing offer at draft time
-                doc.flags.ignore_mandatory = True
-
-        # Totals
-        doc.calculate_taxes_and_totals()
-        _calculate_item_discount_total(doc)
-
-        # Save with version check bypass
-        doc.flags.ignore_version = True
-        doc.save()
-        frappe.db.commit()
+        # Return the submitted document
         return doc.as_dict()
 
-    except frappe.exceptions.TimestampMismatchError as tme:
-        frappe.logger().error(f"Timestamp mismatch in update_invoice: {str(tme)}")
-        # Try to reload and save again
-        try:
-            doc.reload()
-            doc.update(data)
-            doc.calculate_taxes_and_totals()
-            _calculate_item_discount_total(doc)
-            doc.flags.ignore_version = True
-            doc.save()
-            frappe.db.commit()
-            return doc.as_dict()
-        except Exception as retry_e:
-            frappe.logger().error(f"Retry failed in update_invoice: {str(retry_e)}")
-            frappe.throw(_("Document was modified by another process. Please refresh and try again."))
     except frappe.exceptions.ValidationError as ve:
-        frappe.logger().error(f"Validation error in update_invoice: {str(ve)}")
+        error_msg = str(ve)
+        frappe.log_error(f"Validation error: {error_msg}", "POS Invoice Error")
         frappe.throw(_("Validation error: {0}").format(str(ve)))
+
     except Exception as e:
-        frappe.logger().error(f"Error in update_invoice: {str(e)}")
-        frappe.throw(_("Error updating invoice: {0}").format(str(e)))
-
-
-def _calculate_item_discount_total(doc):
-    """
-    Calculate total item-level discounts and store in posa_item_discount_total.
-
-    Simply sum the discount_amount field from each item.
-    ERPNext already calculates this per item in Sales Invoice Item table.
-
-    Only calculates when:
-    - Invoice is POS (is_pos = 1)
-    """
-    # Check if this is a POS invoice
-    if not getattr(doc, 'is_pos', False):
-        return
-
-    # Simply sum discount_amount from all items
-    total_item_discount = sum(flt(item.discount_amount) for item in doc.items)
-
-    # Store in custom field
-    doc.posa_item_discount_total = flt(total_item_discount, doc.precision("posa_item_discount_total"))
+        error_msg = str(e)
+        frappe.log_error(f"Error: {error_msg}", "POS Invoice Error")
+        frappe.throw(_("Error creating and submitting invoice: {0}").format(str(e)))
