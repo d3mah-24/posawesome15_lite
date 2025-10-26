@@ -258,7 +258,7 @@ export default {
       return discountPercentage > 0 && basePrice > 0
         ? flt((basePrice * discountPercentage) / 100) || 0
         : 0;
-    },  
+    },
 
     quick_return() {
       // Enable Quick Return Mode - creates return invoice without linking to previous invoice
@@ -468,7 +468,7 @@ export default {
 
       this.customer = this.pos_profile?.customer || this.customer;
       this._lastCustomer = null;  // Clear customer cache
-      
+
       // Recalculate offers for new session with default customer
       this.calculateAndApplyOffers();
       // لا نرسل "new_invoice" event هنا لتفادي recursion
@@ -889,6 +889,9 @@ export default {
               evntBus.emit("set_customer_info_to_edit", vm.customer_info);
             }
             vm.update_price_list();
+            
+            // ===== RECALCULATE OFFERS WITH CUSTOMER INFO =====
+            vm.calculateAndApplyOffers();
           },
         });
       }
@@ -1454,7 +1457,7 @@ export default {
 
       // Calculate totals
       const totalQty = this.items.reduce((sum, item) => sum + flt(item.qty || 0), 0);
-      const totalAmount = this.items.reduce((sum, item) => 
+      const totalAmount = this.items.reduce((sum, item) =>
         sum + (flt(item.qty || 0) * flt(item.rate || 0)), 0);
 
       // Filter applicable offers
@@ -1479,7 +1482,7 @@ export default {
 
         // Check customer group match
         if (offer.offer_type === 'customer_group') {
-          if (!this.customer_info?.customer_group || 
+          if (!this.customer_info?.customer_group ||
               this.customer_info.customer_group !== offer.customer_group) {
             return false;
           }
@@ -1522,16 +1525,16 @@ export default {
       });
 
       // Apply transaction-level offer (only one allowed)
-      const transactionOffer = sortedOffers.find(offer => 
-        offer.auto && 
-        offer.discount_percentage && 
+      const transactionOffer = sortedOffers.find(offer =>
+        offer.auto &&
+        offer.discount_percentage &&
         ['grand_total', 'customer', 'customer_group', ''].includes(offer.offer_type || '')
       );
 
       if (transactionOffer) {
         this.additional_discount_percentage = flt(transactionOffer.discount_percentage);
         this.offer_discount_percentage = flt(transactionOffer.discount_percentage);
-        
+
         this.posa_offers = [{
           offer_name: transactionOffer.name,
           offer_type: transactionOffer.offer_type,
@@ -1563,7 +1566,7 @@ export default {
             // Only apply if offer discount is better than current
             if (offerDiscount > flt(item.discount_percentage || 0)) {
               item.discount_percentage = offerDiscount;
-              
+
               // Recalculate item price
               const list_price = flt(item.price_list_rate) || 0;
               if (list_price > 0) {
@@ -1746,6 +1749,11 @@ export default {
     });
     evntBus.on("update_customer", (customer) => {
       this.setCustomer(customer);
+      // Recalculate offers when customer changes
+      if (this._lastCustomer !== customer) {
+        this._lastCustomer = customer;
+        this.calculateAndApplyOffers();
+      }
     });
     evntBus.on("fetch_customer_details", () => {
       this.fetch_customer_details();
@@ -1771,6 +1779,12 @@ export default {
 
     evntBus.on("set_offers", (data) => {
       this.posOffers = data;
+      // ===== CACHE SESSION OFFERS =====
+      this._sessionOffers = data || [];
+      // Recalculate when session offers are loaded/updated
+      if (this.items && this.items.length > 0) {
+        this.calculateAndApplyOffers();
+      }
     });
     evntBus.on("update_invoice_offers", (data) => {
       this.updateInvoiceOffers(data);
@@ -1806,14 +1820,17 @@ export default {
     // Event-driven approach for items changes
     evntBus.on("item_added", (item) => {
       // Item added event
+      this.calculateAndApplyOffers();
     });
 
     evntBus.on("item_removed", (item) => {
       // Item removed event
+      this.calculateAndApplyOffers();
     });
 
     evntBus.on("item_updated", (item) => {
       // Item updated event
+      this.calculateAndApplyOffers();
     });
 
     this.$nextTick(() => {
