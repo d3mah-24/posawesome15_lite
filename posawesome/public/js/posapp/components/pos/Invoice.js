@@ -224,15 +224,26 @@ export default {
     },
 
     quick_return() {
-      if (
-        !this.pos_profile?.posa_allow_quick_return ||
-        !this.customer ||
-        !this.items.length
-      ) {
-        return;
-      }
-      this.quick_return_value = !this.quick_return_value;
+      // Enable Quick Return Mode - creates return invoice without linking to previous invoice
+      evntBus.emit("set_customer_readonly", true);
+      this.invoiceType = "Return";
+      this.invoiceTypes = ["Return"];
+      evntBus.emit("update_invoice_type", this.invoiceType);
+      this.quick_return_value = true;
       evntBus.emit("toggle_quick_return", this.quick_return_value);
+
+      // Create new invoice_doc with is_return flag
+      if (!this.invoice_doc) {
+        this.invoice_doc = {
+          is_return: 1,
+          __islocal: 1
+        };
+        evntBus.emit("update_invoice_doc", this.invoice_doc);
+      } else {
+        // Update existing invoice_doc
+        this.invoice_doc.is_return = 1;
+        evntBus.emit("update_invoice_doc", this.invoice_doc);
+      }
     },
 
     remove_item(item) {
@@ -407,6 +418,16 @@ export default {
       this.resetInvoiceState();
       this.return_doc = null;
       this.invoice_doc = "";
+      this.quick_return_value = false;
+      this.invoiceType = "Invoice";
+      this.invoiceTypes = ["Invoice"];
+
+      // Reset all UI states
+      evntBus.emit("set_customer_readonly", false);
+      evntBus.emit("update_invoice_type", this.invoiceType);
+      evntBus.emit("toggle_quick_return", false);
+      evntBus.emit("update_invoice_doc", null);
+
       this.customer = this.pos_profile?.customer || this.customer;
       // لا نرسل "new_invoice" event هنا لتفادي recursion
       // يتم إرساله من printInvoice() فقط بعد الطباعة الناجحة
@@ -531,17 +552,26 @@ export default {
     },
 
     get_invoice_items_minimal() {
-      return this.items.map((item) => ({
-        item_code: item.item_code,
-        qty: item.qty || 1,
-        rate: item.rate || item.price_list_rate || 0,
-        price_list_rate: item.price_list_rate || 0, // MUST send this so ERPNext can calculate discount_amount
-        uom: item.uom || item.stock_uom,
-        serial_no: item.serial_no,
-        discount_percentage: item.discount_percentage || 0,
-        // Don't send discount_amount - let ERPNext calculate it from price_list_rate + discount_percentage
-        batch_no: item.batch_no,
-      }));
+      return this.items.map((item) => {
+        let qty = item.qty || 1;
+
+        // For return invoices (Quick Return or Regular Return), quantity must be negative
+        if (this.invoice_doc?.is_return || this.quick_return_value) {
+          qty = -Math.abs(qty);
+        }
+
+        return {
+          item_code: item.item_code,
+          qty: qty,
+          rate: item.rate || item.price_list_rate || 0,
+          price_list_rate: item.price_list_rate || 0, // MUST send this so ERPNext can calculate discount_amount
+          uom: item.uom || item.stock_uom,
+          serial_no: item.serial_no,
+          discount_percentage: item.discount_percentage || 0,
+          // Don't send discount_amount - let ERPNext calculate it from price_list_rate + discount_percentage
+          batch_no: item.batch_no,
+        };
+      });
     },
 
     get_payments() {
@@ -1383,11 +1413,9 @@ export default {
               color: "success",
             });
 
-            this.resetInvoiceState();
-            this.invoice_doc = null;
-            // إعادة تعيين الجلسة بعد الطباعة الناجحة
+            // إعادة تعيين الجلسة بعد الطباعة الناجحة (جميع الحالات: عادي، مرتجع، مرتجع سريع)
             this.reset_invoice_session();
-            // إغلاق نافذة الدفع وإفراغ الكاش
+            // إغلاق نافذة الدفع
             evntBus.emit("show_payment", "false");
             evntBus.emit("invoice_submitted");
           } else {
