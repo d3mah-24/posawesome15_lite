@@ -1227,37 +1227,58 @@ export default {
       });
 
       // Set basic totals
-      doc.total = total;
+      doc.total = total; // This is items_total
       doc.total_qty = total_qty;
       doc.posa_item_discount_total = item_discount_total;
 
-      // Apply additional discount
+      // Apply additional invoice discount
       const additional_discount = (total * flt(doc.additional_discount_percentage)) / 100;
       doc.discount_amount = additional_discount;
-      doc.net_total = total - additional_discount;
 
-      // ===== FRONTEND TAX CALCULATION =====
-      // Retrieve tax configuration from POS Profile with validation
+      // items_total after invoice discount
+      const items_total_after_discount = total - additional_discount;
+
+      // ===== TAX CALCULATION =====
       const applyTax = this.pos_profile?.posa_apply_tax;
       const taxType = this.pos_profile?.posa_tax_type;
       const taxPercent = flt(this.pos_profile?.posa_tax_percent) || 0;
-
-      // Normalize tax type to handle both "Tax Inclusive" and "Inclusive" formats
       const normalizedTaxType = taxType?.replace('Tax ', '');
 
-      // Validation: Check if tax configuration is valid
       if (applyTax && normalizedTaxType && (normalizedTaxType === 'Inclusive' || normalizedTaxType === 'Exclusive') && !isNaN(taxPercent) && taxPercent > 0) {
-        // Calculate tax using shared utility function
-        const taxAmount = this.calculateTax(doc.net_total, normalizedTaxType, taxPercent);
 
-        doc.total_taxes_and_charges = flt(taxAmount, this.currency_precision);
+        if (normalizedTaxType === 'Inclusive') {
+          // INCLUSIVE: prices already include tax
+          // Example: items_total = 115, tax rate = 15%
+          // grand_total = 115 (what customer pays - same as items_total)
+          // net_total = 100 (base amount: 115 / 1.15)
+          // tax = 15 (extracted: 115 - 100)
 
-        // For both inclusive and exclusive tax: grand_total = net_total + tax
-        doc.grand_total = flt(doc.net_total + taxAmount, this.currency_precision);
+          doc.grand_total = items_total_after_discount;
+          doc.net_total = items_total_after_discount / (1 + taxPercent / 100);
+          doc.total_taxes_and_charges = items_total_after_discount - doc.net_total;
+
+        } else {
+          // EXCLUSIVE: prices don't include tax
+          // Example: items_total = 100, tax rate = 15%
+          // net_total = 100 (same as items_total)
+          // tax = 15 (calculated: 100 × 0.15)
+          // grand_total = 115 (items_total + tax)
+
+          doc.net_total = items_total_after_discount;
+          doc.total_taxes_and_charges = doc.net_total * (taxPercent / 100);
+          doc.grand_total = doc.net_total + doc.total_taxes_and_charges;
+        }
+
+        // Apply precision formatting
+        doc.total_taxes_and_charges = flt(doc.total_taxes_and_charges, this.currency_precision);
+        doc.net_total = flt(doc.net_total, this.currency_precision);
+        doc.grand_total = flt(doc.grand_total, this.currency_precision);
+
       } else {
         // No tax or invalid configuration
+        doc.net_total = items_total_after_discount;
         doc.total_taxes_and_charges = 0;
-        doc.grand_total = doc.net_total;
+        doc.grand_total = items_total_after_discount;
       }
 
       doc.rounded_total = Math.round(doc.grand_total * 2) / 2;
