@@ -10,7 +10,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Translation maps for different languages
-const TRANSLATIONS = {
+window.TRANSLATIONS = {
   ar: {
     // From your example plus extracted text
     "POS Awesome": "نقاط البيع المميزة",
