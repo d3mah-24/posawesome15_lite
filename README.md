@@ -61,7 +61,7 @@ Just a lightweight web interface built on top of ERPNext's proven foundation:
 - ✅ **Completed Tasks:** [docs/tasks/completed_tasks/](docs/tasks/completed_tasks/)
 - ❌ **Failed Tasks:** [docs/tasks/failed_tasks/](docs/tasks/failed_tasks/)
 
-## 💰 Development   Collaboration
+## 💰 Development Collaboration
 
 - ⚠️ **Terms**: Tasks negotiated before beginning
 - 💵 **Payment:** to completed tasks only
