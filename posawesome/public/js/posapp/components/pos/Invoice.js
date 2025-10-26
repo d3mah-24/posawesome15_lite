@@ -4,6 +4,9 @@ import format from "../../format";
 import Customer from "./Customer.vue";
 import { API_MAP } from "../../api_mapper.js";
 
+// Import Frappe utilities for local state management
+const { flt: frappeFlt, cint, round_based_on_smallest_currency_fraction } = frappe.utils;
+
 // ===== COMPONENT =====
 export default {
   name: "Invoice",
@@ -56,6 +59,9 @@ export default {
       // Simple State Management
       _itemOperationTimer: null,
       _updatingFromAPI: false,
+      // Debounce management
+      _debouncedUpdateTimer: null,
+      _debounceBatchOperations: [],
 
       // Table Headers Configuration
       items_headers: [
@@ -180,6 +186,21 @@ export default {
   },
 
   methods: {
+    // Debounce helper methods
+    debounceUpdate(fn, delay = 300) {
+      clearTimeout(this._debouncedUpdateTimer);
+      this._debouncedUpdateTimer = setTimeout(fn, delay);
+    },
+
+    batchOperation(operation) {
+      this._debounceBatchOperations.push(operation);
+      this.debounceUpdate(() => {
+        this._debounceBatchOperations.forEach(op => op());
+        this._debounceBatchOperations = [];
+        this.updateInvoiceDocLocally();
+      }, 150);
+    },
+
     onQtyChange(item) {
       const newQty = Number(item.qty) || 0;
       item.qty = newQty;
@@ -189,8 +210,12 @@ export default {
     },
 
     onQtyInput(item) {
-      // Handle input events - use same logic as onQtyChange but without debounce
-      this.onQtyChange(item);
+      // Debounced - updates UI immediately but calculations delayed
+      const newQty = Number(item.qty) || 0;
+      item.qty = newQty;
+      this.batchOperation(() => {
+        item.amount = this.calculateItemAmount(item);
+      });
     },
 
     increaseQuantity(item) {
@@ -551,6 +576,50 @@ export default {
       return doc;
     },
 
+    createLocalInvoiceDoc() {
+      // Create document structure following frappe.model conventions
+      const doc = {
+        __islocal: 1,
+        __unsaved: 1,
+        doctype: "Sales Invoice",
+        docstatus: 0,
+        is_pos: 1,
+        ignore_pricing_rule: 1,
+        company: this.pos_profile?.company,
+        pos_profile: this.pos_profile?.name,
+        currency: this.pos_profile?.currency,
+        naming_series: this.pos_profile?.naming_series,
+        customer: this.customer,
+        posting_date: this.posting_date,
+        posa_pos_opening_shift: this.pos_opening_shift?.name,
+        items: [],
+        payments: [],
+      };
+
+      // Add metadata that frappe.model uses
+      if (frappe.model && frappe.model.get_new_name) {
+        doc.__newname = frappe.model.get_new_name(doc.doctype);
+      }
+      
+      return doc;
+    },
+
+    syncItemsToInvoiceDoc() {
+      // Sync items array to invoice_doc with proper structure
+      if (!this.invoice_doc) {
+        this.invoice_doc = this.createLocalInvoiceDoc();
+      }
+
+      this.invoice_doc.items = this.items.map((item, idx) => ({
+        ...item,
+        idx: idx + 1,
+        doctype: "Sales Invoice Item",
+        parenttype: "Sales Invoice",
+        parentfield: "items",
+        __islocal: 1,
+      }));
+    },
+
     get_invoice_items_minimal() {
       return this.items.map((item) => {
         let qty = item.qty || 1;
@@ -610,8 +679,8 @@ export default {
         if (!hasDefault && payments.length > 0) payments[0].default = 1;
       }
 
-      // --- إضافة معالجة التقريب ---
-      const totalTarget = this.rounded_total || this.grand_total;
+      // Use rounded_total for payment amounts (not grand_total)
+      const totalTarget = this.invoice_doc?.rounded_total || this.invoice_doc?.grand_total || 0;
       let totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
       let diff = totalPayments - totalTarget;
 
@@ -731,6 +800,16 @@ export default {
       this.invoice_doc.rounded_total = doc.rounded_total;
       this.invoice_doc.items = doc.items;
 
+      // RE-CALCULATE payments with updated rounded_total
+      doc.payments = this.get_payments();
+
+      console.log("Invoice.js - process_invoice() - returning doc:", {
+        grand_total: doc.grand_total,
+        rounded_total: doc.rounded_total,
+        payments: doc.payments?.map(p => ({ mode: p.mode_of_payment, amount: p.amount })),
+        payments_total: doc.payments?.reduce((sum, p) => sum + flt(p.amount), 0)
+      });
+
       return doc;
     },
 
@@ -738,50 +817,46 @@ export default {
       evntBus.emit("show_loading", { text: "Loading...", color: "info" });
 
       try {
-        // التأكد من تحديث الإجماليات محلياً قبل فتح نافذة الدفع
         this.updateInvoiceDocLocally();
-
         const invoice_doc = await this.process_invoice();
 
         console.log("Invoice.js - show_payment() - invoice_doc:", {
           grand_total: invoice_doc?.grand_total,
           net_total: invoice_doc?.net_total,
+          rounded_total: invoice_doc?.rounded_total,
           items_count: invoice_doc?.items?.length || 0,
           payments: invoice_doc?.payments?.length || 0,
+          payments_detail: invoice_doc?.payments?.map(p => ({ mode: p.mode_of_payment, amount: p.amount })),
           pos_profile_payments: this.pos_profile?.payments?.length || 0
         });
 
-        // Add default payment method if no payments exist
+        // Batch parallel API calls if needed
+        const apiCalls = [];
+
+        // Only fetch default payment if no payments exist
         if (!invoice_doc?.payments || invoice_doc?.payments.length === 0) {
-          // Adding default payment
-          try {
-            const defaultPayment = await frappe.call({
-              method: API_MAP.POS_PROFILE.GET_DEFAULT_PAYMENT,
-              args: {
-                pos_profile: this.pos_profile?.name,
-                company:
-                  this.pos_profile?.company ||
-                  frappe.defaults.get_user_default("Company"),
-              },
-            });
-
-            if (defaultPayment.message) {
-              invoice_doc.payments = [
-                {
-                  mode_of_payment: defaultPayment.message.mode_of_payment,
-                  amount: flt(invoice_doc?.grand_total),
-                  account: defaultPayment.message.account,
+          apiCalls.push(
+            frappe.xcall(API_MAP.POS_PROFILE.GET_DEFAULT_PAYMENT, {
+              pos_profile: this.pos_profile?.name,
+              company: this.pos_profile?.company || frappe.defaults.get_user_default("Company"),
+            }).then(defaultPayment => {
+              if (defaultPayment) {
+                invoice_doc.payments = [{
+                  mode_of_payment: defaultPayment.mode_of_payment,
+                  amount: flt(invoice_doc?.rounded_total || invoice_doc?.grand_total),
+                  account: defaultPayment.account,
                   default: 1,
-                },
-              ];
-              // Default payment added
+                }];
+              }
+            }).catch(() => {
+              // Silent fail for default payment
+            })
+          );
+        }
 
-              // في نهج __islocal: لا نحفظ على السيرفر
-              // Payment stays local until Print
-            }
-          } catch (error) {
-            // Payment get failed
-          }
+        // Wait for all batched calls
+        if (apiCalls.length > 0) {
+          await Promise.allSettled(apiCalls);
         }
 
         evntBus.emit("send_invoice_doc_payment", invoice_doc);
@@ -871,79 +946,57 @@ export default {
     },
 
     setDiscountPercentage(item, event) {
-
       let dis_percent = parseFloat(event.target.value) || 0;
+      const maxDiscount = this.pos_profile?.posa_item_max_discount_allowed || 100;
 
-      // Apply max discount limit
-      const maxDiscount =
-        this.pos_profile?.posa_item_max_discount_allowed || 100;
+      dis_percent = Math.max(0, Math.min(dis_percent, maxDiscount));
 
-      if (dis_percent < 0) dis_percent = 0;
       if (dis_percent > maxDiscount) {
-        dis_percent = maxDiscount;
         evntBus.emit("show_mesage", {
-          text: `Maximum discount applied: ${maxDiscount}%`,
+          text: `Maximum discount: ${maxDiscount}%`,
           color: "info",
         });
       }
 
-      item.discount_percentage = dis_percent;
+      item.discount_percentage = frappeFlt(dis_percent, 2);
 
-      const list_price = flt(item.price_list_rate) || 0;
+      const list_price = frappeFlt(item.price_list_rate, this.currency_precision);
       if (list_price > 0) {
-        if (dis_percent > 0) {
-          const dis_amount = (list_price * dis_percent) / 100;
-          item.rate = flt(list_price - dis_amount, this.currency_precision); // dis_price
-        } else {
-          item.rate = list_price; // dis_price = list_price when no discount
-        }
-        // Calculate total amount
+        const dis_amount = frappeFlt((list_price * dis_percent) / 100, this.currency_precision);
+        item.rate = frappeFlt(list_price - dis_amount, this.currency_precision);
         item.amount = this.calculateItemAmount(item);
       }
 
+      // Debounce update
+      this.debounceUpdate(() => this.updateInvoiceDocLocally(), 300);
     },
 
     setItemRate(item, event) {
       let dis_price = parseFloat(event.target.value) || 0;
-      const list_price = flt(item.price_list_rate) || 0;
+      const list_price = frappeFlt(item.price_list_rate, this.currency_precision);
+      const maxDiscount = this.pos_profile?.posa_item_max_discount_allowed || 100;
 
-      if (dis_price < 0) dis_price = 0;
+      dis_price = Math.max(0, Math.min(dis_price, list_price));
 
-      // Don't allow dis_price higher than list_price
-      if (dis_price > list_price) {
-        dis_price = list_price;
-        evntBus.emit("show_mesage", {
-          text: "Price exceeds limit",
-          color: "error",
-        });
-      }
-
-      // Calculate dis_% from price difference
-      let dis_percent = 0;
-      if (list_price > 0) {
-        dis_percent = ((list_price - dis_price) / list_price) * 100;
-      }
-
-      // Apply max discount limit
-      const maxDiscount =
-        this.pos_profile?.posa_item_max_discount_allowed || 100;
+      let dis_percent = list_price > 0 ? frappeFlt(((list_price - dis_price) / list_price) * 100, 2) : 0;
 
       if (dis_percent > maxDiscount) {
-        // Adjust dis_price to respect max discount
-        const max_dis_amount = (list_price * maxDiscount) / 100;
-        dis_price = flt(list_price - max_dis_amount, this.currency_precision);
-        dis_percent = maxDiscount;
+        const max_dis_amount = frappeFlt((list_price * maxDiscount) / 100, this.currency_precision);
+        dis_price = frappeFlt(list_price - max_dis_amount, this.currency_precision);
+        dis_percent = frappeFlt(maxDiscount, 2);
 
         evntBus.emit("show_mesage", {
-          text: `Maximum discount applied: ${maxDiscount}%`,
+          text: `Maximum discount: ${maxDiscount}%`,
           color: "info",
         });
       }
 
-      item.rate = dis_price;
-      item.discount_percentage = flt(dis_percent, 2);
+      item.rate = frappeFlt(dis_price, this.currency_precision);
+      item.discount_percentage = dis_percent;
       item.amount = this.calculateItemAmount(item);
 
+      // Debounce update
+      this.debounceUpdate(() => this.updateInvoiceDocLocally(), 300);
     },
 
     update_price_list() {
@@ -1169,43 +1222,86 @@ export default {
     },
 
     calculateTotalsLocally(doc) {
-      // Calculate totals locally like ERPNext does
+      // Calculate totals locally like ERPNext does using Frappe utilities
       if (!doc || !doc.items) return;
 
-      // Calculate item totals
+      // Use frappe.utils.flt for precise calculations
       let total = 0;
       let total_qty = 0;
       let item_discount_total = 0;
 
       doc.items.forEach(item => {
-        const qty = flt(item.qty) || 0;
-        const rate = flt(item.rate) || 0;
-        const discount_percent = flt(item.discount_percentage) || 0;
+        const qty = frappeFlt(item.qty, this.float_precision);
+        const rate = frappeFlt(item.rate, this.currency_precision);
+        const discount_percent = frappeFlt(item.discount_percentage, 2);
+        const price_list_rate = frappeFlt(item.price_list_rate, this.currency_precision);
 
-        // Calculate discount amount
-        const discount_amount = (rate * qty * discount_percent) / 100;
+        // Calculate using Frappe precision handling
+        const discount_amount = frappeFlt((price_list_rate * qty * discount_percent) / 100, this.currency_precision);
         item.discount_amount = discount_amount;
-        item.amount = (rate * qty) - discount_amount;
+        item.amount = frappeFlt((rate * qty), this.currency_precision);
 
-        total += item.amount;
-        total_qty += qty;
-        item_discount_total += discount_amount;
+        total = frappeFlt(total + item.amount, this.currency_precision);
+        total_qty = frappeFlt(total_qty + qty, this.float_precision);
+        item_discount_total = frappeFlt(item_discount_total + discount_amount, this.currency_precision);
       });
 
-      // Set basic totals
-      doc.total = total;
-      doc.total_qty = total_qty;
-      doc.posa_item_discount_total = item_discount_total;
+      // Set totals with proper precision
+      doc.total = frappeFlt(total, this.currency_precision);
+      doc.total_qty = frappeFlt(total_qty, this.float_precision);
+      doc.posa_item_discount_total = frappeFlt(item_discount_total, this.currency_precision);
 
-      // Apply additional discount
-      const additional_discount = (total * flt(doc.additional_discount_percentage)) / 100;
-      doc.discount_amount = additional_discount;
-      doc.net_total = total - additional_discount;
+      // Additional discount
+      const additional_discount = frappeFlt((total * frappeFlt(doc.additional_discount_percentage)) / 100, this.currency_precision);
+      doc.discount_amount = frappeFlt(additional_discount, this.currency_precision);
+      doc.net_total = frappeFlt(total - additional_discount, this.currency_precision);
 
-      // For now, set tax to 0 (Backend will calculate it properly)
+      // Tax calculation with Frappe precision
       doc.total_taxes_and_charges = 0;
-      doc.grand_total = doc.net_total;
-      doc.rounded_total = Math.round(doc.grand_total * 2) / 2;
+      const applyTax = cint(this.pos_profile?.posa_apply_tax);
+
+      console.log("Invoice.js - calculateTotalsLocally() - pos_profile tax settings:", {
+        pos_profile_name: this.pos_profile?.name,
+        posa_apply_tax: this.pos_profile?.posa_apply_tax,
+        posa_apply_tax_type: typeof this.pos_profile?.posa_apply_tax,
+        posa_tax_type: this.pos_profile?.posa_tax_type,
+        posa_tax_percent: this.pos_profile?.posa_tax_percent,
+        applyTax: applyTax
+      });
+
+      if (applyTax && this.pos_profile?.posa_tax_percent) {
+        const tax_percent = frappeFlt(this.pos_profile.posa_tax_percent);
+
+        console.log("Invoice.js - calculateTotalsLocally() - Tax calculation:", {
+          posa_apply_tax: this.pos_profile.posa_apply_tax,
+          posa_tax_type: this.pos_profile.posa_tax_type,
+          posa_tax_percent: tax_percent,
+          net_total: doc.net_total
+        });
+
+        if (this.pos_profile.posa_tax_type === "Tax Inclusive") {
+          doc.total_taxes_and_charges = frappeFlt((doc.net_total * tax_percent) / (100 + tax_percent), this.currency_precision);
+          doc.grand_total = frappeFlt(doc.net_total, this.currency_precision);
+        } else {
+          doc.total_taxes_and_charges = frappeFlt((doc.net_total * tax_percent) / 100, this.currency_precision);
+          doc.grand_total = frappeFlt(doc.net_total + doc.total_taxes_and_charges, this.currency_precision);
+        }
+
+        console.log("Invoice.js - After tax calculation:", {
+          total_taxes_and_charges: doc.total_taxes_and_charges,
+          grand_total: doc.grand_total
+        });
+      } else {
+        console.log("Invoice.js - No tax - posa_apply_tax:", this.pos_profile?.posa_apply_tax);
+        doc.grand_total = frappeFlt(doc.net_total, this.currency_precision);
+      }
+
+      // Use Frappe's rounding function for currency
+      doc.rounded_total = round_based_on_smallest_currency_fraction(
+        doc.grand_total,
+        this.pos_profile?.currency,
+        this.currency_precision
+      );
     },
 
     handleOffers() {
@@ -1374,6 +1470,20 @@ export default {
         net_total: doc.net_total,
         rounded_total: doc.rounded_total
       });
+
+      // Re-calculate payments with rounded_total
+      // First, temporarily update invoice_doc with calculated totals
+      const tempInvoiceDoc = this.invoice_doc || {};
+      tempInvoiceDoc.rounded_total = doc.rounded_total;
+      tempInvoiceDoc.grand_total = doc.grand_total;
+      const originalInvoiceDoc = this.invoice_doc;
+      this.invoice_doc = tempInvoiceDoc;
+
+      // Re-calculate payments with rounded_total
+      doc.payments = this.get_payments();
+
+      // Restore original invoice_doc
+      this.invoice_doc = originalInvoiceDoc;
 
       if (!this.hasValidPayments(doc)) {
         console.log("Invoice.js - Payment validation failed");
