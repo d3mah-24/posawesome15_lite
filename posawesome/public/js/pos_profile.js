@@ -47,4 +47,17 @@ frappe.ui.form.on('POS Profile', {
         }
     },
 
+    posa_apply_tax: function(frm) {
+        if (!frm.doc.posa_apply_tax) {
+            // Remove tax values when checkbox is unchecked
+            frm.set_value('posa_tax_type', '');
+            frm.set_value('posa_tax_percent', 0);
+
+            frappe.show_alert({
+                message: 'Tax values cleared',
+                indicator: 'info'
+            });
+        }
+    },
+
 });
