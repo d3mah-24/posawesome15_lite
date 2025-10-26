@@ -19,13 +19,6 @@ posawesome/api/
 - Use `fields=["field1", "field2"]` parameter
 - Example: `frappe.get_doc("Item", name, fields=["name", "item_code", "item_name"])`
 
-**Performance Optimization:**
-
-- Use `ignore_version=True` for faster saves
-- Implement immediate `frappe.db.commit()`
-- Target: < 100ms response time without caching
-- Handle `QueryTimeoutError` gracefully
-
 **Error Handling:**
 
 - Implement `frappe.log_error` only for actual errors
@@ -37,7 +30,6 @@ posawesome/api/
 
 **Mandatory compliance for all code contributions:**
 
-- **Frontend:** 3-API batch queue system (CREATE → UPDATE → SUBMIT)
 - **Backend:** Frappe ORM only with specific field selection
 - **Performance:** < 100ms response time, lightweight components
 - **Structure:** DocType-based API organization, no caching except temp batches
