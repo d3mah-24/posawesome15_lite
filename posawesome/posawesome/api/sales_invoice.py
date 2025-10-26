@@ -139,9 +139,11 @@ def create_and_submit_invoice(invoice_doc):
         customer = invoice_doc.get('customer', 'Unknown')
         items_count = len(invoice_doc.get('items', []))
         grand_total = invoice_doc.get('grand_total', 0)
+        is_return = invoice_doc.get('is_return', 0)
+        payments_count = len(invoice_doc.get('payments', []))
 
         frappe.log_error(
-            f"create_and_submit_invoice() - Customer: {customer}, Items: {items_count}, Total: {grand_total}",
+            f"create_and_submit_invoice() - Items: {items_count}, Total: {grand_total}, Is Return: {is_return}, Payments: {payments_count}",
             "POS Invoice Debug"
         )
 
@@ -156,23 +158,23 @@ def create_and_submit_invoice(invoice_doc):
         # Step 1: Use ERPNext native set_missing_values() - fills all default values
         # This is called from SellingController and sets customer, warehouse, etc.
         doc.set_missing_values()
-        frappe.log_error(f"After set_missing_values() - Doc: {doc.doctype}", "POS Invoice Debug")
+        frappe.log_error(f"set_missing_values() - Doctype: {doc.doctype}", "POS Invoice Debug")
 
         # Step 2: Use ERPNext native validate() - full validation
         # This validates customer, items, taxes, payments, etc.
         doc.validate()
-        frappe.log_error(f"After validate() - Docstatus: {doc.docstatus}", "POS Invoice Debug")
+        frappe.log_error(f"validate() - Docstatus: {doc.docstatus}", "POS Invoice Debug")
 
         # Step 3: Use ERPNext native insert() - save draft
         # This saves the document and sets docstatus = 0
         doc.insert()
         invoice_name = doc.name
-        frappe.log_error(f"After insert() - Invoice name: {invoice_name}", "POS Invoice Debug")
+        frappe.log_error(f"insert() - Name: {invoice_name}", "POS Invoice Debug")
 
         # Step 4: Use ERPNext native submit() - submit document
         # This runs before_submit() then on_submit() hooks
         doc.submit()
-        frappe.log_error(f"After submit() - Invoice {invoice_name} submitted successfully", "POS Invoice Debug")
+        frappe.log_error(f"submit() - Success: {invoice_name}", "POS Invoice Debug")
 
         # Return the submitted document
         return doc.as_dict()
