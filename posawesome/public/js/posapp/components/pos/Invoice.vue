@@ -178,8 +178,7 @@
 
       <!-- Action Buttons Row -->
       <div class="action-buttons">
-        <button class="action-btn primary-btn" :disabled="!hasItems || !hasChosenPayment" @click="printInvoice"
-          title="Print after choosing a payment method">
+        <button class="action-btn primary-btn" :disabled="!hasItems" @click="printInvoice" title="Print invoice">
           <i class="mdi mdi-printer action-icon"></i>
           <span>Print</span>
         </button>
