@@ -4,8 +4,9 @@ import subprocess
 # Emojis by extension
 EMOJI = {'.js': '🔄', '.vue': '💄', '.py': '🐍', '.md': '📝', '.json': '📋', '.css': '🎨', '.html': '🌐'}
 
-# Get changed files (skip untracked files)
-files = [f.split()[1] for f in subprocess.getoutput("git status --porcelain").strip().split('\n') if f and f.split()[0] in ['M', 'A', '??'] and 'auto_commit.py' not in f]
+# Get changed files
+files = subprocess.getoutput("git status --short").strip().split('\n')
+files = [f.split()[1] for f in files if f.strip()]
 
 if not files:
     print("✅ No changes")
