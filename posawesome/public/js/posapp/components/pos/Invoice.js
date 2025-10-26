@@ -174,7 +174,8 @@ export default {
       return this.items && this.items.length > 0;
     },
     hasChosenPayment() {
-      return this.hasValidPayments();
+      // Allow printing if there are valid payments OR default payment mode is available
+      return this.hasValidPayments() || !!this.defaultPaymentMode;
     },
   },
 
@@ -697,8 +698,6 @@ export default {
     },
 
     async show_payment() {
-      if (this.readonly) return;
-
       evntBus.emit("show_loading", { text: "Loading...", color: "info" });
 
       try {
@@ -1312,7 +1311,7 @@ export default {
     },
 
     printInvoice() {
-      if (!this.invoice_doc || !this.defaultPaymentMode) return;
+      if (!this.invoice_doc) return;
 
       evntBus.emit("show_loading", { text: "Processing...", color: "info" });
 
