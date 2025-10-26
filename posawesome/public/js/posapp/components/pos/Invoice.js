@@ -57,6 +57,10 @@ export default {
       _itemOperationTimer: null,
       _updatingFromAPI: false,
 
+      // ===== OFFER CACHING (Simple) =====
+      _sessionOffers: [],      // All offers from Pos.js
+      _lastCustomer: null,     // Track customer changes
+
       // Table Headers Configuration
       items_headers: [
         {
@@ -254,7 +258,7 @@ export default {
       return discountPercentage > 0 && basePrice > 0
         ? flt((basePrice * discountPercentage) / 100) || 0
         : 0;
-    },
+    },  
 
     quick_return() {
       // Enable Quick Return Mode - creates return invoice without linking to previous invoice
@@ -463,6 +467,10 @@ export default {
       evntBus.emit("update_invoice_doc", null);
 
       this.customer = this.pos_profile?.customer || this.customer;
+      this._lastCustomer = null;  // Clear customer cache
+      
+      // Recalculate offers for new session with default customer
+      this.calculateAndApplyOffers();
       // لا نرسل "new_invoice" event هنا لتفادي recursion
       // يتم إرساله من printInvoice() فقط بعد الطباعة الناجحة
     },
@@ -1421,6 +1429,168 @@ export default {
         offer_applied: offer.offer_applied,
       };
       this.posa_offers.push(newOffer);
+    },
+
+    /**
+     * Calculate and apply offers based on current invoice state
+     * Called directly when items/customer change
+     */
+    calculateAndApplyOffers() {
+      // Exit early if offers disabled
+      if (!this.pos_profile?.posa_auto_fetch_offers) {
+        return;
+      }
+
+      // Exit if no offers cached
+      if (!this._sessionOffers || this._sessionOffers.length === 0) {
+        return;
+      }
+
+      // Exit if no items
+      if (!this.items || this.items.length === 0) {
+        this.clearOfferDiscounts();
+        return;
+      }
+
+      // Calculate totals
+      const totalQty = this.items.reduce((sum, item) => sum + flt(item.qty || 0), 0);
+      const totalAmount = this.items.reduce((sum, item) => 
+        sum + (flt(item.qty || 0) * flt(item.rate || 0)), 0);
+
+      // Filter applicable offers
+      const applicableOffers = this._sessionOffers.filter(offer => {
+        // Check date validity
+        const today = frappe.datetime.nowdate();
+        if (offer.valid_from && today < offer.valid_from) return false;
+        if (offer.valid_upto && today > offer.valid_upto) return false;
+
+        // Check qty thresholds
+        if (offer.min_qty && totalQty < flt(offer.min_qty)) return false;
+        if (offer.max_qty && totalQty > flt(offer.max_qty)) return false;
+
+        // Check amount thresholds
+        if (offer.min_amt && totalAmount < flt(offer.min_amt)) return false;
+        if (offer.max_amt && totalAmount > flt(offer.max_amt)) return false;
+
+        // Check customer match
+        if (offer.offer_type === 'customer' && offer.customer !== this.customer) {
+          return false;
+        }
+
+        // Check customer group match
+        if (offer.offer_type === 'customer_group') {
+          if (!this.customer_info?.customer_group || 
+              this.customer_info.customer_group !== offer.customer_group) {
+            return false;
+          }
+        }
+
+        // Check item-specific applicability
+        if (offer.offer_type === 'item_code') {
+          return this.items.some(item => item.item_code === offer.item_code);
+        }
+
+        if (offer.offer_type === 'item_group') {
+          return this.items.some(item => item.item_group === offer.item_group);
+        }
+
+        if (offer.offer_type === 'brand') {
+          return this.items.some(item => item.brand === offer.brand);
+        }
+
+        return true; // General offer or grand_total offer
+      });
+
+      // Apply offers
+      this.applyOffersToInvoice(applicableOffers);
+    },
+
+    /**
+     * Apply filtered offers to invoice
+     */
+    applyOffersToInvoice(offers) {
+      if (!offers || offers.length === 0) {
+        this.clearOfferDiscounts();
+        return;
+      }
+
+      // Sort by priority: auto offers first, then by discount percentage
+      const sortedOffers = offers.sort((a, b) => {
+        if (a.auto && !b.auto) return -1;
+        if (!a.auto && b.auto) return 1;
+        return flt(b.discount_percentage) - flt(a.discount_percentage);
+      });
+
+      // Apply transaction-level offer (only one allowed)
+      const transactionOffer = sortedOffers.find(offer => 
+        offer.auto && 
+        offer.discount_percentage && 
+        ['grand_total', 'customer', 'customer_group', ''].includes(offer.offer_type || '')
+      );
+
+      if (transactionOffer) {
+        this.additional_discount_percentage = flt(transactionOffer.discount_percentage);
+        this.offer_discount_percentage = flt(transactionOffer.discount_percentage);
+        
+        this.posa_offers = [{
+          offer_name: transactionOffer.name,
+          offer_type: transactionOffer.offer_type,
+          discount_percentage: transactionOffer.discount_percentage,
+          offer_applied: true,
+          row_id: ''
+        }];
+      } else {
+        this.clearOfferDiscounts();
+      }
+
+      // Apply item-level offers
+      sortedOffers.forEach(offer => {
+        if (!offer.auto || !offer.discount_percentage) return;
+
+        this.items.forEach(item => {
+          let shouldApply = false;
+
+          if (offer.offer_type === 'item_code' && item.item_code === offer.item_code) {
+            shouldApply = true;
+          } else if (offer.offer_type === 'item_group' && item.item_group === offer.item_group) {
+            shouldApply = true;
+          } else if (offer.offer_type === 'brand' && item.brand === offer.brand) {
+            shouldApply = true;
+          }
+
+          if (shouldApply) {
+            const offerDiscount = flt(offer.discount_percentage);
+            // Only apply if offer discount is better than current
+            if (offerDiscount > flt(item.discount_percentage || 0)) {
+              item.discount_percentage = offerDiscount;
+              
+              // Recalculate item price
+              const list_price = flt(item.price_list_rate) || 0;
+              if (list_price > 0) {
+                const discount_amount = (list_price * offerDiscount) / 100;
+                item.rate = flt(list_price - discount_amount, this.currency_precision);
+                item.amount = this.calculateItemAmount(item);
+              }
+            }
+          }
+        });
+      });
+
+      // Update totals
+      this.updateInvoiceDocLocally();
+    },
+
+    /**
+     * Clear offer-based discounts
+     */
+    clearOfferDiscounts() {
+      if (this.offer_discount_percentage > 0) {
+        this.additional_discount_percentage = 0;
+        this.offer_discount_percentage = 0;
+      }
+      if (!this.posa_offers || this.posa_offers.length === 0) {
+        this.posa_offers = [];
+      }
     },
 
     printInvoice() {
