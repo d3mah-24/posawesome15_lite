@@ -157,21 +157,21 @@
         <div class="summary-field readonly-field">
           <label>net_total</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.net_total) }}
+            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.net_total || 0) }}
           </div>
         </div>
 
         <div class="summary-field readonly-field info-field">
           <label>tax</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.total_taxes_and_charges) }}
+            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.total_taxes_and_charges || 0) }}
           </div>
         </div>
 
         <div class="summary-field readonly-field success-field grand-total">
           <label>grand_total</label>
           <div class="field-value">
-            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.grand_total) }}
+            {{ currencySymbol(pos_profile?.currency) }}{{ formatCurrency(invoice_doc?.grand_total || 0) }}
           </div>
         </div>
       </div>
