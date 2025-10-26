@@ -21,10 +21,21 @@ frappe.pages['posapp'].on_page_load = function (wrapper) {
 // Listen for POS Profile loaded to apply translations based on posa_language
 window.addEventListener('posProfileLoaded', function(e) {
 	const posProfile = e.detail.pos_profile;
-	if (posProfile && posProfile.posa_language && posProfile.posa_language == "ar") {
+	const language = posProfile && posProfile.posa_language ? posProfile.posa_language : 'en';
+	
+	// Get translations based on language
+	const translations = getTranslationsForLanguage(language);
+	if (translations) {
 		// Ensure __messages exists before extending it
 		window.__messages = window.__messages || {};
-		$.extend(window.__messages, {
+		$.extend(window.__messages, translations);
+	}
+});
+
+// Translation maps for different languages
+function getTranslationsForLanguage(language) {
+	const TRANSLATIONS = {
+		ar: {
 			"POS Awesome": "نقاط البيع المميزة",
 			"Menu": "قائمة",
 			"List": "قائمة",
@@ -187,10 +198,37 @@ window.addEventListener('posProfileLoaded', function(e) {
 			"Return invoice total should not be higher than {0}": "مجموع فاتورة الإرجاع لا يجب أن يكون أعلى من {0}",
 			"Quantity for item {0} cannot be greater than {1}": "الكمية للصنف {0} لا يمكن أن تكون أكبر من {1}",
 			"You are not allowed to print pending invoices": "لا يُسمح لك بطباعة الفواتير المعلقة",
-			"Loyalty points offer applied": "تم تطبيق عرض نقاط الولاء"
-		});
-	}
-});
+			"Loyalty points offer applied": "تم تطبيق عرض نقاط الولاء",
+			// Additional text from components
+			"inv_disc%": "خصم الفاتورة %",
+			"items_dis": "خصم الأصناف",
+			"before_disc": "قبل الخصم",
+			"net_total": "الصافي",
+			"grand_total": "الإجمالي الكلي",
+			"Print": "طباعة",
+			"Quick Return": "مرتجع سريع",
+			"Scan Barcode": "مسح الباركود",
+			"Search Item": "بحث عن الصنف",
+			"Clear Cache": "مسح الذاكرة المؤقتة",
+			"About System": "حول النظام",
+			"No last receipt": "لا يوجد اخر فاتورة"
+		},
+		es: {
+			"POS Awesome": "POS Awesome",
+			"Menu": "Menú",
+			"Close Shift": "Cerrar Turno",
+			"Logout": "Cerrar sesión"
+		},
+		pt: {
+			"POS Awesome": "POS Awesome",
+			"Menu": "Menu",
+			"Close Shift": "Fechar Turno",
+			"Logout": "Sair"
+		}
+	};
+	
+	return TRANSLATIONS[language] || null;
+}
 
 frappe.pages['posapp'].on_page_leave = function() {
 	// Remove Material Design Icons CSS when leaving POS app
