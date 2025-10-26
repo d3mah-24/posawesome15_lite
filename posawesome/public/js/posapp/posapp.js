@@ -207,7 +207,7 @@ const TRANSLATIONS = {
 // Function to apply translations based on language
 function applyTranslations(language) {
   if (!language || language === 'en') return; // English is default
-  
+
   const translations = TRANSLATIONS[language];
   if (translations) {
     window.__messages = window.__messages || {};
@@ -230,7 +230,7 @@ function SetVueGlobals(app) {
     // Set up global properties that components might need
     app.config.globalProperties.$frappe = frappe;
     app.config.globalProperties.$__ = __; // Frappe's translation function
-    
+
     // Make common Frappe utilities available globally
     if (typeof frappe !== 'undefined') {
         app.config.globalProperties.$call = frappe.call;
