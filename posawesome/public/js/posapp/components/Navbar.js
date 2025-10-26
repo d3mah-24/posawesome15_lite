@@ -39,12 +39,21 @@ export default {
       // Payment totals
       totalCash: 0,
       totalNonCash: 0,
+      // Quick return mode
+      quick_return_value: false,
     };
   },
   computed: {
     invoiceNumberText() {
       if (!this.invoice_doc || !this.invoice_doc.name) {
-        return "Invoice not created yet";
+        // Check current mode
+        if (this.invoice_doc?.is_return) {
+          return "Return_Invoice_Mode";
+        }
+        if (this.quick_return_value) {
+          return "Quick_Return_Mode";
+        }
+        return "Sales_Invoice_Mode";
       }
       return this.invoice_doc.name;
     },
@@ -535,6 +544,9 @@ export default {
         });
         evntBus.on("set_last_invoice", (data) => {
           this.last_invoice = data;
+        });
+        evntBus.on("toggle_quick_return", (value) => {
+          this.quick_return_value = value;
         });
         evntBus.on("update_invoice_doc", (data) => {
           this.invoice_doc = data;
