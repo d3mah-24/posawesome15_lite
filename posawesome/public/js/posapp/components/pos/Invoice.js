@@ -1249,9 +1249,9 @@ export default {
       if (applyTax && normalizedTaxType && (normalizedTaxType === 'Inclusive' || normalizedTaxType === 'Exclusive') && !isNaN(taxPercent) && taxPercent > 0) {
         // Calculate tax using shared utility function
         const taxAmount = this.calculateTax(doc.net_total, normalizedTaxType, taxPercent);
-        
+
         doc.total_taxes_and_charges = flt(taxAmount, this.currency_precision);
-        
+
         // For inclusive tax, grand_total = net_total (tax already included)
         // For exclusive tax, grand_total = net_total + tax
         if (normalizedTaxType === 'Exclusive') {
