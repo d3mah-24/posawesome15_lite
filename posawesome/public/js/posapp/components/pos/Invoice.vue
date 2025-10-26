@@ -274,6 +274,24 @@
   font-style: italic !important;
 }
 
+/* Sales Invoice Mode - Green Bold */
+.sales-invoice-mode .invoice-number-text {
+  color: #4caf50 !important;
+  font-weight: bold !important;
+}
+
+/* Quick Return Mode - Purple Bold */
+.quick-return-mode .invoice-number-text {
+  color: #9c27b0 !important;
+  font-weight: bold !important;
+}
+
+/* Return Invoice Mode - Grey Bold */
+.return-invoice-mode .invoice-number-text {
+  color: #757575 !important;
+  font-weight: bold !important;
+}
+
 /* Global compact styling to match 75% zoom appearance */
 .v-application {
   font-size: 0.75rem !important;
