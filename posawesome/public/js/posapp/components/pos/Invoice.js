@@ -182,13 +182,13 @@ export default {
     onQtyChange(item) {
       const newQty = Number(item.qty) || 0;
       item.qty = newQty;
+
       item.amount = this.calculateItemAmount(item);
-      this.debouncedItemOperation("qty-change");
+      this.updateInvoiceDocLocally();
     },
 
     onQtyInput(item) {
       // Handle input events - use same logic as onQtyChange but without debounce
-      this.isUpdatingTotals = true; // تعيين حالة تحديث المجاميع إلى true
       this.onQtyChange(item);
     },
 
@@ -196,7 +196,7 @@ export default {
       item.qty = (Number(item.qty) || 0) + 1;
       item.amount = this.calculateItemAmount(item);
       evntBus.emit("item_updated", item);
-      this.isUpdatingTotals = true;
+      this.updateInvoiceDocLocally();
     },
 
     decreaseQuantity(item) {
@@ -207,7 +207,7 @@ export default {
         item.qty = newQty;
         item.amount = this.calculateItemAmount(item);
         evntBus.emit("item_updated", item);
-        this.isUpdatingTotals = true;
+        this.updateInvoiceDocLocally();
       }
     },
 
@@ -240,8 +240,10 @@ export default {
       );
       if (index >= 0) {
         this.items.splice(index, 1);
-        if (this.items.length === 0 && this.invoice_doc?.name) {
-          this.delete_draft_invoice();
+        this.updateInvoiceDocLocally();
+        // في نهج __islocal: إذا لم يبقى أصناف، نعيد تعيين الجلسة
+        if (this.items.length === 0) {
+          this.reset_invoice_session();
         } else {
           evntBus.emit("item_removed", item);
         }
@@ -263,7 +265,6 @@ export default {
       if (existing_item) {
         existing_item.qty = flt(existing_item.qty) + flt(new_item.qty);
         existing_item.amount = this.calculateItemAmount(existing_item);
-        this.isUpdatingTotals = true;
       } else {
         new_item.posa_row_id = this.generateRowId();
         new_item.posa_offers = "[]";
@@ -273,17 +274,40 @@ export default {
         new_item.is_free_item = 0;
         new_item.amount = this.calculateItemAmount(new_item);
         this.items.push(new_item);
-        this.isUpdatingTotals = true;
       }
+
+      // Update invoice_doc locally when items change
+      this.updateInvoiceDocLocally();
 
       if (this.items.length === 1 && !this.invoice_doc?.name) {
         this.create_draft_invoice();
       } else {
         evntBus.emit("item_added", existing_item || new_item);
-        if (existing_item) {
-          this.isUpdatingTotals = true;
-        }
       }
+    },
+
+    updateInvoiceDocLocally() {
+      // Update invoice_doc totals locally
+      if (!this.invoice_doc) {
+        this.invoice_doc = {};
+      }
+
+      // Use get_invoice_doc to get current data
+      const doc = this.get_invoice_doc("auto");
+
+      // Calculate totals locally
+      this.calculateTotalsLocally(doc);
+
+      // Update invoice_doc with calculated totals
+      this.invoice_doc.total = doc.total;
+      this.invoice_doc.total_qty = doc.total_qty;
+      this.invoice_doc.posa_item_discount_total = doc.posa_item_discount_total;
+      this.invoice_doc.discount_amount = doc.discount_amount;
+      this.invoice_doc.net_total = doc.net_total;
+      this.invoice_doc.grand_total = doc.grand_total;
+      this.invoice_doc.rounded_total = doc.rounded_total;
+
+      this.isUpdatingTotals = false;
     },
     generateRowId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -312,168 +336,18 @@ export default {
     },
 
     async create_draft_invoice() {
-      try {
-        const doc = this.get_invoice_doc("draft");
-        const result = await this.create_invoice(doc);
-
-        if (result) {
-          this.invoice_doc = result;
-          this.isUpdatingTotals = false;
-        } else {
-          this.invoice_doc = null;
-          this.items = [];
-          this.isUpdatingTotals = false;
-        }
-      } catch (error) {
-        // Draft creation failed - continue with current state
-        this.isUpdatingTotals = false;
-      }
+      // DISABLED: All operations stay __islocal - no auto-saving
+      this.isUpdatingTotals = false;
+      return null;
     },
     create_invoice(doc) {
-      const vm = this;
-      return new Promise((resolve, reject) => {
-        frappe.call({
-          method: API_MAP.SALES_INVOICE.CREATE,
-          args: {
-            data: doc,
-          },
-          async: true,
-          callback: function (r) {
-            vm._processOffers();
-            if (r.message !== undefined) {
-              if (r.message === null) {
-                vm.invoice_doc = null;
-                vm.items = [];
-                resolve(null);
-              } else {
-
-                vm.invoice_doc = r.message;
-
-                // Emit event for navbar to update invoice display
-                evntBus.emit("update_invoice_doc", vm.invoice_doc);
-
-                // Update posa_offers from backend response
-                if (r.message.posa_offers) {
-                  vm.posa_offers = r.message.posa_offers;
-
-                  const appliedOffers = vm.posa_offers.filter(
-                    (offer) => offer.offer_applied
-                  );
-                  if (appliedOffers.length > 0) {
-                    evntBus.emit("update_pos_offers", appliedOffers);
-                  }
-                }
-
-                // Sync additional_discount_percentage from server response
-                if (r.message.additional_discount_percentage !== undefined) {
-                  vm.additional_discount_percentage = flt(r.message.additional_discount_percentage);
-                }
-
-                vm._processOffers();
-
-                // Resolve the promise with the created invoice
-                resolve(vm.invoice_doc);
-              }
-            } else {
-              reject(new Error("Failed to create invoice"));
-            }
-          },
-          error: function (err) {
-            reject(err);
-          },
-        });
-      });
+      // DISABLED: All operations stay __islocal - no auto-saving
+      return Promise.resolve(null);
     },
 
     async auto_update_invoice(doc = null, reason = "auto") {
-      if (this.invoice_doc?.submitted_for_payment) {
-        return;
-      }
-
-      if (!doc && this.items.length === 0 && !this.invoice_doc?.name) {
-        return;
-      }
-
-      const payload = doc || this.get_invoice_doc(reason);
-
-      try {
-        let result;
-
-        if (!this.invoice_doc?.name && this.items.length > 0) {
-          result = await this.create_invoice(payload);
-        } else if (this.invoice_doc?.name) {
-          result = await this.update_invoice(payload);
-        } else {
-          return null;
-        }
-
-        if (!result) {
-          this.invoice_doc = null;
-          this.items = [];
-          return null;
-        }
-
-        if (result && Array.isArray(result.items)) {
-          // Set flag to prevent watcher loop
-          this._updatingFromAPI = true;
-
-          // Merge API items with local items
-          this.mergeItemsFromAPI(result.items);
-
-          // Reset flag after update
-          this.$nextTick(() => {
-            this._updatingFromAPI = false;
-          });
-        }
-
-        // Always update invoice_doc with API response
-        if (result) {
-          if (result.name && !this.invoice_doc?.name) {
-            evntBus.emit("show_mesage", {
-              text: "Draft created",
-              color: "success",
-            });
-          }
-
-          // Update invoice_doc with latest totals from server
-          this.invoice_doc = {
-            ...this.invoice_doc,
-            ...result,
-            items:
-              this.items.length > (result.items?.length || 0)
-                ? this.items
-                : result.items || [],
-          };
-        }
-
-        // === CRITICAL FIX: ENSURE LOCAL STATE REFLECTS SERVER'S CALCULATION ===
-        this.additional_discount_percentage = this.invoice_doc.additional_discount_percentage || 0;
-        this.discount_amount = this.invoice_doc.discount_amount || 0;
-        // ======================================================================
-
-        this._updatingFromAPI = false;
-        return result;
-      } catch (error) {
-        if (
-          error?.message &&
-          error.message.includes("Document has been modified")
-        ) {
-          try {
-            await this.reload_invoice();
-          } catch (reloadError) {
-            // Invoice reload failed after conflict - continue with current data
-          }
-          return;
-        }
-
-        evntBus.emit("show_mesage", {
-          text: "Auto-saving draft failed",
-          color: "error",
-        });
-
-        this._updatingFromAPI = false;
-        throw error;
-      }
+      // DISABLED: All operations stay __islocal - no auto-saving
+      return null;
     },
 
     queue_auto_save(reason = "auto") {
@@ -512,61 +386,12 @@ export default {
       }
     },
 
-    debounced_auto_update(reason = "auto") {
-      if (this._autoUpdateTimer) {
-        clearTimeout(this._autoUpdateTimer);
-      }
-
-      this._autoUpdateTimer = setTimeout(() => {
-        this.queue_auto_save(reason);
-      }, 500);
-    },
 
     cancel_invoice() {
-      if (this.invoice_doc && this.invoice_doc?.name) {
-        frappe.call({
-          method: "frappe.client.delete",
-          args: {
-            doctype: "Sales Invoice",
-            name: this.invoice_doc?.name,
-          },
-          callback: (r) => {
-            if (r.message) {
-              evntBus.emit("show_mesage", {
-                text: "Draft cancelled",
-                color: "success",
-              });
-            }
-          },
-        });
-      }
-
-      this.resetInvoiceState();
-      this.customer = this.pos_profile?.customer;
-      this.invoice_doc = "";
-      this.return_doc = "";
-      evntBus.emit("set_customer_readonly", false);
+      // في نهج __islocal: لا نحتاج حذف من قاعدة البيانات
+      // فقط إعادة تعيين الحالة وإغلاق نافذة الدفع
+      this.reset_invoice_session();
       evntBus.emit("show_payment", "false");
-    },
-
-    delete_draft_invoice() {
-      const name = this.invoice_doc && this.invoice_doc?.name;
-      const reset = () => {
-        this.reset_invoice_session();
-      };
-
-      if (!name) {
-        reset();
-        return;
-      }
-
-      frappe
-        .call({
-          method: API_MAP.SALES_INVOICE.DELETE,
-          args: { invoice_name: name },
-        })
-        .then(reset)
-        .catch(reset);
     },
 
     reset_invoice_session() {
@@ -574,23 +399,18 @@ export default {
       this.return_doc = null;
       this.invoice_doc = "";
       this.customer = this.pos_profile?.customer || this.customer;
-      evntBus.emit("new_invoice", "false");
+      // لا نرسل "new_invoice" event هنا لتفادي recursion
+      // يتم إرساله من printInvoice() فقط بعد الطباعة الناجحة
     },
 
     new_invoice(data = {}) {
-      let old_invoice = null;
       evntBus.emit("set_customer_readonly", false);
       this.posa_offers = [];
       this.return_doc = "";
 
-      const doc = this.get_invoice_doc();
-      if (doc.name) {
-        old_invoice = this.update_invoice(doc);
-      } else {
-        if (doc.items.length) {
-          old_invoice = this.update_invoice(doc);
-        }
-      }
+      // في نهج __islocal: لا نحفظ أي شيء قبل Print
+      // previous invoice is automatically discarded
+
       if (!data.name && !data.is_return) {
         this.items = [];
         this.customer = this.pos_profile?.customer;
@@ -851,18 +671,26 @@ export default {
     },
 
     async process_invoice() {
+      // استخدام get_invoice_doc لبناء المستند الكامل
       const doc = this.get_invoice_doc("payment");
 
-      try {
-        const result = await this.update_invoice(doc);
-        return result;
-      } catch (error) {
-        evntBus.emit("show_mesage", {
-          text: "Processing failed",
-          color: "error",
-        });
-        throw error;
+      // حساب الإجماليات محلياً
+      this.calculateTotalsLocally(doc);
+
+      // نسخ الإجماليات إلى invoice_doc للاحتفاظ بها
+      if (!this.invoice_doc) {
+        this.invoice_doc = {};
       }
+      this.invoice_doc.total = doc.total;
+      this.invoice_doc.total_qty = doc.total_qty;
+      this.invoice_doc.posa_item_discount_total = doc.posa_item_discount_total;
+      this.invoice_doc.discount_amount = doc.discount_amount;
+      this.invoice_doc.net_total = doc.net_total;
+      this.invoice_doc.grand_total = doc.grand_total;
+      this.invoice_doc.rounded_total = doc.rounded_total;
+      this.invoice_doc.items = doc.items;
+
+      return doc;
     },
 
     async show_payment() {
@@ -871,7 +699,18 @@ export default {
       evntBus.emit("show_loading", { text: "Loading...", color: "info" });
 
       try {
+        // التأكد من تحديث الإجماليات محلياً قبل فتح نافذة الدفع
+        this.updateInvoiceDocLocally();
+
         const invoice_doc = await this.process_invoice();
+
+        console.log("Invoice.js - show_payment() - invoice_doc:", {
+          grand_total: invoice_doc?.grand_total,
+          net_total: invoice_doc?.net_total,
+          items_count: invoice_doc?.items?.length || 0,
+          payments: invoice_doc?.payments?.length || 0,
+          pos_profile_payments: this.pos_profile?.payments?.length || 0
+        });
 
         // Add default payment method if no payments exist
         if (!invoice_doc?.payments || invoice_doc?.payments.length === 0) {
@@ -898,18 +737,8 @@ export default {
               ];
               // Default payment added
 
-              // Save default payment to server
-              try {
-                await frappe.call({
-                  method: API_MAP.SALES_INVOICE.UPDATE,
-                  args: {
-                    invoice_data: invoice_doc,
-                  },
-                });
-                // Default payment saved
-              } catch (error) {
-                // Payment save failed
-              }
+              // في نهج __islocal: لا نحفظ على السيرفر
+              // Payment stays local until Print
             }
           } catch (error) {
             // Payment get failed
@@ -1033,7 +862,6 @@ export default {
         item.amount = this.calculateItemAmount(item);
       }
 
-      this.debouncedItemOperation("discount-change");
     },
 
     setItemRate(item, event) {
@@ -1077,7 +905,6 @@ export default {
       item.discount_percentage = flt(dis_percent, 2);
       item.amount = this.calculateItemAmount(item);
 
-      this.debouncedItemOperation("rate-change");
     },
 
     update_price_list() {
@@ -1089,13 +916,15 @@ export default {
     },
 
     update_discount_umount() {
-
       // Simplified: just validate and set, server will recalculate
       if (!this.pos_profile?.posa_allow_user_to_edit_additional_discount) {
         this.additional_discount_percentage =
           this.invoice_doc?.additional_discount_percentage || 0;
         return;
       }
+
+      // Update totals locally when discount changes
+      this.updateInvoiceDocLocally();
 
       const value = flt(this.additional_discount_percentage) || 0;
       const maxDiscount =
@@ -1111,7 +940,6 @@ export default {
         });
       }
 
-      this.debouncedItemOperation("invoice-discount-change");
     },
 
     set_serial_no(item) {
@@ -1295,32 +1123,50 @@ export default {
       }
     },
 
-    debouncedItemOperation(operation = "item-operation") {
-      // Clear existing timer
-      if (this._itemOperationTimer) {
-        clearTimeout(this._itemOperationTimer);
-      }
-
-      // Wait 1 second after user stops, then send update
-      this._itemOperationTimer = setTimeout(() => {
-        this.sendInvoiceUpdate();
-      }, 1000); // 1 second delay
-    },
 
     sendInvoiceUpdate() {
-      if (!this.invoice_doc?.name) return;
+      // DISABLED: No auto-saving - everything stays local
+      this.isUpdatingTotals = false;
+    },
 
-      // Sending update to server
+    calculateTotalsLocally(doc) {
+      // Calculate totals locally like ERPNext does
+      if (!doc || !doc.items) return;
 
-      const doc = this.get_invoice_doc("item-update");
+      // Calculate item totals
+      let total = 0;
+      let total_qty = 0;
+      let item_discount_total = 0;
 
-      this.auto_update_invoice(doc, "item-update")
-        .then(() => {
-          this.isUpdatingTotals = false;
-        })
-        .catch((error) => {
-          this.isUpdatingTotals = false;
-        });
+      doc.items.forEach(item => {
+        const qty = flt(item.qty) || 0;
+        const rate = flt(item.rate) || 0;
+        const discount_percent = flt(item.discount_percentage) || 0;
+
+        // Calculate discount amount
+        const discount_amount = (rate * qty * discount_percent) / 100;
+        item.discount_amount = discount_amount;
+        item.amount = (rate * qty) - discount_amount;
+
+        total += item.amount;
+        total_qty += qty;
+        item_discount_total += discount_amount;
+      });
+
+      // Set basic totals
+      doc.total = total;
+      doc.total_qty = total_qty;
+      doc.posa_item_discount_total = item_discount_total;
+
+      // Apply additional discount
+      const additional_discount = (total * flt(doc.additional_discount_percentage)) / 100;
+      doc.discount_amount = additional_discount;
+      doc.net_total = total - additional_discount;
+
+      // For now, set tax to 0 (Backend will calculate it properly)
+      doc.total_taxes_and_charges = 0;
+      doc.grand_total = doc.net_total;
+      doc.rounded_total = Math.round(doc.grand_total * 2) / 2;
     },
 
     handleOffers() {
@@ -1432,7 +1278,8 @@ export default {
         });
 
       this.posa_offers = cleaned;           // backend reads posa_offers
-      this.debounced_auto_update("offers"); // triggers update call
+      // في نهج __islocal: لا نحتاج تحديثات تلقائية
+      // updates stay local until Print
     },
 
 
@@ -1466,66 +1313,90 @@ export default {
 
       evntBus.emit("show_loading", { text: "Processing...", color: "info" });
 
-      this.process_invoice()
-        .then((invoice_doc) => {
-          if (!this.hasValidPayments(invoice_doc)) {
-            evntBus.emit("show_payment", "true");
-            evntBus.emit("hide_loading");
-            return;
-          }
+      // Build invoice_doc locally as __islocal (ERPNext native approach)
+      const doc = this.get_invoice_doc("print");
+      doc.__islocal = 1;  // Mark as local document (matches ERPNext behavior)
 
-          // Use Frappe's built-in submit
-          frappe.call({
-            method: "frappe.client.submit",
-            args: {
-              doc: invoice_doc,
-            },
-            callback: (r) => {
-              evntBus.emit("hide_loading");
+      // Debug: Log important invoice data
+      console.log("Invoice.js - printInvoice():", {
+        customer: doc.customer,
+        items_count: doc.items?.length || 0,
+        grand_total: doc.grand_total,
+        payment_count: doc.payments?.length || 0
+      });
 
-              if (r.message?.name) {
-                const print_format = this.pos_profile?.print_format;
+      // Calculate totals locally (like ERPNext does)
+      // This ensures totals are updated without saving to server
+      this.calculateTotalsLocally(doc);
 
-                // Open print window directly
-                const print_url = frappe.urllib.get_full_url(
-                  `/printview?doctype=Sales%20Invoice&name=${r.message.name}&format=${print_format}&trigger_print=1&no_letterhead=0`
-                );
+      console.log("Invoice.js - After calculateTotalsLocally():", {
+        grand_total: doc.grand_total,
+        net_total: doc.net_total,
+        rounded_total: doc.rounded_total
+      });
 
-                window.open(print_url);
+      if (!this.hasValidPayments(doc)) {
+        console.log("Invoice.js - Payment validation failed");
+        evntBus.emit("show_payment", "true");
+        evntBus.emit("hide_loading");
+        return;
+      }
 
-                evntBus.emit("set_last_invoice", r.message.name);
-                evntBus.emit("show_mesage", {
-                  text: `Invoice ${r.message.name} submitted`,
-                  color: "success",
-                });
-
-                this.resetInvoiceState();
-                this.invoice_doc = null;
-                evntBus.emit("new_invoice", "false");
-                evntBus.emit("invoice_submitted");
-              } else {
-                evntBus.emit("show_mesage", {
-                  text: "Submit failed",
-                  color: "error",
-                });
-              }
-            },
-            error: (err) => {
-              evntBus.emit("hide_loading");
-              evntBus.emit("show_mesage", {
-                text: err?.message || "Failed to submit",
-                color: "error",
-              });
-            },
+      // Send to server for insert + submit (ERPNext native workflow)
+      console.log("Invoice.js - Sending to server for create_and_submit_invoice");
+      frappe.call({
+        method: "posawesome.posawesome.api.sales_invoice.create_and_submit_invoice",
+        args: {
+          invoice_doc: doc,
+        },
+        callback: (r) => {
+          console.log("Invoice.js - Server response:", {
+            success: !!r.message?.name,
+            invoice_name: r.message?.name || "No name"
           });
-        })
-        .catch((error) => {
+
+          evntBus.emit("hide_loading");
+
+          if (r.message?.name) {
+            const print_format = this.pos_profile?.print_format;
+
+            // Open print window directly
+            const print_url = frappe.urllib.get_full_url(
+              `/printview?doctype=Sales%20Invoice&name=${r.message.name}&format=${print_format}&trigger_print=1&no_letterhead=0`
+            );
+
+            window.open(print_url);
+
+            evntBus.emit("set_last_invoice", r.message.name);
+            evntBus.emit("show_mesage", {
+              text: `Invoice ${r.message.name} submitted`,
+              color: "success",
+            });
+
+            this.resetInvoiceState();
+            this.invoice_doc = null;
+            // إعادة تعيين الجلسة بعد الطباعة الناجحة
+            this.reset_invoice_session();
+            // إغلاق نافذة الدفع وإفراغ الكاش
+            evntBus.emit("show_payment", "false");
+            evntBus.emit("invoice_submitted");
+          } else {
+            console.error("Invoice.js - Submit failed: No invoice name returned");
+            evntBus.emit("show_mesage", {
+              text: "Submit failed",
+              color: "error",
+            });
+          }
+        },
+        error: (err) => {
+          console.error("Invoice.js - Server error:", err?.message || "Unknown error");
           evntBus.emit("hide_loading");
           evntBus.emit("show_mesage", {
-            text: "Failed to prepare invoice: " + error.message,
+            text: err?.message || "Failed to submit",
             color: "error",
           });
-        });
+        },
+      });
     },
 
     update_item_detail(item) {
@@ -1596,8 +1467,9 @@ export default {
       this.fetch_customer_details();
     });
     evntBus.on("new_invoice", () => {
-      this.invoice_doc = "";
-      this.cancel_invoice();
+      // في نهج __islocal: فقط إعادة تعيين الجلسة بدون حذف
+      this.reset_invoice_session();
+      evntBus.emit("show_payment", "false");
     });
     evntBus.on("load_invoice", (data) => {
 
@@ -1650,17 +1522,14 @@ export default {
     // Event-driven approach for items changes
     evntBus.on("item_added", (item) => {
       // Item added event
-      this.debouncedItemOperation("item-added");
     });
 
     evntBus.on("item_removed", (item) => {
       // Item removed event
-      this.debouncedItemOperation("item-removed");
     });
 
     evntBus.on("item_updated", (item) => {
       // Item updated event
-      this.debouncedItemOperation("item-updated");
     });
 
     this.$nextTick(() => {
@@ -1741,9 +1610,7 @@ export default {
   // ===== SECTION 6: WATCH =====
   watch: {
     discount_amount() {
-      if (this.invoice_doc && this.invoice_doc?.name) {
-        this.debouncedItemOperation("discount-amount-change");
-      }
+      // No auto-saving - everything stays local
     },
     offerApplied: {
       handler(newVal, oldVal) {
