@@ -26,7 +26,7 @@ export default {
   data() {
     return {
       invoicesDialog: false,
-      selected: [],
+      selected: null,  // Changed from [] to null for single selection
       dialog_data: [],
       isLoading: false,
       company: '',
@@ -48,7 +48,7 @@ export default {
       this.pos_opening_shift = data.pos_opening_shift || null;
       this.company = this.getCompany();
       this.dialog_data = [];
-      this.selected = [];
+      this.selected = null;  // Changed from [] to null
       this.search_invoices();
     });
   },
@@ -63,19 +63,13 @@ export default {
       return this.pos_profile?.company || this.pos_opening_shift?.company || this.company || DEFAULT_COMPANY;
     },
 
-    toggleSelectAll(event) {
-      if (event.target.checked) {
-        this.selected = this.dialog_data.map(item => item.name);
-      } else {
-        this.selected = [];
-      }
-    },
+    // Removed toggleSelectAll - not needed for radio buttons
 
       // Close the returns dialog and reset state
     close_dialog() {
       this.$nextTick(() => {
         this.invoicesDialog = false;
-        this.selected = [];
+        this.selected = null;  // Changed from [] to null
         this.dialog_data = [];
         this.invoice_name = '';
       });
@@ -186,12 +180,12 @@ export default {
 
     // Submit selected invoice for return
     async submit_dialog() {
-      if (!this.selected.length || !this.dialog_data.length) {
+      if (!this.selected || !this.dialog_data.length) {
         this.showMessage('Please select a valid invoice', 'error');
         return;
       }
 
-      const selectedItem = this.dialog_data.find(item => item.name === this.selected[0]);
+      const selectedItem = this.dialog_data.find(item => item.name === this.selected);
       if (!selectedItem) {
         this.showMessage('Selected invoice not found', 'error');
         return;
@@ -211,8 +205,16 @@ export default {
 
       const invoice_doc = this.createReturnInvoiceDoc(return_doc);
 
-      evntBus.emit(EVENT_NAMES.LOAD_RETURN_INVOICE, { invoice_doc, return_doc });
+      // Close dialog first
       this.invoicesDialog = false;
+
+      // Reset selection
+      this.selected = null;
+      this.dialog_data = [];
+      this.invoice_name = '';
+
+      // Emit event after closing
+      evntBus.emit(EVENT_NAMES.LOAD_RETURN_INVOICE, { invoice_doc, return_doc });
     }
   },
 
