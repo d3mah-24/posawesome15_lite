@@ -151,6 +151,11 @@ export default {
         // Load offers for this profile
         await this.get_offers(pos_profile.name);
 
+        // Emit custom event for translation loading
+        window.dispatchEvent(new CustomEvent('posProfileLoaded', {
+          detail: { pos_profile: pos_profile }
+        }));
+
         // Emit events to notify other components
         evntBus.emit(EVENTS.REGISTER_POS_PROFILE, shift_data);
         evntBus.emit(EVENTS.SET_COMPANY, { name: pos_profile.company });
